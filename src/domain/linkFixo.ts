@@ -47,6 +47,10 @@ export function contarPacientesComLink(links: readonly Acompanhamento[], planos:
   return chaves.size
 }
 
+/** CA-2226: o aviso do limite conta pacientes com link (D-1214), com a mesma régua do CA-1190. */
+export const textoDoLimite = (limite: number | null | undefined): string =>
+  `Você já tem ${limite ?? 0} pacientes com link, o limite da sua assinatura. Remova um link em Adesão ou mude de assinatura para gerar outro.`
+
 /** O plano no link não é este: o cartão pergunta "Juliana já tem link. Atualizar com este plano?" (CA-2222). */
 export const precisaAtualizarComPlano = (link: Acompanhamento, casoId: string): boolean => link.casoId !== casoId
 

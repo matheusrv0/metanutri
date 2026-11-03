@@ -1,7 +1,9 @@
 // O lado do nutricionista: gerar o link do paciente e ver se ele está marcando.
-// Fica junto do plano, porque é do plano que as missões e a dieta do link saem.
-import { Check, Copy, Link2, RefreshCw, ShieldCheck } from 'lucide-react'
-import { useState, type ReactNode } from 'react'
+// Fica junto do plano, porque é do plano que as missões e a dieta do link saem. Desde a spec lado-do-paciente, o link é
+// do paciente (D-1214): o plano novo de quem já tem link pergunta se atualiza o mesmo endereço, o plano sem paciente
+// pergunta para quem é o link (D-1216), e "Gerar link novo" virou "Trocar o endereço" (D-1215).
+import { Check, Copy, Link2, RefreshCw, ShieldCheck, UserRoundPlus } from 'lucide-react'
+import { useId, useState, type ReactNode } from 'react'
 import {
   criarAcompanhamento,
   regerarLink,
@@ -12,20 +14,27 @@ import {
   EXPLICACAO_ESTADO,
   type Acompanhamento,
 } from '@/domain/acompanhamento.ts'
+import { avisoLigado } from '@/domain/avisosNaFicha.ts'
 import { copiarDieta, dietaMudou, temDieta, type DietaDoPlano } from '@/domain/dietaDoLink.ts'
+import { pedirEnvio } from '@/domain/emailsDoLink.ts'
 import { dataCompleta } from '@/domain/formatarData.ts'
 import { LIMITE_DE_LINKS } from '@/domain/fonteSupabase.ts'
+import { atualizarComPlano, contarPacientesComLink, linkDoPaciente, precisaAtualizarComPlano, textoDoLimite } from '@/domain/linkFixo.ts'
 import type { Missao } from '@/domain/missoes.ts'
 import { linkDeUsoNaoComercial, planoPorId, podeGerarLink, PLANO_PADRAO, type IdPlano } from '@/domain/conta.ts'
-import { agoraEmBrasilia } from '@/domain/retorno.ts'
+import { agoraEmBrasilia, pacienteDoAcompanhamento } from '@/domain/retorno.ts'
 import type { Situacao } from '@/domain/situacao.ts'
-import { textoDoLink } from '@/domain/whatsapp.ts'
+import { primeiroNome, textoDoLink } from '@/domain/whatsapp.ts'
 import { useAcompanhamentos, useLerDaNuvemAoAbrir } from '@/ui/estado/contextoAcompanhamentos.ts'
+import { useCasosOpcional } from '@/ui/estado/contextoCasos.ts'
 import { usePacientesOpcional } from '@/ui/estado/contextoPacientes.ts'
 import { DIETA_GRANDE_DEMAIS, LINK_GRANDE_DEMAIS } from '@/ui/estado/mensagemDoBanco.ts'
+import { useClienteDosEmails, useEmailsDoLink } from '@/ui/estado/usarEmailsDoLink.ts'
 import { BotaoWhatsApp } from '@/ui/whatsapp/BotaoWhatsApp.tsx'
 import type { PacienteDoWhatsApp } from '@/ui/whatsapp/DialogoWhatsApp.tsx'
+import { mascararEmail } from '../../../supabase/functions/_shared/avisos/email.ts'
 import { CaixaDietaNoLink } from './CaixaDietaNoLink.tsx'
+import { DialogoTrocarEndereco } from './DialogoTrocarEndereco.tsx'
 import { enderecoDoPaciente } from './endereco.ts'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { SeloEstado } from './SeloEstado.tsx'
@@ -53,6 +62,11 @@ interface CartaoLinkMissoesProps {
   readonly aoVerPlanos?: (() => void) | undefined
   /** Abre a ficha com o cursor no Telefone, quando o WhatsApp não tem número (spec whatsapp-e-retorno, CA-505). */
   readonly aoCadastrarTelefone?: ((pacienteId: string) => void) | undefined
+  /**
+   * D-1216 e CA-2224: o plano sem paciente pergunta "Para quem é este link?" e cria a ficha com o nome escrito, ligando
+   * o plano a ela. Devolve o id do paciente criado. Sem esta função (os testes de antes), o link sai sem paciente.
+   */
+  readonly aoCriarPaciente?: ((nome: string) => string | null) | undefined
 }
 
 export function CartaoLinkMissoes({
@@ -66,9 +80,12 @@ export function CartaoLinkMissoes({
   hoje = agoraEmBrasilia(new Date()).dia,
   aoVerPlanos,
   aoCadastrarTelefone,
+  aoCriarPaciente,
 }: CartaoLinkMissoesProps) {
-  const { repositorio, salvar, acompanhamentos, foraDaNuvem } = useAcompanhamentos()
+  const { salvar, acompanhamentos, foraDaNuvem } = useAcompanhamentos()
   const fichas = usePacientesOpcional()
+  const planos = useCasosOpcional()?.casos ?? []
+  const clienteDosEmails = useClienteDosEmails()
   useLerDaNuvemAoAbrir()
   const planoAtual = planoPorId(plano) ?? planoPorId(PLANO_PADRAO)
   const naoComercial = linkDeUsoNaoComercial(planoAtual, situacao)
@@ -81,7 +98,23 @@ export function CartaoLinkMissoes({
   const [mostrarDieta, setMostrarDieta] = useState(true)
   // CA-544: ligar a dieta num link que já existe espera a confirmação de autorização.
   const [autorizandoDieta, setAutorizandoDieta] = useState(false)
-  const acompanhamento = repositorio.porCaso(casoId)
+  // CA-2224: o paciente criado por "Para quem é este link?", enquanto o plano ainda não chegou com o vínculo.
+  const [pacienteCriado, setPacienteCriado] = useState<string | null>(null)
+  const [perguntandoQuem, setPerguntandoQuem] = useState(false)
+  // CA-2223: o diálogo de "Trocar o endereço" e o que aconteceu depois.
+  const [trocando, setTrocando] = useState(false)
+  const [depoisDaTroca, setDepoisDaTroca] = useState<string | null>(null)
+  // CA-2249: "Avisar Juliana por e-mail" ao atualizar; nulo é o padrão (marcada quando ela aceitou o aviso).
+  const [avisarEscolha, setAvisarEscolha] = useState<boolean | null>(null)
+  const pacienteAtual = pacienteId ?? pacienteCriado
+  // D-1214: o link é do paciente; o plano sem paciente (os links de antes) continua achando o link pelo plano.
+  const acompanhamento: Acompanhamento | null =
+    (pacienteAtual ? linkDoPaciente(acompanhamentos, pacienteAtual, planos) : null) ?? acompanhamentos.find((a) => a.casoId === casoId) ?? null
+  const { emails, recarregar: recarregarEmails } = useEmailsDoLink(acompanhamento?.id ?? null)
+  const emailQueFunciona = emails?.email && emails.supressao === null ? mascararEmail(emails.email) : null
+  const nomeCurto = primeiroNome(nome)
+  const podeAvisar = emails !== null && avisoLigado(emails, 'plano')
+  const avisar = avisarEscolha ?? podeAvisar
   const dietaVai = dieta !== undefined && mostrarDieta
 
   const gravar = async (novo: Acompanhamento) => {
@@ -89,21 +122,59 @@ export function CartaoLinkMissoes({
     const motivo = await salvar(novo)
     setNoLimite(motivo === LIMITE_DE_LINKS)
     setSalvando(false)
+    return motivo
   }
 
-  // Gerar de novo troca o token do mesmo registro, em vez de criar um segundo:
-  // dois acompanhamentos para o mesmo plano fariam a tela mostrar o link velho.
-  // CA-421: o aviso, uma vez no link, não sai; e entra no link antigo de conta de estudante.
-  // CA-547: o link novo leva a dieta de agora quando ela está ligada; desligada, continua sem.
+  // O primeiro link do paciente. CA-421: o aviso de estágio entra no link de conta de estudante.
+  // CA-547: o link novo leva a dieta de agora quando ela está ligada.
   const gerar = () => {
     setCopiado(false)
     setPedindoConsentimento(false)
-    const dietaNova = acompanhamento?.dieta && dieta ? { dieta: copiarDieta(dieta, hoje) } : {}
-    void gravar(
-      acompanhamento
-        ? { ...regerarLink(acompanhamento, { nome, missoes, ...dietaNova }), usoNaoComercial: acompanhamento.usoNaoComercial || naoComercial }
-        : criarAcompanhamento({ casoId, pacienteId, nome, missoes, usoNaoComercial: naoComercial, dieta: dieta && mostrarDieta ? copiarDieta(dieta, hoje) : null }),
-    )
+    void gravar(criarAcompanhamento({ casoId, pacienteId: pacienteAtual, nome, missoes, usoNaoComercial: naoComercial, dieta: dieta && mostrarDieta ? copiarDieta(dieta, hoje) : null }))
+  }
+
+  /**
+   * D-1215 e CA-2223: "Trocar o endereço" troca o token (o antigo deixa de abrir), com as missões do plano de agora.
+   * Com e-mail no link, o S4 sai na hora; sem, a frase manda usar o WhatsApp do cartão.
+   */
+  const trocarEndereco = async () => {
+    if (!acompanhamento) return
+    setTrocando(false)
+    setCopiado(false)
+    const dietaNova = acompanhamento.dieta && dieta ? { dieta: copiarDieta(dieta, hoje) } : {}
+    const novo = { ...regerarLink(acompanhamento, { nome, missoes, ...dietaNova }), usoNaoComercial: acompanhamento.usoNaoComercial || naoComercial }
+    const motivo = await gravar(novo)
+    if (motivo !== null) return
+    if (emailQueFunciona === null) {
+      setDepoisDaTroca('Endereço trocado. Mande o novo pelo WhatsApp.')
+      return
+    }
+    const envio = await pedirEnvio(clienteDosEmails, 'trocou', novo.id)
+    setDepoisDaTroca(envio.ok ? `Endereço trocado. O novo foi para ${emailQueFunciona}.` : `Endereço trocado. ${envio.erro} Mande o novo pelo WhatsApp.`)
+    recarregarEmails()
+  }
+
+  /** CA-2222 e CA-2249: atualizar o link do paciente com este plano; com a caixa marcada, o A1 é agendado. */
+  const atualizarComEstePlano = async () => {
+    if (!acompanhamento) return
+    const motivo = await gravar({
+      ...atualizarComPlano(acompanhamento, { casoId, pacienteId: pacienteAtual, nome, missoes, dieta }, hoje),
+      usoNaoComercial: acompanhamento.usoNaoComercial || naoComercial,
+    })
+    if (motivo === null && avisar && podeAvisar) {
+      await pedirEnvio(clienteDosEmails, 'atualizou', acompanhamento.id, true)
+      recarregarEmails()
+    }
+  }
+
+  /** CA-2224: "Para quem é este link?" cria a ficha e segue para a autorização. */
+  const criarPaciente = (nomeDoPaciente: string) => {
+    if (!aoCriarPaciente) return
+    const id = aoCriarPaciente(nomeDoPaciente.trim())
+    if (id === null) return
+    setPacienteCriado(id)
+    setPerguntandoQuem(false)
+    setPedindoConsentimento(true)
   }
 
   // CA-543, CA-544 e CA-545: ligar, desligar ou atualizar a dieta não troca o endereço nem as missões.
@@ -154,9 +225,9 @@ export function CartaoLinkMissoes({
       </div>
     )
 
-  // Regerar não conta: já existe link para este plano. O limite vale para o link novo.
-  const outrosLinks = acompanhamentos.filter((a) => a.casoId !== casoId).length
-  const cabeMaisUm = planoAtual !== null && podeGerarLink(planoAtual, outrosLinks)
+  // O limite vale para o paciente novo e conta pacientes com link (D-1214); o próprio paciente não conta de novo.
+  const deOutros = acompanhamentos.filter((a) => a.casoId !== casoId && (pacienteAtual === null || pacienteDoAcompanhamento(a, planos) !== pacienteAtual))
+  const cabeMaisUm = planoAtual !== null && podeGerarLink(planoAtual, contarPacientesComLink(deOutros, planos))
 
   const copiar = async (endereco: string) => {
     try {
@@ -186,7 +257,9 @@ export function CartaoLinkMissoes({
           Link do paciente
         </h2>
 
-        {pedindoConsentimento ? (
+        {perguntandoQuem ? (
+          <ParaQuem nomeSugerido={nome} aoConfirmar={criarPaciente} aoDesistir={() => setPerguntandoQuem(false)} />
+        ) : pedindoConsentimento ? (
           <div className="mt-3 rounded-xl border border-stateinfo/40 bg-lightinfo p-4">
             <p className="flex items-center gap-2 font-medium text-infotext">
               <ShieldCheck className="size-4" aria-hidden="true" />
@@ -220,23 +293,24 @@ export function CartaoLinkMissoes({
             {cabeMaisUm ? (
               <>
                 {dieta ? <CaixaDietaNoLink marcada={mostrarDieta} aoMudar={setMostrarDieta} /> : null}
-                <Button type="button" onClick={() => setPedindoConsentimento(true)} className="mt-4">
+                <Button
+                  type="button"
+                  onClick={() => (pacienteAtual === null && aoCriarPaciente ? setPerguntandoQuem(true) : setPedindoConsentimento(true))}
+                  className="mt-4"
+                >
                   <Link2 className="size-4" aria-hidden="true" />
                   Gerar link do paciente
                 </Button>
                 {naoComercial ? (
                   <p className="mt-3 text-xs text-muted-foreground">
-                    Conta de estudante: até {planoAtual.limiteLinksPaciente} links, de uso não comercial. A tela do paciente avisa que o
-                    acompanhamento é de estágio.
+                    Conta de estudante: até {planoAtual.limiteLinksPaciente} pacientes com link, de uso não comercial. A tela do paciente avisa que
+                    o acompanhamento é de estágio.
                   </p>
                 ) : null}
               </>
             ) : (
               <div className="mt-4 rounded-xl border border-statelow/40 bg-lightwarning p-3 text-sm text-warningtext">
-                <p>
-                  Você já usou os {planoAtual?.limiteLinksPaciente} links da sua assinatura. Remova um link em Adesão ou mude de assinatura para gerar
-                  outro.
-                </p>
+                <p>{textoDoLimite(planoAtual?.limiteLinksPaciente)}</p>
                 {aoVerPlanos ? (
                   <Button size="sm" variant="outline" className="mt-2" onClick={aoVerPlanos}>
                     Ver preços
@@ -252,8 +326,24 @@ export function CartaoLinkMissoes({
   }
 
   // O telefone é o da ficha: a do plano ou, se o plano perdeu o vínculo, a do link (D-142).
-  const idDoPaciente = pacienteId ?? acompanhamento.pacienteId
+  const idDoPaciente = pacienteAtual ?? acompanhamento.pacienteId
   const paciente = idDoPaciente ? (fichas?.pacientes.find((p) => p.id === idDoPaciente) ?? null) : null
+
+  // CA-2222: o paciente já tem link, com outro plano. O mesmo endereço passa a mostrar este quando ela confirma.
+  if (precisaAtualizarComPlano(acompanhamento, casoId)) {
+    return (
+      <PerguntaAtualizar
+        nome={nomeCurto}
+        endereco={enderecoDoPaciente(acompanhamento.token)}
+        podeAvisar={podeAvisar}
+        avisar={avisar}
+        aoMudarAvisar={setAvisarEscolha}
+        ocupado={salvando}
+        aviso={avisoDaNuvem}
+        aoAtualizar={() => void atualizarComEstePlano()}
+      />
+    )
+  }
 
   return (
     <PainelDoLink
@@ -279,9 +369,118 @@ export function CartaoLinkMissoes({
         ) : null
       }
       aoCopiar={copiar}
-      aoGerarNovo={gerar}
+      aoTrocarEndereco={() => {
+        setDepoisDaTroca(null)
+        setTrocando(true)
+      }}
+      depoisDaTroca={depoisDaTroca}
       aoCadastrarTelefone={aoCadastrarTelefone}
+      dialogo={
+        <DialogoTrocarEndereco
+          aberto={trocando}
+          aoFechar={() => setTrocando(false)}
+          aoConfirmar={() => void trocarEndereco()}
+          primeiroNome={nomeCurto}
+          emailMascarado={emailQueFunciona}
+          ocupado={salvando}
+        />
+      }
     />
+  )
+}
+
+/** CA-2224: "Para quem é este link?", com o nome do plano já escrito. Confirmar cria a ficha, e o link é dela. */
+function ParaQuem({ nomeSugerido, aoConfirmar, aoDesistir }: { readonly nomeSugerido: string; readonly aoConfirmar: (nome: string) => void; readonly aoDesistir: () => void }) {
+  const id = useId()
+  const [nome, setNome] = useState(nomeSugerido)
+  return (
+    <form
+      className="mt-3 flex flex-col gap-3 rounded-xl border border-stateinfo/40 bg-lightinfo p-4"
+      onSubmit={(e) => {
+        e.preventDefault()
+        if (nome.trim()) aoConfirmar(nome)
+      }}
+    >
+      <p className="flex items-center gap-2 font-medium text-infotext">
+        <UserRoundPlus className="size-4" aria-hidden="true" />
+        Para quem é este link?
+      </p>
+      <p className="text-sm text-foreground">O link é do paciente. Confirmar cria a ficha com este nome, e o plano fica ligado a ela.</p>
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor={id} className="text-xs font-medium text-muted-foreground">
+          Nome do paciente
+        </label>
+        <input
+          id={id}
+          value={nome}
+          maxLength={120}
+          onChange={(e) => setNome(e.target.value)}
+          className="min-h-11 w-full min-w-0 rounded-lg border border-border bg-card px-3 py-2 text-base text-foreground sm:min-h-0 sm:text-sm"
+        />
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <Button type="submit" disabled={!nome.trim()}>
+          Criar a ficha e seguir
+        </Button>
+        <Button type="button" variant="ghost" onClick={aoDesistir}>
+          Agora não
+        </Button>
+      </div>
+    </form>
+  )
+}
+
+/** CA-2222: "Juliana já tem link. Atualizar com este plano?", sim por padrão, com o aviso por e-mail (CA-2249). */
+function PerguntaAtualizar({
+  nome,
+  endereco,
+  podeAvisar,
+  avisar,
+  aoMudarAvisar,
+  ocupado,
+  aviso,
+  aoAtualizar,
+}: {
+  readonly nome: string
+  readonly endereco: string
+  readonly podeAvisar: boolean
+  readonly avisar: boolean
+  readonly aoMudarAvisar: (avisar: boolean) => void
+  readonly ocupado: boolean
+  readonly aviso: ReactNode
+  readonly aoAtualizar: () => void
+}) {
+  const id = useId()
+  return (
+    <section aria-labelledby="titulo-missoes" className="rounded-2xl border border-border bg-card p-5">
+      <h2 id="titulo-missoes" className="font-titulo text-lg font-semibold text-heading">
+        Link do paciente
+      </h2>
+      <div className="mt-3 flex flex-col gap-3 rounded-xl border border-stateinfo/40 bg-lightinfo p-4">
+        <p className="font-medium text-infotext [overflow-wrap:anywhere]">{`${nome || 'O paciente'} já tem link. Atualizar com este plano?`}</p>
+        <p className="text-sm text-foreground">O endereço continua o mesmo, e as marcações dos dias anteriores ficam.</p>
+        <p className="text-xs text-muted-foreground [overflow-wrap:anywhere]">{endereco}</p>
+        {podeAvisar ? (
+          <label htmlFor={id} className="flex min-h-11 cursor-pointer items-center gap-3">
+            <input
+              id={id}
+              type="checkbox"
+              checked={avisar}
+              onChange={(e) => aoMudarAvisar(e.target.checked)}
+              className="size-5 shrink-0 cursor-pointer accent-[var(--brand-primary)]"
+            />
+            <span className="text-sm text-foreground [overflow-wrap:anywhere]">{nome ? `Avisar ${nome} por e-mail` : 'Avisar o paciente por e-mail'}</span>
+          </label>
+        ) : null}
+        <div>
+          <Button type="button" loading={ocupado} onClick={aoAtualizar}>
+            <RefreshCw aria-hidden="true" />
+            Atualizar
+          </Button>
+        </div>
+      </div>
+      {aviso}
+    </section>
   )
 }
 
@@ -294,8 +493,10 @@ function PainelDoLink({
   paciente,
   caixaDaDieta,
   aoCopiar,
-  aoGerarNovo,
+  aoTrocarEndereco,
+  depoisDaTroca,
   aoCadastrarTelefone,
+  dialogo,
 }: {
   readonly acompanhamento: Acompanhamento
   readonly hoje: string
@@ -308,8 +509,11 @@ function PainelDoLink({
   /** Ligar, desligar e atualizar a dieta do link (spec dieta-no-link). */
   readonly caixaDaDieta: ReactNode
   readonly aoCopiar: (endereco: string) => void
-  readonly aoGerarNovo: () => void
+  readonly aoTrocarEndereco: () => void
+  /** CA-2223: o que aconteceu depois de trocar (o S4 saiu, ou mandar pelo WhatsApp). */
+  readonly depoisDaTroca: string | null
   readonly aoCadastrarTelefone: ((pacienteId: string) => void) | undefined
+  readonly dialogo: ReactNode
 }) {
   const endereco = enderecoDoPaciente(acompanhamento.token)
   const estado = estadoDoAcompanhamento(acompanhamento, hoje)
@@ -375,17 +579,21 @@ function PainelDoLink({
 
       {caixaDaDieta}
 
-      <div className="mt-4 flex flex-wrap items-center gap-3">
-        <Button type="button" variant="ghost" disabled={gerando} onClick={aoGerarNovo}>
-          <RefreshCw className="size-4" aria-hidden="true" />
-          Gerar link novo
-        </Button>
-        <p className="text-xs text-muted-foreground">
-          {acompanhamento.dieta === null
-            ? 'Gerar um link novo atualiza as missões com o plano atual. O link antigo deixa de funcionar.'
-            : 'Gerar um link novo atualiza as missões e o plano alimentar do link. O link antigo deixa de funcionar.'}
+      {depoisDaTroca ? (
+        <p role="status" className="mt-4 rounded-xl bg-surfacesunken p-3 text-sm text-foreground [overflow-wrap:anywhere]">
+          {depoisDaTroca}
         </p>
+      ) : null}
+
+      {/* D-1215: "Gerar link novo" virou "Trocar o endereço", para quando o link vazou. */}
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        <Button type="button" variant="ghost" className="text-errortext hover:text-errortext" disabled={gerando} onClick={aoTrocarEndereco}>
+          <RefreshCw className="size-4" aria-hidden="true" />
+          Trocar o endereço
+        </Button>
+        <p className="text-xs text-muted-foreground">Para quando o link vazou: o endereço atual deixa de abrir.</p>
       </div>
+      {dialogo}
     </section>
   )
 }

@@ -493,6 +493,13 @@ export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pe
                   aoVerPlanos={() => navegar(rotaDePlanos(assinatura.plano))}
                   aoCadastrarTelefone={cadastrarTelefone}
                   situacao={perfil?.situacao ?? null}
+                  // D-1216 e CA-2224: o link exige paciente; o plano sem ficha cria a ficha com o nome escrito e liga o plano a ela.
+                  aoCriarPaciente={(nomeDoPaciente) => {
+                    const criado = repoPacientes.criar(nomeDoPaciente)
+                    atualizarPacientes()
+                    alterarCaso({ pacienteId: criado.id })
+                    return criado.id
+                  }}
                   {...(sessao ? { plano: assinatura.plano } : {})}
                 />
               </div>

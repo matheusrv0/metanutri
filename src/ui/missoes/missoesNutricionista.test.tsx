@@ -17,6 +17,13 @@ const MISSOES: readonly Missao[] = [
 
 const HOJE = '2026-09-26'
 
+/** D-1215: "Gerar link novo" virou "Trocar o endereço", com a confirmação do diálogo. */
+async function trocarOEndereco(usuario: ReturnType<typeof userEvent.setup>, achar: 'get' | 'find' = 'get') {
+  const botao = achar === 'find' ? await screen.findByRole('button', { name: 'Trocar o endereço' }) : screen.getByRole('button', { name: 'Trocar o endereço' })
+  await usuario.click(botao)
+  await usuario.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Trocar o endereço' }))
+}
+
 function memoria(): Armazenamento {
   const dados = new Map<string, string>()
   return {
@@ -147,7 +154,7 @@ describe('Cartão do link de missões', () => {
     await usuario.click(screen.getByRole('button', { name: /Já tenho a autorização/ }))
     const primeiro = (screen.getByLabelText('Endereço do link') as HTMLInputElement).value
 
-    await usuario.click(screen.getByRole('button', { name: /Gerar link novo/ }))
+    await trocarOEndereco(usuario)
     const segundo = (screen.getByLabelText('Endereço do link') as HTMLInputElement).value
 
     expect(segundo).not.toBe(primeiro)
@@ -310,7 +317,7 @@ describe('Conta de estudante: uso não comercial', () => {
         <CartaoLinkMissoes casoId="c1" pacienteId={null} nome="Ana" missoes={MISSOES} plano="estudante" hoje={HOJE} />
       </Anfitriao>,
     )
-    expect(screen.getByText(/até 3 links, de uso não comercial/i)).toBeInTheDocument()
+    expect(screen.getByText(/até 3 pacientes com link, de uso não comercial/i)).toBeInTheDocument()
   })
 
   it('o link gerado por estudante fica marcado como não comercial', async () => {
@@ -335,7 +342,7 @@ describe('Conta de estudante: uso não comercial', () => {
       </Anfitriao>,
     )
 
-    expect(screen.getByText(/até 2 links, de uso não comercial/i)).toBeInTheDocument()
+    expect(screen.getByText(/até 2 pacientes com link, de uso não comercial/i)).toBeInTheDocument()
     await gerar(usuario)
     expect(repo.porCaso('c1')?.usoNaoComercial).toBe(true)
   })
@@ -351,7 +358,7 @@ describe('Conta de estudante: uso não comercial', () => {
       </Anfitriao>,
     )
 
-    await usuario.click(screen.getByRole('button', { name: /Gerar link novo/ }))
+    await trocarOEndereco(usuario)
     expect(repo.porCaso('c1')?.usoNaoComercial).toBe(true)
   })
 
@@ -394,7 +401,7 @@ describe('Conta de estudante: uso não comercial', () => {
 
     expect(screen.queryByRole('button', { name: /Gerar link do paciente/ })).not.toBeInTheDocument()
     // CA-1190 (spec textos-e-promessas): "assinatura" é a cobrança; o verbo é "Remover".
-    expect(screen.getByText('Você já usou os 3 links da sua assinatura. Remova um link em Adesão ou mude de assinatura para gerar outro.')).toBeInTheDocument()
+    expect(screen.getByText('Você já tem 3 pacientes com link, o limite da sua assinatura. Remova um link em Adesão ou mude de assinatura para gerar outro.')).toBeInTheDocument()
   })
 
   it('CA-1190 (spec textos-e-promessas): o pedido de autorização diz de quem é a responsabilidade, sem travessão', async () => {
@@ -438,7 +445,7 @@ describe('Conta de estudante: uso não comercial', () => {
       </Anfitriao>,
     )
 
-    expect(screen.getByRole('button', { name: /Gerar link novo/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Trocar o endereço' })).toBeInTheDocument()
   })
 })
 
@@ -626,21 +633,21 @@ describe('A dieta no link, pelo cartão (spec dieta-no-link)', () => {
     expect(screen.queryByText(MUDOU)).not.toBeInTheDocument()
   })
 
-  it('CA-547: "Gerar link novo" leva a dieta de agora; com a dieta desligada, continua sem ela', async () => {
+  it('CA-547: "Trocar o endereço" leva a dieta de agora; com a dieta desligada, continua sem ela', async () => {
     const usuario = userEvent.setup()
     const repo = criarRepositorioAcompanhamentos(memoria())
     const comDieta = repo.salvar({ ...acompanhamentoDe('c1', 'Ana'), dieta: ANTIGA })
     const { unmount } = cartaoComDieta(repo)
-    await usuario.click(screen.getByRole('button', { name: /Gerar link novo/ }))
+    await trocarOEndereco(usuario)
     expect(repo.porCaso('c1')?.token).not.toBe(comDieta.token)
     expect(repo.porCaso('c1')?.dieta).toEqual(copiarDieta(DIETA, HOJE))
-    expect(screen.getByText('Gerar um link novo atualiza as missões e o plano alimentar do link. O link antigo deixa de funcionar.')).toBeInTheDocument()
+    expect(screen.getByText('Endereço trocado. Mande o novo pelo WhatsApp.')).toBeInTheDocument()
     unmount()
 
     const outro = criarRepositorioAcompanhamentos(memoria())
     outro.salvar(acompanhamentoDe('c1', 'Ana'))
     cartaoComDieta(outro)
-    await usuario.click(screen.getByRole('button', { name: /Gerar link novo/ }))
+    await trocarOEndereco(usuario)
     expect(outro.porCaso('c1')?.dieta).toBeNull()
   })
 
