@@ -31,7 +31,7 @@ pesquisa por script para `src/data/frisancho.json`.
 |---|---|---|---|---|
 | T1 | SPEC | `specs/antropometria-completa/SPEC.md` | — | — |
 | T2 | PLAN | `specs/antropometria-completa/PLAN.md` | — | T1 |
-| T3 | Modelo das medidas e leitura retrocompatível | `src/domain/tipos.ts`, `src/domain/caso.ts`, `src/domain/caso.test.ts`, `src/domain/persistencia.ts`, `src/domain/persistencia.test.ts`, `src/domain/duplicar.ts`, `src/domain/duplicar.test.ts` | CA-2000 a CA-2003, CB-1008 | T2 |
+| T3 | Modelo das medidas e leitura retrocompatível | `src/domain/tipos.ts`, `src/domain/caso.ts`, `src/domain/caso.test.ts`, `src/domain/persistencia.ts`, `src/domain/persistencia.test.ts`, `src/domain/duplicar.ts`, `src/domain/duplicar.test.ts`, `src/domain/composicao.ts` (só o tipo `Dobras`) | CA-2000 a CA-2003, CB-1008 | T2 |
 | T4 | Fontes e a linha do resultado | `src/domain/fontesAntropometria.ts`, `src/domain/linhaDoResultado.ts`, `src/domain/linhaDoResultado.test.ts` | CA-2030, CB-1000, CB-1004 | T2 |
 | T5 | Protocolos de dobras | `src/domain/protocolosDeDobras.ts`, `src/domain/protocolosDeDobras.test.ts` | CA-2010 a CA-2025, CB-1001, CB-1002 (dobras), CB-1009 a CB-1011 | T3, T4 |
 | T6 | Tabelas de Frisancho | `dados-brutos/antropometria/frisancho-percentis.md`, `dados-brutos/README.md`, `scripts/dados/importar-frisancho.mjs`, `src/data/frisancho.json`, `src/data/frisancho.test.ts` | CA-2044 | T2 |
@@ -61,6 +61,9 @@ pesquisa por script para `src/data/frisancho.json`.
    lido: o nível de cima, `composicao`, `composicao.dobras` e `medidasCorporais`).
 4. `persistencia.ts`: a leitura usa `completarCasoLido`, com a regra de `quantidades` de hoje.
 5. `duplicar.ts`: `ClassificacaoDoPlano` desce em `medidasCorporais`; `NA_DUPLICACAO` ganha cada campo novo.
+6. `composicao.ts`: o tipo `Dobras` passa a ser o do plano (`ComposicaoCorporal['dobras']`, 10 dobras) e
+   `DOBRAS_VAZIAS` ganha as 4 novas. Sem isso a tela de hoje não compila (ela confere a dobra da lista do protocolo
+   contra as do plano). Nenhuma conta muda: os dois protocolos de hoje usam as mesmas 6 dobras.
 
 ### T4 · Fontes e a linha do resultado
 
