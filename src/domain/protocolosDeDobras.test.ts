@@ -606,3 +606,25 @@ describe('suprailíaca pela linha (spec antropometria-completa, revisão, CA-207
     expect(anterior.avisos.join(' ')).toMatch(/usada a da linha axilar anterior/)
   })
 })
+
+describe('soma perto do pico: o resultado satura (spec antropometria-completa, rodada 2, CA-2093)', () => {
+  const SATURA = /Soma perto do pico da equação \(115,5 mm\): o resultado satura, e o % quase não sobe com mais dobra\. Compare com outro protocolo\./
+  const petroskiMulher = (soma: number) =>
+    calculado(calcularProtocolo('petroski', paciente('F', 30, { pesoKg: 70, estaturaCm: 165 }), dobras({ subescapular: soma / 3, suprailiacaMed: soma / 3, coxa: soma / 3 })))
+
+  it('CA-2093: Petroski mulher com Σ 104 e 114 mm calcula e avisa que satura; com 103 mm, não', () => {
+    const r104 = petroskiMulher(104)
+    const r114 = petroskiMulher(114)
+    expect(naPrecisao(r104.gorduraPct, 2)).toBe(32.34)
+    expect(naPrecisao(r114.gorduraPct, 2)).toBe(32.58)
+    expect(r104.avisos.join(' ')).toMatch(SATURA)
+    expect(r114.avisos.join(' ')).toMatch(SATURA)
+    expect(petroskiMulher(103).avisos.join(' ')).not.toMatch(/satura/)
+  })
+
+  it('CA-2093: vale para toda quadrática com pico (JP 3 dobras no homem: 90% de 258,3 é 232,5)', () => {
+    const jp3 = (soma: number) => calculado(calcularProtocolo('jackson-pollock-3', paciente('M', 30), dobras({ peitoral: soma / 3, abdominal: soma / 3, coxa: soma / 3 }))).avisos.join(' ')
+    expect(jp3(233)).toMatch(/Soma perto do pico da equação \(258,3 mm\): o resultado satura/)
+    expect(jp3(230)).not.toMatch(/satura/)
+  })
+})

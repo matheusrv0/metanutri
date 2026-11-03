@@ -512,14 +512,23 @@ function emMm(valor: number, casas: number): string {
   return f.format(valor)
 }
 
-/** D-1038: a soma fora da faixa da amostra calcula, com o aviso e a faixa. */
+/** Rodada 2: de 90% do pico em diante, a inclinação da parábola já caiu a 10% da inicial. */
+const FRACAO_DO_PICO_QUE_SATURA = 0.9
+
+/** D-1038: a soma fora da faixa da amostra calcula, com o aviso e a faixa; perto do pico, avisa que satura (rodada 2). */
 function avisosDaSoma(variante: VarianteDoProtocolo, soma: number): string[] {
-  const faixa = variante.somaNaAmostra
-  if (!faixa) return []
+  const avisos: string[] = []
   const exibida = naPrecisao(soma, 1)
-  if (exibida >= faixa.min && exibida <= faixa.max) return []
-  const origem = faixa.inferida ? ', inferida pela faixa de cada dobra' : ''
-  return [`A soma das dobras está fora da faixa da amostra da equação (${emMm(faixa.min, 0)} a ${emMm(faixa.max, 0)} mm${origem}).`]
+  const faixa = variante.somaNaAmostra
+  if (faixa && (exibida < faixa.min || exibida > faixa.max)) {
+    const origem = faixa.inferida ? ', inferida pela faixa de cada dobra' : ''
+    avisos.push(`A soma das dobras está fora da faixa da amostra da equação (${emMm(faixa.min, 0)} a ${emMm(faixa.max, 0)} mm${origem}).`)
+  }
+  const pico = variante.picoDaSomaMm
+  if (pico !== null && exibida > FRACAO_DO_PICO_QUE_SATURA * pico) {
+    avisos.push(`Soma perto do pico da equação (${emMm(pico, 1)} mm): o resultado satura, e o % quase não sobe com mais dobra. Compare com outro protocolo.`)
+  }
+  return avisos
 }
 
 const frase = (itens: readonly string[]) => (itens.length <= 1 ? itens.join('') : `${itens.slice(0, -1).join(', ')} e ${itens[itens.length - 1] ?? ''}`)
