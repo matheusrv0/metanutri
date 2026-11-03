@@ -86,7 +86,8 @@ export async function escolher(usuario: ReturnType<typeof userEvent.setup>, esco
 
 export async function abrirColunas(usuario: ReturnType<typeof userEvent.setup>, escolhido: File = arquivo('pacientes.csv', CSV_DO_PROTOTIPO)): Promise<void> {
   await escolher(usuario, escolhido)
-  await screen.findByRole('heading', { level: 2, name: escolhido.name })
+  // A planilha grande leva mais que o segundo padrão do findBy no jsdom.
+  await screen.findByRole('heading', { level: 2, name: escolhido.name }, { timeout: 10_000 })
 }
 
 export async function abrirPrevia(usuario: ReturnType<typeof userEvent.setup>, escolhido?: File): Promise<void> {

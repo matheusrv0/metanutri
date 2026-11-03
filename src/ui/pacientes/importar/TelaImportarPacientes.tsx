@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
+import { mudarDestino } from '@/domain/importar/colunas.ts'
 import { lerPlanilha } from '@/domain/importar/lerPlanilha.ts'
 import { textoDaRecusa } from '@/domain/importar/textos.ts'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { Passos } from '@ds/componentes/navigation/Passos.tsx'
 import { useArmazenamento } from '../../estado/contextoArmazenamento.ts'
-import { comPlanilha, ESTADO_INICIAL, maisAdiante, PASSOS, type EstadoDaImportacao, type Passo } from './estadoDaImportacao.ts'
+import { comAba, comPlanilha, ESTADO_INICIAL, maisAdiante, PASSOS, type EstadoDaImportacao, type Passo } from './estadoDaImportacao.ts'
 import { PassoArquivo } from './PassoArquivo.tsx'
+import { PassoColunas } from './PassoColunas.tsx'
 import { esquecerRascunho, guardarRascunho, lerRascunho } from './rascunhoDaImportacao.ts'
 
 /**
@@ -112,9 +114,20 @@ export function TelaImportarPacientes({ moldura, aoSair }: TelaImportarPacientes
         {estado.passo === 'arquivo' ? (
           <PassoArquivo lendo={lendo} recusa={recusa} aoEscolher={(arquivo) => void ler(arquivo)} aoCancelarLeitura={cancelarLeitura} tituloRef={titulo} />
         ) : estado.passo === 'colunas' && estado.planilha ? (
-          <section aria-labelledby="importar-colunas">
-            <h2 id="importar-colunas" ref={titulo} tabIndex={-1} className="card-title focus:outline-none">
-              {estado.planilha.nome}
+          <PassoColunas
+            planilha={estado.planilha}
+            aba={estado.aba}
+            destinos={estado.destinos}
+            aoEscolherAba={(aba) => mudar((atual) => comAba(atual, aba))}
+            aoMudarDestino={(indice, destino) => mudar((atual) => ({ ...atual, destinos: mudarDestino(atual.destinos, indice, destino), aviso: null }))}
+            aoTrocarArquivo={() => irPara('arquivo')}
+            aoVerPrevia={() => irPara('previa')}
+            tituloRef={titulo}
+          />
+        ) : estado.passo === 'previa' ? (
+          <section aria-labelledby="importar-previa">
+            <h2 id="importar-previa" ref={titulo} tabIndex={-1} className="sr-only">
+              Prévia
             </h2>
           </section>
         ) : null}
