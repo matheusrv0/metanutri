@@ -134,6 +134,6 @@ antropometria já usa.
 |---|---|---|---|
 | D1 | Spec e plano | `specs/ficha-unica/SPEC.md`, `PLAN.md` | — |
 | D2 | Uma lista com a classificação de cada campo do plano; duplicar o plano de paciente limpa as medidas do dia e a estatura abaixo de 20 anos | `src/domain/duplicar.ts`, `src/domain/duplicar.test.ts` | CA-1096 a CA-1098, CB-359 |
-| D3 | A idade da ficha na data nova decide a estatura: o repositório recebe a data de nascimento, e as duas telas que duplicam a passam | `src/domain/persistencia.ts`, `src/domain/persistencia.test.ts`, `src/ui/pacientes/TelaPaciente.tsx`, `src/ui/casos/TelaCasos.tsx` | CA-1097 |
+| D3 | A idade da ficha na data nova decide a estatura: o repositório recebe a data de nascimento, e as duas telas que duplicam a passam | `src/domain/persistencia.ts`, `src/domain/persistencia.test.ts`, `src/ui/pacientes/TelaPaciente.tsx`, `src/ui/pacientes/pacientes.test.tsx`, `src/ui/casos/TelaCasos.tsx`, `src/ui/casos/TelaCasos.test.tsx` | CA-1096, CA-1097 |
 
 Cada tarefa vai num commit, com o teste antes do código. Risco: o plano antigo com gestação gravada (seção 12 da SPEC).
