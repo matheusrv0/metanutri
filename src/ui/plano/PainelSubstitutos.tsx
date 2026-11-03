@@ -57,7 +57,7 @@ export function PainelSubstitutos({ item, alimento, refeicao, aoLado, aoAdiciona
         ]}
         valor={modo}
         aoEscolher={setModo}
-        className="grid w-full grid-cols-2 [&>button]:justify-center [&>button]:px-2 [&>button]:text-center"
+        className="grid w-full grid-cols-2 [&>button]:justify-center [&>button]:whitespace-nowrap [&>button]:px-1.5 [&>button]:text-xs sm:[&>button]:px-2 sm:[&>button]:text-[0.8125rem]"
       />
       {/* Um estado por item: trocar de item recomeça a busca do macro dele. */}
       {modo === 'buscar' ? (
@@ -88,8 +88,12 @@ export function PainelSubstitutos({ item, alimento, refeicao, aoLado, aoAdiciona
           <div className="flex min-h-0 flex-col gap-4 overflow-y-auto px-5 pb-6 pt-5">
             {/* O "Fechar" tem 44 px no celular (D-246): o título termina antes dele, com folga. */}
             <div className="flex flex-col gap-1 pr-8 max-sm:pr-11">
-              <SheetTitle className="break-words text-base leading-snug">{nomeDoTitulo}</SheetTitle>
-              <SheetDescription className="numeros">{porcao}</SheetDescription>
+              <SheetTitle className="line-clamp-2 break-words text-base leading-snug" title={nomeDoTitulo}>
+                {nomeDoTitulo}
+              </SheetTitle>
+              <SheetDescription className="numeros line-clamp-2 break-words" title={porcao}>
+                {porcao}
+              </SheetDescription>
             </div>
             {corpo}
           </div>
@@ -115,10 +119,18 @@ export function PainelSubstitutos({ item, alimento, refeicao, aoLado, aoAdiciona
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 flex-col gap-0.5">
-          <h2 id={idTitulo} ref={titulo} tabIndex={-1} className="break-words text-base font-semibold leading-snug text-heading focus-visible:outline-none">
+          <h2
+            id={idTitulo}
+            ref={titulo}
+            tabIndex={-1}
+            title={nomeDoTitulo}
+            className="line-clamp-2 break-words text-base font-semibold leading-snug text-heading focus-visible:outline-none"
+          >
             {nomeDoTitulo}
           </h2>
-          <p className="numeros text-sm text-muted-foreground">{porcao}</p>
+          <p className="numeros line-clamp-2 break-words text-sm text-muted-foreground" title={porcao}>
+            {porcao}
+          </p>
         </div>
         <Button variant="ghost" size="iconsm" className="-mr-1.5 -mt-1 shrink-0" aria-label="Fechar substitutos" onClick={aoFechar}>
           <X aria-hidden="true" />

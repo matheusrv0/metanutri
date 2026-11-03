@@ -43,7 +43,7 @@ export function OpcoesDoItem({ item, descricao, aoTirar }: OpcoesDoItemProps) {
                 <Button
                   variant="link"
                   size="sm"
-                  className="h-auto px-0 text-xs max-sm:min-h-11"
+                  className="h-auto px-0 text-xs underline underline-offset-4 max-sm:min-h-11"
                   onClick={() => aoTirar(n)}
                   aria-label={`Tirar a opção ${nome}`}
                 >

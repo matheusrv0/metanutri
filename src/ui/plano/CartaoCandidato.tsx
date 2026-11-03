@@ -23,7 +23,10 @@ export function CartaoCandidato({ candidato, vaga, aoComparar, aoAdicionarOpcao,
   return (
     <li className="flex flex-col gap-2 border-t border-border py-3 first:border-0 first:pt-1">
       <p className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-        <span className="min-w-0 break-words font-semibold text-heading">{alimento.descricao}</span>
+        {/* D-801: o nome identifica; quebra em até 2 linhas, e o resto fica no title. */}
+        <span className="line-clamp-2 min-w-0 break-words font-semibold text-heading" title={alimento.descricao}>
+          {alimento.descricao}
+        </span>
         {alimento.id >= PRIMEIRO_ID_PROPRIO ? <span className="rotulo text-muted-foreground">meu</span> : null}
         <span className="numeros text-sm text-muted-foreground">{textoDaPorcao(candidato)}</span>
       </p>
@@ -38,7 +41,7 @@ export function CartaoCandidato({ candidato, vaga, aoComparar, aoAdicionarOpcao,
         <Button
           variant="link"
           size="sm"
-          className={cn('h-auto px-0 max-sm:min-h-11 max-sm:basis-full max-sm:justify-start sm:mr-auto')}
+          className={cn('h-auto px-0 underline underline-offset-4 max-sm:min-h-11 max-sm:basis-full max-sm:justify-start sm:mr-auto')}
           onClick={aoComparar}
           aria-label={`Comparar ${alimento.descricao}`}
         >

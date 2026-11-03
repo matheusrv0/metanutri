@@ -106,7 +106,7 @@ export function CalculadoraDeSubstituto({ item, alimento, aoAdicionarOpcao, aoSu
               <Button
                 variant="link"
                 size="sm"
-                className="h-auto px-0 max-sm:min-h-11 max-sm:basis-full max-sm:justify-start sm:mr-auto"
+                className="h-auto px-0 underline underline-offset-4 max-sm:min-h-11 max-sm:basis-full max-sm:justify-start sm:mr-auto"
                 onClick={() => setComparando(true)}
               >
                 Comparar

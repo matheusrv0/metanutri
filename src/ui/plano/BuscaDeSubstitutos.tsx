@@ -111,7 +111,7 @@ export function BuscaDeSubstitutos({ item, alimento, restricoes, aoAdicionarOpca
         <div className="relative flex min-h-11 items-center rounded-md border border-input bg-card py-2 pl-3 pr-9 text-base text-muted-foreground has-[:focus-visible]:border-primary has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring sm:min-h-10 sm:text-sm sm:pointer-coarse:min-h-11 sm:pointer-coarse:text-base">
           <span aria-hidden="true" className="flex min-w-0 items-center gap-2">
             <Search className="size-4 shrink-0" />
-            Outro nutriente: fibra, cálcio, potássio…
+            <span className="truncate">Outro nutriente: fibra, cálcio, potássio…</span>
           </span>
           <ChevronDown aria-hidden="true" className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2" />
           <select

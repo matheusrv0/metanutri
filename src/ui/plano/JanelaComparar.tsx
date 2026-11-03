@@ -20,12 +20,26 @@ interface JanelaCompararProps {
   readonly aoFechar: () => void
 }
 
-function Cabeca({ alimento, porcao }: { readonly alimento: Alimento; readonly porcao: string }) {
+/** No celular, a coluna diz só "Original" ou "Substituto"; o nome e a porção ficam na legenda acima da tabela. */
+function Cabeca({ alimento, porcao, curto }: { readonly alimento: Alimento; readonly porcao: string; readonly curto: string }) {
   return (
     <span className="flex flex-col items-end gap-0.5 text-right">
-      <span className="break-words text-sm font-semibold text-heading">{alimento.descricao}</span>
-      <span className="numeros text-xs font-normal text-muted-foreground">{porcao}</span>
+      <span className="text-xs font-semibold text-heading sm:hidden">{curto}</span>
+      <span className="break-words text-sm font-semibold text-heading max-sm:hidden">{alimento.descricao}</span>
+      <span className="numeros text-xs font-normal text-muted-foreground max-sm:hidden">{porcao}</span>
     </span>
+  )
+}
+
+function Legenda({ rotulo, alimento, porcao }: { readonly rotulo: string; readonly alimento: Alimento; readonly porcao: string }) {
+  return (
+    <div className="flex flex-col">
+      <dt className="text-xs font-medium text-muted-foreground">{rotulo}</dt>
+      <dd className="break-words text-sm text-heading">
+        <span className="font-semibold">{alimento.descricao}</span>
+        <span className="numeros text-muted-foreground">{` · ${porcao}`}</span>
+      </dd>
+    </div>
   )
 }
 
@@ -37,18 +51,24 @@ export function JanelaComparar({ original, substituto, escolhidos, vaga, aoAdici
   const linhas = substituto ? compararNaPorcao(original, substituto, escolhidos) : []
   return (
     <Dialog open={substituto !== null} onOpenChange={(aberta) => !aberta && aoFechar()}>
-      <DialogContent className="max-h-[90dvh] grid-cols-[minmax(0,1fr)] overflow-y-auto sm:max-w-2xl">
+      <DialogContent className="max-h-[90dvh] grid-cols-[minmax(0,1fr)] overflow-y-auto max-sm:w-[calc(100%-1rem)] max-sm:p-4 sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Comparar alimentos</DialogTitle>
           <DialogDescription className="sr-only">Os dois alimentos nas porções propostas, nutriente por nutriente.</DialogDescription>
         </DialogHeader>
         {substituto ? (
-          <table className="numeros w-full table-fixed border-separate border-spacing-0 text-sm">
+          <dl className="flex flex-col gap-2 sm:hidden">
+            <Legenda rotulo="Original" alimento={original.alimento} porcao={textoDaPorcao(original)} />
+            <Legenda rotulo="Substituto" alimento={substituto.alimento} porcao={textoDaPorcao(substituto)} />
+          </dl>
+        ) : null}
+        {substituto ? (
+          <table className="numeros w-full table-fixed border-separate border-spacing-0 text-xs sm:text-sm">
             <colgroup>
-              <col className="w-[30%]" />
+              <col className="w-[26%] sm:w-[28%]" />
               <col />
               <col />
-              <col className="w-[22%] sm:w-[18%]" />
+              <col className="w-[25%] sm:w-[18%]" />
             </colgroup>
             <thead>
               <tr>
@@ -56,15 +76,15 @@ export function JanelaComparar({ original, substituto, escolhidos, vaga, aoAdici
                   Na porção
                 </th>
                 <th scope="col" className="pb-2 pl-2 align-bottom">
-                  <Cabeca alimento={original.alimento} porcao={textoDaPorcao(original)} />
+                  <Cabeca alimento={original.alimento} porcao={textoDaPorcao(original)} curto="Original" />
                 </th>
                 <th scope="col" className="pb-2 pl-2 align-bottom">
-                  <Cabeca alimento={substituto.alimento} porcao={textoDaPorcao(substituto)} />
+                  <Cabeca alimento={substituto.alimento} porcao={textoDaPorcao(substituto)} curto="Substituto" />
                 </th>
                 <th scope="col" className="pb-2 pl-2 text-right align-bottom">
                   <span className="flex flex-col items-end gap-0.5">
-                    <span className="text-sm font-semibold text-heading">Diferença</span>
-                    <span className="text-xs font-normal text-muted-foreground">substituto − original</span>
+                    <span className="text-xs font-semibold text-heading sm:text-sm">Diferença</span>
+                    <span className="text-xs font-normal text-muted-foreground max-sm:hidden">substituto − original</span>
                   </span>
                 </th>
               </tr>
@@ -76,13 +96,28 @@ export function JanelaComparar({ original, substituto, escolhidos, vaga, aoAdici
                     {l.rotulo}
                     {l.escolhido ? <span className="block text-xs font-medium text-primary">escolhido</span> : null}
                   </th>
-                  <td className={cn('border-t border-border py-2 pl-2 text-right', l.semDado.original ? 'text-xs text-muted-foreground' : 'text-foreground')}>
+                  <td
+                    className={cn(
+                      'border-t border-border py-2 pl-2 text-right',
+                      l.semDado.original ? 'text-xs text-muted-foreground' : 'whitespace-nowrap text-foreground',
+                    )}
+                  >
                     {l.original}
                   </td>
-                  <td className={cn('border-t border-border py-2 pl-2 text-right', l.semDado.substituto ? 'text-xs text-muted-foreground' : 'text-foreground')}>
+                  <td
+                    className={cn(
+                      'border-t border-border py-2 pl-2 text-right',
+                      l.semDado.substituto ? 'text-xs text-muted-foreground' : 'whitespace-nowrap text-foreground',
+                    )}
+                  >
                     {l.substituto}
                   </td>
-                  <td className={cn('border-t border-border py-2 pl-2 text-right', l.diferenca === '—' ? 'text-muted-foreground' : 'font-medium text-heading')}>
+                  <td
+                    className={cn(
+                      'whitespace-nowrap border-t border-border py-2 pl-2 text-right',
+                      l.diferenca === '—' ? 'text-muted-foreground' : 'font-medium text-heading',
+                    )}
+                  >
                     {l.diferenca}
                   </td>
                 </tr>
