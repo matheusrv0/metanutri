@@ -64,7 +64,8 @@ function pareceBinario(texto: string): boolean {
     const codigo = amostra.charCodeAt(i)
     if ((codigo >= 1 && codigo <= 8) || (codigo >= 14 && codigo <= 31)) controles += 1
   }
-  return controles > amostra.length / 100
+  // Um ou outro controle num texto (o Ctrl-Z do fim, CB-922) é limpo na leitura (D-918); binário tem muitos.
+  return controles > Math.max(8, amostra.length / 20)
 }
 
 async function lerCsv(bytes: Uint8Array, tsv: boolean, sinal: AbortSignal | undefined, darAVez: () => Promise<void>): Promise<{ separador: Separador; registros: Registro[]; cortada: boolean } | null> {

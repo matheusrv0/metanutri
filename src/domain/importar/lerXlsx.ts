@@ -4,6 +4,7 @@
 // (CB-903). Nada é escrito em lugar nenhum: o arquivo fica na memória da aba (D-914).
 import { LIMITE_DE_COLUNAS } from './colunas.ts'
 import { decodificar, registroComTexto, type Registro } from './lerTexto.ts'
+import { desfazerEscapeDoXlsx, limparCelula } from './limparCelula.ts'
 import { abrirZip, type Zip } from './zip.ts'
 
 export interface AbaLida {
@@ -86,12 +87,14 @@ async function relacoesDe(zip: Zip, caminho: string): Promise<Map<string, Relaca
   return mapa
 }
 
-/** O texto de um `si` ou `is`: os `t` dele, sem a leitura fonética (`rPh`). */
+/** O texto de um `si` ou `is`: os `t` dele, sem a leitura fonética (`rPh`), com o escape `_xHHHH_` desfeito (D-918). */
 function textoRico(elemento: Element): string {
-  return todos(elemento, 't')
-    .filter((t) => t.parentElement?.localName !== 'rPh')
-    .map((t) => t.textContent ?? '')
-    .join('')
+  return desfazerEscapeDoXlsx(
+    todos(elemento, 't')
+      .filter((t) => t.parentElement?.localName !== 'rPh')
+      .map((t) => t.textContent ?? '')
+      .join(''),
+  )
 }
 
 /** O formato de data escrito à mão: tem dia ou ano fora das aspas, das barras de escape e dos colchetes. */
@@ -158,7 +161,10 @@ interface Contexto {
   readonly data1904: boolean
 }
 
-function valorDa(celula: Element, contexto: Contexto): string {
+/** D-918: o valor da célula, limpo dos caracteres de controle e em NFC. */
+const valorDa = (celula: Element, contexto: Contexto): string => limparCelula(valorCru(celula, contexto))
+
+function valorCru(celula: Element, contexto: Contexto): string {
   const tipo = celula.getAttribute('t')
   const v = filho(celula, 'v')?.textContent ?? null
   if (tipo === 'inlineStr') {
@@ -167,7 +173,7 @@ function valorDa(celula: Element, contexto: Contexto): string {
   }
   if (v === null) return ''
   if (tipo === 's') return contexto.textos[Number(v)] ?? ''
-  if (tipo === 'str' || tipo === 'e') return v
+  if (tipo === 'str' || tipo === 'e') return desfazerEscapeDoXlsx(v)
   if (tipo === 'b') return v === '1' ? 'VERDADEIRO' : 'FALSO'
   if (tipo === 'd') return /^\d{4}-\d{2}-\d{2}/.test(v) ? v.slice(0, 10) : v
   const estilo = Number(celula.getAttribute('s') ?? 0)

@@ -4,6 +4,8 @@
 // UTF-8; o "Texto Unicode" do Excel, com tabulação em UTF-16. A nutricionista não precisa saber qual é: o app tenta o
 // UTF-8 estrito e, se falhar, lê como Windows-1252, que contém o Latin-1.
 
+import { limparCelula } from './limparCelula.ts'
+
 export type Codificacao = 'utf-8' | 'windows-1252' | 'utf-16le' | 'utf-16be'
 
 export interface TextoLido {
@@ -99,7 +101,8 @@ export function* lerRegistros(texto: string, separador: Separador): Generator<Re
       fimDoRegistro = true
     }
     numero += 1
-    yield { numero, celulas }
+    // D-918: sem os caracteres de controle e em NFC; a célula só com controle (o Ctrl-Z do fim) fica vazia.
+    yield { numero, celulas: celulas.map(limparCelula) }
   }
 }
 

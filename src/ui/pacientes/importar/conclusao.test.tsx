@@ -61,6 +61,20 @@ describe('CA-1933 e CA-1940: "Importar 5 pacientes"', () => {
   })
 })
 
+describe('CB-930 e CB-923: o que a ficha recebe vem limpo (D-918)', () => {
+  it('o nome escrito no Mac entra em NFC, e o controle no meio do nome não chega à ficha', async () => {
+    const til = String.fromCharCode(0x303)
+    const controle = String.fromCharCode(1)
+    const { usuario, repoPacientes } = montarTela()
+    await abrirPrevia(usuario, arquivo('mac.csv', `Nome;Sexo\nJoa${til}o Lima;M\nAna${controle} Souza;F\n`))
+    await importar(usuario, 2)
+    await screen.findByRole('heading', { level: 2, name: '2 pacientes importados' })
+    const nomes = repoPacientes.listar().map((p) => p.nome).sort()
+    expect(nomes).toEqual(['Ana Souza', 'João Lima'])
+    expect(nomes[1]).toBe('João Lima'.normalize('NFC'))
+  })
+})
+
 describe('break-ui: muitos importados', () => {
   it('"Desfazer" e "Ver pacientes" vêm antes da lista: com 120 nomes, as ações não ficam no fim da página', async () => {
     const { usuario } = montarTela()
