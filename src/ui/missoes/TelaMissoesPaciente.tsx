@@ -18,7 +18,10 @@ import { Logo } from '@ds/componentes/display/Logo.tsx'
 import { armazenamentoLocal } from '../estado/armazenamentoLocal.ts'
 import { obterSupabase } from '../estado/supabase.ts'
 import { irParaOApp } from './endereco.ts'
+import { CartaoInstalar } from './link/CartaoInstalar.tsx'
+import { FolhaInstalar } from './link/FolhaInstalar.tsx'
 import { useMeuPlanoNaPagina } from './link/manifesto.ts'
+import { useInstalar } from './link/usarInstalar.ts'
 import { primeiroNomeDoLink } from './link/textosDoLink.ts'
 import { LinkDoPaciente } from './LinkDoPaciente.tsx'
 import { MolduraDoLink } from './MolduraDoLink.tsx'
@@ -103,6 +106,8 @@ export function TelaMissoesPaciente({ token, fonte, hoje = diaLocal(), agora, cl
   const acompanhamento = carregando ? null : carga.acompanhamento
   // O token do link aberto: o do link fixo, quando o endereço era de um link antigo (D-1217).
   const tokenAberto = acompanhamento?.token ?? null
+  // D-1219: o cartão Instalar e a folha com os passos.
+  const instalar = useInstalar(hoje)
 
   useEffect(() => {
     let vivo = true
@@ -168,6 +173,8 @@ export function TelaMissoesPaciente({ token, fonte, hoje = diaLocal(), agora, cl
     const novo = marcarMissao(carga.acompanhamento, hoje, missaoId, feita)
     if (novo === carga.acompanhamento) return
     setCarga({ ...carga, acompanhamento: novo })
+    // CA-2232: a primeira marcação neste aparelho faz o cartão Instalar aparecer.
+    if (feita) instalar.registrarMarcacao()
     fonte.salvar(novo).then(
       () => setNaoSalvou(null),
       (erro: unknown) => {
@@ -223,5 +230,19 @@ export function TelaMissoesPaciente({ token, fonte, hoje = diaLocal(), agora, cl
     )
   }
 
-  return <LinkDoPaciente acompanhamento={acompanhamento} marca={carga.marca} hoje={hoje} naoSalvou={naoSalvou} aoAlternar={alternar} dados={carga.dados} {...(agora ? { agora } : {})} />
+  return (
+    <>
+      <LinkDoPaciente
+        acompanhamento={acompanhamento}
+        marca={carga.marca}
+        hoje={hoje}
+        naoSalvou={naoSalvou}
+        aoAlternar={alternar}
+        dados={carga.dados}
+        {...(agora ? { agora } : {})}
+        instalar={instalar.mostrarCartao ? <CartaoInstalar aoInstalar={instalar.instalar} aoAgoraNao={instalar.agoraNao} /> : null}
+      />
+      <FolhaInstalar aberta={instalar.folhaAberta} aoFechar={instalar.fecharFolha} plataforma={instalar.plataforma} cor={carga.marca.cor} />
+    </>
+  )
 }
