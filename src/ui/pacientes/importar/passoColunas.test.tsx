@@ -96,6 +96,22 @@ describe('CA-1915: um destino por coluna, menos Observações', () => {
   })
 })
 
+describe('D-919 e CB-926: mais de 200 colunas', () => {
+  it('o passo Colunas diz que só as 200 primeiras entram', async () => {
+    const { usuario } = montarTela()
+    const larga = `Nome;Sexo\nAna;F${';'.repeat(300)}x\n`
+    await abrirColunas(usuario, arquivo('larga.csv', larga))
+    expect(screen.getByText('Só as 200 primeiras colunas entram.')).toBeInTheDocument()
+    expect(screen.getAllByRole('combobox', { name: /^Destino da coluna/ })).toHaveLength(200)
+  })
+
+  it('com poucas colunas, o aviso não aparece', async () => {
+    const { usuario } = montarTela()
+    await abrirColunas(usuario)
+    expect(screen.queryByText('Só as 200 primeiras colunas entram.')).not.toBeInTheDocument()
+  })
+})
+
 describe('CA-1908: XLSX com mais de uma aba', () => {
   it('"Aba" mostra as abas do arquivo, a primeira escolhida; trocar a aba relê as colunas', async () => {
     const bytes = await montarXlsx({

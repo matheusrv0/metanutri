@@ -6,6 +6,9 @@ import { registroComTexto, type Registro } from './lerTexto.ts'
 /** D-901: até 2.000 linhas de paciente por arquivo. O teto segue o da nuvem (D-910). */
 export const LIMITE_DE_LINHAS = 2000
 
+/** D-919: só as 200 primeiras colunas entram; nenhuma ficha precisa de mais. */
+export const LIMITE_DE_COLUNAS = 200
+
 /** Quantas linhas do topo podem ser o cabeçalho (D-904). */
 const LINHAS_DO_CABECALHO = 10
 
@@ -85,6 +88,8 @@ export interface AnaliseDaAba {
   readonly reconhecidas: number
   /** Passou de `LIMITE_DE_LINHAS` linhas de paciente (CA-1910). */
   readonly excede: boolean
+  /** Havia mais de `LIMITE_DE_COLUNAS` colunas; as de depois ficaram de fora (D-919). */
+  readonly colunasCortadas: boolean
 }
 
 /** Um destino por coluna, menos Observações: o repetido volta a "Não importar" (CB-905). */
@@ -124,6 +129,10 @@ export function analisarAba(registros: readonly Registro[], cortada: boolean, li
     }
   }
 
+  // D-919 e CB-926: além da 200ª coluna, nada entra.
+  const colunasCortadas = quantas > LIMITE_DE_COLUNAS
+  quantas = Math.min(quantas, LIMITE_DE_COLUNAS)
+
   const primeira = linhas[0]
   const colunas: Coluna[] = Array.from({ length: quantas }, (_, indice) => {
     const texto = (cabecalho?.celulas[indice] ?? '').trim()
@@ -138,6 +147,7 @@ export function analisarAba(registros: readonly Registro[], cortada: boolean, li
     destinos,
     reconhecidas: destinos.filter((d) => d !== 'nao').length,
     excede: cortada || linhas.length > limite,
+    colunasCortadas,
   }
 }
 

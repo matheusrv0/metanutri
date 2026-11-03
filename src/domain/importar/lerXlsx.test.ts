@@ -139,6 +139,35 @@ describe('CB-928: XML com DTD ou entidade (D-920)', () => {
   })
 })
 
+describe('CB-927: referência de coluna absurda (D-919)', () => {
+  /** Um XLSX com o XML da aba escrito à mão. */
+  async function comAba(linhas: string): Promise<Uint8Array> {
+    const principal = 'http://schemas.openxmlformats.org/spreadsheetml/2006/main'
+    const relacoes = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships'
+    return montarZip([
+      { nome: 'xl/workbook.xml', dados: `<workbook xmlns="${principal}" xmlns:r="${relacoes}"><sheets><sheet name="A" sheetId="1" r:id="rId1"/></sheets></workbook>` },
+      {
+        nome: 'xl/_rels/workbook.xml.rels',
+        dados: `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="${relacoes}/worksheet" Target="worksheets/sheet1.xml"/></Relationships>`,
+      },
+      { nome: 'xl/worksheets/sheet1.xml', dados: `<worksheet xmlns="${principal}"><sheetData>${linhas}</sheetData></worksheet>` },
+    ])
+  }
+  const celula = (ref: string, texto: string) => `<c r="${ref}" t="inlineStr"><is><t>${texto}</t></is></c>`
+
+  it('a célula além de XFD (a 16.384ª coluna) é ignorada, e o resto é lido', async () => {
+    const [aba] = await lerXlsx(await comAba(`<row r="1">${celula('A1', 'Nome')}${celula('ZZZZ1', 'x')}${celula('ZZZZZZZZZZ1', 'y')}</row><row r="2">${celula('A2', 'Ana')}</row>`), { limiteDeLinhas: 10 })
+    expect(celulas(aba)).toEqual([['Nome'], ['Ana']])
+  })
+
+  it('a célula entre a 201ª e a XFD não estica a linha: vira um sinal de que há colunas além das 200', async () => {
+    const [aba] = await lerXlsx(await comAba(`<row r="1">${celula('A1', 'Nome')}${celula('XFD1', 'z')}</row>`), { limiteDeLinhas: 10 })
+    const linha = aba?.registros[0]?.celulas ?? []
+    expect(linha.length).toBeLessThanOrEqual(201)
+    expect(linha.at(-1)).toBe('z')
+  })
+})
+
 describe('CB-910: zip que não é planilha', () => {
   it('um zip qualquer chamado .xlsx é recusado', async () => {
     const bytes = await montarZip([{ nome: 'foto.jpg', dados: 'x' }])

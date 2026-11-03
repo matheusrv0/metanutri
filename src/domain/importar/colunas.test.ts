@@ -1,5 +1,5 @@
 // As colunas da planilha (spec importar-pacientes, D-904, D-905): CA-1911 a CA-1915, CA-1917, CB-904, CB-905.
-import { analisarAba, destinoDoCabecalho, LIMITE_DE_LINHAS, mudarDestino, temNome, type Destino } from './colunas.ts'
+import { analisarAba, destinoDoCabecalho, LIMITE_DE_COLUNAS, LIMITE_DE_LINHAS, mudarDestino, temNome, type Destino } from './colunas.ts'
 import type { Registro } from './lerTexto.ts'
 
 /** Linhas de planilha numeradas a partir de 1, sem as vazias (como os leitores entregam). */
@@ -116,6 +116,23 @@ describe('CB-905: o mesmo cabeçalho duas vezes', () => {
 
   it('Observações repetida fica nas duas', () => {
     expect(analisarAba(planilha(['Nome', 'Obs', 'Notas'], ['Ana', 'a', 'b']), false).destinos).toEqual(['nome', 'observacoes', 'observacoes'])
+  })
+})
+
+describe('CB-926: milhares de colunas (D-919)', () => {
+  it('só as 200 primeiras colunas entram, e a análise diz que cortou', () => {
+    const larga = ['Ana', 'F', ...Array.from({ length: 15_000 }, () => ''), 'x']
+    const analise = analisarAba(planilha(['Nome', 'Sexo'], larga), false)
+    expect(LIMITE_DE_COLUNAS).toBe(200)
+    expect(analise.colunas).toHaveLength(200)
+    expect(analise.destinos).toHaveLength(200)
+    expect(analise.colunasCortadas).toBe(true)
+  })
+
+  it('até 200, nada é cortado', () => {
+    const analise = analisarAba(planilha(Array.from({ length: 200 }, (_, i) => (i === 0 ? 'Nome' : `C${i}`)), Array.from({ length: 200 }, () => 'x')), false)
+    expect(analise.colunas).toHaveLength(200)
+    expect(analise.colunasCortadas).toBe(false)
   })
 })
 

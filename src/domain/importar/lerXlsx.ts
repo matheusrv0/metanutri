@@ -2,6 +2,7 @@
 // aba visível com as linhas como texto, como o CSV (DP-IP-10): a data do Excel vira o dia (AAAA-MM-DD, sem
 // ambiguidade), o número inteiro vira todos os dígitos (CB-908), o decimal usa vírgula, a fórmula vale o valor guardado
 // (CB-903). Nada é escrito em lugar nenhum: o arquivo fica na memória da aba (D-914).
+import { LIMITE_DE_COLUNAS } from './colunas.ts'
 import { decodificar, registroComTexto, type Registro } from './lerTexto.ts'
 import { abrirZip, type Zip } from './zip.ts'
 
@@ -138,9 +139,14 @@ function numeroComoTexto(valor: string): string {
 }
 
 /** A coluna da referência ("B2" → 1). */
+/** XFD, a última coluna do Excel (a 16.384ª): referência além dela não existe (D-919, CB-927). */
+const ULTIMA_COLUNA = 16_383
+
+/** A coluna da referência ("B2" → 1); `null` sem referência; `Infinity` além de XFD. */
 function colunaDa(referencia: string | null): number | null {
   const letras = referencia?.match(/^[A-Z]+/i)?.[0]
   if (!letras) return null
+  if (letras.length > 3) return Number.POSITIVE_INFINITY
   let indice = 0
   for (const letra of letras.toUpperCase()) indice = indice * 26 + (letra.charCodeAt(0) - 64)
   return indice - 1
@@ -220,8 +226,18 @@ export async function lerXlsx(bytes: Uint8Array, { limiteDeLinhas, sinal, darAVe
       let coluna = -1
       for (const celula of filhos(linha, 'c')) {
         coluna = colunaDa(celula.getAttribute('r')) ?? coluna + 1
+        // CB-927: a célula além de XFD é ignorada.
+        if (coluna > ULTIMA_COLUNA) continue
+        // D-919: a célula além da 200ª coluna não estica a linha; o texto dela vai para a 201ª, que a análise corta e
+        // só usa para saber que havia colunas além das 200.
+        const valor = valorDa(celula, contexto)
+        if (coluna >= LIMITE_DE_COLUNAS) {
+          while (celulas.length < LIMITE_DE_COLUNAS) celulas.push('')
+          if (valor.trim() !== '') celulas[LIMITE_DE_COLUNAS] = valor
+          continue
+        }
         while (celulas.length < coluna) celulas.push('')
-        celulas[coluna] = valorDa(celula, contexto)
+        celulas[coluna] = valor
       }
       if (!registroComTexto(celulas)) continue
       if (comTexto === limiteDeLinhas) {

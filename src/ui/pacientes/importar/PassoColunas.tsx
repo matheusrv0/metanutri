@@ -1,4 +1,4 @@
-import { TriangleAlert } from 'lucide-react'
+import { Info, TriangleAlert } from 'lucide-react'
 import { useId, type Ref } from 'react'
 import { DESTINOS, temNome, type Destino } from '@/domain/importar/colunas.ts'
 import { textoDaRecusa } from '@/domain/importar/textos.ts'
@@ -74,6 +74,14 @@ export function PassoColunas({ planilha, aba, destinos, aoEscolherAba, aoMudarDe
         <Alert variant="warning" role="alert">
           <TriangleAlert aria-hidden="true" />
           <p>{textoDaRecusa({ tipo: 'linhas' })}</p>
+        </Alert>
+      ) : null}
+
+      {/* D-919 e CB-926: a planilha com mais de 200 colunas entra com as 200 primeiras. */}
+      {analise.colunasCortadas ? (
+        <Alert variant="info">
+          <Info aria-hidden="true" />
+          <p>Só as 200 primeiras colunas entram.</p>
         </Alert>
       ) : null}
 
