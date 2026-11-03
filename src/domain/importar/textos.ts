@@ -10,6 +10,7 @@ export type Recusa =
   | { readonly tipo: 'linhas' }
   | { readonly tipo: 'vazia' }
   | { readonly tipo: 'ilegivel' }
+  | { readonly tipo: 'aba-grande' }
 
 export function textoDaRecusa(recusa: Recusa): string {
   switch (recusa.tipo) {
@@ -27,6 +28,8 @@ export function textoDaRecusa(recusa: Recusa): string {
       return 'A planilha tem mais de 2.000 linhas. Divida em arquivos menores.'
     case 'vazia':
       return 'A planilha não tem pacientes.'
+    case 'aba-grande':
+      return 'Aba grande demais. Salve a aba dos pacientes como CSV.'
     case 'ilegivel':
       return 'Não foi possível ler esta planilha. Use CSV ou XLSX.'
   }

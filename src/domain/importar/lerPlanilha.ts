@@ -5,6 +5,7 @@ import { analisarAba, LIMITE_DE_LINHAS, type AnaliseDaAba } from './colunas.ts'
 import { decodificar, detectarSeparador, lerRegistros, registroComTexto, type Registro, type Separador } from './lerTexto.ts'
 import { lerXlsx } from './lerXlsx.ts'
 import { criarPausa } from './pausas.ts'
+import { EntradaGrandeDemais } from './zip.ts'
 import type { Recusa } from './textos.ts'
 
 /** DP-IP-4: 5 MB, como o comprovante de matrícula. */
@@ -99,9 +100,13 @@ export async function lerPlanilha(arquivo: ArquivoParaLer, { sinal, darAVez, rel
     const pausar = criarPausa({ darAVez, sinal, relogio })
 
     let planilha: Omit<PlanilhaLida, 'abaInicial'>
+    let abasGrandes = false
     if (tipo === 'xlsx') {
       const abas = await lerXlsx(bytes, { limiteDeLinhas: LINHAS_A_JUNTAR, sinal, pausar })
-      planilha = { tipo: 'xlsx', separador: ';', abas: abas.map((aba) => ({ nome: aba.nome, analise: analisarAba(aba.registros, aba.cortada) })) }
+      // CB-933: a aba que passou do teto fica de fora da lista; se só ela podia ter pacientes, a recusa diz isso.
+      abasGrandes = abas.some((aba) => aba.grandeDemais === true)
+      const lidas = abas.filter((aba) => aba.grandeDemais !== true)
+      planilha = { tipo: 'xlsx', separador: ';', abas: lidas.map((aba) => ({ nome: aba.nome, analise: analisarAba(aba.registros, aba.cortada) })) }
     } else {
       const csv = await lerCsv(bytes, tipo === 'tsv', pausar)
       if (csv === null) return { tipo: 'recusada', recusa: { tipo: 'ilegivel' } }
@@ -109,13 +114,16 @@ export async function lerPlanilha(arquivo: ArquivoParaLer, { sinal, darAVez, rel
     }
     if (sinal?.aborted) return { tipo: 'cancelada' }
 
-    const abaInicial = planilha.abas.findIndex((aba) => aba.analise.linhas.length > 0)
+    // CB-933: com uma aba pulada, a capa ou o resumo que sobra não passa pela dos pacientes; só a que tem a coluna Nome.
+    const abaInicial = planilha.abas.findIndex((aba) => aba.analise.linhas.length > 0 && (!abasGrandes || aba.analise.destinos.includes('nome')))
     const escolhida = planilha.abas[abaInicial]
-    if (escolhida === undefined) return { tipo: 'recusada', recusa: { tipo: 'vazia' } }
+    if (escolhida === undefined) return { tipo: 'recusada', recusa: { tipo: abasGrandes ? 'aba-grande' : 'vazia' } }
     if (escolhida.analise.excede) return { tipo: 'recusada', recusa: { tipo: 'linhas' } }
     return { tipo: 'lida', planilha: { ...planilha, abaInicial } }
   } catch (erro) {
     if (ehCancelamento(erro) || sinal?.aborted) return { tipo: 'cancelada' }
+    // Os textos compartilhados (ou outra parte que todas as abas usam) passam do teto: nenhuma aba se lê sem eles.
+    if (erro instanceof EntradaGrandeDemais) return { tipo: 'recusada', recusa: { tipo: 'aba-grande' } }
     return { tipo: 'recusada', recusa: { tipo: 'ilegivel' } }
   }
 }

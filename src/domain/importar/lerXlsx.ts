@@ -5,7 +5,7 @@
 import { LIMITE_DE_COLUNAS } from './colunas.ts'
 import { decodificar, registroComTexto, type Registro } from './lerTexto.ts'
 import { desfazerEscapeDoXlsx, limparCelula } from './limparCelula.ts'
-import { abrirZip, type Zip } from './zip.ts'
+import { abrirZip, EntradaGrandeDemais, type Zip } from './zip.ts'
 
 export interface AbaLida {
   readonly nome: string
@@ -13,6 +13,8 @@ export interface AbaLida {
   readonly registros: Registro[]
   /** A aba tinha mais linhas com texto que o limite: o que passou não foi lido (CA-1910). */
   readonly cortada: boolean
+  /** A aba passa do teto de 8 MB e não foi lida (D-920, CB-933). */
+  readonly grandeDemais?: true
 }
 
 export interface OpcoesDeLeitura {
@@ -216,7 +218,15 @@ export async function lerXlsx(bytes: Uint8Array, { limiteDeLinhas, sinal, pausar
   const abas: AbaLida[] = []
   for (const aba of visiveis) {
     const caminho = aba.id === null ? undefined : relacoes.get(aba.id)?.caminho
-    const documento = caminho === undefined ? null : await lerXml(zip, caminho)
+    let documento: Document | null
+    try {
+      documento = caminho === undefined ? null : await lerXml(zip, caminho)
+    } catch (erro) {
+      // CB-933: a aba gigante é pulada; quem decide se ela fazia falta é a leitura da planilha.
+      if (!(erro instanceof EntradaGrandeDemais)) throw erro
+      abas.push({ nome: aba.nome, registros: [], cortada: false, grandeDemais: true })
+      continue
+    }
     if (documento === null) continue
     const registros: Registro[] = []
     let comTexto = 0

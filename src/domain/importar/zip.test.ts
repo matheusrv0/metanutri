@@ -46,8 +46,8 @@ describe('zip', () => {
     descomprimir.mockRestore()
   })
 
-  it('D-920: o teto de cada entrada é 16 MB', () => {
-    expect(TETO_POR_ENTRADA).toBe(16 * 1024 * 1024)
+  it('D-920: o teto de cada entrada é 8 MB (revisão 2)', () => {
+    expect(TETO_POR_ENTRADA).toBe(8 * 1024 * 1024)
   })
 
   it('DP-IP-3: o teto total vale para a soma das entradas abertas', async () => {

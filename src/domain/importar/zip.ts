@@ -8,9 +8,18 @@ const CABECALHO_LOCAL = 0x04034b50
 
 /**
  * DP-IP-3 e D-920: o quanto uma entrada e todas juntas podem ter depois de abertas. Uma aba de 2.000 pacientes tem
- * poucos megabytes; 16 MB de XML já levam o DOMParser, que é síncrono, a segurar a aba.
+ * poucos megabytes; 16 MB de XML já levam o DOMParser, que é síncrono, a segurar a aba, e por isso o teto é 8 MB
+ * (revisão 2).
  */
-export const TETO_POR_ENTRADA = 16 * 1024 * 1024
+export const TETO_POR_ENTRADA = 8 * 1024 * 1024
+
+/** A entrada passa do teto (D-920): quem lê pode pular a aba, em vez de recusar o arquivo inteiro (CB-933). */
+export class EntradaGrandeDemais extends Error {
+  constructor() {
+    super('Entrada grande demais.')
+    this.name = 'EntradaGrandeDemais'
+  }
+}
 const TETO_TOTAL = 48 * 1024 * 1024
 
 interface Entrada {
@@ -56,7 +65,7 @@ async function inflar(dados: Uint8Array, teto: number): Promise<Uint8Array> {
     total += value.length
     if (total > teto) {
       await leitor.cancel()
-      throw new Error('Entrada grande demais.')
+      throw new EntradaGrandeDemais()
     }
     partes.push(value)
   }
@@ -115,10 +124,10 @@ export async function abrirZip(bytes: Uint8Array, opcoes: OpcoesDoZip = {}): Pro
       const restante = tetoTotal - aberto
       const teto = Math.min(tetoPorEntrada, restante)
       // CB-929: a entrada que declara mais que o teto não é aberta. A que mente no tamanho para no teto ao abrir.
-      if (entrada.tamanho > teto) throw new Error('Entrada grande demais.')
+      if (entrada.tamanho > teto) throw new EntradaGrandeDemais()
       let conteudo: Uint8Array
       if (entrada.metodo === 0) {
-        if (guardado.length > teto) throw new Error('Entrada grande demais.')
+        if (guardado.length > teto) throw new EntradaGrandeDemais()
         conteudo = guardado
       } else if (entrada.metodo === 8) conteudo = await inflar(guardado, teto)
       else throw new Error('Compressão desconhecida.')

@@ -114,6 +114,52 @@ describe('CB-900: planilha vazia ou só com o cabeçalho', () => {
   })
 })
 
+describe('CB-933: aba de mais de 8 MB (D-920)', () => {
+  const principal = 'http://schemas.openxmlformats.org/spreadsheetml/2006/main'
+  const relacoes = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships'
+  const inline = (ref: string, texto: string) => `<c r="${ref}" t="inlineStr"><is><t>${texto}</t></is></c>`
+  const pequena = `<worksheet xmlns="${principal}"><sheetData><row r="1">${inline('A1', 'Nome')}</row><row r="2">${inline('A2', 'Ana Souza')}</row></sheetData></worksheet>`
+  const capa = `<worksheet xmlns="${principal}"><sheetData><row r="1">${inline('A1', 'Relatório')}</row></sheetData></worksheet>`
+  // Uma aba de 8 MB e pouco, só de linhas vazias: comprimida, o arquivo fica pequeno (abaixo de 5 MB), e o zip declara o tamanho de verdade.
+  const gigante = `<worksheet xmlns="${principal}"><sheetData>${'<row/>'.repeat(Math.ceil((8 * 1024 * 1024) / 6) + 10)}</sheetData></worksheet>`
+
+  async function pasta(abas: readonly (readonly [string, string])[], textos?: string): Promise<Uint8Array> {
+    return montarZip(
+      [
+        { nome: 'xl/workbook.xml', dados: `<workbook xmlns="${principal}" xmlns:r="${relacoes}"><sheets>${abas.map(([nome], i) => `<sheet name="${nome}" sheetId="${i + 1}" r:id="rId${i + 1}"/>`).join('')}</sheets></workbook>` },
+        {
+          nome: 'xl/_rels/workbook.xml.rels',
+          dados: `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${abas.map((_, i) => `<Relationship Id="rId${i + 1}" Type="${relacoes}/worksheet" Target="worksheets/sheet${i + 1}.xml"/>`).join('')}</Relationships>`,
+        },
+        ...abas.map(([, xml], i) => ({ nome: `xl/worksheets/sheet${i + 1}.xml`, dados: xml })),
+        ...(textos === undefined ? [] : [{ nome: 'xl/sharedStrings.xml', dados: textos }]),
+      ],
+      true,
+    )
+  }
+
+  it('a aba alheia gigante é pulada, e a dos pacientes é lida', async () => {
+    const resultado = await lerPlanilha(arquivo('pasta.xlsx', await pasta([['Exportação bruta', gigante], ['Pacientes', pequena]])))
+    expect(resultado.tipo).toBe('lida')
+    if (resultado.tipo !== 'lida') return
+    expect(resultado.planilha.abas.map((a) => a.nome)).toEqual(['Pacientes'])
+    expect(resultado.planilha.abas[0]?.analise.linhas[0]?.celulas).toEqual(['Ana Souza'])
+  })
+
+  it('se a gigante é a única que podia ter pacientes: "Aba grande demais. Salve a aba dos pacientes como CSV."', async () => {
+    expect(recusa(await lerPlanilha(arquivo('pasta.xlsx', await pasta([['Capa', capa], ['Pacientes', gigante]]))))).toBe(
+      'Aba grande demais. Salve a aba dos pacientes como CSV.',
+    )
+  })
+
+  it('CB-929: os textos compartilhados de mais de 8 MB dão a mesma frase (sem eles, nenhuma aba se lê)', async () => {
+    const textos = `<sst xmlns="${principal}">${'<si/>'.repeat(Math.ceil((8 * 1024 * 1024) / 5) + 10)}</sst>`
+    expect(recusa(await lerPlanilha(arquivo('pasta.xlsx', await pasta([['Pacientes', pequena]], textos))))).toBe(
+      'Aba grande demais. Salve a aba dos pacientes como CSV.',
+    )
+  })
+})
+
 describe('CB-910: arquivo renomeado', () => {
   it.each([
     ['um zip chamado .csv', async () => montarZip([{ nome: 'a.txt', dados: 'x' }])],

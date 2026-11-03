@@ -199,6 +199,14 @@ a limitação no CB-913). Um commit por item, com o teste antes:
 - **R10 · Textos** (D-922): saem "As outras ficam de fora." e "Sem sexo e sem data".
 - **R11 · CB-917 de verdade:** o teste exclui um importado à mão pelo repositório antes de desfazer.
 
+### Revisão 2 (aprovada, com três recomendações leves; um commit cada, com a linha da SPEC e o teste)
+- **R12 · U+FFFE, U+FFFF e surrogates** (D-918, CB-932): `limparCelula` tira os dois não caracteres e troca o meio
+  par por U+FFFD. `limparCelula.ts`.
+- **R13 · 8 MB por entrada** (D-920, CB-929, CB-933): `zip.ts` lança `EntradaGrandeDemais`; `lerXlsx.ts` pula a aba
+  e a marca; `lerPlanilha.ts` só aceita, com uma aba pulada, a que tem a coluna Nome, e recusa com "aba-grande"
+  (`textos.ts`).
+- **R14 · `r` até 1.048.576** (D-921, CB-934): a linha de número maior é ignorada. `lerXlsx.ts`.
+
 ### Validação (sem commit)
 `npm run check`, `npm run e2e`, `npm run test:csp`; o tamanho do pedaço novo e do principal, antes e depois
 (`npm run build:app`); prints de 360, 390 e 1440 px, nos dois temas, em
