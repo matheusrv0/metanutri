@@ -92,6 +92,13 @@ describe('CA-1920: a coluna lida como mês/dia', () => {
     expect(iso('03/04/1990')).toBe('1990-04-03')
   })
 
+  it('CB-931: com o ano de dois dígitos (o "m/d/yy" do Excel americano), a coluna também vira mês/dia', () => {
+    expect(ordemDasDatas(['03/25/90', '12/31/85'], HOJE)).toBe('md')
+    // 29/02 só existe em ano bissexto: "02/29/00" é 2000, que tem; lido como 1900, não teria.
+    expect(ordemDasDatas(['02/29/00', '13/01/99'], HOJE)).toBe('dm')
+    expect(iso('04/05/88', 'md')).toBe('1988-04-05')
+  })
+
   it('datas no formato AAAA-MM-DD e números de série não mudam a ordem', () => {
     expect(ordemDasDatas(['1990-03-25', '33311'])).toBe('dm')
   })

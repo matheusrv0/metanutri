@@ -123,7 +123,7 @@ export function montarPrevia({ linhas, colunas, destinos, correcoes, marcas, pac
   const iObservacoes = destinos.flatMap((destino, i) => (destino === 'observacoes' ? [i] : []))
   const celula = (registro: Registro, i: number | undefined): string => (i === undefined || i < 0 ? '' : (registro.celulas[i] ?? '').trim())
 
-  const ordem = iData !== undefined && iData >= 0 ? ordemDasDatas(linhas.map((r) => celula(r, iData))) : 'dm'
+  const ordem = iData !== undefined && iData >= 0 ? ordemDasDatas(linhas.map((r) => celula(r, iData)), hoje) : 'dm'
 
   const naConta = new Map<string, (string | null)[]>()
   for (const paciente of pacientes) {

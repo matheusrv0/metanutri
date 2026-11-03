@@ -32,6 +32,12 @@ const SERIE = /^\d{1,7}(?:[.,]\d+)?$/
 
 const DIA_MS = 86_400_000
 
+/** O dia de hoje no relógio de quem usa (AAAA-MM-DD). */
+function diaDeHoje(): string {
+  const agora = new Date()
+  return `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}-${String(agora.getDate()).padStart(2, '0')}`
+}
+
 const dois = (n: number): string => String(n).padStart(2, '0')
 
 /** O dia existe no calendário (31/02 não). */
@@ -85,15 +91,16 @@ export function lerData(texto: string, hoje: string, ordem: OrdemDasDatas = 'dm'
 
 /**
  * CA-1920: se alguma data da coluna só existe como mês/dia e nenhuma só como dia/mês, a coluna inteira é mês/dia.
- * Todas ambíguas (dia e mês até 12) ficam dia/mês, o padrão do Brasil (CB-906).
+ * Todas ambíguas (dia e mês até 12) ficam dia/mês, o padrão do Brasil (CB-906). O ano de dois dígitos é completado antes
+ * de conferir o dia, como na leitura (CB-907, CB-931): sem isso, "03/25/90" não existia em nenhuma das duas ordens.
  */
-export function ordemDasDatas(textos: readonly string[]): OrdemDasDatas {
+export function ordemDasDatas(textos: readonly string[], hoje: string = diaDeHoje()): OrdemDasDatas {
   let soMesDia = 0
   let soDiaMes = 0
   for (const texto of textos) {
     const partes = DIA_E_MES.exec(texto.trim())
     if (!partes) continue
-    const [a, b, ano] = [Number(partes[1]), Number(partes[2]), Number(partes[3])]
+    const [a, b, ano] = [Number(partes[1]), Number(partes[2]), anoCompleto(partes[3] ?? '', hoje)]
     const comoDiaMes = existe(ano, b, a)
     const comoMesDia = existe(ano, a, b)
     if (comoMesDia && !comoDiaMes) soMesDia += 1
