@@ -4,6 +4,14 @@
 **Protótipo aprovado:** `MarcaNoLink.dc.html` (canvas "MetaNutri Redesenho", 29/10/2026).
 **Status:** o dono aprovou o protótipo e a SPEC em 29/10/2026 ("use skills para deixar mais profissional ainda e mantendo
 esse mesmo padrão"). Regra do dono: "apenas faça"; as decisões deste plano estão registradas abaixo (DP-ML-1 em diante).
+Concluído em 03/11/2026, no ramo `marca-no-link`, rebaseado sobre a `main` (67fb5a4). Falta o dono rodar o
+`supabase/015-marca-no-link.sql` **antes** de publicar o site (R-ML-1).
+
+**Validação (03/11/2026):** `npm run check` (lint, tipos e 6229 testes em 332 arquivos), `npm run e2e` (479 testes; os
+específicos da marca, 23, todos verdes; 5 de outras funções caíram na rodada cheia por carga e porta ocupada por outro
+agente e passaram de novo sozinhos), `npm run test:csp` (3) e `npm run test:seguranca` (227, com o 015 aplicado no
+Supabase local), tudo verde. Prints em 360, 390 e 1440 px nos dois temas e o pior caso (`break-ui`) em
+`scratchpad/marca-no-link/prints/`.
 
 ## Abordagem
 
@@ -183,45 +191,45 @@ Cada uma ganha uma nota curta "*Atualizado pela `marca-no-link` (29/10/2026)*" n
 
 ## Tarefas
 
-- [ ] **T1** — `corDaMarca.ts`: `normalizarCor`, `luminancia`, `contraste`, `avaliarCor` (contraste, aceita, sugestão,
+- [x] **T1** — `corDaMarca.ts`: `normalizarCor`, `luminancia`, `contraste`, `avaliarCor` (contraste, aceita, sugestão,
   versão do escuro), `formatarContraste`, `CORES_PRONTAS`, `COR_PADRAO`.
   - Depende de: —
   - Cobre: CA-1957 (as seis passam), CA-1958 (formato), CA-1959, CA-1960, CA-1961, CA-1962 (200 sorteadas), CB-960
   - Feito quando: os testes com as cores conhecidas (`#1F4E8C` 8,31; `#8CC63F` 2,05 → `#587F26` 4,69; 4,4987 recusada e
     4,5003 aceita) passam.
-- [ ] **T2** — `logoDaMarca.ts`: `conferirArquivoDeLogo`, `prepararLogo(arquivo, dataUrl, textoSvg, desenhista)`,
+- [x] **T2** — `logoDaMarca.ts`: `conferirArquivoDeLogo`, `prepararLogo(arquivo, dataUrl, textoSvg, desenhista)`,
   `ehLogoClara`, `svgPedeRecursoDeFora`, `bytesDoDataUrl`, `ehLogoPublicavel`.
   - Depende de: —
   - Cobre: CA-1952 (regra), CA-1953, CA-1954, CA-1955 (o SVG nunca sai), CB-950, CB-952, CB-953
   - Feito quando: testes com um desenhista falso que devolve tamanhos conhecidos.
-- [ ] **T3** — Perfil com `cor` e `marcaPublicada`; `marca.ts` com `lerMarcaDoLink`, `marcaDoPerfil` e `publicarMarca`
+- [x] **T3** — Perfil com `cor` e `marcaPublicada`; `marca.ts` com `lerMarcaDoLink`, `marcaDoPerfil` e `publicarMarca`
   (upsert em `marcas`, com o dono da sessão e o prazo da nuvem).
   - Depende de: T1, T2
   - Cobre: CA-1951 (domínio), CA-1963 (domínio), CA-1973 (leitura), CB-955
-- [ ] **T4** — `supabase/015-marca-no-link.sql`, os testes de texto e os testes no Supabase local; as travas em
+- [x] **T4** — `supabase/015-marca-no-link.sql`, os testes de texto e os testes no Supabase local; as travas em
   `mensagemDoBanco`.
   - Depende de: —
   - Cobre: CA-1974, CA-1975, CA-1976, CA-1977 (nada muda na CSP)
-- [ ] **T5** — `porToken` devolve `marca`; `AcompanhamentoDoLink`.
+- [x] **T5** — `porToken` devolve `marca`; `AcompanhamentoDoLink`.
   - Depende de: T3
   - Cobre: CA-1967, CA-1974 (cliente)
-- [ ] **T6** — Tokens, `PlacaLogo`, `EscolhaDeCor`, `CampoCor`, vitrine, índice e DESIGN.md.
+- [x] **T6** — Tokens, `PlacaLogo`, `EscolhaDeCor`, `CampoCor`, vitrine, índice e DESIGN.md.
   - Depende de: T1
   - Cobre: CA-1980 (grupo de opções com nome e código, erro ligado ao campo), CB-954
-- [ ] **T7** — `LinkDoPaciente` e a tela do paciente com a marca.
+- [x] **T7** — `LinkDoPaciente` e a tela do paciente com a marca.
   - Depende de: T5, T6
   - Cobre: CA-1965, CA-1966, CA-1968, CA-1969, CA-1970, CA-1971, CA-1972, CA-1973, CB-958
-- [ ] **T8** — "Sua marca": rota, menu, tela, prévia, cartão na Conta; sai o cartão "Logotipo"; o desenhista de verdade.
+- [x] **T8** — "Sua marca": rota, menu, tela, prévia, cartão na Conta; sai o cartão "Logotipo"; o desenhista de verdade.
   - Depende de: T2, T3, T6, T7
   - Cobre: CA-1950, CA-1951, CA-1952 a CA-1964 (tela), CA-1978, CA-1980, CA-1981, CB-950, CB-956, CB-961
-- [ ] **T9** — O texto do recurso (CA-1979) e as notas nas outras specs.
+- [x] **T9** — O texto do recurso (CA-1979) e as notas nas outras specs.
   - Depende de: —
   - Cobre: CA-1979
-- [ ] **T10** — Ponta a ponta: "Sua marca" (modo local), o link com marca (servidor falso), a CSP com a logo por "Sua
+- [x] **T10** — Ponta a ponta: "Sua marca" (modo local), o link com marca (servidor falso), a CSP com a logo por "Sua
   marca", a vitrine; prints em 360, 390 e 1440 px nos dois temas; `break-ui`.
   - Depende de: T8
   - Cobre: CA-1952, CA-1955 (no navegador), CA-1965, CA-1966, CA-1972, CA-1977, CA-1981
-- [ ] **T11** — README (o 015 e a ordem) e a validação no topo deste plano.
+- [x] **T11** — README (o 015 e a ordem) e a validação no topo deste plano.
 
 ## Riscos
 
