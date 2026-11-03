@@ -99,7 +99,8 @@ export function metaDePerda(caso: Caso, entrada: EntradaDaMeta = {}): ResultadoD
     avisos.push('Sem o % de gordura atual, não há peso-alvo.')
   }
   const prazo = alvoKg && { preservandoMassaMagra: (peso - alvoKg.preservandoMassaMagraKg) / tetoKgPorSemana, perdaTipica: (peso - alvoKg.perdaTipicaKg) / tetoKgPorSemana }
-  const deficitKcal = imc >= 25 && imc < 30 ? { min: 300, max: 500, teto: 1000 as const } : { min: 500, max: 750, teto: 1000 as const }
+  // R4.5b e revisão (item 3): abaixo de IMC 30, 300–500 (NHLBI 2000), também com IMC < 25; de 30 em diante, 500–750.
+  const deficitKcal = imc < 30 ? { min: 300, max: 500, teto: 1000 as const } : { min: 500, max: 750, teto: 1000 as const }
   const get = medidaValida(entrada.gastoTotalKcal)
   let energiaSugeridaKcal: { readonly min: number; readonly max: number } | null = null
   if (get !== null) {

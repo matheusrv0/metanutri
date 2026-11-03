@@ -118,3 +118,13 @@ describe('idoso (spec antropometria-completa, revisão, CA-2073)', () => {
     expect(metaDePerda(idosa(70, 28 * 1.55 ** 2))?.mostra).toBe(true)
   })
 })
+
+describe('déficit abaixo de IMC 25 (spec antropometria-completa, revisão, CA-2076)', () => {
+  it('CA-2076: IMC 23 com "emagrecer" → 300–500 kcal/dia, nunca maior que o do sobrepeso', () => {
+    const normal = mostrada(metaDePerda(caso({ pesoKg: 23 * 1.7 ** 2, objetivo: 'emagrecer' })))
+    const sobrepeso = mostrada(metaDePerda(caso({ pesoKg: 27 * 1.7 ** 2, objetivo: 'emagrecer' })))
+    expect(normal.deficitKcal).toEqual({ min: 300, max: 500, teto: 1000 })
+    expect(normal.deficitKcal.max).toBeLessThanOrEqual(sobrepeso.deficitKcal.max)
+    expect(mostrada(metaDePerda(caso({ pesoKg: 30 * 1.7 ** 2 }))).deficitKcal).toEqual({ min: 500, max: 750, teto: 1000 })
+  })
+})
