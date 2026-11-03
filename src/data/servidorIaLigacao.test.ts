@@ -4,6 +4,7 @@
 // Anthropic (servidorIaAnthropic.test.ts) e no banco (sqlAssistenteIa.test.ts e testes/seguranca/ia.test.ts).
 import sql from '../../supabase/016-assistente-ia.sql?raw'
 import nucleo from '../../supabase/functions/_shared/ia.ts?raw'
+import custo from '../../supabase/functions/_shared/iaCusto.ts?raw'
 import anthropic from '../../supabase/functions/_shared/iaAnthropic.ts?raw'
 import catalogo from '../../supabase/functions/_shared/iaCatalogo.ts?raw'
 import contrato from '../../supabase/functions/_shared/iaContrato.ts?raw'
@@ -12,9 +13,10 @@ import portas from '../../supabase/functions/_shared/iaPortas.ts?raw'
 import prompt from '../../supabase/functions/_shared/iaPrompt.ts?raw'
 import bancoDaIa from '../../supabase/functions/_shared/iaSupabase.ts?raw'
 import indice from '../../supabase/functions/sugerir-plano/index.ts?raw'
+import { cabecalhosPara, responder } from '../../supabase/functions/_shared/cobranca.ts'
 import { tetoDoAmbiente } from '../../supabase/functions/_shared/ia.ts'
 
-const NUCLEOS = { ia: nucleo, iaAnthropic: anthropic, iaCatalogo: catalogo, iaContrato: contrato, iaFalsa: falsa, iaPortas: portas, iaPrompt: prompt }
+const NUCLEOS = { ia: nucleo, iaCusto: custo, iaAnthropic: anthropic, iaCatalogo: catalogo, iaContrato: contrato, iaFalsa: falsa, iaPortas: portas, iaPrompt: prompt }
 
 describe('D-1316: a função é só ligação', () => {
   it('o index.ts liga o cliente com a chave de serviço, o banco e o modelo, e não decide nada', () => {
@@ -63,11 +65,43 @@ describe('D-1316: a função é só ligação', () => {
     expect(indice).toContain('modelo: falso.ligado ? criarModeloFalso() :')
   })
 
+  it('CA-2383 e D-1330: o index passa o sinal do pedido do navegador ao núcleo', () => {
+    expect(indice).toContain('sinal: req.signal,')
+  })
+
   it('D-1318: IA_TETO_DIARIO_USD vale quando é número maior que zero; senão, US$ 5', () => {
     expect(tetoDoAmbiente(undefined)).toBe(5)
     expect(tetoDoAmbiente('12.5')).toBe(12.5)
     expect(tetoDoAmbiente('0')).toBe(5)
     expect(tetoDoAmbiente('dez')).toBe(5)
+  })
+})
+
+describe('CA-2300: a permissão do navegador e o método, pelo que a função devolve', () => {
+  const APP = 'https://app.metanutri.com.br'
+
+  it('o index responde OPTIONS e o 405 antes de qualquer outra coisa, com os cabeçalhos de cabecalhosPara(origem)', () => {
+    const opcoes = indice.indexOf("if (req.method === 'OPTIONS') return new Response('ok', { headers: cabecalhosPara(origem) })")
+    const metodo = indice.indexOf("if (req.method !== 'POST') return responder({ erro: 'Use POST.' }, 405, origem)")
+    expect(opcoes).toBeGreaterThan(indice.indexOf("const origem = req.headers.get('Origin')"))
+    expect(metodo).toBeGreaterThan(opcoes)
+    expect(metodo).toBeLessThan(indice.indexOf('await lerCorpo(req)'))
+  })
+
+  it('do app: a permissão repete o endereço; de outro endereço ou sem endereço: sem permissão; sempre Vary: Origin', () => {
+    expect(cabecalhosPara(APP)).toMatchObject({ 'Access-Control-Allow-Origin': APP, Vary: 'Origin' })
+    expect(cabecalhosPara('https://metanutri.com.br')).not.toHaveProperty('Access-Control-Allow-Origin')
+    expect(cabecalhosPara('https://atacante.exemplo')).not.toHaveProperty('Access-Control-Allow-Origin')
+    expect(cabecalhosPara(null)).not.toHaveProperty('Access-Control-Allow-Origin')
+    expect(JSON.stringify(cabecalhosPara(APP))).not.toContain('*')
+  })
+
+  it('o 405 sai em JSON, com a permissão só para o app', async () => {
+    const r = responder({ erro: 'Use POST.' }, 405, APP)
+    expect(r.status).toBe(405)
+    expect(r.headers.get('Access-Control-Allow-Origin')).toBe(APP)
+    expect(await r.json()).toEqual({ erro: 'Use POST.' })
+    expect(responder({ erro: 'Use POST.' }, 405, 'https://atacante.exemplo').headers.get('Access-Control-Allow-Origin')).toBeNull()
   })
 })
 

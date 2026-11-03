@@ -36,6 +36,8 @@ Deno.serve(async (req: Request) => {
       {
         conta: await quemPede(cliente, req.headers.get('Authorization')),
         corpo: lido.json,
+        // D-1330: o navegador foi embora (fechou a gaveta, cancelou, caiu), a chamada à IA para.
+        sinal: req.signal,
       },
       {
         banco: criarBancoDaIa(cliente, console.error),

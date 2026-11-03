@@ -63,6 +63,7 @@ export function criarBancoDaIa(cliente: SupabaseClient, log: Registro): BancoDaI
           p_saida: c.saida,
           p_custo: c.custoMicrodolares,
           p_duracao: c.duracaoMs,
+          p_custo_estimado: c.custoEstimado,
         })
         if (error) log('IA: não consegui concluir o uso:', error.message)
       } catch (erro) {

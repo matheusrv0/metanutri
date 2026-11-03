@@ -15,6 +15,8 @@ export const RECUSA_DA_IA = 'A IA não respondeu a este pedido. Mude o texto do 
 export const IA_DEMOROU = 'A sugestão demorou demais. Tente de novo; esta não conta no limite.'
 export const IA_INDISPONIVEL = 'As sugestões com IA estão indisponíveis agora. Tente mais tarde.'
 export const MUITAS_SUGESTOES = 'Muitas sugestões seguidas. Espere alguns minutos e tente de novo.'
+/** D-1330: o navegador cancelou (ninguém lê esta resposta). */
+export const IA_CANCELADA = 'A sugestão foi cancelada.'
 
 // ---------- Limites (D-1318) ----------
 

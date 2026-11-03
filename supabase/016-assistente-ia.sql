@@ -9,6 +9,7 @@
 -- O que muda:
 --   * a tabela uso_da_ia guarda cada sugestão pedida à IA: a conta, o modo, o modelo, o resultado, os tokens, o custo
 --     e a duração. Nenhum dado do paciente; consentimento_declarado só diz que a ficha tinha a autorização;
+--     custo_estimado marca a chamada cortada (prazo, rede, cancelamento), anotada com uma estimativa, nunca com zero;
 --   * quatro funções que só o servidor chama: reservar (conta o mês e a hora e anota, num passo só), concluir, contar
 --     o mês (o contador da gaveta) e somar o custo de todas as contas desde uma data (o teto do dia).
 
@@ -32,6 +33,8 @@ create table if not exists public.uso_da_ia (
   tokens_cache_lidos integer check (tokens_cache_lidos >= 0),
   tokens_saida integer check (tokens_saida >= 0),
   custo_microdolares bigint check (custo_microdolares >= 0),
+  -- D-1329: o custo da chamada cortada é estimado (o que o fluxo mostrou mais a saída pelo tempo); o gasto do dia o soma.
+  custo_estimado boolean not null default false,
   duracao_ms integer check (duracao_ms >= 0),
   criado_em timestamptz not null default now(),
   concluido_em timestamptz
@@ -105,7 +108,8 @@ create or replace function public.concluir_uso_da_ia(
   p_cache_lidos integer,
   p_saida integer,
   p_custo bigint,
-  p_duracao integer
+  p_duracao integer,
+  p_custo_estimado boolean
 )
 returns boolean
 language plpgsql
@@ -122,6 +126,7 @@ begin
          tokens_saida = p_saida,
          custo_microdolares = p_custo,
          duracao_ms = p_duracao,
+         custo_estimado = coalesce(p_custo_estimado, false),
          concluido_em = now()
    where u.id = p_reserva and u.status = 'reservado';
   return found;
@@ -147,6 +152,7 @@ $$;
 -- ---------- O gasto de todas as contas (D-1318, CA-2310) ----------
 
 -- O teto do dia: a função soma as últimas 24 h e, acima de IA_TETO_DIARIO_USD, responde que a IA está indisponível.
+-- Soma também o custo estimado das chamadas cortadas (D-1329): o teto enxerga o prazo esgotado e a rede caída.
 create or replace function public.custo_da_ia_desde(p_desde timestamptz)
 returns bigint
 language sql
@@ -160,8 +166,8 @@ $$;
 -- Só o servidor (service_role) chama. Sem security definer: elas rodam com as permissões de quem chama.
 revoke all on function public.reservar_uso_da_ia(uuid, text, boolean, integer, timestamptz, integer) from public, anon, authenticated;
 grant execute on function public.reservar_uso_da_ia(uuid, text, boolean, integer, timestamptz, integer) to service_role;
-revoke all on function public.concluir_uso_da_ia(bigint, text, text, integer, integer, integer, integer, bigint, integer) from public, anon, authenticated;
-grant execute on function public.concluir_uso_da_ia(bigint, text, text, integer, integer, integer, integer, bigint, integer) to service_role;
+revoke all on function public.concluir_uso_da_ia(bigint, text, text, integer, integer, integer, integer, bigint, integer, boolean) from public, anon, authenticated;
+grant execute on function public.concluir_uso_da_ia(bigint, text, text, integer, integer, integer, integer, bigint, integer, boolean) to service_role;
 revoke all on function public.uso_da_ia_no_mes(uuid, timestamptz) from public, anon, authenticated;
 grant execute on function public.uso_da_ia_no_mes(uuid, timestamptz) to service_role;
 revoke all on function public.custo_da_ia_desde(timestamptz) from public, anon, authenticated;

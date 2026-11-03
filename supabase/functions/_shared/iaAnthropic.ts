@@ -2,16 +2,19 @@
 // decisão do dono, nenhuma dependência nova). Usa só o fetch e o AbortSignal padrão: roda no Deno e no Node, e o Vitest
 // testa com um fetch de mentira (src/data/servidorIaAnthropic.test.ts). A chave chega de fora e só vai no cabeçalho.
 //
-// O pedido vai com `stream: true`: o fluxo mantém a conexão viva enquanto o modelo pensa, e a função junta a mensagem no
-// fim (DP-IA-5). Prazo de 110 s, sem nova tentativa.
+// O pedido vai com `stream: true`: o fluxo mantém a conexão viva enquanto o modelo pensa, e a função lê aos poucos e
+// junta a mensagem no fim (DP-IA-5). Prazo de 110 s, sem nova tentativa. O que foi visto do fluxo serve para estimar o
+// custo quando a chamada é cortada (D-1329), e o sinal do pedido do navegador cancela a chamada (D-1330).
+import { MAX_TOKENS, tokensDoCorte } from './iaCusto.ts'
 import { CATALOGO_DO_PROMPT, ESQUEMA_RESPOSTA, REGRAS_IA } from './iaPrompt.ts'
 import type { ChamadaDaIa, EsforcoDaIa, ModeloDaIa, ModeloDeIa, RespostaDoModelo, TokensDoModelo } from './iaPortas.ts'
+
+export { MAX_TOKENS }
 
 export const API_DA_ANTHROPIC = 'https://api.anthropic.com/v1/messages'
 export const VERSAO_DA_API = '2026-10-21'
 /** A troca automática por outro modelo quando o filtro recusa por engano (`fallbacks: "default"`). */
 export const BETA_DA_TROCA = 'server-side-fallback-2026-07-01'
-export const MAX_TOKENS = 32_000
 export const PRAZO_DA_IA_MS = 110_000
 
 export const MODELOS_ACEITOS: readonly ModeloDeIa[] = ['claude-opus-5-5', 'claude-sonnet-5-5', 'claude-haiku-5-5']
@@ -105,12 +108,16 @@ export interface MensagemDoFluxo {
 }
 
 /**
- * A mensagem montada a partir dos eventos: o modelo de `message_start` (com a troca automática, o que respondeu), o texto
- * dos blocos `text`, o motivo da parada e os tokens. Com `usage.iterations` (a troca automática rodou), um item por
- * modelo que rodou: `message` é o modelo pedido, `fallback_message` o que respondeu, quando o item não diz o modelo.
+ * A mensagem montada a partir dos eventos: o modelo que respondeu, o texto dos blocos `text`, o motivo da parada e os
+ * tokens. Com `usage.iterations` (a troca automática rodou), um item por modelo que rodou: `message` é o modelo pedido,
+ * `fallback_message` o que respondeu, quando o item não diz o modelo.
+ *
+ * D-1333: com a troca no meio do fluxo, o `message_start` nomeia o modelo pedido. Vale o `model` do último
+ * `fallback_message` de `usage.iterations`; sem ele, o `to.model` do último bloco `fallback`; sem os dois, o do início.
  */
 export function montarMensagemDoFluxo(corpo: string, modeloPedido: string): MensagemDoFluxo {
   let modelo: string | null = null
+  let trocaPara: string | null = null
   let stopReason: string | null = null
   let categoria: string | null = null
   let erro: string | null = null
@@ -130,6 +137,7 @@ export function montarMensagemDoFluxo(corpo: string, modeloPedido: string): Mens
       case 'content_block_start': {
         const bloco = objeto(evento['content_block'])
         blocos.set(inteiro(evento['index']), { tipo: texto(bloco?.['type']) ?? '', texto: texto(bloco?.['text']) ?? '' })
+        if (bloco?.['type'] === 'fallback') trocaPara = texto(objeto(bloco['to'])?.['model']) ?? trocaPara
         break
       }
       case 'content_block_delta': {
@@ -157,8 +165,10 @@ export function montarMensagemDoFluxo(corpo: string, modeloPedido: string): Mens
   }
 
   const uso = { ...usoInicio, ...usoFim }
-  const quemRespondeu = modelo ?? modeloPedido
   const iteracoes = Array.isArray(uso['iterations']) ? uso['iterations'].map(objeto).filter((i): i is Readonly<Record<string, unknown>> => i !== null) : []
+  const daTroca = [...iteracoes].reverse().find((i) => i['type'] === 'fallback_message')
+  modelo = texto(daTroca?.['model']) ?? trocaPara ?? modelo
+  const quemRespondeu = modelo ?? modeloPedido
   const tokens: TokensDoModelo[] =
     iteracoes.length > 0
       ? iteracoes.map((i) => ({ modelo: texto(i['model']) ?? (i['type'] === 'fallback_message' ? quemRespondeu : modeloPedido), ...usoDe(i) }))
@@ -185,36 +195,61 @@ export function respostaDoFluxo(mensagem: MensagemDoFluxo, modeloPedido: string)
 
 export interface OpcoesDoModelo {
   readonly prazoMs: number
+  /** O relógio em ms, para medir quanto o fluxo correu antes de um corte (D-1329); padrão `performance.now`. */
+  readonly relogio?: () => number
 }
 
-/** O corpo inteiro, ou a rejeição do prazo: o sinal vale também durante a leitura do fluxo (CA-2315). */
-function lerAteOFim(resposta: Response, sinal: AbortSignal): Promise<string> {
-  return new Promise<string>((resolver, rejeitar) => {
-    const parar = () => {
-      resposta.body?.cancel().catch(() => undefined)
-      rejeitar(sinal.reason instanceof Error ? sinal.reason : new DOMException('Prazo da IA', 'TimeoutError'))
-    }
-    if (sinal.aborted) return parar()
-    sinal.addEventListener('abort', parar, { once: true })
-    resposta.text().then(
-      (texto) => {
-        sinal.removeEventListener('abort', parar)
-        resolver(texto)
-      },
-      (erro: unknown) => {
-        sinal.removeEventListener('abort', parar)
-        rejeitar(erro)
-      },
-    )
+/** A rejeição de um sinal abortado: o motivo dele, ou o erro de prazo. */
+const motivoDoSinal = (sinal: AbortSignal): Error => (sinal.reason instanceof Error ? sinal.reason : new DOMException('Prazo da IA', 'TimeoutError'))
+
+/**
+ * D-1329: lê o fluxo aos poucos e entrega cada pedaço a `guardar`, para o que já chegou valer mesmo se a leitura for
+ * cortada. O sinal (prazo ou cancelamento) vale durante toda a leitura: abortado, para de ler e rejeita.
+ */
+async function lerFluxo(resposta: Response, sinal: AbortSignal, guardar: (pedaco: string) => void): Promise<void> {
+  const corpo = resposta.body
+  if (!corpo) {
+    guardar(await resposta.text())
+    return
+  }
+  const leitor = corpo.getReader()
+  const decodificador = new TextDecoder()
+  let parar: () => void = () => undefined
+  const abortado = new Promise<never>((_, rejeitar) => {
+    parar = () => rejeitar(motivoDoSinal(sinal))
+    if (sinal.aborted) parar()
+    else sinal.addEventListener('abort', parar, { once: true })
   })
+  abortado.catch(() => undefined)
+  try {
+    for (;;) {
+      const { done, value } = await Promise.race([leitor.read(), abortado])
+      if (done) break
+      guardar(decodificador.decode(value, { stream: true }))
+    }
+    guardar(decodificador.decode())
+  } finally {
+    sinal.removeEventListener('abort', parar)
+    if (sinal.aborted) leitor.cancel().catch(() => undefined)
+  }
 }
 
 const ehPrazo = (erro: unknown): boolean => erro instanceof Error && (erro.name === 'TimeoutError' || erro.name === 'AbortError')
 
-/** CA-2312 a CA-2316: o pedido à API e a leitura do fluxo inteiro. Nunca lança: o que deu errado vira um tipo. */
+/**
+ * CA-2312 a CA-2316, CA-2382 e CA-2383: o pedido à API e a leitura do fluxo. Nunca lança: o que deu errado vira um tipo.
+ * No corte (prazo, rede, erro no fluxo ou cancelamento pelo navegador), os tokens são os vistos mais a estimativa.
+ */
 export function criarModeloAnthropic(chave: string, opcoes: OpcoesDoModelo = { prazoMs: PRAZO_DA_IA_MS }, buscar: typeof fetch = fetch): ModeloDaIa {
+  const relogio = opcoes.relogio ?? (() => performance.now())
   return async (chamada) => {
-    const sinal = AbortSignal.timeout(opcoes.prazoMs)
+    const prazo = AbortSignal.timeout(opcoes.prazoMs)
+    // D-1330: o cancelamento do navegador e o prazo param a chamada do mesmo jeito.
+    const sinal = chamada.sinal ? AbortSignal.any([chamada.sinal, prazo]) : prazo
+    let corpo = ''
+    let inicioDoFluxo: number | null = null
+    const tokensAteAqui = (vistos: readonly TokensDoModelo[] | null): readonly TokensDoModelo[] =>
+      tokensDoCorte({ vistos, modelo: chamada.modelo, mensagem: chamada.mensagem, msDeFluxo: inicioDoFluxo === null ? 0 : relogio() - inicioDoFluxo })
     try {
       const resposta = await buscar(API_DA_ANTHROPIC, {
         method: 'POST',
@@ -223,13 +258,20 @@ export function criarModeloAnthropic(chave: string, opcoes: OpcoesDoModelo = { p
         signal: sinal,
       })
       if (!resposta.ok) {
-        const corpo: unknown = await resposta.json().catch(() => null)
-        return { tipo: 'erro-http', status: resposta.status, erro: texto(objeto(objeto(corpo)?.['error'])?.['type']) }
+        const erro: unknown = await resposta.json().catch(() => null)
+        return { tipo: 'erro-http', status: resposta.status, erro: texto(objeto(objeto(erro)?.['error'])?.['type']) }
       }
-      const corpo = await lerAteOFim(resposta, sinal)
-      return respostaDoFluxo(montarMensagemDoFluxo(corpo, chamada.modelo), chamada.modelo)
+      inicioDoFluxo = relogio()
+      await lerFluxo(resposta, sinal, (pedaco) => {
+        corpo += pedaco
+      })
+      const r = respostaDoFluxo(montarMensagemDoFluxo(corpo, chamada.modelo), chamada.modelo)
+      return r.tipo === 'erro-fluxo' ? { ...r, tokens: tokensAteAqui(r.tokens) } : r
     } catch (erro) {
-      return ehPrazo(erro) || sinal.aborted ? { tipo: 'demorou' } : { tipo: 'sem-rede' }
+      const visto = montarMensagemDoFluxo(corpo, chamada.modelo)
+      const corte = { modelo: visto.modelo ?? chamada.modelo, tokens: tokensAteAqui(visto.modelo !== null ? visto.tokens : null) }
+      if (chamada.sinal?.aborted) return { tipo: 'cancelada', ...corte }
+      return { tipo: ehPrazo(erro) || prazo.aborted ? 'demorou' : 'sem-rede', ...corte }
     }
   }
 }

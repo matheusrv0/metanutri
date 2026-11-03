@@ -13,7 +13,7 @@ const tabela = semComentarios.split('create table if not exists public.uso_da_ia
 
 const FUNCOES = [
   'reservar_uso_da_ia(uuid, text, boolean, integer, timestamptz, integer)',
-  'concluir_uso_da_ia(bigint, text, text, integer, integer, integer, integer, bigint, integer)',
+  'concluir_uso_da_ia(bigint, text, text, integer, integer, integer, integer, bigint, integer, boolean)',
   'uso_da_ia_no_mes(uuid, timestamptz)',
   'custo_da_ia_desde(timestamptz)',
 ] as const
@@ -38,6 +38,7 @@ describe('banco: assistente de IA (016)', () => {
         expect(tabela).toContain(`${coluna} integer check (${coluna} >= 0)`)
       }
       expect(tabela).toContain('custo_microdolares bigint check (custo_microdolares >= 0)')
+      expect(tabela).toContain('custo_estimado boolean not null default false')
       expect(tabela).toContain('criado_em timestamptz not null default now()')
       expect(tabela).toContain('concluido_em timestamptz')
       expect(tabela).not.toMatch(/nome|email|telefone|nascimento|paciente|pedido|resposta|texto/i)
@@ -105,6 +106,11 @@ describe('banco: assistente de IA (016)', () => {
       expect(corpo).toContain("where u.id = p_reserva and u.status = 'reservado';")
       expect(corpo).toContain('concluido_em = now()')
       expect(corpo).toContain('return found;')
+    })
+
+    it('CA-2382: concluir guarda se o custo é estimado (a chamada cortada), sem nulo', () => {
+      expect(corpoDa('concluir_uso_da_ia')).toContain('custo_estimado = coalesce(p_custo_estimado, false)')
+      expect(semComentarios).toMatch(/p_duracao integer,\s+p_custo_estimado boolean\s+\)\s+returns boolean/)
     })
 
     it('CA-2310: o custo das últimas 24 h soma todas as contas, sem nulo', () => {

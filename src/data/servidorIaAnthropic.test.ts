@@ -1,6 +1,7 @@
 // @vitest-environment node
-// A porta da Anthropic (spec assistente-ia, D-1317; CA-2312 a CA-2316), com um fetch de mentira: o corpo e os cabeçalhos
-// do pedido, a leitura do fluxo e o que cada falha vira.
+// A porta da Anthropic (spec assistente-ia, D-1317, D-1329, D-1330 e D-1333; CA-2312 a CA-2316, CA-2382, CA-2383 e
+// CA-2387), com um fetch de mentira: o corpo e os cabeçalhos do pedido, a leitura do fluxo, o que cada falha vira e o
+// custo estimado do corte.
 import {
   API_DA_ANTHROPIC,
   BETA_DA_TROCA,
@@ -10,9 +11,11 @@ import {
   modeloDoAmbiente,
   montarMensagemDoFluxo,
   PRAZO_DA_IA_MS,
+  respostaDoFluxo,
   VERSAO_DA_API,
 } from '../../supabase/functions/_shared/iaAnthropic.ts'
 import { CATALOGO_IA } from '../../supabase/functions/_shared/iaCatalogo.ts'
+import { entradaEstimada, SAIDA_ESTIMADA_POR_SEGUNDO, tokensDoCorte } from '../../supabase/functions/_shared/iaCusto.ts'
 import type { ChamadaDaIa } from '../../supabase/functions/_shared/iaPortas.ts'
 import { ESQUEMA_RESPOSTA, REGRAS_IA } from '../../supabase/functions/_shared/iaPrompt.ts'
 import { fluxoSse } from './servidorIaFalsos.test-utils.ts'
@@ -150,14 +153,119 @@ describe('o que cada fim vira', () => {
     expect(await chamar(() => new Response('não é json', { status: 529 }))).toEqual({ tipo: 'erro-http', status: 529, erro: null })
   })
 
-  it('CA-2315: o prazo estourado vira demorou; a rede caída, sem-rede', async () => {
-    expect(await chamar(() => Promise.reject(new DOMException('tempo', 'TimeoutError')))).toEqual({ tipo: 'demorou' })
-    expect(await chamar(() => Promise.reject(new TypeError('fetch failed')))).toEqual({ tipo: 'sem-rede' })
+  it('CA-2315 e CA-2382: o prazo estourado vira demorou; a rede caída, sem-rede; antes do fluxo, a entrada é estimada pelo tamanho', async () => {
+    const estimado = [{ modelo: 'claude-opus-5-5', entrada: entradaEstimada(CHAMADA.mensagem), cacheGravados: 0, cacheLidos: 0, saida: 0 }]
+    expect(await chamar(() => Promise.reject(new DOMException('tempo', 'TimeoutError')))).toEqual({ tipo: 'demorou', modelo: 'claude-opus-5-5', tokens: estimado })
+    expect(await chamar(() => Promise.reject(new TypeError('fetch failed')))).toEqual({ tipo: 'sem-rede', modelo: 'claude-opus-5-5', tokens: estimado })
   })
 
   it('CA-2315: o prazo vale também enquanto o fluxo é lido', async () => {
     const lento = new ReadableStream<Uint8Array>({ start() {} })
     const r = await criarModeloAnthropic('k', { prazoMs: 30 }, buscarQueResponde(() => new Response(lento)).buscar)(CHAMADA)
-    expect(r).toEqual({ tipo: 'demorou' })
+    expect(r).toMatchObject({ tipo: 'demorou' })
+  })
+})
+
+const evento = (tipo: string, dados: Readonly<Record<string, unknown>>) => `event: ${tipo}\ndata: ${JSON.stringify({ type: tipo, ...dados })}\n\n`
+const INICIO = evento('message_start', {
+  message: { id: 'm', type: 'message', role: 'assistant', model: 'claude-opus-5-5', content: [], usage: { input_tokens: 20_000, cache_creation_input_tokens: 10_000, cache_read_input_tokens: 0, output_tokens: 1 } },
+})
+
+/** O fluxo manda o começo (a API já cobrou a entrada) e depois: fica parado, cai ou manda um erro. */
+function fluxoQue(fim: 'para' | 'cai' | 'erro'): typeof fetch {
+  return (async () =>
+    new Response(
+      new ReadableStream<Uint8Array>({
+        start(c) {
+          c.enqueue(new TextEncoder().encode(INICIO + evento('content_block_start', { index: 0, content_block: { type: 'thinking', thinking: '' } })))
+          if (fim === 'cai') setTimeout(() => c.error(new TypeError('connection reset')), 5)
+          if (fim === 'erro') {
+            c.enqueue(new TextEncoder().encode(evento('error', { error: { type: 'overloaded_error', message: 'x' } })))
+            c.close()
+          }
+        },
+      }),
+    )) as typeof fetch
+}
+
+/** Um relógio que anda 30 s entre o começo do fluxo e o corte. */
+const relogioDe30s = () => {
+  let leituras = 0
+  return () => (leituras++ === 0 ? 1_000 : 31_000)
+}
+
+describe('CA-2382 e D-1329: a chamada cortada anota o que o fluxo mostrou mais a saída pelo tempo', () => {
+  const esperado = [{ modelo: 'claude-opus-5-5', entrada: 20_000, cacheGravados: 10_000, cacheLidos: 0, saida: 30 * SAIDA_ESTIMADA_POR_SEGUNDO }]
+
+  it('prazo depois do message_start: a entrada e o cache dele, e 150 tokens por segundo de fluxo', async () => {
+    const r = await criarModeloAnthropic('k', { prazoMs: 40, relogio: relogioDe30s() }, fluxoQue('para'))(CHAMADA)
+    expect(r).toEqual({ tipo: 'demorou', modelo: 'claude-opus-5-5', tokens: esperado })
+  })
+
+  it('a conexão cai depois do message_start: o mesmo, como sem-rede', async () => {
+    const r = await criarModeloAnthropic('k', { prazoMs: 5_000, relogio: relogioDe30s() }, fluxoQue('cai'))(CHAMADA)
+    expect(r).toEqual({ tipo: 'sem-rede', modelo: 'claude-opus-5-5', tokens: esperado })
+  })
+
+  it('erro no meio do fluxo: o mesmo, como erro-fluxo', async () => {
+    const r = await criarModeloAnthropic('k', { prazoMs: 5_000, relogio: relogioDe30s() }, fluxoQue('erro'))(CHAMADA)
+    expect(r).toEqual({ tipo: 'erro-fluxo', erro: 'overloaded_error', modelo: 'claude-opus-5-5', tokens: esperado })
+  })
+
+  it('a saída estimada nunca passa do max_tokens', () => {
+    const t = tokensDoCorte({ vistos: null, modelo: 'claude-opus-5-5', mensagem: 'x', msDeFluxo: 10 * 60_000 })
+    expect(t[0]?.saida).toBe(MAX_TOKENS)
+  })
+})
+
+describe('CA-2383 e D-1330: o navegador cancela, a chamada para', () => {
+  it('o sinal do pedido aborta a chamada no meio do fluxo; vira cancelada, com a estimativa', async () => {
+    const controle = new AbortController()
+    const r = criarModeloAnthropic('k', { prazoMs: 5_000, relogio: relogioDe30s() }, fluxoQue('para'))({ ...CHAMADA, sinal: controle.signal })
+    setTimeout(() => controle.abort(), 10)
+    expect(await r).toEqual({ tipo: 'cancelada', modelo: 'claude-opus-5-5', tokens: [{ modelo: 'claude-opus-5-5', entrada: 20_000, cacheGravados: 10_000, cacheLidos: 0, saida: 4500 }] })
+  })
+
+  it('o sinal vai junto do prazo no fetch', async () => {
+    const controle = new AbortController()
+    const { buscar, pedidos } = buscarQueResponde(() => new Response(fluxoSse({ texto: JSON_OK })))
+    await criarModeloAnthropic('k', { prazoMs: 1000 }, buscar)({ ...CHAMADA, sinal: controle.signal })
+    const sinal = pedidos[0]?.init.signal
+    expect(sinal?.aborted).toBe(false)
+    controle.abort()
+    expect(sinal?.aborted).toBe(true)
+  })
+})
+
+describe('CA-2387 e D-1333: o modelo anotado é o que respondeu', () => {
+  const corpoComTroca = (comIteracoes: boolean) =>
+    INICIO +
+    evento('content_block_start', { index: 0, content_block: { type: 'text', text: '' } }) +
+    evento('content_block_delta', { index: 0, delta: { type: 'text_delta', text: JSON_OK.slice(0, 10) } }) +
+    evento('content_block_start', { index: 1, content_block: { type: 'fallback', from: { model: 'claude-opus-5-5' }, to: { model: 'claude-opus-5' } } }) +
+    evento('content_block_start', { index: 2, content_block: { type: 'text', text: '' } }) +
+    evento('content_block_delta', { index: 2, delta: { type: 'text_delta', text: JSON_OK.slice(10) } }) +
+    evento('message_delta', {
+      delta: { stop_reason: 'end_turn' },
+      usage: comIteracoes
+        ? {
+            output_tokens: 300,
+            iterations: [
+              { type: 'message', model: 'claude-opus-5-5', input_tokens: 20_000, output_tokens: 200 },
+              { type: 'fallback_message', model: 'claude-opus-5', input_tokens: 20_000, output_tokens: 300 },
+            ],
+          }
+        : { output_tokens: 300 },
+    }) +
+    evento('message_stop', {})
+
+  it('pelo fallback_message de usage.iterations, com o custo de cada modelo', () => {
+    const r = respostaDoFluxo(montarMensagemDoFluxo(corpoComTroca(true), 'claude-opus-5-5'), 'claude-opus-5-5')
+    expect(r).toMatchObject({ tipo: 'ok', texto: JSON_OK, modelo: 'claude-opus-5' })
+    expect('tokens' in r && r.tokens.map((t) => t.modelo)).toEqual(['claude-opus-5-5', 'claude-opus-5'])
+  })
+
+  it('sem iterations, pelo to.model do bloco fallback', () => {
+    expect(montarMensagemDoFluxo(corpoComTroca(false), 'claude-opus-5-5').modelo).toBe('claude-opus-5')
   })
 })

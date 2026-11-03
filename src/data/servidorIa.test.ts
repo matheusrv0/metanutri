@@ -4,6 +4,7 @@
 import {
   custoEmMicrodolares,
   ESTUDANTE_SEM_APROVACAO,
+  IA_CANCELADA,
   IA_DEMOROU,
   IA_INDISPONIVEL,
   MUITAS_SUGESTOES,
@@ -18,8 +19,10 @@ import {
   type DependenciasDaIa,
 } from '../../supabase/functions/_shared/ia.ts'
 import { IDS_DO_CATALOGO_IA } from '../../supabase/functions/_shared/iaCatalogo.ts'
-import { conferirResposta, limparPedido } from '../../supabase/functions/_shared/iaContrato.ts'
+import { entradaEstimada, PRECOS, SAIDA_ESTIMADA_POR_SEGUNDO } from '../../supabase/functions/_shared/iaCusto.ts'
+import { conferirResposta, limparPedido, type PedidoDeSugestao } from '../../supabase/functions/_shared/iaContrato.ts'
 import { criarModeloFalso, modoFalso, LISTAS_DO_FALSO } from '../../supabase/functions/_shared/iaFalsa.ts'
+import { montarMensagem } from '../../supabase/functions/_shared/iaPrompt.ts'
 import type { ContaParaIa, RespostaDoModelo } from '../../supabase/functions/_shared/iaPortas.ts'
 import { PEDIDO_INVALIDO } from '../../supabase/functions/_shared/portas.ts'
 import { AGORA_IA, bancoDaIaFalso, CONTA_IA, CONTA_PADRAO, modeloFalsoDeTeste, PEDIDO_BASE, type MetodoDoBanco, type UsoGuardado } from './servidorIaFalsos.test-utils.ts'
@@ -189,7 +192,7 @@ describe('o sucesso', () => {
     })
     expect(m.banco.usos).toHaveLength(1)
     expect(m.banco.usos[0]?.status).toBe('ok')
-    expect(m.banco.usos[0]?.conclusao).toEqual({ status: 'ok', modelo: 'claude-opus-5-5', entrada: 1500, cacheGravados: 0, cacheLidos: 10_000, saida: 6000, custoMicrodolares: 140_800, duracaoMs: 35_000 })
+    expect(m.banco.usos[0]?.conclusao).toEqual({ status: 'ok', modelo: 'claude-opus-5-5', entrada: 1500, cacheGravados: 0, cacheLidos: 10_000, saida: 6000, custoMicrodolares: 140_800, duracaoMs: 35_000, custoEstimado: false })
   })
 
   it('CA-2312: a IA recebe o modelo e o esforço da função, a mensagem do pedido limpo e um resumo da conta, nunca o id', async () => {
@@ -262,7 +265,8 @@ describe('CA-2319: o custo', () => {
     expect(custoEmMicrodolares(TOKENS)).toBe(140_800)
     // Gravação do cache de 5 minutos: 10.000 × 5 = 50.000; × 1,1 = 55.000.
     expect(custoEmMicrodolares([{ modelo: 'claude-opus-5-5', entrada: 0, cacheGravados: 10_000, cacheLidos: 0, saida: 0 }])).toBe(55_000)
-    expect(custoEmMicrodolares([{ modelo: 'claude-sonnet-5-5', entrada: 1500, cacheGravados: 0, cacheLidos: 10_000, saida: 6000 }])).toBe(Math.round((3000 + 2000 + 60_000) * 1.1))
+    // CA-2388: no Sonnet 5.5, a leitura do cache é 0,05× da entrada (US$ 0,10).
+    expect(custoEmMicrodolares([{ modelo: 'claude-sonnet-5-5', entrada: 1500, cacheGravados: 0, cacheLidos: 10_000, saida: 6000 }])).toBe(Math.round((3000 + 1000 + 60_000) * 1.1))
     expect(custoEmMicrodolares([{ modelo: 'claude-haiku-5-5', entrada: 1500, cacheGravados: 0, cacheLidos: 10_000, saida: 6000 }])).toBe(Math.round((150 + 100 + 3000) * 1.1))
   })
 
@@ -275,6 +279,107 @@ describe('CA-2319: o custo', () => {
     ).toBe(Math.round((46_000 + 57_500 + 125_000) * 1.1))
     expect(custoEmMicrodolares([{ modelo: 'claude-novo', entrada: 1000, cacheGravados: 0, cacheLidos: 0, saida: 0 }])).toBe(5500)
     expect(custoEmMicrodolares([{ modelo: 'falso', entrada: 1000, cacheGravados: 0, cacheLidos: 0, saida: 1000 }])).toBe(0)
+  })
+})
+
+describe('CA-2382 e D-1329: a chamada cortada é anotada com a estimativa, nunca com zero', () => {
+  const mensagemDoPedido = () => {
+    const lido = limparPedido(PEDIDO_BASE)
+    if (!lido.ok || lido.pedido.modo === 'uso') throw new Error('pedido')
+    return montarMensagem(lido.pedido as PedidoDeSugestao)
+  }
+
+  it.each(['demorou', 'sem-rede', 'cancelada'] as const)('%s sem os tokens da porta: a entrada pelo tamanho do pedido e a saída pela duração', async (tipo) => {
+    const m = montar({ respostas: [{ tipo }] })
+    await pedir(PEDIDO_BASE, m.dep)
+    const conclusao = m.banco.usos[0]?.conclusao
+    // A chamada "leva" 35 s no relógio do teste: 35 × 150 tokens de saída.
+    const tokens = [{ modelo: 'claude-opus-5-5', entrada: entradaEstimada(mensagemDoPedido()), cacheGravados: 0, cacheLidos: 0, saida: 35 * SAIDA_ESTIMADA_POR_SEGUNDO }]
+    expect(conclusao).toMatchObject({ status: 'erro', custoEstimado: true, entrada: tokens[0]?.entrada, saida: tokens[0]?.saida })
+    expect(conclusao?.custoMicrodolares).toBe(custoEmMicrodolares(tokens))
+    expect(conclusao?.custoMicrodolares).toBeGreaterThan(0)
+  })
+
+  it('com os tokens que a porta viu, valem eles', async () => {
+    const tokens = [{ modelo: 'claude-opus-5-5', entrada: 20_000, cacheGravados: 10_000, cacheLidos: 0, saida: 4500 }]
+    const m = montar({ respostas: [{ tipo: 'demorou', modelo: 'claude-opus-5-5', tokens }] })
+    expect((await pedir(PEDIDO_BASE, m.dep)).status).toBe(504)
+    expect(m.banco.usos[0]?.conclusao).toMatchObject({ entrada: 20_000, cacheGravados: 10_000, saida: 4500, custoMicrodolares: custoEmMicrodolares(tokens), custoEstimado: true })
+  })
+
+  it('o teto do dia enxerga os cortes: com o gasto deles, a IA fica indisponível sem chamar o modelo', async () => {
+    const banco = bancoDaIaFalso()
+    let relogio = AGORA_IA.getTime()
+    const caro = [{ modelo: 'claude-opus-5-5', entrada: 20_000, cacheGravados: 10_000, cacheLidos: 0, saida: 16_500 }]
+    const chamadas: number[] = []
+    for (let i = 0; i < 30; i++) {
+      const conta = { id: `00000000-0000-0000-0000-0000000000${String(i).padStart(2, '0')}`, email: 'conta@exemplo.com' }
+      const dep: DependenciasDaIa = {
+        banco: banco.banco,
+        modelo: async () => {
+          chamadas.push(i)
+          return { tipo: 'demorou', modelo: 'claude-opus-5-5', tokens: caro }
+        },
+        modeloId: 'claude-opus-5-5',
+        esforco: 'medium',
+        tetoDiarioUsd: 5,
+        agora: () => new Date((relogio += 1000)),
+        log: () => undefined,
+      }
+      await pedir(PEDIDO_BASE, dep, conta)
+    }
+    const gasto = await banco.banco.custoDesde(new Date(AGORA_IA.getTime() - 86_400_000))
+    expect(gasto).toBeGreaterThanOrEqual(5_000_000)
+    expect(chamadas.length).toBeLessThan(30)
+    expect(banco.usos.filter((u) => u.status === 'ok')).toHaveLength(0)
+  })
+})
+
+describe('CA-2383, D-1330, CB-1300 e CB-1319: o navegador cancela', () => {
+  it('o sinal do pedido chega à chamada da IA', async () => {
+    const m = montar()
+    const controle = new AbortController()
+    await sugerirPlano({ conta: CONTA_IA, corpo: PEDIDO_BASE, sinal: controle.signal }, m.dep)
+    expect(m.modelo.chamadas[0]?.sinal).toBe(controle.signal)
+  })
+
+  it('cancelada: 499, o uso fica erro com o custo estimado e não conta no mês', async () => {
+    const m = montar({ respostas: [{ tipo: 'cancelada' }] })
+    expect(await pedir(PEDIDO_BASE, m.dep)).toEqual({ status: 499, corpo: { erro: IA_CANCELADA, codigo: 'cancelada' } })
+    expect(m.banco.usos[0]).toMatchObject({ status: 'erro', conclusao: { custoEstimado: true } })
+    expect(await m.dep.banco.usosNoMes(CONTA_IA.id, new Date('2026-11-01T03:00:00Z'))).toBe(0)
+  })
+
+  it('CB-1300: se o servidor já terminou antes de o navegador ir embora, o uso conta', async () => {
+    const m = montar()
+    const controle = new AbortController()
+    const r = await sugerirPlano({ conta: CONTA_IA, corpo: PEDIDO_BASE, sinal: controle.signal }, m.dep)
+    controle.abort()
+    expect(r.status).toBe(200)
+    expect(await m.dep.banco.usosNoMes(CONTA_IA.id, new Date('2026-11-01T03:00:00Z'))).toBe(1)
+  })
+})
+
+describe('CB-1317: o teto passado no meio de um pedido', () => {
+  it('o pedido em andamento termina; o próximo recebe indisponível', async () => {
+    const banco = bancoDaIaFalso({ gastoDoDia: 4_900_000 })
+    let relogio = AGORA_IA.getTime()
+    const dep: DependenciasDaIa = { banco: banco.banco, modelo: modeloFalsoDeTeste([OK]).modelo, modeloId: 'claude-opus-5-5', esforco: 'medium', tetoDiarioUsd: 5, agora: () => new Date((relogio += 1000)), log: () => undefined }
+    expect((await pedir(PEDIDO_BASE, dep)).status).toBe(200)
+    expect(await pedir(PEDIDO_BASE, dep)).toEqual({ status: 503, corpo: { erro: IA_INDISPONIVEL, codigo: 'indisponivel' } })
+  })
+})
+
+describe('CA-2388 e D-1334: os preços da página oficial', () => {
+  it('a tabela, por milhão: entrada, gravação de cache de 5 min, leitura e saída', () => {
+    expect(PRECOS).toEqual({
+      'claude-opus-5-5': { entrada: 4, cacheGravacao: 5, cacheLeitura: 0.2, saida: 20 },
+      'claude-sonnet-5-5': { entrada: 2, cacheGravacao: 2.5, cacheLeitura: 0.1, saida: 10 },
+      'claude-sonnet-5': { entrada: 2, cacheGravacao: 2.5, cacheLeitura: 0.2, saida: 10 },
+      'claude-haiku-5-5': { entrada: 0.1, cacheGravacao: 0.125, cacheLeitura: 0.01, saida: 0.5 },
+      'claude-opus-5': { entrada: 5, cacheGravacao: 6.25, cacheLeitura: 0.5, saida: 25 },
+      'claude-opus-4-8': { entrada: 5, cacheGravacao: 6.25, cacheLeitura: 0.5, saida: 25 },
+    })
   })
 })
 

@@ -46,7 +46,7 @@ const linhaDe = (dados: unknown): Linha => {
 describe('CA-2322: só o servidor chama as funções da IA', () => {
   it.each([
     ['reservar_uso_da_ia', () => ({ p_conta: c.vitima.id, p_modo: 'gerar', p_consentimento: true, p_limite_mes: 99, p_inicio_mes: inicioDoMes(), p_limite_hora: 99 })],
-    ['concluir_uso_da_ia', () => ({ p_reserva: 1, p_status: 'ok', p_modelo: 'x', p_entrada: 0, p_cache_gravados: 0, p_cache_lidos: 0, p_saida: 0, p_custo: 0, p_duracao: 0 })],
+    ['concluir_uso_da_ia', () => ({ p_reserva: 1, p_status: 'ok', p_modelo: 'x', p_entrada: 0, p_cache_gravados: 0, p_cache_lidos: 0, p_saida: 0, p_custo: 0, p_duracao: 0, p_custo_estimado: false })],
     ['uso_da_ia_no_mes', () => ({ p_conta: c.vitima.id, p_inicio_mes: inicioDoMes() })],
     ['custo_da_ia_desde', () => ({ p_desde: new Date(Date.now() - 24 * UMA_HORA_MS).toISOString() })],
   ] as const)('%s é recusada para outra conta e para quem não entrou', async (funcao, args) => {
@@ -120,7 +120,7 @@ describe('CA-2324: concluir', () => {
     await limparAtacante()
     const reserva = linhaDe((await reservar(40)).data).reserva
     const concluir = (status: string, custo: number) =>
-      c.servico.rpc('concluir_uso_da_ia', { p_reserva: reserva, p_status: status, p_modelo: 'claude-opus-5-5', p_entrada: 1500, p_cache_gravados: 0, p_cache_lidos: 10_000, p_saida: 6000, p_custo: custo, p_duracao: 70_000 })
+      c.servico.rpc('concluir_uso_da_ia', { p_reserva: reserva, p_status: status, p_modelo: 'claude-opus-5-5', p_entrada: 1500, p_cache_gravados: 0, p_cache_lidos: 10_000, p_saida: 6000, p_custo: custo, p_duracao: 70_000, p_custo_estimado: false })
     expect((await concluir('ok', 128_000)).data).toBe(true)
     expect((await concluir('erro', 1)).data).toBe(false)
     const linha = await c.servico.from('uso_da_ia').select('status, custo_microdolares, modelo, tokens_saida, concluido_em').eq('id', reserva).single()
@@ -129,8 +129,24 @@ describe('CA-2324: concluir', () => {
   })
 
   it('resultado desconhecido é recusado', async () => {
-    const r = await c.servico.rpc('concluir_uso_da_ia', { p_reserva: 1, p_status: 'reservado', p_modelo: 'x', p_entrada: 0, p_cache_gravados: 0, p_cache_lidos: 0, p_saida: 0, p_custo: 0, p_duracao: 0 })
+    const r = await c.servico.rpc('concluir_uso_da_ia', { p_reserva: 1, p_status: 'reservado', p_modelo: 'x', p_entrada: 0, p_cache_gravados: 0, p_cache_lidos: 0, p_saida: 0, p_custo: 0, p_duracao: 0, p_custo_estimado: false })
     expect(r.error?.code).toBe('22023')
+  })
+})
+
+describe('CA-2382: a chamada cortada', () => {
+  it('fica marcada como custo estimado, não conta no mês e entra no gasto do dia', async () => {
+    await limparAtacante()
+    const desde = new Date(Date.now() - 60 * 1000).toISOString()
+    const antes = Number((await c.servico.rpc('custo_da_ia_desde', { p_desde: desde })).data)
+    const reserva = linhaDe((await reservar(40)).data).reserva
+    const r = await c.servico.rpc('concluir_uso_da_ia', { p_reserva: reserva, p_status: 'erro', p_modelo: 'claude-opus-5-5', p_entrada: 20_000, p_cache_gravados: 10_000, p_cache_lidos: 0, p_saida: 16_500, p_custo: 506_000, p_duracao: 110_000, p_custo_estimado: true })
+    expect(r.data).toBe(true)
+    const linha = await c.servico.from('uso_da_ia').select('status, custo_estimado').eq('id', reserva).single()
+    expect(linha.data).toEqual({ status: 'erro', custo_estimado: true })
+    expect(Number((await c.servico.rpc('custo_da_ia_desde', { p_desde: desde })).data) - antes).toBe(506_000)
+    expect((await c.servico.rpc('uso_da_ia_no_mes', { p_conta: c.atacante.id, p_inicio_mes: inicioDoMes() })).data).toBe(0)
+    await limparAtacante()
   })
 })
 

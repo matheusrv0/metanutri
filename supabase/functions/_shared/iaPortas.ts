@@ -19,6 +19,8 @@ export interface ChamadaDaIa {
   readonly naoUsar: readonly number[]
   readonly refeicoes: readonly { readonly nome: string; readonly horario: string }[]
   readonly modo: ModoIa
+  /** D-1330: o sinal do pedido do navegador; abortado, a chamada à IA para (cancelamento). */
+  readonly sinal?: AbortSignal
 }
 
 /** Os tokens de um modelo que rodou na chamada (com a troca automática, pode ser mais de um). */
@@ -38,9 +40,13 @@ export type RespostaDoModelo =
   /** A API respondeu com erro HTTP antes do fluxo. Só o tipo do erro, nunca a mensagem inteira. */
   | { readonly tipo: 'erro-http'; readonly status: number; readonly erro: string | null }
   /** O fluxo trouxe um evento de erro ou terminou no meio. */
+  /** O fluxo trouxe um evento de erro ou terminou no meio; os tokens já vêm com a estimativa do corte (D-1329). */
   | { readonly tipo: 'erro-fluxo'; readonly erro: string; readonly modelo: string | null; readonly tokens: readonly TokensDoModelo[] }
-  | { readonly tipo: 'demorou' }
-  | { readonly tipo: 'sem-rede' }
+  /**
+   * D-1329 e D-1330: a chamada cortada pelo prazo, pela rede ou pelo navegador (`cancelada`). A porta de verdade manda os
+   * tokens vistos mais a estimativa; sem eles, o núcleo estima pelo tamanho do pedido e pela duração.
+   */
+  | { readonly tipo: 'demorou' | 'sem-rede' | 'cancelada'; readonly modelo?: string; readonly tokens?: readonly TokensDoModelo[] }
 
 export type ModeloDaIa = (chamada: ChamadaDaIa) => Promise<RespostaDoModelo>
 
@@ -66,6 +72,8 @@ export interface ConclusaoDoUso {
   readonly saida: number
   readonly custoMicrodolares: number
   readonly duracaoMs: number
+  /** D-1329: o custo é estimado (chamada cortada), não o que a API devolveu. */
+  readonly custoEstimado: boolean
 }
 
 /**

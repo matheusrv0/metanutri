@@ -5,9 +5,11 @@
 //   do JSON; 9. a conclusão do uso, com tokens e custo.
 // O registro nunca leva o corpo do pedido, o texto da resposta nem o id da conta (CA-2320).
 import { IDS_DO_CATALOGO_IA } from './iaCatalogo.ts'
+import { custoEmMicrodolares, tokensDoCorte } from './iaCusto.ts'
 import {
   conferirResposta,
   ESTUDANTE_SEM_APROVACAO,
+  IA_CANCELADA,
   IA_DEMOROU,
   IA_INDISPONIVEL,
   MUITAS_SUGESTOES,
@@ -30,48 +32,10 @@ import type { BancoDaIa, ConclusaoDoUso, ContaParaIa, EsforcoDaIa, ModeloDaIa, M
 import { montarMensagem } from './iaPrompt.ts'
 import { PEDIDO_INVALIDO, respostaDeErro as erro, type ContaQuePede, type Registro, type RespostaDaFuncao } from './portas.ts'
 
-export { ESTUDANTE_SEM_APROVACAO, IA_DEMOROU, IA_INDISPONIVEL, MUITAS_SUGESTOES, RECUSA_DA_IA, SEM_CONSENTIMENTO, SEM_CRN_IA, SEM_PERFIL_IA, SEM_SESSAO_IA }
+export { custoEmMicrodolares, FATOR_DOS_EUA, PRECOS, type PrecoDoModelo } from './iaCusto.ts'
+export { ESTUDANTE_SEM_APROVACAO, IA_CANCELADA, IA_DEMOROU, IA_INDISPONIVEL, MUITAS_SUGESTOES, RECUSA_DA_IA, SEM_CONSENTIMENTO, SEM_CRN_IA, SEM_PERFIL_IA, SEM_SESSAO_IA }
 
 const UM_DIA_MS = 24 * 60 * 60 * 1000
-/** O EUA custa 10% a mais (`inference_geo: "us"`, D-1317). */
-export const FATOR_DOS_EUA = 1.1
-
-export interface PrecoDoModelo {
-  /** Dólares por milhão de tokens. */
-  readonly entrada: number
-  /** Gravação do cache de 5 minutos. */
-  readonly cacheGravacao: number
-  readonly cacheLeitura: number
-  readonly saida: number
-}
-
-/**
- * DP-IA-6: os preços da página oficial, conferidos pela skill da API em 03/11/2026. O Opus 5 e o Opus 4.8 são os que a
- * troca automática usa. Modelo fora da tabela usa o mais caro dela.
- */
-export const PRECOS: Readonly<Record<string, PrecoDoModelo>> = {
-  'claude-opus-5-5': { entrada: 4, cacheGravacao: 5, cacheLeitura: 0.2, saida: 20 },
-  'claude-sonnet-5-5': { entrada: 2, cacheGravacao: 2.5, cacheLeitura: 0.2, saida: 10 },
-  'claude-haiku-5-5': { entrada: 0.1, cacheGravacao: 0.125, cacheLeitura: 0.01, saida: 0.5 },
-  'claude-opus-5': { entrada: 5, cacheGravacao: 6.25, cacheLeitura: 0.5, saida: 25 },
-  'claude-opus-4-8': { entrada: 5, cacheGravacao: 6.25, cacheLeitura: 0.5, saida: 25 },
-}
-const PRECO_DESCONHECIDO: PrecoDoModelo = { entrada: 5, cacheGravacao: 6.25, cacheLeitura: 0.5, saida: 25 }
-
-/**
- * CA-2319: o custo em microdólares. Tokens × dólares por milhão dá microdólares; soma cada modelo que rodou e põe os
- * 10% dos EUA. O modo falso (modelo "falso") não custa nada.
- */
-export function custoEmMicrodolares(tokens: readonly TokensDoModelo[]): number {
-  let total = 0
-  for (const t of tokens) {
-    if (t.modelo === 'falso') continue
-    const p = PRECOS[t.modelo] ?? PRECO_DESCONHECIDO
-    total += t.entrada * p.entrada + t.cacheGravados * p.cacheGravacao + t.cacheLidos * p.cacheLeitura + t.saida * p.saida
-  }
-  return Math.round(total * FATOR_DOS_EUA)
-}
-
 /** `IA_TETO_DIARIO_USD`: um número maior que zero; sem ele, ou inválido, US$ 5 (D-1318). */
 export function tetoDoAmbiente(valor: string | undefined): number {
   const n = Number(valor?.trim() || Number.NaN)
@@ -114,6 +78,8 @@ export interface PedidoDaIa {
   readonly conta: ContaQuePede | null
   /** O corpo já lido como JSON; nulo se não era JSON. */
   readonly corpo: unknown
+  /** D-1330: o sinal do pedido (`req.signal`): o navegador foi embora, a chamada à IA para. */
+  readonly sinal?: AbortSignal
 }
 
 export interface DependenciasDaIa {
@@ -191,19 +157,21 @@ export async function sugerirPlano(pedido: PedidoDaIa, dep: DependenciasDaIa): P
     return erro(IA_INDISPONIVEL, 503, 'indisponivel')
   }
 
+  const mensagem = montarMensagem(sugestao)
   const inicioDaChamada = dep.agora().getTime()
   const resposta: RespostaDoModelo = await dep.modelo({
     modelo: dep.modeloId,
     esforco: dep.esforco,
-    mensagem: montarMensagem(sugestao),
+    mensagem,
     usuario: await resumoDaConta(conta),
     naoUsar: sugestao.naoUsar,
     refeicoes: sugestao.refeicoes,
     modo: sugestao.modo,
+    ...(pedido.sinal ? { sinal: pedido.sinal } : {}),
   })
   const duracaoMs = Math.max(0, dep.agora().getTime() - inicioDaChamada)
 
-  const concluir = async (status: ConclusaoDoUso['status'], modelo: string | null, tokens: readonly TokensDoModelo[]) => {
+  const concluir = async (status: ConclusaoDoUso['status'], modelo: string | null, tokens: readonly TokensDoModelo[], custoEstimado = false) => {
     const conclusao: ConclusaoDoUso = {
       status,
       modelo,
@@ -213,11 +181,16 @@ export async function sugerirPlano(pedido: PedidoDaIa, dep: DependenciasDaIa): P
       saida: somar(tokens, 'saida'),
       custoMicrodolares: custoEmMicrodolares(tokens),
       duracaoMs,
+      custoEstimado,
     }
     // CA-2320: só o modo, o resultado, o modelo, os tokens e a duração.
-    dep.log('IA:', sugestao.modo, status, modelo ?? '-', `entrada ${conclusao.entrada}`, `cache lido ${conclusao.cacheLidos}`, `saída ${conclusao.saida}`, `${duracaoMs} ms`)
+    dep.log('IA:', sugestao.modo, status, modelo ?? '-', `entrada ${conclusao.entrada}`, `cache lido ${conclusao.cacheLidos}`, `saída ${conclusao.saida}`, `${duracaoMs} ms`, custoEstimado ? 'custo estimado' : '')
     await dep.banco.concluir(reserva, conclusao)
   }
+
+  /** D-1329: os tokens da chamada cortada; sem os da porta, a estimativa pelo pedido e pela duração. */
+  const doCorte = (tokens: readonly TokensDoModelo[] | undefined): readonly TokensDoModelo[] =>
+    tokens && tokens.length > 0 ? tokens : tokensDoCorte({ vistos: null, modelo: dep.modeloId, mensagem, msDeFluxo: duracaoMs })
 
   switch (resposta.tipo) {
     case 'recusa':
@@ -233,15 +206,21 @@ export async function sugerirPlano(pedido: PedidoDaIa, dep: DependenciasDaIa): P
       dep.log('IA: a API respondeu', resposta.status, resposta.erro ?? '-')
       return resposta.status === 429 ? erro(MUITAS_SUGESTOES, 429, 'ocupado') : erro(IA_INDISPONIVEL, 503, 'indisponivel')
     case 'erro-fluxo':
-      await concluir('erro', resposta.modelo, resposta.tokens)
+      await concluir('erro', resposta.modelo ?? dep.modeloId, doCorte(resposta.tokens), true)
       dep.log('IA: o fluxo falhou:', resposta.erro)
       return erro(IA_INDISPONIVEL, 503, 'indisponivel')
+    // CA-2382: o corte gasta e é anotado com a estimativa; não conta no mês.
     case 'demorou':
-      await concluir('erro', null, [])
+      await concluir('erro', resposta.modelo ?? dep.modeloId, doCorte(resposta.tokens), true)
       return erro(IA_DEMOROU, 504, 'demorou')
     case 'sem-rede':
-      await concluir('erro', null, [])
+      await concluir('erro', resposta.modelo ?? dep.modeloId, doCorte(resposta.tokens), true)
       return erro(IA_INDISPONIVEL, 503, 'indisponivel')
+    // CA-2383: o navegador cancelou; ninguém lê a resposta.
+    case 'cancelada':
+      await concluir('erro', resposta.modelo ?? dep.modeloId, doCorte(resposta.tokens), true)
+      dep.log('IA: cancelada pelo navegador.')
+      return erro(IA_CANCELADA, 499, 'cancelada')
     case 'ok':
       break
   }
