@@ -6,6 +6,7 @@ import { quantosLitros } from './missoes.ts'
 import { PACIENTE_SEM_NOME } from './nomeDoPaciente.ts'
 import { nomeParaPaciente } from './nomeParaPaciente.ts'
 import type { Armazenamento } from './persistencia.ts'
+import { lerOpcoesDoItem } from './opcoesDoItem.ts'
 import { quantidadeNaFolha, type QuantidadeNaFolha } from './quantidadeNaFolha.ts'
 import { ehItemDeReceita, ingredientesNaQuantidade, nomeDaReceita, receitaComOQueComer, receitaDoItem, receitasDoPlano, textoDaPorcao, textoDoRendimento } from './receitaNoPlano.ts'
 import { medidasDoAlimento } from './busca.ts'
@@ -194,6 +195,18 @@ export function linhaDaFolha(item: ItemPlano, buscar: BuscarAlimento, modo: Modo
   const receita = receitaDoItem(item)
   const medida = modo === 'gramas' || !receita ? null : textoDaPorcao(receita, item.gramas)
   return { nome: nomeDaReceita(receita), quantidade: quantidadeDaReceita(medida, item.gramas, modo) }
+}
+
+/**
+ * As opções do item na folha, que o paciente lê com "ou" embaixo dele (spec busca-substitutos, D-1115), com o nome para
+ * o paciente e a quantidade na escolha do plano. A opção cujo alimento foi excluído some (CB-1102); a receita não tem.
+ */
+export function opcoesNaFolha(item: ItemPlano, buscar: BuscarAlimento, modo: ModoQuantidade = 'medida-caseira'): readonly LinhaDaFolha[] {
+  if (ehItemDeReceita(item)) return []
+  return lerOpcoesDoItem(item).flatMap((o) => {
+    const alimento = buscar(o.alimentoId)
+    return alimento ? [{ nome: nomeParaPaciente(alimento), quantidade: quantidadeNaFolha(o.alimentoId, o.gramas, modo, o.medida) }] : []
+  })
 }
 
 /** A porção da receita como quantidade da folha: em "Medida e gramas", o peso ao lado (D-376). */

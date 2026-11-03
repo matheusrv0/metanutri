@@ -6,6 +6,7 @@ import { modoDeQuantidade } from '../domain/caso.ts'
 import { nomeSemAlimento } from '../domain/produtos.ts'
 import { FRASE_PROPOSTA } from '../domain/documentoDoPaciente.ts'
 import { dataCompleta } from '../domain/formatarData.ts'
+import { lerOpcoesDoItem } from '../domain/opcoesDoItem.ts'
 import { quantidadeNaFolha, textoDoPeso, type QuantidadeNaFolha } from '../domain/quantidadeNaFolha.ts'
 import { ehItemDeReceita, nomeDaReceita, receitaDoItem, receitasDoPlano, textoDaPorcao, textoDoRendimento } from '../domain/receitaNoPlano.ts'
 import { descreverSuplemento, suplementosParaDocumento, type Suplemento } from '../domain/suplementos.ts'
@@ -68,7 +69,13 @@ export function quantidadeNoWord(q: QuantidadeNaFolha): string {
  * banana (1 unidade)"); sem meia porção que feche, ou com o plano em "Gramas", o peso (D-297 da conduta-da-nutricionista).
  */
 export function descreverItem(item: ItemPlano, buscar: BuscarAlimento, modo: ModoQuantidade = 'medida-caseira'): string {
-  if (!ehItemDeReceita(item)) return descreverAlimento(item.alimentoId, item.gramas, buscar, modo, item.medida)
+  if (!ehItemDeReceita(item)) {
+    // Spec busca-substitutos, D-1115 e CA-2124: as opções do item depois de "ou"; a do alimento excluído fica de fora.
+    const opcoes = lerOpcoesDoItem(item)
+      .filter((o) => buscar(o.alimentoId) !== undefined)
+      .map((o) => ` ou ${descreverAlimento(o.alimentoId, o.gramas, buscar, modo, o.medida)}`)
+    return `${descreverAlimento(item.alimentoId, item.gramas, buscar, modo, item.medida)}${opcoes.join('')}`
+  }
   const receita = receitaDoItem(item)
   const porcao = modo === 'gramas' || !receita ? null : textoDaPorcao(receita, item.gramas)
   return `${nomeDaReceita(receita)} (${quantidadeNoWord({ medida: porcao, gramas: item.gramas, unidade: 'g', aproximada: false, comPeso: modo === 'medida-e-gramas' })})`

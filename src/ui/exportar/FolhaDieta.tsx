@@ -10,6 +10,7 @@ import {
   linhaFinaDaFolha,
   OPCOES_IMPRESSAO_PADRAO,
   opcoesDaRefeicao,
+  opcoesNaFolha,
   receitasDaFolha,
   TROCAS_PEDIDAS_PELA_FOLHA,
   trocasDaFolha,
@@ -77,6 +78,19 @@ function Itens({ itens, modo }: { readonly itens: readonly ItemPlano[]; readonly
             <span className="font-medium text-heading">{linha.nome}</span>
             <span className="sr-only">, </span>
             <Quantidade quantidade={linha.quantidade} />
+            {/* Spec busca-substitutos, D-1115: as opções do item, com "ou", nas mesmas colunas, logo abaixo dele. */}
+            {opcoesNaFolha(item, buscarAlimento, modo).map((opcao, n) => (
+              <Fragment key={n}>
+                <span className="pl-3 max-sm:mt-1">
+                  <span className="text-muted-foreground">ou </span>
+                  {opcao.nome}
+                </span>
+                <span className="sr-only">, </span>
+                <span className="pl-3 sm:pl-0">
+                  <Quantidade quantidade={opcao.quantidade} />
+                </span>
+              </Fragment>
+            ))}
           </li>
         )
       })}
