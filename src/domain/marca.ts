@@ -25,6 +25,9 @@ function corDoLink(valor: unknown): string | null {
   return avaliarCor(cor).aceita ? cor : null
 }
 
+/** CB-966 e DP-ML-36: a cor própria vale no link? A que não passa na regra de hoje vira a do MetaNutri (DP-ML-13). */
+export const corValeNoLink = (cor: string): boolean => corDoLink(cor) !== null
+
 /**
  * DP-ML-13 e CA-1973: o link desconfia do que lê. Só PNG em data URI dentro do teto e do tamanho da cópia (DP-ML-33)
  * vira logo; o resto (a função de antes, sem as colunas; uma gravação que contornou o app) vira "sem logo" ou "sem cor",

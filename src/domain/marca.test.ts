@@ -1,7 +1,7 @@
 // Spec marca-no-link: a marca publicada (D-952) — o que o link lê e o que "Salvar" grava.
 import { FALHA_DE_REDE } from '@/ui/estado/mensagemDoBanco.ts'
 import { LOGO_MAX_BYTES } from './logoDaMarca.ts'
-import { lerMarcaDoLink, marcaDoPerfil, SEM_MARCA, temMarca } from './marca.ts'
+import { corValeNoLink, lerMarcaDoLink, marcaDoPerfil, SEM_MARCA, temMarca } from './marca.ts'
 import { MARCA_INDISPONIVEL, publicarMarca, type ClienteDaMarca } from './marcaNaNuvem.ts'
 import { PERFIL_VAZIO } from './perfil.ts'
 
@@ -38,6 +38,12 @@ describe('a marca que o link lê (CA-1973, DP-ML-13)', () => {
     const ihdr = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 13, 0x49, 0x48, 0x44, 0x52, 0, 0, 0x5d, 0xc0, 0, 0, 0x5d, 0xc0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     const gigante = `data:image/png;base64,${btoa(String.fromCharCode(...ihdr))}`
     expect(lerMarcaDoLink({ marca_logo: gigante, marca_cor: '#1f4e8c' })).toEqual({ logo: null, cor: '#1f4e8c' })
+  })
+
+  it('CB-966: corValeNoLink segue a mesma regra do link', () => {
+    expect(corValeNoLink('#3f5f2a')).toBe(true)
+    expect(corValeNoLink('#8cc63f')).toBe(false)
+    expect(corValeNoLink('#0e3b43')).toBe(false)
   })
 
   it('DP-ML-13: cor fora do formato, recusada pelo contraste ou a padrão vira "sem cor"', () => {

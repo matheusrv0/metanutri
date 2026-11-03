@@ -1,15 +1,20 @@
-import { ImageOff } from 'lucide-react'
+import { ImageOff, TriangleAlert } from 'lucide-react'
 import { codigoDaCor, COR_PADRAO, nomeDaCorPronta } from '@/domain/corDaMarca.ts'
+import { corValeNoLink } from '@/domain/marca.ts'
 import { lerPerfil } from '@/domain/perfil.ts'
 import { Card, CardHeader, CardTitle } from '@ds/componentes/display/card.tsx'
 import { PlacaLogo } from '@ds/componentes/display/PlacaLogo.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { useArmazenamento } from '../estado/contextoArmazenamento.ts'
 
+/** CB-966 (D-963): a cor salva que não passa na regra de hoje; o link usa a do MetaNutri. */
+const AVISO_COR_FORA_DA_REGRA = 'O link usa a cor do MetaNutri: esta tem pouco contraste.'
+
 /** O cartão "Sua marca" na página da Conta (spec marca-no-link, D-950 e CA-1950): a logo e a cor de agora, e o caminho para mudar. */
 export function CartaoSuaMarca({ aoAbrir }: { readonly aoAbrir: () => void }) {
   const perfil = lerPerfil(useArmazenamento())
   const cor = perfil.cor ?? COR_PADRAO
+  const corForaDaRegra = perfil.cor !== null && !corValeNoLink(perfil.cor)
   return (
     <Card className="gap-4">
       <CardHeader>
@@ -35,6 +40,12 @@ export function CartaoSuaMarca({ aoAbrir }: { readonly aoAbrir: () => void }) {
           Editar
         </Button>
       </div>
+      {corForaDaRegra ? (
+        <p className="flex items-start gap-2 text-sm text-warningtext">
+          <TriangleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+          {AVISO_COR_FORA_DA_REGRA}
+        </p>
+      ) : null}
     </Card>
   )
 }

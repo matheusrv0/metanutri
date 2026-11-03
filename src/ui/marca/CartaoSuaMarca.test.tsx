@@ -33,6 +33,20 @@ describe('CA-1950: o cartão "Sua marca" na Conta', () => {
     gravarPerfil(localStorage, { ...PERFIL_VAZIO, cor: '#123456' })
     render(<CartaoSuaMarca aoAbrir={() => undefined} />)
     expect(screen.getByText('Outra cor')).toBeInTheDocument()
+    expect(screen.queryByText(/O link usa a cor do MetaNutri/)).not.toBeInTheDocument()
+  })
+
+  it('CB-966: a cor salva que não passa na regra de hoje (2,05:1) avisa que o link usa a cor do MetaNutri', () => {
+    gravarPerfil(localStorage, { ...PERFIL_VAZIO, cor: '#8cc63f', marcaPublicada: true })
+    render(<CartaoSuaMarca aoAbrir={() => undefined} />)
+    expect(screen.getByText('O link usa a cor do MetaNutri: esta tem pouco contraste.')).toBeInTheDocument()
+    // O cartão continua dizendo qual é a cor salva.
+    expect(screen.getByText('#8CC63F')).toBeInTheDocument()
+  })
+
+  it('CB-966: sem cor própria não há aviso', () => {
+    render(<CartaoSuaMarca aoAbrir={() => undefined} />)
+    expect(screen.queryByText(/O link usa a cor do MetaNutri/)).not.toBeInTheDocument()
   })
 })
 
