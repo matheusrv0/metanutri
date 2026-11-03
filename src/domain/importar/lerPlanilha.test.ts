@@ -19,6 +19,12 @@ function arquivo(nome: string, bytes: Uint8Array, tamanho = bytes.length): Arqui
 
 const csv = (linhas: readonly string[]) => emUtf8(`${linhas.join('\r\n')}\r\n`)
 const pacientes = (n: number) => ['Nome;Sexo', ...Array.from({ length: n }, (_, i) => `Paciente ${i};F`)]
+/** Um relógio de teste que anda `passo` ms a cada leitura: o leitor acha que cada fatia já passou do tempo. */
+const relogio = (passo: number) => {
+  let agora = 0
+  return () => (agora += passo)
+}
+
 const recusa = (resultado: ResultadoDaLeitura) => (resultado.tipo === 'recusada' ? textoDaRecusa(resultado.recusa) : resultado.tipo)
 
 describe('CA-1909: o que não é CSV nem XLSX é recusado, e nada mais acontece', () => {
@@ -57,13 +63,14 @@ describe('CA-1910: limites de tamanho e de linhas', () => {
   it('a leitura para no limite: 20 mil linhas não são lidas inteiras', async () => {
     let vezes = 0
     const resultado = await lerPlanilha(arquivo('a.csv', csv(pacientes(20_000))), {
+      relogio: relogio(13),
       darAVez: async () => {
         vezes += 1
       },
     })
     expect(recusa(resultado)).toBe('A planilha tem mais de 2.000 linhas. Divida em arquivos menores.')
-    // A vez é dada a cada 500 registros: chegar ao fim seria 40 vezes.
-    expect(vezes).toBeLessThanOrEqual(5)
+    // Com o relógio sempre além da fatia, a vez é dada a cada 32 registros: chegar ao fim seria 625 vezes.
+    expect(vezes).toBeLessThanOrEqual(70)
   })
 
   it('DP-IP-11: no XLSX, a primeira aba acima do limite é recusada; outra aba acima do limite fica marcada', async () => {
@@ -124,10 +131,27 @@ describe('CB-910: arquivo renomeado', () => {
 })
 
 describe('CB-911: arquivo grande lido em partes, com "Cancelar"', () => {
+  it('DP-IP-32: a vez é dada por fatia de 12 ms de leitura, não por número de registros', async () => {
+    const contar = async (passo: number) => {
+      let vezes = 0
+      await lerPlanilha(arquivo('a.csv', csv(pacientes(1500))), {
+        relogio: relogio(passo),
+        darAVez: async () => {
+          vezes += 1
+        },
+      })
+      return vezes
+    }
+    // Leitura rápida (o relógio parado) não para; leitura lenta (cada olhada no relógio passa da fatia) para sempre.
+    expect(await contar(0)).toBe(0)
+    expect(await contar(13)).toBeGreaterThan(10)
+  })
+
   it('o cancelamento no meio da leitura do CSV devolve "cancelada" e nada mais', async () => {
     const controle = new AbortController()
     const resultado = await lerPlanilha(arquivo('a.csv', csv(pacientes(1500))), {
       sinal: controle.signal,
+      relogio: relogio(13),
       darAVez: async () => controle.abort(),
     })
     expect(resultado.tipo).toBe('cancelada')
@@ -138,6 +162,7 @@ describe('CB-911: arquivo grande lido em partes, com "Cancelar"', () => {
     const linhas = [['Nome'], ...Array.from({ length: 1500 }, (_, i) => [`P ${i}`])]
     const resultado = await lerPlanilha(arquivo('a.xlsx', await montarXlsx({ abas: [{ nome: 'A', linhas }] })), {
       sinal: controle.signal,
+      relogio: relogio(13),
       darAVez: async () => controle.abort(),
     })
     expect(resultado.tipo).toBe('cancelada')

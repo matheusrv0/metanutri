@@ -19,8 +19,8 @@ export interface OpcoesDeLeitura {
   /** Quantas linhas com texto juntar, no máximo, de cada aba. */
   readonly limiteDeLinhas: number
   readonly sinal?: AbortSignal | undefined
-  /** Dá a vez ao navegador entre as partes (CB-911). */
-  readonly darAVez?: (() => Promise<void>) | undefined
+  /** Chamada a cada linha: dá a vez ao navegador por fatia de tempo e para no "Cancelar" (CB-911, `pausas.ts`). */
+  readonly pausar?: (() => Promise<void>) | undefined
 }
 
 const RELACAO_DOCUMENTO = /\/officeDocument$/
@@ -186,7 +186,7 @@ function valorCru(celula: Element, contexto: Contexto): string {
 }
 
 /** As abas visíveis do XLSX, na ordem do arquivo; se todas forem ocultas, todas. Lança quando o arquivo não é XLSX. */
-export async function lerXlsx(bytes: Uint8Array, { limiteDeLinhas, sinal, darAVez }: OpcoesDeLeitura): Promise<AbaLida[]> {
+export async function lerXlsx(bytes: Uint8Array, { limiteDeLinhas, sinal, pausar }: OpcoesDeLeitura): Promise<AbaLida[]> {
   const zip = await abrirZip(bytes)
   const raiz = await relacoesDe(zip, '')
   const caminhoDoLivro = [...raiz.values()].find((r) => RELACAO_DOCUMENTO.test(r.tipo))?.caminho ?? 'xl/workbook.xml'
@@ -219,13 +219,8 @@ export async function lerXlsx(bytes: Uint8Array, { limiteDeLinhas, sinal, darAVe
     let comTexto = 0
     let cortada = false
     let anterior = 0
-    let lidas = 0
     for (const linha of todos(documento, 'row')) {
-      lidas += 1
-      if (lidas % 250 === 0) {
-        if (sinal?.aborted) throw new DOMException('Leitura cancelada.', 'AbortError')
-        await darAVez?.()
-      }
+      await pausar?.()
       // D-921 e CB-925: as marcas e as correções são guardadas pelo número; o que não avança vira o seguinte.
       const declarado = Number(linha.getAttribute('r'))
       const numero = Number.isInteger(declarado) && declarado > anterior ? declarado : anterior + 1

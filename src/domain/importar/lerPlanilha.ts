@@ -4,6 +4,7 @@
 import { analisarAba, LIMITE_DE_LINHAS, type AnaliseDaAba } from './colunas.ts'
 import { decodificar, detectarSeparador, lerRegistros, registroComTexto, type Registro, type Separador } from './lerTexto.ts'
 import { lerXlsx } from './lerXlsx.ts'
+import { criarPausa } from './pausas.ts'
 import type { Recusa } from './textos.ts'
 
 /** DP-IP-4: 5 MB, como o comprovante de matrícula. */
@@ -14,9 +15,6 @@ export const LIMITE_DE_BYTES = 5 * 1024 * 1024
  * disso, passou do limite qualquer que seja o cabeçalho (CA-1910: nada é lido além do necessário para contar).
  */
 const LINHAS_A_JUNTAR = LIMITE_DE_LINHAS + 11
-
-/** O CSV dá a vez ao navegador a cada tantos registros (DP-IP-32). O XLSX, a cada 250 linhas (`lerXlsx`). */
-const REGISTROS_POR_VEZ = 500
 
 /** O arquivo, sem depender do `File` do navegador: a tela passa o `File`, o teste passa bytes. */
 export interface ArquivoParaLer {
@@ -44,9 +42,9 @@ export type ResultadoDaLeitura = { readonly tipo: 'lida'; readonly planilha: Pla
 export interface OpcoesDaLeitura {
   readonly sinal?: AbortSignal | undefined
   readonly darAVez?: (() => Promise<void>) | undefined
+  /** O relógio da fatia de leitura (DP-IP-32), em milissegundos; o teste passa um que anda como quer. */
+  readonly relogio?: (() => number) | undefined
 }
-
-const darAVezAoNavegador = (): Promise<void> => new Promise((resolver) => setTimeout(resolver, 0))
 
 const extensao = (nome: string): string => {
   const ponto = nome.lastIndexOf('.')
@@ -68,7 +66,7 @@ function pareceBinario(texto: string): boolean {
   return controles > Math.max(8, amostra.length / 20)
 }
 
-async function lerCsv(bytes: Uint8Array, tsv: boolean, sinal: AbortSignal | undefined, darAVez: () => Promise<void>): Promise<{ separador: Separador; registros: Registro[]; cortada: boolean } | null> {
+async function lerCsv(bytes: Uint8Array, tsv: boolean, pausar: () => Promise<void>): Promise<{ separador: Separador; registros: Registro[]; cortada: boolean } | null> {
   // Um zip (o XLSX chamado de .csv) começa com "PK".
   if (bytes[0] === 0x50 && bytes[1] === 0x4b && bytes[2] === 0x03 && bytes[3] === 0x04) return null
   const { texto } = decodificar(bytes)
@@ -76,13 +74,8 @@ async function lerCsv(bytes: Uint8Array, tsv: boolean, sinal: AbortSignal | unde
   const separador: Separador = tsv ? '\t' : detectarSeparador(texto)
   const registros: Registro[] = []
   let cortada = false
-  let lidos = 0
   for (const registro of lerRegistros(texto, separador)) {
-    lidos += 1
-    if (lidos % REGISTROS_POR_VEZ === 0) {
-      await darAVez()
-      if (sinal?.aborted) throw new DOMException('Leitura cancelada.', 'AbortError')
-    }
+    await pausar()
     if (!registroComTexto(registro.celulas)) continue
     if (registros.length === LINHAS_A_JUNTAR) {
       cortada = true
@@ -94,7 +87,7 @@ async function lerCsv(bytes: Uint8Array, tsv: boolean, sinal: AbortSignal | unde
 }
 
 /** Lê o arquivo. Nunca lança: o que dá errado vira recusa; o "Cancelar", `cancelada`. */
-export async function lerPlanilha(arquivo: ArquivoParaLer, { sinal, darAVez = darAVezAoNavegador }: OpcoesDaLeitura = {}): Promise<ResultadoDaLeitura> {
+export async function lerPlanilha(arquivo: ArquivoParaLer, { sinal, darAVez, relogio }: OpcoesDaLeitura = {}): Promise<ResultadoDaLeitura> {
   const tipo = extensao(arquivo.nome)
   if (tipo === 'xls' || tipo === 'ods' || tipo === 'numbers') return { tipo: 'recusada', recusa: { tipo } }
   if (!['csv', 'txt', 'tsv', 'xlsx'].includes(tipo)) return { tipo: 'recusada', recusa: { tipo: 'nao-e-planilha', nome: arquivo.nome } }
@@ -103,13 +96,14 @@ export async function lerPlanilha(arquivo: ArquivoParaLer, { sinal, darAVez = da
   try {
     const bytes = new Uint8Array(await arquivo.bytes())
     if (sinal?.aborted) return { tipo: 'cancelada' }
+    const pausar = criarPausa({ darAVez, sinal, relogio })
 
     let planilha: Omit<PlanilhaLida, 'abaInicial'>
     if (tipo === 'xlsx') {
-      const abas = await lerXlsx(bytes, { limiteDeLinhas: LINHAS_A_JUNTAR, sinal, darAVez })
+      const abas = await lerXlsx(bytes, { limiteDeLinhas: LINHAS_A_JUNTAR, sinal, pausar })
       planilha = { tipo: 'xlsx', separador: ';', abas: abas.map((aba) => ({ nome: aba.nome, analise: analisarAba(aba.registros, aba.cortada) })) }
     } else {
-      const csv = await lerCsv(bytes, tipo === 'tsv', sinal, darAVez)
+      const csv = await lerCsv(bytes, tipo === 'tsv', pausar)
       if (csv === null) return { tipo: 'recusada', recusa: { tipo: 'ilegivel' } }
       planilha = { tipo: 'csv', separador: csv.separador, abas: [{ nome: arquivo.nome, analise: analisarAba(csv.registros, csv.cortada) }] }
     }
