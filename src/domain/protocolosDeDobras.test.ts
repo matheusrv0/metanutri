@@ -1,0 +1,436 @@
+import { DOBRAS_VAZIAS, calcularComposicao } from './composicao.ts'
+import { naPrecisao } from './linhaDoResultado.ts'
+import {
+  PROTOCOLOS_DE_DOBRAS,
+  aplicacaoDoProtocolo,
+  brozek,
+  calcularProtocolo,
+  converterDensidade,
+  lohman,
+  siri,
+  type IdProtocolo,
+  type PacienteDoProtocolo,
+  type ResultadoDoProtocolo,
+} from './protocolosDeDobras.ts'
+import type { ComposicaoCorporal, Sexo } from './tipos.ts'
+
+type Dobras = ComposicaoCorporal['dobras']
+const dobras = (parcial: Partial<Dobras>): Dobras => ({ ...DOBRAS_VAZIAS, ...parcial })
+const paciente = (sexo: Sexo, idadeAnos: number, extra: Partial<PacienteDoProtocolo> = {}): PacienteDoProtocolo => ({
+  sexo,
+  idadeAnos,
+  pesoKg: null,
+  estaturaCm: null,
+  gestante: false,
+  ...extra,
+})
+
+/** O resultado que calculou; falha o teste se não calculou. */
+function calculado(r: ResultadoDoProtocolo) {
+  if (!r.calculou) throw new Error(`não calculou: ${r.motivo}`)
+  return r
+}
+
+describe('catálogo (spec antropometria-completa, CA-2010)', () => {
+  it('CA-2010: os 8 protocolos do lançamento, nesta ordem, com os metadados por sexo', () => {
+    expect(PROTOCOLOS_DE_DOBRAS.map((p) => p.id)).toEqual([
+      'jackson-pollock-3',
+      'jackson-pollock-7',
+      'durnin-womersley',
+      'petroski',
+      'guedes',
+      'faulkner-4',
+      'slaughter-triceps-subescapular',
+      'slaughter-triceps-panturrilha',
+    ])
+    for (const p of PROTOCOLOS_DE_DOBRAS) {
+      for (const sexo of ['M', 'F'] as const) {
+        const v = p.porSexo[sexo]
+        expect.soft(v.dobras.length, `${p.id} ${sexo}`).toBeGreaterThan(0)
+        expect.soft(v.populacao.length, `${p.id} ${sexo}`).toBeGreaterThan(5)
+        expect.soft(v.fonte.citacao.length, `${p.id} ${sexo}`).toBeGreaterThan(20)
+      }
+    }
+  })
+
+  it('CA-2010: as dobras exigidas são as da tabela da seção 4 da spec', () => {
+    const exigidas = (id: IdProtocolo, sexo: Sexo) => PROTOCOLOS_DE_DOBRAS.find((p) => p.id === id)?.porSexo[sexo].dobras
+    expect(exigidas('jackson-pollock-3', 'M')).toEqual(['peitoral', 'abdominal', 'coxa'])
+    expect(exigidas('jackson-pollock-3', 'F')).toEqual(['tricipital', 'suprailiaca', 'coxa'])
+    const sete = ['peitoral', 'axilarMedia', 'tricipital', 'subescapular', 'abdominal', 'suprailiaca', 'coxa']
+    expect(exigidas('jackson-pollock-7', 'M')).toEqual(sete)
+    expect(exigidas('jackson-pollock-7', 'F')).toEqual(sete)
+    expect(exigidas('durnin-womersley', 'F')).toEqual(['bicipital', 'tricipital', 'subescapular', 'suprailiaca'])
+    expect(exigidas('petroski', 'M')).toEqual(['subescapular', 'tricipital', 'suprailiaca', 'panturrilhaMedial'])
+    expect(exigidas('petroski', 'F')).toEqual(['subescapular', 'suprailiaca', 'coxa'])
+    expect(exigidas('guedes', 'M')).toEqual(['tricipital', 'suprailiaca', 'abdominal'])
+    expect(exigidas('guedes', 'F')).toEqual(['subescapular', 'suprailiaca', 'coxa'])
+    expect(exigidas('faulkner-4', 'M')).toEqual(['tricipital', 'subescapular', 'suprailiaca', 'abdominal'])
+    expect(exigidas('slaughter-triceps-subescapular', 'M')).toEqual(['tricipital', 'subescapular'])
+    expect(exigidas('slaughter-triceps-panturrilha', 'F')).toEqual(['tricipital', 'panturrilhaMedial'])
+  })
+
+  it('D-1008: a forma da equação é um dado do protocolo (log10 em Durnin & Womersley e Guedes)', () => {
+    const forma = (id: IdProtocolo) => PROTOCOLOS_DE_DOBRAS.find((p) => p.id === id)?.porSexo.M.forma
+    expect(forma('jackson-pollock-7')).toBe('quadratica')
+    expect(forma('durnin-womersley')).toBe('log10')
+    expect(forma('guedes')).toBe('log10')
+    expect(forma('faulkner-4')).toBe('linear')
+  })
+})
+
+describe('se o protocolo se aplica (spec antropometria-completa, CA-2011)', () => {
+  it('CA-2011: diz as dobras que faltam, na ordem do protocolo, e se vale pelo sexo e pela idade', () => {
+    const a = aplicacaoDoProtocolo('jackson-pollock-3', paciente('M', 30), dobras({ peitoral: 7, abdominal: 25 }))
+    expect(a.dobrasExigidas).toEqual(['peitoral', 'abdominal', 'coxa'])
+    expect(a.dobrasQueFaltam).toEqual(['coxa'])
+    expect(a.entradasQueFaltam).toEqual([])
+    expect(a.aplicaPeloSexo).toBe(true)
+    expect(a.aplicaPelaIdade).toBe(true)
+    expect(aplicacaoDoProtocolo('jackson-pollock-3', paciente('M', 65), dobras({})).aplicaPelaIdade).toBe(false)
+  })
+
+  it('CA-2011 e CB-1000: dobra 0 ou negativa conta como faltando', () => {
+    const a = aplicacaoDoProtocolo('jackson-pollock-3', paciente('F', 30), dobras({ tricipital: 0, suprailiaca: -2, coxa: 20 }))
+    expect(a.dobrasQueFaltam).toEqual(['tricipital', 'suprailiaca'])
+  })
+
+  it('CB-1001: sem sexo ou sem idade, não dá para dizer', () => {
+    const semSexo = aplicacaoDoProtocolo('jackson-pollock-3', { ...paciente('M', 30), sexo: null }, dobras({}))
+    expect(semSexo.dobrasExigidas).toEqual([])
+    expect(semSexo.aplicaPeloSexo).toBeNull()
+    expect(semSexo.entradasQueFaltam).toContain('sexo')
+    const semIdade = aplicacaoDoProtocolo('jackson-pollock-3', { ...paciente('M', 30), idadeAnos: null }, dobras({}))
+    expect(semIdade.aplicaPelaIdade).toBeNull()
+    expect(semIdade.entradasQueFaltam).toEqual(['idade'])
+  })
+
+  it('CA-2017: Petroski na mulher pede peso e estatura', () => {
+    const a = aplicacaoDoProtocolo('petroski', paciente('F', 30, { pesoKg: 60 }), dobras({ subescapular: 15, suprailiaca: 15, coxa: 25 }))
+    expect(a.entradasQueFaltam).toEqual(['estatura'])
+  })
+})
+
+describe('Jackson & Pollock (spec antropometria-completa, CA-2012 a CA-2015)', () => {
+  // Pesquisa 2.2.1 e 2.2.2: conferido no original (JP78) e em fontes secundárias independentes (JPW80).
+  it('CA-2012: JP 7 dobras, homem de 30 anos, Σ7 = 120 mm → D 1,05907 e 17,39%', () => {
+    const r = calculado(
+      calcularProtocolo('jackson-pollock-7', paciente('M', 30), dobras({ peitoral: 15, axilarMedia: 15, tricipital: 15, subescapular: 20, abdominal: 25, suprailiaca: 15, coxa: 15 })),
+    )
+    expect(r.somaMm).toBe(120)
+    expect(r.densidade).toBeCloseTo(1.05907, 5)
+    expect(r.gorduraPct).toBeCloseTo(17.39, 2)
+    expect(r.conversao).toBe('siri')
+  })
+
+  it('CA-2013: JP 3 dobras, homem de 30 anos, Σ3 = 60 mm → D 1,05782 e 17,95%', () => {
+    const r = calculado(calcularProtocolo('jackson-pollock-3', paciente('M', 30), dobras({ peitoral: 15, abdominal: 25, coxa: 20 })))
+    expect(r.densidade).toBeCloseTo(1.05782, 5)
+    expect(r.gorduraPct).toBeCloseTo(17.95, 2)
+  })
+
+  it('CA-2014: JP 7 dobras, mulher de 30 anos, Σ7 = 140 mm → D 1,03837 e 26,71%', () => {
+    const r = calculado(
+      calcularProtocolo('jackson-pollock-7', paciente('F', 30), dobras({ peitoral: 10, axilarMedia: 15, tricipital: 25, subescapular: 20, abdominal: 30, suprailiaca: 20, coxa: 20 })),
+    )
+    expect(r.densidade).toBeCloseTo(1.03837, 5)
+    expect(r.gorduraPct).toBeCloseTo(26.71, 2)
+  })
+
+  it('CA-2015: JP 3 dobras, mulher de 30 anos, Σ3 = 70 mm → D 1,03708 e 27,30%', () => {
+    const r = calculado(calcularProtocolo('jackson-pollock-3', paciente('F', 30), dobras({ tricipital: 25, suprailiaca: 20, coxa: 25 })))
+    expect(r.densidade).toBeCloseTo(1.03708, 5)
+    expect(r.gorduraPct).toBeCloseTo(27.3, 2)
+  })
+
+  it('CA-2015: os dois ids de hoje dão o mesmo número de calcularComposicao', () => {
+    const casos = [
+      { protocolo: 'jackson-pollock-3', sexo: 'M', idade: 41, d: dobras({ peitoral: 12, abdominal: 28, coxa: 17 }) },
+      { protocolo: 'jackson-pollock-3', sexo: 'F', idade: 29, d: dobras({ tricipital: 21, suprailiaca: 18, coxa: 30 }) },
+      { protocolo: 'faulkner-4', sexo: 'F', idade: 35, d: dobras({ tricipital: 10, subescapular: 12, suprailiaca: 14, abdominal: 16 }) },
+    ] as const
+    for (const c of casos) {
+      const antigo = calcularComposicao({ protocolo: c.protocolo, sexo: c.sexo, idadeAnos: c.idade, pesoKg: 70, dobras: c.d })
+      const novo = calculado(calcularProtocolo(c.protocolo, paciente(c.sexo, c.idade, { pesoKg: 70 }), c.d))
+      expect(naPrecisao(novo.gorduraPct, 1)).toBe(antigo.gorduraPct)
+    }
+  })
+})
+
+describe('Durnin & Womersley 1974 (spec antropometria-completa, CA-2016)', () => {
+  // Grade da pesquisa (2.2.4), saída do script exemplos_protocolos.py: sexo, faixa, Σ4, D, %G (Siri).
+  const GRADE = `H,17-19,40,1.06107,16.51
+H,17-19,50,1.05496,19.21
+H,20-29,40,1.06185,16.17
+H,20-29,50,1.05573,18.87
+H,30-39,40,1.05505,19.17
+H,30-39,50,1.04978,21.53
+H,40-49,40,1.04986,21.49
+H,40-49,50,1.04307,24.56
+H,50+,40,1.04670,22.92
+H,50+,50,1.03915,26.35
+H,17-72,40,1.05731,18.17
+H,17-72,50,1.05010,21.39
+M,16-19,40,1.04628,23.10
+M,16-19,50,1.03971,26.09
+M,20-29,40,1.04503,23.67
+M,20-29,50,1.03808,26.84
+M,30-39,40,1.04105,25.48
+M,30-39,50,1.03493,28.30
+M,40-49,40,1.03525,28.14
+M,40-49,50,1.02932,30.90
+M,50+,40,1.03057,30.32
+M,50+,50,1.02432,33.25
+M,16-68,40,1.04183,25.12
+M,16-68,50,1.03488,28.31`
+  // Uma idade dentro de cada faixa (a "todas as idades" é pedida pela opção).
+  const IDADE: Readonly<Record<string, number>> = { '17-19': 18, '16-19': 18, '20-29': 25, '30-39': 35, '40-49': 45, '50+': 60, '17-72': 35, '16-68': 35 }
+
+  it.each(GRADE.split('\n').map((l) => l.split(',')))('CA-2016: %s %s com Σ4 = %s mm → D %s e %s%%', (sx, faixa, soma, d, pct) => {
+    const sexo: Sexo = sx === 'H' ? 'M' : 'F'
+    const todas = faixa === '17-72' || faixa === '16-68'
+    const s = Number(soma) / 4
+    const r = calculado(
+      calcularProtocolo('durnin-womersley', paciente(sexo, IDADE[faixa ?? ''] ?? 0), dobras({ bicipital: s, tricipital: s, subescapular: s, suprailiaca: s }), {
+        // A grade da pesquisa converte por Siri em toda faixa, inclusive 16–19.
+        conversao: 'siri',
+        durninTodasAsIdades: todas,
+      }),
+    )
+    expect(r.densidade).toBeCloseTo(Number(d), 5)
+    expect(r.gorduraPct).toBeCloseTo(Number(pct), 2)
+  })
+
+  it('CA-2016: os valores da Tabela 9 do original saem a ± 0,2 ponto', () => {
+    const dw = (sexo: Sexo, idade: number, soma: number) =>
+      calculado(
+        calcularProtocolo('durnin-womersley', paciente(sexo, idade), dobras({ bicipital: soma / 4, tricipital: soma / 4, subescapular: soma / 4, suprailiaca: soma / 4 })),
+      ).gorduraPct
+    expect(Math.abs(dw('M', 35, 40) - 19.2)).toBeLessThanOrEqual(0.2)
+    expect(Math.abs(dw('M', 45, 40) - 21.4)).toBeLessThanOrEqual(0.2)
+    expect(Math.abs(dw('F', 35, 50) - 28.2)).toBeLessThanOrEqual(0.2)
+    expect(Math.abs(dw('F', 45, 50) - 31.0)).toBeLessThanOrEqual(0.2)
+  })
+
+  it('CA-2016 e D-1011: a primeira faixa feminina é 16–19; abaixo da primeira faixa vale a "todas as idades", com aviso', () => {
+    const quatro = dobras({ bicipital: 10, tricipital: 10, subescapular: 10, suprailiaca: 10 })
+    const menina = calculado(calcularProtocolo('durnin-womersley', paciente('F', 16), quatro, { conversao: 'siri' }))
+    expect(menina.densidade).toBeCloseTo(1.04628, 5)
+    expect(menina.avisos.join(' ')).not.toMatch(/fora da população/i)
+    const menino = calculado(calcularProtocolo('durnin-womersley', paciente('M', 16), quatro, { conversao: 'siri' }))
+    expect(menino.densidade).toBeCloseTo(1.05731, 5)
+    expect(menino.avisos.join(' ')).toMatch(/fora da população de origem/i)
+  })
+
+  it('D-8 da pesquisa (2.4.1): log10, não ln — com ln a densidade sairia outra', () => {
+    const r = calculado(calcularProtocolo('durnin-womersley', paciente('M', 35), dobras({ bicipital: 10, tricipital: 10, subescapular: 10, suprailiaca: 10 }), { conversao: 'siri' }))
+    expect(r.densidade).toBeCloseTo(1.1422 - 0.0544 * Math.log10(40), 10)
+    expect(r.densidade).not.toBeCloseTo(1.1422 - 0.0544 * Math.log(40), 3)
+  })
+})
+
+describe('Petroski 1995 (spec antropometria-completa, CA-2017)', () => {
+  it('CA-2017: homem de 30 anos, SE+TR+SI+PM = 60 mm → D 1,05365 e 19,79%', () => {
+    const r = calculado(calcularProtocolo('petroski', paciente('M', 30), dobras({ subescapular: 15, tricipital: 15, suprailiaca: 15, panturrilhaMedial: 15 })))
+    expect(r.densidade).toBeCloseTo(1.05365, 5)
+    expect(r.gorduraPct).toBeCloseTo(19.79, 2)
+  })
+
+  it('CA-2017: mulher de 30 anos, 60 kg, 165 cm, SE+SI+CX = 55 mm → D 1,04554 e 23,44%', () => {
+    const r = calculado(calcularProtocolo('petroski', paciente('F', 30, { pesoKg: 60, estaturaCm: 165 }), dobras({ subescapular: 15, suprailiaca: 15, coxa: 25 })))
+    expect(r.densidade).toBeCloseTo(1.04554, 5)
+    expect(r.gorduraPct).toBeCloseTo(23.44, 2)
+  })
+
+  it('CA-2017: sem o peso ou a estatura, a mulher não calcula e diz qual falta', () => {
+    const r = calcularProtocolo('petroski', paciente('F', 30, { pesoKg: 60 }), dobras({ subescapular: 15, suprailiaca: 15, coxa: 25 }))
+    expect(r.calculou).toBe(false)
+    if (!r.calculou) expect(r.motivo).toMatch(/estatura/)
+  })
+})
+
+describe('Guedes 1985 (spec antropometria-completa, CA-2018)', () => {
+  it('CA-2018: homem TR+SI+AB = 50 mm → D 1,05743 e 18,12%; mulher SE+SI+CX = 60 mm → D 1,04091 e 25,55%', () => {
+    const h = calculado(calcularProtocolo('guedes', paciente('M', 22), dobras({ tricipital: 15, suprailiaca: 15, abdominal: 20 })))
+    expect(h.densidade).toBeCloseTo(1.05743, 5)
+    expect(h.gorduraPct).toBeCloseTo(18.12, 2)
+    const m = calculado(calcularProtocolo('guedes', paciente('F', 22), dobras({ subescapular: 15, suprailiaca: 15, coxa: 30 })))
+    expect(m.densidade).toBeCloseTo(1.04091, 5)
+    expect(m.gorduraPct).toBeCloseTo(25.55, 2)
+  })
+
+  it('CA-2018 e D-1013: os coeficientes de 5 casas arredondados a 4 casas são os da versão [V2]', () => {
+    // 1,17136 − 0,06706 · log10 Σ (H) e 1,16650 − 0,07063 · log10 Σ (M): as de 4 casas são 1,1714/0,0671 e 1,1665/0,0706.
+    // A densidade é c − m · log10(Σ): dois pontos (Σ = 20 e 100 mm) dão c e m.
+    const h = calculado(calcularProtocolo('guedes', paciente('M', 22), dobras({ tricipital: 10, suprailiaca: 5, abdominal: 5 }), { conversao: 'siri' }))
+    const h2 = calculado(calcularProtocolo('guedes', paciente('M', 22), dobras({ tricipital: 50, suprailiaca: 25, abdominal: 25 }), { conversao: 'siri' }))
+    const m = ((h.densidade ?? 0) - (h2.densidade ?? 0)) / (Math.log10(100) - Math.log10(20))
+    const c = (h.densidade ?? 0) + m * Math.log10(20)
+    expect(naPrecisao(c, 4)).toBe(1.1714)
+    expect(naPrecisao(m, 4)).toBe(0.0671)
+    const f = calculado(calcularProtocolo('guedes', paciente('F', 22), dobras({ subescapular: 10, suprailiaca: 5, coxa: 5 }), { conversao: 'siri' }))
+    const f2 = calculado(calcularProtocolo('guedes', paciente('F', 22), dobras({ subescapular: 50, suprailiaca: 25, coxa: 25 }), { conversao: 'siri' }))
+    const mf = ((f.densidade ?? 0) - (f2.densidade ?? 0)) / (Math.log10(100) - Math.log10(20))
+    expect(naPrecisao((f.densidade ?? 0) + mf * Math.log10(20), 4)).toBe(1.1665)
+    expect(naPrecisao(mf, 4)).toBe(0.0706)
+  })
+})
+
+describe('Faulkner (Yuhasz) (spec antropometria-completa, CA-2019)', () => {
+  it('CA-2019: Σ4 = 52 mm → 13,739% (o gabarito publicado), sem conversão, com o aviso da amostra', () => {
+    const r = calculado(calcularProtocolo('faulkner-4', paciente('M', 24), dobras({ tricipital: 10, subescapular: 12, suprailiaca: 14, abdominal: 16 })))
+    expect(r.gorduraPct).toBeCloseTo(13.739, 3)
+    expect(r.densidade).toBeNull()
+    expect(r.conversao).toBeNull()
+    expect(r.avisos.join(' ')).toMatch(/amostra de origem desconhecida/i)
+  })
+})
+
+describe('Slaughter 1988 (spec antropometria-completa, CA-2020 e CA-2021)', () => {
+  const trse = (soma: number) => dobras({ tricipital: soma / 2, subescapular: soma / 2 })
+
+  it('CA-2020: meninos com soma até 35 mm pela maturação e pelo grupo do estudo', () => {
+    const pubere = calculado(calcularProtocolo('slaughter-triceps-subescapular', paciente('M', 13), trse(18), { maturacao: 'pubere', grupo: 'branco' }))
+    expect(pubere.gorduraPct).toBeCloseTo(15.79, 2)
+    const pos = calculado(calcularProtocolo('slaughter-triceps-subescapular', paciente('M', 16), trse(18), { maturacao: 'pos-pubere', grupo: 'branco' }))
+    expect(pos.gorduraPct).toBeCloseTo(13.69, 2)
+  })
+
+  it('CA-2020: menina com 30 mm → 25,70% (o bodycomp, sem o quadrado, dá 37,0%)', () => {
+    const r = calculado(calcularProtocolo('slaughter-triceps-subescapular', paciente('F', 12), trse(30)))
+    expect(r.gorduraPct).toBeCloseTo(25.7, 2)
+  })
+
+  it('CA-2020: acima de 35 mm, a linear; com 35 mm exatos, a quadrática (D-1012)', () => {
+    expect(calculado(calcularProtocolo('slaughter-triceps-subescapular', paciente('M', 12), trse(40))).gorduraPct).toBeCloseTo(32.92, 2)
+    expect(calculado(calcularProtocolo('slaughter-triceps-subescapular', paciente('F', 12), trse(40))).gorduraPct).toBeCloseTo(31.54, 2)
+    const menino35 = calculado(calcularProtocolo('slaughter-triceps-subescapular', paciente('M', 16), trse(35), { maturacao: 'pos-pubere', grupo: 'branco' }))
+    expect(menino35.gorduraPct).toBeCloseTo(27.05, 2)
+    expect(calculado(calcularProtocolo('slaughter-triceps-subescapular', paciente('F', 12), trse(35))).gorduraPct).toBeCloseTo(28.13, 2)
+  })
+
+  it('CA-2020: menino com soma até 35 mm sem maturação ou sem grupo não calcula e diz o que falta', () => {
+    const r = calcularProtocolo('slaughter-triceps-subescapular', paciente('M', 13), trse(18), { maturacao: 'pubere' })
+    expect(r.calculou).toBe(false)
+    if (!r.calculou) {
+      expect(r.motivo).toMatch(/grupo/)
+      expect(r.aplicacao?.entradasQueFaltam).toEqual(['grupo'])
+    }
+    const semNada = aplicacaoDoProtocolo('slaughter-triceps-subescapular', paciente('M', 13), trse(18))
+    expect(semNada.entradasQueFaltam).toEqual(['maturacao', 'grupo'])
+  })
+
+  it('CA-2021: tríceps + panturrilha medial de 25 mm → menino 19,38% e menina 20,35%', () => {
+    const tp = dobras({ tricipital: 12.5, panturrilhaMedial: 12.5 })
+    expect(calculado(calcularProtocolo('slaughter-triceps-panturrilha', paciente('M', 10), tp)).gorduraPct).toBeCloseTo(19.38, 2)
+    expect(calculado(calcularProtocolo('slaughter-triceps-panturrilha', paciente('F', 10), tp)).gorduraPct).toBeCloseTo(20.35, 2)
+  })
+})
+
+describe('conversão da densidade (spec antropometria-completa, CA-2022 e CA-2023)', () => {
+  it('CA-2022: D = 1,0500 → Siri 21,43% e Brozek 21,04%', () => {
+    expect(siri(1.05)).toBeCloseTo(21.43, 2)
+    expect(brozek(1.05)).toBeCloseTo(21.04, 2)
+  })
+
+  it('CA-2022: as constantes de Lohman de 7 a 19 anos (pesquisa 2.3.2, D = 1,0500)', () => {
+    const LOHMAN = `M,7,15.38
+M,9,15.76
+M,11,17.1
+M,13,18.86
+M,15,20.05
+M,17,21.29
+F,7,14.14
+F,9,14.52
+F,11,16.0
+F,13,18.62
+F,15,18.86
+F,17,18.95`
+    for (const [sexo, idade, pct] of LOHMAN.split('\n').map((l) => l.split(','))) {
+      const s: Sexo = sexo === 'M' ? 'M' : 'F'
+      expect.soft(lohman(1.05, s, Number(idade)), `${sexo} ${idade}`).toBeCloseTo(Number(pct), 2)
+      // A outra idade da mesma faixa dá o mesmo.
+      expect.soft(lohman(1.05, s, Number(idade) + 1), `${sexo} ${Number(idade) + 1}`).toBeCloseTo(Number(pct), 2)
+    }
+    expect(lohman(1.05, 'M', 20)).toBeNull()
+    expect(lohman(1.05, 'F', 6)).toBeNull()
+  })
+
+  it('CA-2022 e D-1009: a automática usa Lohman de 7 a 19 anos e Siri de 20 em diante; Siri e Brozek escolhidos valem em qualquer idade', () => {
+    expect(converterDensidade(1.05, 'automatica', 'M', 17)).toEqual({ gorduraPct: lohman(1.05, 'M', 17), conversao: 'lohman' })
+    expect(converterDensidade(1.05, 'automatica', 'F', 20)).toEqual({ gorduraPct: siri(1.05), conversao: 'siri' })
+    expect(converterDensidade(1.05, 'automatica', 'F', 75)).toEqual({ gorduraPct: siri(1.05), conversao: 'siri' })
+    expect(converterDensidade(1.05, 'siri', 'M', 12)).toEqual({ gorduraPct: siri(1.05), conversao: 'siri' })
+    expect(converterDensidade(1.05, 'brozek', 'F', 30)).toEqual({ gorduraPct: brozek(1.05), conversao: 'brozek' })
+    expect(converterDensidade(1.05, 'automatica', 'M', 5)).toBeNull()
+  })
+
+  it('CA-2023: Faulkner e Slaughter já dão o %: escolher Brozek não muda nada', () => {
+    const quatro = dobras({ tricipital: 10, subescapular: 12, suprailiaca: 14, abdominal: 16 })
+    const f1 = calculado(calcularProtocolo('faulkner-4', paciente('M', 24), quatro))
+    const f2 = calculado(calcularProtocolo('faulkner-4', paciente('M', 24), quatro, { conversao: 'brozek' }))
+    expect(f2.gorduraPct).toBe(f1.gorduraPct)
+    const tp = dobras({ tricipital: 12.5, panturrilhaMedial: 12.5 })
+    expect(calculado(calcularProtocolo('slaughter-triceps-panturrilha', paciente('M', 10), tp, { conversao: 'brozek' })).gorduraPct).toBeCloseTo(19.38, 2)
+  })
+
+  it('JP 3 dobras num adolescente de 17 anos, na automática, converte por Lohman (e avisa que está fora da população)', () => {
+    const r = calculado(calcularProtocolo('jackson-pollock-3', paciente('M', 17), dobras({ peitoral: 15, abdominal: 25, coxa: 20 })))
+    expect(r.conversao).toBe('lohman')
+    expect(r.avisos.join(' ')).toMatch(/fora da população de origem/i)
+  })
+})
+
+describe('massas, soma e casos de borda (spec antropometria-completa, CA-2024 e CA-2025)', () => {
+  const tres = dobras({ peitoral: 15, abdominal: 25, coxa: 20 })
+
+  it('CA-2024: com o peso, massa gorda e massa magra; sem o peso, só o %', () => {
+    const com = calculado(calcularProtocolo('jackson-pollock-3', paciente('M', 30, { pesoKg: 80 }), tres))
+    expect(com.somaMm).toBe(60)
+    expect(com.massaGordaKg).toBeCloseTo((80 * com.gorduraPct) / 100, 10)
+    expect(com.massaMagraKg).toBeCloseTo(80 - (com.massaGordaKg ?? 0), 10)
+    const sem = calculado(calcularProtocolo('jackson-pollock-3', paciente('M', 30), tres))
+    expect(sem.massaGordaKg).toBeNull()
+    expect(sem.massaMagraKg).toBeNull()
+  })
+
+  it('CA-2025: fora da faixa de idade calcula e avisa, com a faixa', () => {
+    const r = calculado(calcularProtocolo('jackson-pollock-3', paciente('M', 65), tres))
+    expect(r.avisos.join(' ')).toMatch(/fora da população de origem.*18 a 61 anos/i)
+  })
+
+  it('CA-2025: resultado de 70% ou mais não sai, e o motivo pede para conferir', () => {
+    const r = calcularProtocolo('slaughter-triceps-subescapular', paciente('M', 12), dobras({ tricipital: 60, subescapular: 60 }))
+    expect(r.calculou).toBe(false)
+    if (!r.calculou) expect(r.motivo).toMatch(/fora do plausível/)
+  })
+
+  it('CA-2025 e CB-1002: na gestação, nenhum protocolo calcula', () => {
+    const r = calcularProtocolo('jackson-pollock-3', paciente('F', 30, { gestante: true }), dobras({ tricipital: 25, suprailiaca: 20, coxa: 25 }))
+    expect(r.calculou).toBe(false)
+    if (!r.calculou) expect(r.motivo).toMatch(/gestação/)
+  })
+
+  it('CB-1001: sem sexo, não calcula e diz que falta o sexo', () => {
+    const r = calcularProtocolo('jackson-pollock-3', { ...paciente('M', 30), sexo: null }, tres)
+    expect(r.calculou).toBe(false)
+    if (!r.calculou) expect(r.motivo).toMatch(/sexo/)
+  })
+
+  it('CB-1001: falta dobra → diz qual', () => {
+    const r = calcularProtocolo('jackson-pollock-3', paciente('M', 30), dobras({ peitoral: 7, abdominal: 25 }))
+    expect(r.calculou).toBe(false)
+    if (!r.calculou) expect(r.motivo).toBe('Faltam as dobras: coxa.')
+  })
+
+  it('CB-1009: protocolo desconhecido não lança', () => {
+    const r = calcularProtocolo('protocolo-do-futuro' as IdProtocolo, paciente('M', 30), tres)
+    expect(r.calculou).toBe(false)
+    if (!r.calculou) expect(r.motivo).toBe('Protocolo desconhecido.')
+  })
+
+  it('Jackson, Pollock e Ward: acima de 40 anos, a cautela dos autores', () => {
+    const r = calculado(calcularProtocolo('jackson-pollock-3', paciente('F', 45), dobras({ tricipital: 25, suprailiaca: 20, coxa: 25 })))
+    expect(r.avisos.join(' ')).toMatch(/cautela acima de 40 anos/i)
+  })
+})
