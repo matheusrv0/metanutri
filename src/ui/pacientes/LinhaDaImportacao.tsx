@@ -1,5 +1,5 @@
 import { FileSpreadsheet, Undo2 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { importacoesRecentes, pacientesQueSaem, rotuloDaImportacao, textoDoDesfeito } from '@/domain/importar/importacao.ts'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { useAcompanhamentosOpcional } from '../estado/contextoAcompanhamentos.ts'
@@ -20,6 +20,12 @@ export function LinhaDaImportacao({ agora }: LinhaDaImportacaoProps) {
   const { casos, repositorio: repoCasos } = useCasos()
   const acompanhamentos = useAcompanhamentosOpcional()?.acompanhamentos ?? null
   const [desfeita, setDesfeita] = useState<string | null>(null)
+  const frase = useRef<HTMLParagraphElement>(null)
+
+  // O botão some com a linha: o foco vai para a frase que diz o que aconteceu, e não para o começo da página.
+  useEffect(() => {
+    if (desfeita !== null) frase.current?.focus()
+  }, [desfeita])
   const recentes = importacoesRecentes(pacientes, casos, acompanhamentos ?? [], agora)
 
   const desfazer = (importacaoId: string) => {
@@ -34,7 +40,7 @@ export function LinhaDaImportacao({ agora }: LinhaDaImportacaoProps) {
   return (
     <div className="flex flex-col gap-3">
       {desfeita !== null ? (
-        <p role="status" className="rounded-2xl bg-card px-4 py-3 text-sm text-foreground sm:px-5">
+        <p ref={frase} tabIndex={-1} role="status" className="rounded-2xl bg-card px-4 py-3 text-sm text-foreground focus:outline-none sm:px-5">
           {desfeita}
         </p>
       ) : null}

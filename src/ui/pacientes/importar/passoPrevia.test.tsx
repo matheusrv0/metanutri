@@ -1,6 +1,6 @@
 // O passo Prévia (spec importar-pacientes, D-908, D-909): CA-1920, CA-1922, CA-1923, CA-1926 a CA-1932, CA-1946,
 // CA-1947, CB-901 e DP-IP-14.
-import { screen, within } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import { criarPacienteVazio } from '@/domain/pacientes.ts'
 import { abrirColunas, abrirPrevia, arquivo, CSV_DO_PROTOTIPO, montarTela as montarSo, NA_CONTA } from './montarTela.test-utils.tsx'
 
@@ -14,7 +14,7 @@ const linhaDe = (nome: string): HTMLElement => {
   return linha
 }
 const situacao = (nome: string) => within(linhaDe(nome)).getAllByRole('cell').at(-1)?.textContent
-const contas = () => screen.getByRole('status', { name: 'Contas da prévia' }).textContent
+const contas = () => screen.getByRole('group', { name: 'Contas da prévia' }).textContent
 
 describe('CA-1927: a prévia da planilha do protótipo', () => {
   it('"5 prontos para importar", "4 com problema", o número de cada linha e "Importar 5 pacientes"', async () => {
@@ -206,6 +206,18 @@ describe('CA-1947: leitor de tela', () => {
     await abrirPrevia(usuario)
     expect(screen.getByRole('checkbox', { name: 'Importar Bruno Carvalho Dias' })).toHaveAccessibleDescription('Sexo vazio')
     expect(screen.getByRole('checkbox', { name: 'Importar Juliana Ferreira Souza' })).toHaveAccessibleDescription('Pronto')
+  })
+
+  it('as contas são anunciadas só quando mudam, depois de uma pausa: não a cada tecla', async () => {
+    const { usuario } = montarTela()
+    await abrirPrevia(usuario)
+    const anuncio = screen.getByRole('status', { name: 'Anúncio das contas' })
+    expect(anuncio).toHaveTextContent('')
+    const campo = screen.getByRole('textbox', { name: 'Data de nascimento de Camila Rodrigues' })
+    await usuario.type(campo, '{Control>}a{/Control}28/02/1994')
+    // Enquanto se digita, nada é anunciado; a conta final vem uma vez, depois da pausa.
+    expect(anuncio).toHaveTextContent('')
+    await waitFor(() => expect(anuncio).toHaveTextContent('6 prontos para importar, 3 com problema.'), { timeout: 3000 })
   })
 
   it('o passo Prévia leva o foco ao título dele', async () => {

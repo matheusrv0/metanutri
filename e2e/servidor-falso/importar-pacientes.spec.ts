@@ -70,7 +70,7 @@ test('CA-1902, CA-1933 e CA-1945: do arquivo à conclusão; a planilha não sai 
   await escolher(page)
   await expect(page.getByText('9 linhas · 9 colunas · 7 reconhecidas')).toBeVisible()
   await page.getByRole('button', { name: 'Ver prévia' }).click()
-  await expect(page.getByRole('status', { name: 'Contas da prévia' })).toContainText('6 prontos para importar')
+  await expect(page.getByRole('group', { name: 'Contas da prévia' })).toContainText('6 prontos para importar')
 
   // CA-1945: até aqui, nenhum pedido levou nada da planilha, e nada dela foi para o armazenamento do navegador.
   const daPlanilha = ['Juliana', 'Camila', CPF, '68,4', 'Intolerância']
@@ -176,7 +176,7 @@ test('CB-911: 2.000 linhas são lidas sem travar a tela', async ({ page }) => {
   await escolher(page, 'duas-mil.csv', texto)
   expect(Date.now() - inicio).toBeLessThan(10_000)
   await page.getByRole('button', { name: 'Ver prévia' }).click()
-  await expect(page.getByRole('status', { name: 'Contas da prévia' })).toContainText('2.000 prontos para importar')
+  await expect(page.getByRole('group', { name: 'Contas da prévia' })).toContainText('2.000 prontos para importar')
   await expect(page.getByRole('table', { name: 'Linhas da planilha' }).getByRole('checkbox')).toHaveCount(50)
   // A tela responde: a caixa marca na hora, e o botão conta.
   await page.getByRole('checkbox', { name: 'Importar Paciente 0000' }).click()

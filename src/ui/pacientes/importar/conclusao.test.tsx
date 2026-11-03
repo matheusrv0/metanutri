@@ -131,7 +131,7 @@ describe('CA-1935: um paciente criado em outra aba entre a prévia e o clique', 
     expect(repoPacientes.listar().map((p) => p.nome).sort()).toEqual(['Fernanda Almeida Costa', 'Lucas Martins'])
     const lucas = screen.getByRole('checkbox', { name: 'Importar Lucas Martins' }).closest('[role="row"]') as HTMLElement
     expect(within(lucas).getAllByRole('cell').at(-1)?.textContent).toBe('Já está na conta')
-    expect(screen.getByRole('status', { name: 'Contas da prévia' })).toHaveTextContent('4 prontos para importar5 com problema')
+    expect(screen.getByRole('group', { name: 'Contas da prévia' })).toHaveTextContent('4 prontos para importar5 com problema')
     await usuario.click(screen.getByRole('button', { name: 'Importar 4 pacientes' }))
     expect(await screen.findByRole('heading', { level: 2, name: '4 pacientes importados' })).toBeInTheDocument()
   })

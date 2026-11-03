@@ -6,6 +6,7 @@ import { Card } from '@ds/componentes/display/card.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { CaixaDeMarcar } from '@ds/componentes/forms/CaixaDeMarcar.tsx'
 import { cn } from '@ds/lib/cn.ts'
+import { AnuncioDasContas } from './AnuncioDasContas.tsx'
 import type { AvisoDaPrevia } from './estadoDaImportacao.ts'
 import { GRADE_DA_PREVIA, LinhaDaPrevia } from './LinhaDaPrevia.tsx'
 
@@ -41,7 +42,8 @@ export function PassoPrevia({ previa, paginas, aviso, aoMarcar, aoMarcarTodas, a
         Prévia
       </h2>
 
-      <div role="status" aria-label="Contas da prévia" className="flex flex-wrap items-baseline gap-x-8 gap-y-2">
+      {/* As contas à vista; o anúncio delas é à parte, só quando mudam (CA-1947). */}
+      <div role="group" aria-label="Contas da prévia" className="flex flex-wrap items-baseline gap-x-8 gap-y-2">
         <p className="flex items-baseline gap-2">
           <strong className="numeros text-3xl font-bold tracking-tight text-successtext">{previa.prontos.toLocaleString('pt-BR')}</strong>{' '}
           <span className="text-sm text-foreground">{previa.prontos === 1 ? 'pronto para importar' : 'prontos para importar'}</span>
@@ -53,6 +55,8 @@ export function PassoPrevia({ previa, paginas, aviso, aoMarcar, aoMarcarTodas, a
           <span className="text-sm text-foreground">com problema</span>
         </p>
       </div>
+
+      <AnuncioDasContas prontos={previa.prontos} comProblema={previa.comProblema} />
 
       {aviso?.tipo === 'mudou' ? (
         <Alert variant="warning" role="alert">

@@ -36,6 +36,8 @@ describe('CA-1943: a linha das 24 horas em Pacientes', () => {
     expect(linha).toHaveTextContent('Importação de hoje, 14:32 · 5 pacientes')
     await userEvent.click(screen.getByRole('button', { name: 'Desfazer a importação de hoje, 14:32' }))
     expect(screen.getByRole('status')).toHaveTextContent('Importação desfeita.')
+    // O botão some com a linha: o foco vai para a frase que diz o que aconteceu.
+    expect(screen.getByRole('status')).toHaveFocus()
     expect(repo.listar()).toEqual([])
   })
 
