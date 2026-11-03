@@ -3,11 +3,14 @@ import { useEffect, useId, useMemo, useState } from 'react'
 import { diaLocal } from '@/domain/acompanhamento.ts'
 import { resumoDaAdesao } from '@/domain/adesaoNoRetorno.ts'
 import type { AssinaturaDoPlano } from '@/domain/assinaturaDoPlano.ts'
+import { proximoDoLink } from '@/domain/avisosNaFicha.ts'
 import { dietaDoPlano } from '@/domain/dietaDoLink.ts'
+import { definirEmailDaFicha } from '@/domain/emailsDoLink.ts'
 import { perfilDaFicha } from '@/domain/fichaNoPlano.ts'
 import { dataCompleta } from '@/domain/formatarData.ts'
 import { linkDoPaciente } from '@/domain/linkFixo.ts'
 import type { Paciente } from '@/domain/pacientes.ts'
+import { lerPerfil } from '@/domain/perfil.ts'
 import { ultimoLinkPorPaciente } from '@/domain/retorno.ts'
 import type { ModoPlano } from '@/domain/tipos.ts'
 import { formatarAlteracao } from '../casos/formatarAlteracao.ts'
@@ -17,12 +20,16 @@ import { Card, CardDescription, CardHeader, CardTitle } from '@ds/componentes/di
 import { useAcompanhamentosOpcional } from '../estado/contextoAcompanhamentos.ts'
 import { useCasos } from '../estado/contextoCasos.ts'
 import { usePacientes } from '../estado/contextoPacientes.ts'
-import { useEmailsDoLink } from '../estado/usarEmailsDoLink.ts'
+import { useArmazenamento } from '../estado/contextoArmazenamento.ts'
+import { useClienteDosEmails, useEmailsDoLink } from '../estado/usarEmailsDoLink.ts'
+import { CartaoAvisosPorEmail } from './CartaoAvisosPorEmail.tsx'
+import { CartaoEnviados } from './CartaoEnviados.tsx'
 import { AnamneseDaFicha } from './AnamneseDaFicha.tsx'
 import { CartaoDadosDoPaciente } from './CartaoDadosDoPaciente.tsx'
 import { CartaoExames } from './CartaoExames.tsx'
 import { CartaoLinkDoPaciente, type PlanoNoLink } from './CartaoLinkDoPaciente.tsx'
 import { CartaoProximaConsulta } from './CartaoProximaConsulta.tsx'
+import { CartaoProximoEmail } from './CartaoProximoEmail.tsx'
 import { CartaoSuplementos } from './CartaoSuplementos.tsx'
 import type { CampoDaFicha } from '../navegacao.ts'
 import { EvolucaoPeso, type PontoEvolucao } from './EvolucaoPeso.tsx'
@@ -104,6 +111,26 @@ export function TelaPaciente({
           dieta: dietaDoPlano(registroDoLink.caso, registroDoLink.plano),
         }
 
+  // DP-LP-7: o e-mail da ficha vai para o link quando muda (o servidor só troca se ele mudou desde a última vez).
+  const clienteDosEmails = useClienteDosEmails()
+  const emailDaFicha = paciente?.email.trim() ?? ''
+  const linkId = link?.id ?? null
+  const recarregarEmails = emailsDoLink.recarregar
+  useEffect(() => {
+    if (linkId === null || clienteDosEmails === null) return
+    let vivo = true
+    void definirEmailDaFicha(clienteDosEmails, linkId, emailDaFicha === '' ? null : emailDaFicha).then((r) => {
+      if (vivo && r.ok) recarregarEmails()
+    })
+    return () => {
+      vivo = false
+    }
+  }, [linkId, clienteDosEmails, emailDaFicha, recarregarEmails])
+
+  // O nome e o registro que assinam os e-mails, na prévia do próximo (D-1234).
+  const perfilLocal = lerPerfil(useArmazenamento())
+  const registro = perfilLocal.tipo === 'estudante' ? 'Estágio de nutrição, sob supervisão' : perfilLocal.crn.trim() ? `Nutricionista · ${perfilLocal.crn.trim()}` : 'Nutricionista'
+
   // D-1209 e CA-2214: a próxima consulta da ficha sobe para o link quando a ficha muda, sem link novo.
   const consultaDaFicha = paciente?.proximaConsulta ?? null
   useEffect(() => {
@@ -135,11 +162,22 @@ export function TelaPaciente({
   }
 
   const perfil = perfilDaFicha(paciente, hoje, planos.length > 0)
+  const proximo = link !== null && emailsDoLink.emails !== null ? proximoDoLink(link, emailsDoLink.emails, agora) : null
+
+  /** CA-2261: "Cadastrar na ficha" e "Corrigir na ficha" levam o cursor ao campo E-mail desta ficha. */
+  const irParaOEmail = () => {
+    const campo = Array.from(document.querySelectorAll('label')).find((rotulo) => rotulo.textContent?.trim() === 'E-mail')?.control
+    if (!(campo instanceof HTMLElement)) return
+    campo.scrollIntoView?.({ block: 'center' })
+    campo.focus()
+  }
 
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
-      <div className="flex flex-col gap-6">
-        <CartaoDadosDoPaciente paciente={paciente} perfil={perfil} hoje={hoje} aoAlterar={alterar} focarTelefone={focar === 'telefone'} />
+    // Spec lado-do-paciente: a coluna da direita ganha os e-mails do link, depois do histórico e do peso; abaixo da tela
+    // larga, eles vêm depois da ficha (o histórico e o peso continuam antes, CA-587).
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[minmax(0,1fr)_360px] xl:grid-rows-[auto_1fr]">
+      <div className="flex flex-col gap-6 xl:row-span-2">
+        <CartaoDadosDoPaciente paciente={paciente} perfil={perfil} hoje={hoje} aoAlterar={alterar} focarTelefone={focar === 'telefone'} focarEmail={focar === 'email'} />
 
         <AnamneseDaFicha key={paciente.id} paciente={paciente} aoAlterar={alterar} perfil={perfil} hoje={hoje} adesao={adesao} />
 
@@ -249,6 +287,22 @@ export function TelaPaciente({
           <EvolucaoPeso pontos={evolucao} />
         </Card>
       </div>
+
+      {link !== null ? (
+        <div className="flex flex-col gap-6 xl:col-start-2">
+          <CartaoAvisosPorEmail
+            nomeDoPaciente={paciente.nome}
+            linkId={link.id}
+            emails={emailsDoLink.emails}
+            erro={emailsDoLink.erro}
+            aoMudar={emailsDoLink.recarregar}
+            aoCadastrarEmail={irParaOEmail}
+            agora={agora}
+          />
+          <CartaoProximoEmail link={link} emails={emailsDoLink.emails} proximo={proximo} nomeDoPaciente={paciente.nome} nutricionista={perfilLocal.nome} registro={registro} />
+          <CartaoEnviados emails={emailsDoLink.emails} proximo={proximo} />
+        </div>
+      ) : null}
     </div>
   )
 }
