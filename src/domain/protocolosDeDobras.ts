@@ -101,7 +101,8 @@ const JP78 = 'homens dos EUA (Jackson e Pollock, 1978)'
 const JPW80 = 'mulheres dos EUA (Jackson, Pollock e Ward, 1980)'
 const SLAUGHTER = 'crianças e adolescentes (Slaughter et al., 1988)'
 // D-1039: a suprailíaca de cada protocolo vem pela linha: `suprailiacaAnt` (JP, ACSM), `suprailiacaMed` (D&W; Petroski,
-// que seguiu Harrison 1991) e `suprailiaca` quando a pesquisa não registra a linha (Guedes, Faulkner).
+// que seguiu Harrison 1991) e `suprailiaca` quando a pesquisa não registra a linha (Guedes, Faulkner; rodada 2: a média
+// antes da anterior, como Petroski).
 /** D-1038: as faixas da soma publicadas (JP78, Tabela 1; Durnin & Womersley, Tabela 9) e a inferida de Petroski. */
 const publicada = (min: number, max: number) => ({ min, max, inferida: false })
 
@@ -378,7 +379,7 @@ interface DobraResolvida {
 /**
  * O valor da dobra pedida pelo protocolo (D-1039). A suprailíaca vem pela linha do protocolo; sem ela, a de linha não
  * informada (plano de antes); sem as duas, a da outra linha. Sem linha registrada, a de linha não informada, depois a
- * anterior, depois a média. As outras dobras vêm como estão.
+ * média, depois a anterior (rodada 2). As outras dobras vêm como estão.
  */
 function resolverDobra(pedida: DobraCutanea, dobras: Dobras): DobraResolvida {
   if (pedida === 'suprailiacaAnt' || pedida === 'suprailiacaMed') {
@@ -397,7 +398,7 @@ function resolverDobra(pedida: DobraCutanea, dobras: Dobras): DobraResolvida {
     const semRegistro = 'A pesquisa não registra a linha da suprailíaca deste protocolo'
     const semLinha = medidaValida(dobras.suprailiaca)
     if (semLinha !== null) return { valor: semLinha, aviso: `${semRegistro}.` }
-    for (const linha of ['suprailiacaAnt', 'suprailiacaMed'] as const) {
+    for (const linha of ['suprailiacaMed', 'suprailiacaAnt'] as const) {
       const v = medidaValida(dobras[linha])
       if (v !== null) return { valor: v, aviso: `${semRegistro}: usada a da linha ${LINHA[linha]}.` }
     }

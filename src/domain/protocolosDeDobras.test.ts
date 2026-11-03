@@ -591,16 +591,18 @@ describe('suprailíaca pela linha (spec antropometria-completa, revisão, CA-207
     expect(petroski.densidade).toBeCloseTo(1.05365, 5)
   })
 
-  it('CA-2079: Guedes e Faulkner, sem linha registrada: a de linha não informada, depois a anterior, depois a média, e avisa qual', () => {
+  it('CA-2079 (revisto, rodada 2): Guedes e Faulkner, sem linha registrada: a de linha não informada, depois a média, depois a anterior, e avisa qual', () => {
     const quatro = { tricipital: 10, subescapular: 12, abdominal: 16 }
     const semLinha = calculado(calcularProtocolo('faulkner-4', paciente('M', 24), dobras({ ...quatro, suprailiaca: 14, suprailiacaAnt: 40, suprailiacaMed: 40 })))
     expect(semLinha.gorduraPct).toBeCloseTo(13.739, 3)
     expect(semLinha.avisos.join(' ')).toMatch(/não registra a linha da suprailíaca/)
-    const anterior = calculado(calcularProtocolo('faulkner-4', paciente('M', 24), dobras({ ...quatro, suprailiacaAnt: 14, suprailiacaMed: 40 })))
-    expect(anterior.gorduraPct).toBeCloseTo(13.739, 3)
+    const media = calculado(calcularProtocolo('faulkner-4', paciente('M', 24), dobras({ ...quatro, suprailiacaMed: 14, suprailiacaAnt: 40 })))
+    expect(media.gorduraPct).toBeCloseTo(13.739, 3)
+    expect(media.avisos.join(' ')).toMatch(/não registra a linha da suprailíaca deste protocolo: usada a da linha axilar média/)
+    const guedes = calculado(calcularProtocolo('guedes', paciente('M', 22), dobras({ tricipital: 15, suprailiacaMed: 15, suprailiacaAnt: 40, abdominal: 20 })))
+    expect(guedes.densidade).toBeCloseTo(1.05743, 5)
+    const anterior = calculado(calcularProtocolo('guedes', paciente('M', 22), dobras({ tricipital: 15, suprailiacaAnt: 15, abdominal: 20 })))
+    expect(anterior.densidade).toBeCloseTo(1.05743, 5)
     expect(anterior.avisos.join(' ')).toMatch(/usada a da linha axilar anterior/)
-    const media = calculado(calcularProtocolo('guedes', paciente('M', 22), dobras({ tricipital: 15, suprailiacaMed: 15, abdominal: 20 })))
-    expect(media.densidade).toBeCloseTo(1.05743, 5)
-    expect(media.avisos.join(' ')).toMatch(/usada a da linha axilar média/)
   })
 })
