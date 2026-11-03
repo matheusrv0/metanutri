@@ -76,8 +76,19 @@ describe('CA-1942: os que já foram mudados ficam', () => {
 
 describe('CB-917: paciente importado excluído à mão antes do "Desfazer"', () => {
   it('é ignorado, e a conta não o inclui', () => {
-    const pacientes = [importado('a'), importado('b')]
-    expect(pacientesQueSaem('imp1', pacientes, [], [])).toEqual({ saem: ['a', 'b'], ficam: 0 })
+    const conta = observarMudancas(armazenamentoDaConta(new Memoria(), 'u1'), () => undefined, () => EM)
+    const repo = criarRepositorioPacientes(conta)
+    repo.criarVarios([importado('a'), importado('b'), importado('c')])
+    // A nutricionista exclui um deles à mão, pela ficha, antes do "Desfazer".
+    repo.excluir('b')
+    const desfazer = pacientesQueSaem('imp1', repo.listar(), [], [])
+    // Ele não está entre os que saem nem entre os que "ficaram porque já foram mudados".
+    expect(desfazer).toEqual({ saem: ['a', 'c'], ficam: 0 })
+    repo.excluirVarios(desfazer.saem)
+    expect(repo.listar()).toEqual([])
+    // A lápide da exclusão à mão continua a dela, e as do desfazer entram ao lado.
+    const marcas = lerMudancas(montarCopia(conta, EM).dados[CHAVE_MUDANCAS] ?? null)
+    expect(Object.keys(marcas.excluidos).sort()).toEqual(['pacientes/a', 'pacientes/b', 'pacientes/c'])
   })
 })
 
