@@ -162,8 +162,12 @@ function regraDaProteina(caso: Caso, entrada: EntradaDaProteina, imc: number | n
     const g = gorduraDoCaso(caso, entrada.gordura)
     const limite = caso.sexo === null ? null : inicioDoSobrepesoDeGallagher(caso.sexo, idade)
     if (g !== null && limite !== null && naPrecisao(g.gorduraPct, 1) < limite) {
-      const avisos = ['População de origem: fisiculturistas naturais em preparação para competição, magros e treinados (Helms 2014).']
-      return { faixa: { min: 2.3, max: 3.1 }, sobre: 'massa-magra', fonte: FONTES.helms2014, evidencia: 'limitada', avisos }
+      // Rodada 2: Helms não define "magro"; o corte por Gallagher é nosso (D-1032 e D-1036 revistas).
+      const avisos = [
+        'População de origem: fisiculturistas naturais em preparação para competição, magros e treinados (Helms 2014).',
+        `${PROPOSTA_DO_APP}: "magro" é o % de gordura abaixo do início do sobrepeso de Gallagher, um corte do app.`,
+      ]
+      return { faixa: { min: 2.3, max: 3.1 }, sobre: 'massa-magra', fonte: FONTES.helms2014, evidencia: 'proposta-do-app', avisos }
     }
     const motivo =
       g === null || limite === null

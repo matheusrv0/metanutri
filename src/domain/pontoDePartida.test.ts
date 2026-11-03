@@ -175,3 +175,22 @@ describe('proposta do app (spec antropometria-completa, revisão, CA-2083)', () 
     expect(r?.calculou && r.avisos.join(' ')).toMatch(/Proposta do app \(sem diretriz\)/)
   })
 })
+
+describe('o "magro" de Helms é proposta do app (spec antropometria-completa, rodada 2, CA-2091)', () => {
+  const emagrecer = (gorduraPct: number) => caso({ objetivo: 'emagrecer' }, { gorduraPct })
+
+  it('CA-2091: atleta de 35 anos com 15% → Helms 2014, com a evidência e o aviso de proposta do app', () => {
+    const r = proteinaPorObjetivo(emagrecer(15), { perfil: 'atleta' })
+    if (!r?.calculou) throw new Error('sem sugestão')
+    expect(r.fonte.curta).toBe(FONTES.helms2014.curta)
+    expect(r.evidencia).toBe('proposta-do-app')
+    expect(r.avisos.join(' ')).toMatch(/Proposta do app \(sem diretriz\): "magro" é o % de gordura abaixo do início do sobrepeso de Gallagher/)
+  })
+
+  it('CA-2091: atleta com 25% (ISSN) mantém a evidência da ISSN', () => {
+    const r = proteinaPorObjetivo(emagrecer(25), { perfil: 'atleta' })
+    if (!r?.calculou) throw new Error('sem sugestão')
+    expect(r.fonte.curta).toBe(FONTES.issn2017.curta)
+    expect(r.evidencia).toBe('limitada')
+  })
+})
