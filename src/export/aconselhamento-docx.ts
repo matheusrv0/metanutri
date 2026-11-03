@@ -71,9 +71,13 @@ export function quantidadeNoWord(q: QuantidadeNaFolha): string {
 export function descreverItem(item: ItemPlano, buscar: BuscarAlimento, modo: ModoQuantidade = 'medida-caseira'): string {
   if (!ehItemDeReceita(item)) {
     // Spec busca-substitutos, D-1115 e CA-2124: as opções do item depois de "ou"; a do alimento excluído fica de fora.
-    const opcoes = lerOpcoesDoItem(item)
-      .filter((o) => buscar(o.alimentoId) !== undefined)
-      .map((o) => ` ou ${descreverAlimento(o.alimentoId, o.gramas, buscar, modo, o.medida)}`)
+    const opcoes = lerOpcoesDoItem(item).flatMap((o) => {
+      if (buscar(o.alimentoId) !== undefined) return [` ou ${descreverAlimento(o.alimentoId, o.gramas, buscar, modo, o.medida)}`]
+      // D-1122 e CB-1110: a opção da base ampliada sem a base sai pela cópia do nome; a do próprio excluído, não.
+      if (!o.copia) return []
+      const q = quantidadeNaFolha(o.alimentoId, o.gramas, modo, o.medida)
+      return [` ou ${o.copia.descricao} (${quantidadeNoWord({ ...q, unidade: o.copia.unidade ?? q.unidade })})`]
+    })
     return `${descreverAlimento(item.alimentoId, item.gramas, buscar, modo, item.medida)}${opcoes.join('')}`
   }
   const receita = receitaDoItem(item)

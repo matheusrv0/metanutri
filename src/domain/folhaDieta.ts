@@ -205,7 +205,10 @@ export function opcoesNaFolha(item: ItemPlano, buscar: BuscarAlimento, modo: Mod
   if (ehItemDeReceita(item)) return []
   return lerOpcoesDoItem(item).flatMap((o) => {
     const alimento = buscar(o.alimentoId)
-    return alimento ? [{ nome: nomeParaPaciente(alimento), quantidade: quantidadeNaFolha(o.alimentoId, o.gramas, modo, o.medida) }] : []
+    const quantidade = quantidadeNaFolha(o.alimentoId, o.gramas, modo, o.medida)
+    if (alimento) return [{ nome: nomeParaPaciente(alimento), quantidade }]
+    // D-1122 e CB-1110: a opção da base ampliada montada sem a base sai pela cópia do nome; a do próprio excluído, não.
+    return o.copia ? [{ nome: o.copia.paciente, quantidade: { ...quantidade, unidade: o.copia.unidade ?? quantidade.unidade } }] : []
   })
 }
 

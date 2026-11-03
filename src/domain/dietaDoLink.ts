@@ -127,9 +127,21 @@ function alimentoDaDieta(alimentoId: number, gramas: number, buscar: BuscarAlime
 function itemDaDieta(item: ItemPlano, buscar: BuscarAlimento, modo: ModoQuantidade): ItemDaDieta {
   if (!ehItemDeReceita(item)) {
     // D-1115 (spec busca-substitutos): as opções do item vão junto; a do alimento excluído fica de fora (CB-1102).
-    const ou = lerOpcoesDoItem(item)
-      .filter((o) => buscar(o.alimentoId) !== undefined)
-      .map((o) => alimentoDaDieta(o.alimentoId, o.gramas, buscar, modo, o.medida))
+    const ou = lerOpcoesDoItem(item).flatMap((o): ItemDaDieta[] => {
+      if (buscar(o.alimentoId) !== undefined) return [alimentoDaDieta(o.alimentoId, o.gramas, buscar, modo, o.medida)]
+      // D-1122 e CB-1110: a opção da base ampliada sem a base vai pela cópia do nome, em gramas.
+      if (!o.copia) return []
+      const q = quantidadeNaFolha(o.alimentoId, o.gramas, modo, o.medida)
+      return [
+        {
+          medida: q.medida,
+          gramas: o.gramas,
+          alimento: o.copia.paciente,
+          ...(lerMedidaDoItem(o.medida) !== undefined ? { escolhida: true as const } : {}),
+          ...(o.copia.unidade === 'ml' ? { unidade: 'ml' as const } : {}),
+        },
+      ]
+    })
     return { ...alimentoDaDieta(item.alimentoId, item.gramas, buscar, modo, item.medida), ...(ou.length > 0 ? { ou } : {}) }
   }
   const receita = receitaDoItem(item)

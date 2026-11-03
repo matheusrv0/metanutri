@@ -1,7 +1,10 @@
 // Operações imutáveis sobre o plano (SPEC CA-12, CA-13, CA-14, CB-04).
+import { ehDaBaseAmpliada } from './baseAmpliada.ts'
+import { nomeParaPaciente } from './nomeParaPaciente.ts'
 import { lerOpcoesDoItem, vagaParaOpcao } from './opcoesDoItem.ts'
 import { ID_DE_RECEITA } from './receitaNoPlano.ts'
-import type { ItemPlano, MedidaDoItem, OpcaoDoItem, OpcaoId, Plano, ReceitaDoPlano, Refeicao } from './tipos.ts'
+import { buscarAlimento } from './tabelas.ts'
+import type { BuscarAlimento, CopiaDoAlimento, ItemPlano, MedidaDoItem, OpcaoDoItem, OpcaoId, Plano, ReceitaDoPlano, Refeicao } from './tipos.ts'
 
 export type GerarId = () => string
 
@@ -185,13 +188,27 @@ export function devolverItem(plano: Plano, refeicaoId: string, item: ItemPlano):
   return alterarOpcao(plano, refeicaoId, 'principal', (itens) => itens.map((i) => (i.id === item.id ? item : i)))
 }
 
+/** D-1122: a opção da base ampliada copia o nome (o da base, o do paciente e o ml), porque a base chega sob demanda. */
+function copiaDaBaseAmpliada(alimentoId: number, buscar: BuscarAlimento): CopiaDoAlimento | undefined {
+  if (!ehDaBaseAmpliada(alimentoId)) return undefined
+  const a = buscar(alimentoId)
+  if (!a) return undefined
+  return { descricao: a.descricao.trim(), paciente: nomeParaPaciente(a), ...(a.unidade === 'ml' ? { unidade: 'ml' as const } : {}) }
+}
+
 /** CA-2120: mais uma opção no item; a repetida, a do próprio alimento e a terceira não entram (CB-1106). */
-export function adicionarOpcaoAoItem(plano: Plano, refeicaoId: string, itemId: string, opcao: AlimentoNaPorcao): Plano {
+export function adicionarOpcaoAoItem(plano: Plano, refeicaoId: string, itemId: string, opcao: AlimentoNaPorcao, buscar: BuscarAlimento = buscarAlimento): Plano {
   validarGramas(opcao.gramas)
   const item = plano.refeicoes.find((r) => r.id === refeicaoId)?.opcoes.principal.find((i) => i.id === itemId)
   if (!item) throw new Error(`Item ${itemId} não existe nesta opção.`)
   if (vagaParaOpcao(item, opcao.alimentoId) !== 'livre') return plano
-  const nova: OpcaoDoItem = { alimentoId: opcao.alimentoId, gramas: opcao.gramas, medida: opcao.medida === null ? null : { ...opcao.medida } }
+  const copia = copiaDaBaseAmpliada(opcao.alimentoId, buscar)
+  const nova: OpcaoDoItem = {
+    alimentoId: opcao.alimentoId,
+    gramas: opcao.gramas,
+    medida: opcao.medida === null ? null : { ...opcao.medida },
+    ...(copia ? { copia } : {}),
+  }
   return alterarOpcao(plano, refeicaoId, 'principal', (itens) => itens.map((i) => (i.id === itemId ? comOpcoes(i, [...lerOpcoesDoItem(i), nova]) : i)))
 }
 

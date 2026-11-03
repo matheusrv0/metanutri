@@ -29,7 +29,8 @@ export function OpcoesDoItem({ item, descricao, aoTirar }: OpcoesDoItemProps) {
     <ul aria-label={`Opções de ${descricao}`} className="flex flex-col gap-1.5 border-l border-border pl-3">
       {opcoes.map((o, n) => {
         const alimento = buscarAlimento(o.alimentoId)
-        const nome = alimento?.descricao ?? nomeSemAlimento(o.alimentoId)
+        // D-1122: sem a base ampliada, o nome da cópia; o próprio excluído diz o nome do que aconteceu (CB-1102).
+        const nome = alimento?.descricao ?? o.copia?.descricao ?? nomeSemAlimento(o.alimentoId)
         const medida = medidaNaLinha({ alimentoId: o.alimentoId, gramas: o.gramas, ...(o.medida === undefined ? {} : { medida: o.medida }) })
         const porcao = alimento ? textoDaPorcao({ alimento, gramas: o.gramas, textoDaMedida: medida?.texto ?? null }) : `${formatarNumero(o.gramas, 0)} g`
         const aviso = alimento ? restricaoDoAlimento(alimento, restricoes) : null

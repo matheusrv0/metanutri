@@ -207,6 +207,20 @@ export interface OpcaoDoItem {
   readonly gramas: number
   /** A medida da porção (D-379); `null` = só gramas; sem o campo, a automática. */
   readonly medida?: MedidaDoItem | null
+  /**
+   * Só na opção da base ampliada (D-1122): o nome copiado ao entrar no plano. A base chega sob demanda; sem ela, a folha,
+   * o link e o Word mostram a opção por aqui, em gramas, em vez de deixá-la de fora.
+   */
+  readonly copia?: CopiaDoAlimento
+}
+
+/** O nome do alimento copiado na opção (D-1122). */
+export interface CopiaDoAlimento {
+  /** O nome da base ("Macarrão, trigo, cozido"), o do planejador e do Word. */
+  readonly descricao: string
+  /** O nome para o paciente, o da folha e do link. */
+  readonly paciente: string
+  readonly unidade?: 'ml'
 }
 
 export interface Refeicao {

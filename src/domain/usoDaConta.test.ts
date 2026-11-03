@@ -1,4 +1,4 @@
-import { contarUso } from './usoDaConta.ts'
+import { contarUso, planosComAlimento } from './usoDaConta.ts'
 import type { Plano } from './tipos.ts'
 
 const item = (id: string, alimentoId: number) => ({ id, alimentoId, gramas: 100 })
@@ -20,5 +20,22 @@ describe('uso da conta (spec alimentos-e-gramaturas, D-370)', () => {
     const estragado = { refeicoes: [{ opcoes: { principal: 'x' } }, null] } as unknown as Plano
     const comReceita: Plano = { refeicoes: [{ id: 'r', nome: 'Lanche', horario: '16:00', opcoes: { principal: [item('a', 0)], substituto1: [], substituto2: [] } }] }
     expect(contarUso([estragado, comReceita, null, undefined]).size).toBe(0)
+  })
+})
+
+describe('planos que usam o alimento (spec busca-substitutos, D-1123)', () => {
+  it('CA-2131: o alimento próprio que só aparece como opção de um item conta', () => {
+    const comOpcao: Plano = {
+      refeicoes: [
+        {
+          id: 'r1',
+          nome: 'Almoço',
+          horario: '12:00',
+          opcoes: { principal: [{ ...item('a', 3), opcoesDoItem: [{ alimentoId: 900_001, gramas: 80, medida: null }] }], substituto1: [], substituto2: [] },
+        },
+      ],
+    }
+    const semOpcao: Plano = { refeicoes: [{ id: 'r1', nome: 'Almoço', horario: '12:00', opcoes: { principal: [item('a', 3)], substituto1: [], substituto2: [] } }] }
+    expect(planosComAlimento([comOpcao, semOpcao, comOpcao], 900_001)).toBe(2)
   })
 })
