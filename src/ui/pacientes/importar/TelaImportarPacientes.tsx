@@ -175,7 +175,8 @@ export function TelaImportarPacientes({ moldura, aoSair }: TelaImportarPacientes
     const importados = preparo.pacientes.map((p) => ({
       id: p.id,
       nome: p.nome,
-      detalhe: [p.sexo, p.nascimento ? dataCompleta(p.nascimento) : null].filter(Boolean).join(' · ') || 'Sem sexo e sem data',
+      // D-922: sem o sexo e sem a data, o travessão de "sem dado".
+      detalhe: [p.sexo, p.nascimento ? dataCompleta(p.nascimento) : null].filter(Boolean).join(' · ') || '—',
     }))
     mudar((atual) => ({ ...atual, passo: 'concluida', aviso: null, resultado: { importacaoId, importados, deFora: linhasDeFora(previa), desfeita: null } }))
   }

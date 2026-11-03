@@ -155,7 +155,6 @@ export function PassoArquivo({ lendo, recusa, aoEscolher, aoCancelarLeitura, tit
             </li>
           ))}
         </ul>
-        <p className="text-xs text-muted-foreground">As outras ficam de fora.</p>
       </Card>
     </div>
   )

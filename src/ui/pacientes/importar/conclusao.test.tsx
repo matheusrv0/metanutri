@@ -52,6 +52,16 @@ describe('CA-1933 e CA-1940: "Importar 5 pacientes"', () => {
     expect(screen.queryByRole('button', { name: 'Baixar as que ficaram de fora' })).not.toBeInTheDocument()
   })
 
+  it('D-922: quem entra sem o sexo e sem a data mostra "—"', async () => {
+    const { usuario } = montarTela()
+    await abrirPrevia(usuario, arquivo('a.csv', 'Nome;Sexo\nAna;\n'))
+    await usuario.click(screen.getByRole('checkbox', { name: 'Importar Ana' }))
+    await usuario.click(screen.getByRole('button', { name: 'Importar 1 paciente' }))
+    const regiao = await screen.findByRole('region', { name: '1 paciente importado' })
+    expect(within(regiao).getAllByRole('listitem').map((li) => li.textContent)).toEqual(['Ana—'])
+    expect(screen.queryByText('Sem sexo e sem data')).not.toBeInTheDocument()
+  })
+
   it('"Ver pacientes" volta a Pacientes', async () => {
     const { usuario, aoSair } = montarTela()
     await abrirPrevia(usuario, arquivo('a.csv', 'Nome;Sexo\nAna;F\n'))

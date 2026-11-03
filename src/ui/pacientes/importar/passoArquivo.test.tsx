@@ -79,6 +79,8 @@ describe('A entrada (D-900)', () => {
       'Objetivo',
       'Observaçõesaceita várias',
     ])
+    // D-922: a lista já diz o que entra.
+    expect(screen.queryByText('As outras ficam de fora.')).not.toBeInTheDocument()
   })
 })
 
