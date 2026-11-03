@@ -73,6 +73,7 @@ export interface ComposicaoCorporal {
   readonly dobras: {
     readonly tricipital: number | null
     readonly subescapular: number | null
+    /** A suprailíaca de linha não informada: o valor dos planos de antes (spec antropometria-completa, D-1039). */
     readonly suprailiaca: number | null
     readonly abdominal: number | null
     readonly peitoral: number | null
@@ -82,6 +83,9 @@ export interface ComposicaoCorporal {
     readonly supraespinal: number | null
     readonly axilarMedia: number | null
     readonly panturrilhaMedial: number | null
+    /** Suprailíaca na linha axilar anterior (ACSM/JP) e na linha axilar média (D&W, Lohman); nomes do protótipo (D-1039). */
+    readonly suprailiacaAnt: number | null
+    readonly suprailiacaMed: number | null
   }
   readonly bioimpedancia: {
     readonly gorduraPct: number | null

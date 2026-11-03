@@ -6,6 +6,7 @@ import {
   aplicacaoDoProtocolo,
   calcularProtocolo,
   protocoloPorId,
+  valoresDasDobras,
   type IdProtocolo,
   type OpcoesDoProtocolo,
   type PacienteDoProtocolo,
@@ -174,13 +175,14 @@ export function linhaSomaDeDobras(caso: Caso, opcoes: OpcoesDaGordura = {}): Lin
   if (!protocolo) return null
   if (caso.sexo === null) return linhaSemValor(linha, [{ campo: 'sexo', nome: 'o sexo' }])
   const exigidas = protocolo.porSexo[caso.sexo].dobras
-  const medidas = exigidas.map((d) => medidaValida(caso.composicao.dobras[d]))
+  // D-1039: a suprailíaca pela linha do protocolo, a mesma escolha da conta.
+  const { valores: medidas, avisos: avisosDaLinha } = valoresDasDobras(exigidas, caso.composicao.dobras)
   const parcial = medidas.reduce<number>((total, v) => total + (v ?? 0), 0)
   const faltam = exigidas.filter((_, i) => medidas[i] === null)
   const detalhes: Detalhe[] = [{ tipo: 'texto', rotulo: 'Protocolo', texto: protocolo.nome }]
   if (faltam.length > 0) {
     const comParcial: Detalhe[] = faltam.length < exigidas.length ? [...detalhes, { tipo: 'numero', rotulo: 'Soma parcial', valor: parcial, unidade: 'mm', casas: 1 }] : detalhes
-    return { ...linhaSemValor(linha, faltam.map(faltaDaDobra), ['A soma está incompleta: faltam dobras do protocolo.']), detalhes: comParcial }
+    return { ...linhaSemValor(linha, faltam.map(faltaDaDobra), ['A soma está incompleta: faltam dobras do protocolo.', ...avisosDaLinha]), detalhes: comParcial }
   }
-  return { ...linhaSemValor(linha, []), valor: parcial, fonte: protocolo.porSexo[caso.sexo].fonte, detalhes }
+  return { ...linhaSemValor(linha, [], avisosDaLinha), valor: parcial, fonte: protocolo.porSexo[caso.sexo].fonte, detalhes }
 }

@@ -73,6 +73,8 @@ const COMPLETO: Partial<Caso> = {
       supraespinal: 14,
       axilarMedia: 13,
       panturrilhaMedial: 11,
+      suprailiacaAnt: 19,
+      suprailiacaMed: 21,
     },
     bioimpedancia: { gorduraPct: 28, massaMagraKg: 59, aguaPct: 52, aparelho: 'InBody 270' },
   },
@@ -204,6 +206,8 @@ describe('medidas do dia na duplicação (spec ficha-unica, D-367)', () => {
       'composicao.dobras.supraespinal',
       'composicao.dobras.axilarMedia',
       'composicao.dobras.panturrilhaMedial',
+      'composicao.dobras.suprailiacaAnt',
+      'composicao.dobras.suprailiacaMed',
       'composicao.bioimpedancia.gorduraPct',
       'composicao.bioimpedancia.massaMagraKg',
       'composicao.bioimpedancia.aguaPct',
@@ -233,6 +237,8 @@ describe('medidas do dia na duplicação (spec ficha-unica, D-367)', () => {
       supraespinal: null,
       axilarMedia: null,
       panturrilhaMedial: null,
+      suprailiacaAnt: null,
+      suprailiacaMed: null,
     })
     expect(copia.caso.composicao.bioimpedancia).toEqual({ gorduraPct: null, massaMagraKg: null, aguaPct: null, aparelho: 'InBody 270' })
   })

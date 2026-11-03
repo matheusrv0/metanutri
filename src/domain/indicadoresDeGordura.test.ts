@@ -117,3 +117,11 @@ describe('massa gorda, massa magra e soma de dobras (spec antropometria-completa
     expect(gorduraDoCaso(caso())).toBeNull()
   })
 })
+
+describe('suprailíaca pela linha na soma de dobras (spec antropometria-completa, revisão, CA-2078)', () => {
+  it('CA-2078: a soma segue a mesma escolha de linha do protocolo, com o aviso', () => {
+    const l = linhaSomaDeDobras(caso({ sexo: 'F' }, { tricipital: 25, suprailiacaMed: 20, coxa: 25 }))
+    expect(l?.valor).toBe(70)
+    expect(l?.avisos.join(' ')).toMatch(/deslocado/)
+  })
+})

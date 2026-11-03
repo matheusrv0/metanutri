@@ -96,10 +96,12 @@ const QUADRATICAS = {
 const densidadeQuadratica = (q: Quadratica, soma: number, idade: number) => q.a - q.b * soma + q.c * soma ** 2 - q.idade * idade
 const pico = (q: Quadratica) => q.b / (2 * q.c)
 
-const JP_DOBRAS_7: readonly DobraCutanea[] = ['peitoral', 'axilarMedia', 'tricipital', 'subescapular', 'abdominal', 'suprailiaca', 'coxa']
+const JP_DOBRAS_7: readonly DobraCutanea[] = ['peitoral', 'axilarMedia', 'tricipital', 'subescapular', 'abdominal', 'suprailiacaAnt', 'coxa']
 const JP78 = 'homens dos EUA (Jackson e Pollock, 1978)'
 const JPW80 = 'mulheres dos EUA (Jackson, Pollock e Ward, 1980)'
 const SLAUGHTER = 'crianças e adolescentes (Slaughter et al., 1988)'
+// D-1039: a suprailíaca de cada protocolo vem pela linha: `suprailiacaAnt` (JP, ACSM), `suprailiacaMed` (D&W; Petroski,
+// que seguiu Harrison 1991) e `suprailiaca` quando a pesquisa não registra a linha (Guedes, Faulkner).
 /** D-1038: as faixas da soma publicadas (JP78, Tabela 1; Durnin & Womersley, Tabela 9) e a inferida de Petroski. */
 const publicada = (min: number, max: number) => ({ min, max, inferida: false })
 
@@ -109,7 +111,7 @@ export const PROTOCOLOS_DE_DOBRAS: readonly Protocolo[] = [
     nome: 'Jackson & Pollock, 3 dobras',
     porSexo: {
       M: { populacao: JP78, idade: { min: 18, max: 61 }, dobras: ['peitoral', 'abdominal', 'coxa'], entradas: ['idade'], forma: 'quadratica', saida: 'densidade', fonte: FONTES.jacksonPollock1978, somaNaAmostra: publicada(14, 118), picoDaSomaMm: pico(QUADRATICAS.jp3M) },
-      F: { populacao: JPW80, idade: { min: 18, max: 55 }, dobras: ['tricipital', 'suprailiaca', 'coxa'], entradas: ['idade'], forma: 'quadratica', saida: 'densidade', fonte: FONTES.jacksonPollockWard1980, somaNaAmostra: null, picoDaSomaMm: pico(QUADRATICAS.jp3F) },
+      F: { populacao: JPW80, idade: { min: 18, max: 55 }, dobras: ['tricipital', 'suprailiacaAnt', 'coxa'], entradas: ['idade'], forma: 'quadratica', saida: 'densidade', fonte: FONTES.jacksonPollockWard1980, somaNaAmostra: null, picoDaSomaMm: pico(QUADRATICAS.jp3F) },
     },
     aviso: null,
   },
@@ -126,8 +128,8 @@ export const PROTOCOLOS_DE_DOBRAS: readonly Protocolo[] = [
     id: 'durnin-womersley',
     nome: 'Durnin & Womersley, 4 dobras',
     porSexo: {
-      M: { populacao: 'homens de Glasgow, Escócia', idade: { min: 17, max: 72 }, dobras: ['bicipital', 'tricipital', 'subescapular', 'suprailiaca'], entradas: ['idade'], forma: 'log10', saida: 'densidade', fonte: FONTES.durninWomersley1974, somaNaAmostra: publicada(15, 210), picoDaSomaMm: null },
-      F: { populacao: 'mulheres de Glasgow, Escócia', idade: { min: 16, max: 68 }, dobras: ['bicipital', 'tricipital', 'subescapular', 'suprailiaca'], entradas: ['idade'], forma: 'log10', saida: 'densidade', fonte: FONTES.durninWomersley1974, somaNaAmostra: publicada(15, 210), picoDaSomaMm: null },
+      M: { populacao: 'homens de Glasgow, Escócia', idade: { min: 17, max: 72 }, dobras: ['bicipital', 'tricipital', 'subescapular', 'suprailiacaMed'], entradas: ['idade'], forma: 'log10', saida: 'densidade', fonte: FONTES.durninWomersley1974, somaNaAmostra: publicada(15, 210), picoDaSomaMm: null },
+      F: { populacao: 'mulheres de Glasgow, Escócia', idade: { min: 16, max: 68 }, dobras: ['bicipital', 'tricipital', 'subescapular', 'suprailiacaMed'], entradas: ['idade'], forma: 'log10', saida: 'densidade', fonte: FONTES.durninWomersley1974, somaNaAmostra: publicada(15, 210), picoDaSomaMm: null },
     },
     aviso: null,
   },
@@ -135,9 +137,9 @@ export const PROTOCOLOS_DE_DOBRAS: readonly Protocolo[] = [
     id: 'petroski',
     nome: 'Petroski',
     porSexo: {
-      M: { populacao: 'homens do sul do Brasil', idade: { min: 18, max: 61 }, dobras: ['subescapular', 'tricipital', 'suprailiaca', 'panturrilhaMedial'], entradas: ['idade'], forma: 'quadratica', saida: 'densidade', fonte: FONTES.petroski1995, somaNaAmostra: null, picoDaSomaMm: pico(QUADRATICAS.petroskiM) },
+      M: { populacao: 'homens do sul do Brasil', idade: { min: 18, max: 61 }, dobras: ['subescapular', 'tricipital', 'suprailiacaMed', 'panturrilhaMedial'], entradas: ['idade'], forma: 'quadratica', saida: 'densidade', fonte: FONTES.petroski1995, somaNaAmostra: null, picoDaSomaMm: pico(QUADRATICAS.petroskiM) },
       // Faixa inferida: a soma dos mínimos e dos máximos de cada dobra na amostra feminina (Petroski e Pires-Neto 1995, Tab. 1).
-      F: { populacao: 'mulheres do Rio Grande do Sul e de Santa Catarina', idade: { min: 18, max: 51 }, dobras: ['subescapular', 'suprailiaca', 'coxa'], entradas: ['idade', 'peso', 'estatura'], forma: 'quadratica', saida: 'densidade', fonte: FONTES.petroski1995, somaNaAmostra: { min: 21, max: 118, inferida: true }, picoDaSomaMm: pico(QUADRATICAS.petroskiF) },
+      F: { populacao: 'mulheres do Rio Grande do Sul e de Santa Catarina', idade: { min: 18, max: 51 }, dobras: ['subescapular', 'suprailiacaMed', 'coxa'], entradas: ['idade', 'peso', 'estatura'], forma: 'quadratica', saida: 'densidade', fonte: FONTES.petroski1995, somaNaAmostra: { min: 21, max: 118, inferida: true }, picoDaSomaMm: pico(QUADRATICAS.petroskiF) },
     },
     aviso: null,
   },
@@ -184,7 +186,7 @@ export const PROTOCOLOS_DE_DOBRAS: readonly Protocolo[] = [
 export const NOME_DA_DOBRA: Readonly<Record<DobraCutanea, string>> = {
   tricipital: 'tricipital',
   subescapular: 'subescapular',
-  suprailiaca: 'suprailíaca',
+  suprailiaca: 'suprailíaca (linha não informada)',
   abdominal: 'abdominal',
   peitoral: 'peitoral',
   coxa: 'coxa',
@@ -192,6 +194,8 @@ export const NOME_DA_DOBRA: Readonly<Record<DobraCutanea, string>> = {
   supraespinal: 'supraespinal',
   axilarMedia: 'axilar média',
   panturrilhaMedial: 'panturrilha medial',
+  suprailiacaAnt: 'suprailíaca (linha axilar anterior)',
+  suprailiacaMed: 'suprailíaca (linha axilar média)',
 }
 
 const NOME_DA_ENTRADA: Readonly<Record<EntradaDaEquacao, string>> = {
@@ -349,6 +353,8 @@ export interface AplicacaoDoProtocolo {
   readonly aplicaPeloSexo: boolean | null
   /** `null` sem idade ou com a faixa da amostra desconhecida. */
   readonly aplicaPelaIdade: boolean | null
+  /** Os avisos das dobras: a suprailíaca de outra linha ou de linha não informada (D-1039). */
+  readonly avisos: readonly string[]
 }
 
 export const protocoloPorId = (id: IdProtocolo): Protocolo | null => PROTOCOLOS_DE_DOBRAS.find((p) => p.id === id) ?? null
@@ -361,7 +367,51 @@ export const conversaoDoProtocolo = (protocolo: Protocolo, opcoes: OpcoesDoProto
 
 const AVISO_DE_LOHMAN = 'Conversão de Lohman (abaixo de 20 anos): aos 20 anos a conta passa para Siri, e o % muda de degrau sem a dobra mudar.'
 
-const somaDas = (exigidas: readonly DobraCutanea[], dobras: Dobras): number => exigidas.reduce((total, d) => total + (medidaValida(dobras[d]) ?? 0), 0)
+const LINHA = { suprailiacaAnt: 'axilar anterior', suprailiacaMed: 'axilar média' } as const
+
+interface DobraResolvida {
+  readonly valor: number | null
+  readonly aviso: string | null
+}
+
+/**
+ * O valor da dobra pedida pelo protocolo (D-1039). A suprailíaca vem pela linha do protocolo; sem ela, a de linha não
+ * informada (plano de antes); sem as duas, a da outra linha. Sem linha registrada, a de linha não informada, depois a
+ * anterior, depois a média. As outras dobras vêm como estão.
+ */
+function resolverDobra(pedida: DobraCutanea, dobras: Dobras): DobraResolvida {
+  if (pedida === 'suprailiacaAnt' || pedida === 'suprailiacaMed') {
+    const certa = medidaValida(dobras[pedida])
+    if (certa !== null) return { valor: certa, aviso: null }
+    const semLinha = medidaValida(dobras.suprailiaca)
+    if (semLinha !== null) return { valor: semLinha, aviso: `Suprailíaca sem a linha informada (plano de antes da antropometria completa): o protocolo pede a da linha ${LINHA[pedida]}.` }
+    const outra = pedida === 'suprailiacaAnt' ? 'suprailiacaMed' : 'suprailiacaAnt'
+    const daOutra = medidaValida(dobras[outra])
+    if (daOutra !== null) {
+      return { valor: daOutra, aviso: `Só há a suprailíaca da linha ${LINHA[outra]}; o protocolo pede a da linha ${LINHA[pedida]}: o resultado pode estar deslocado.` }
+    }
+    return { valor: null, aviso: null }
+  }
+  if (pedida === 'suprailiaca') {
+    const semRegistro = 'A pesquisa não registra a linha da suprailíaca deste protocolo'
+    const semLinha = medidaValida(dobras.suprailiaca)
+    if (semLinha !== null) return { valor: semLinha, aviso: `${semRegistro}.` }
+    for (const linha of ['suprailiacaAnt', 'suprailiacaMed'] as const) {
+      const v = medidaValida(dobras[linha])
+      if (v !== null) return { valor: v, aviso: `${semRegistro}: usada a da linha ${LINHA[linha]}.` }
+    }
+    return { valor: null, aviso: null }
+  }
+  return { valor: medidaValida(dobras[pedida]), aviso: null }
+}
+
+/** Os valores das dobras exigidas, na ordem do protocolo, e os avisos da escolha da linha (D-1039). */
+export function valoresDasDobras(exigidas: readonly DobraCutanea[], dobras: Dobras): { readonly valores: readonly (number | null)[]; readonly avisos: readonly string[] } {
+  const resolvidas = exigidas.map((d) => resolverDobra(d, dobras))
+  return { valores: resolvidas.map((r) => r.valor), avisos: resolvidas.flatMap((r) => (r.aviso === null ? [] : [r.aviso])) }
+}
+
+const somaDas = (exigidas: readonly DobraCutanea[], dobras: Dobras): number => valoresDasDobras(exigidas, dobras).valores.reduce<number>((total, v) => total + (v ?? 0), 0)
 
 /** As entradas de que a conta precisa: as fixas, a idade da conversão automática e as do Slaughter até 35 mm. */
 function entradasPedidas(protocolo: Protocolo, variante: VarianteDoProtocolo, sexo: Sexo, soma: number | null, opcoes: OpcoesDoProtocolo): EntradaDaEquacao[] {
@@ -374,9 +424,10 @@ function entradasPedidas(protocolo: Protocolo, variante: VarianteDoProtocolo, se
 
 function aplicacao(protocolo: Protocolo, paciente: PacienteDoProtocolo, dobras: Dobras, opcoes: OpcoesDoProtocolo): AplicacaoDoProtocolo {
   const { sexo, idadeAnos } = paciente
-  if (sexo === null) return { dobrasExigidas: [], dobrasQueFaltam: [], entradasQueFaltam: ['sexo'], aplicaPeloSexo: null, aplicaPelaIdade: null }
+  if (sexo === null) return { dobrasExigidas: [], dobrasQueFaltam: [], entradasQueFaltam: ['sexo'], aplicaPeloSexo: null, aplicaPelaIdade: null, avisos: [] }
   const variante = protocolo.porSexo[sexo]
-  const dobrasQueFaltam = variante.dobras.filter((d) => medidaValida(dobras[d]) === null)
+  const { valores, avisos } = valoresDasDobras(variante.dobras, dobras)
+  const dobrasQueFaltam = variante.dobras.filter((_, i) => valores[i] === null)
   const soma = dobrasQueFaltam.length === 0 ? somaDas(variante.dobras, dobras) : null
   const temos: Readonly<Record<EntradaDaEquacao, boolean>> = {
     sexo: true,
@@ -389,13 +440,13 @@ function aplicacao(protocolo: Protocolo, paciente: PacienteDoProtocolo, dobras: 
   const entradasQueFaltam = entradasPedidas(protocolo, variante, sexo, soma, opcoes).filter((e) => !temos[e])
   const { idade } = variante
   const aplicaPelaIdade = idadeAnos === null || idade === null ? null : idadeAnos >= idade.min && idadeAnos <= idade.max
-  return { dobrasExigidas: variante.dobras, dobrasQueFaltam, entradasQueFaltam, aplicaPeloSexo: true, aplicaPelaIdade }
+  return { dobrasExigidas: variante.dobras, dobrasQueFaltam, entradasQueFaltam, aplicaPeloSexo: true, aplicaPelaIdade, avisos }
 }
 
 /** Quais dobras e entradas faltam, e se o protocolo vale para o paciente pelo sexo e pela idade (CA-2011). */
 export function aplicacaoDoProtocolo(id: IdProtocolo, paciente: PacienteDoProtocolo, dobras: Dobras, opcoes: OpcoesDoProtocolo = {}): AplicacaoDoProtocolo {
   const protocolo = protocoloPorId(id)
-  if (!protocolo) return { dobrasExigidas: [], dobrasQueFaltam: [], entradasQueFaltam: [], aplicaPeloSexo: null, aplicaPelaIdade: null }
+  if (!protocolo) return { dobrasExigidas: [], dobrasQueFaltam: [], entradasQueFaltam: [], aplicaPeloSexo: null, aplicaPelaIdade: null, avisos: [] }
   return aplicacao(protocolo, paciente, dobras, opcoes)
 }
 
@@ -509,6 +560,7 @@ export function calcularProtocolo(id: IdProtocolo, paciente: PacienteDoProtocolo
     massaMagraKg: peso === null || massaGordaKg === null ? null : peso - massaGordaKg,
     fontes: conversao === null ? [variante.fonte] : [variante.fonte, FONTE_DA_CONVERSAO[conversao]],
     avisos: [
+      ...ap.avisos,
       ...avisosDaSoma(variante, soma),
       ...(conversao === 'lohman' ? [AVISO_DE_LOHMAN] : []),
       ...avisosDoResultado(protocolo, variante, paciente, opcoes, entradasPedidas(protocolo, variante, sexo, soma, opcoes)),

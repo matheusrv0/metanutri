@@ -18,6 +18,8 @@ export const DOBRAS_VAZIAS: Dobras = {
   supraespinal: null,
   axilarMedia: null,
   panturrilhaMedial: null,
+  suprailiacaAnt: null,
+  suprailiacaMed: null,
 }
 
 export interface Protocolo {

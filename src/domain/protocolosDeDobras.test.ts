@@ -56,13 +56,13 @@ describe('catálogo (spec antropometria-completa, CA-2010)', () => {
   it('CA-2010: as dobras exigidas são as da tabela da seção 4 da spec', () => {
     const exigidas = (id: IdProtocolo, sexo: Sexo) => PROTOCOLOS_DE_DOBRAS.find((p) => p.id === id)?.porSexo[sexo].dobras
     expect(exigidas('jackson-pollock-3', 'M')).toEqual(['peitoral', 'abdominal', 'coxa'])
-    expect(exigidas('jackson-pollock-3', 'F')).toEqual(['tricipital', 'suprailiaca', 'coxa'])
-    const sete = ['peitoral', 'axilarMedia', 'tricipital', 'subescapular', 'abdominal', 'suprailiaca', 'coxa']
+    expect(exigidas('jackson-pollock-3', 'F')).toEqual(['tricipital', 'suprailiacaAnt', 'coxa'])
+    const sete = ['peitoral', 'axilarMedia', 'tricipital', 'subescapular', 'abdominal', 'suprailiacaAnt', 'coxa']
     expect(exigidas('jackson-pollock-7', 'M')).toEqual(sete)
     expect(exigidas('jackson-pollock-7', 'F')).toEqual(sete)
-    expect(exigidas('durnin-womersley', 'F')).toEqual(['bicipital', 'tricipital', 'subescapular', 'suprailiaca'])
-    expect(exigidas('petroski', 'M')).toEqual(['subescapular', 'tricipital', 'suprailiaca', 'panturrilhaMedial'])
-    expect(exigidas('petroski', 'F')).toEqual(['subescapular', 'suprailiaca', 'coxa'])
+    expect(exigidas('durnin-womersley', 'F')).toEqual(['bicipital', 'tricipital', 'subescapular', 'suprailiacaMed'])
+    expect(exigidas('petroski', 'M')).toEqual(['subescapular', 'tricipital', 'suprailiacaMed', 'panturrilhaMedial'])
+    expect(exigidas('petroski', 'F')).toEqual(['subescapular', 'suprailiacaMed', 'coxa'])
     expect(exigidas('guedes', 'M')).toEqual(['tricipital', 'suprailiaca', 'abdominal'])
     expect(exigidas('guedes', 'F')).toEqual(['subescapular', 'suprailiaca', 'coxa'])
     expect(exigidas('faulkner-4', 'M')).toEqual(['tricipital', 'subescapular', 'suprailiaca', 'abdominal'])
@@ -92,7 +92,8 @@ describe('se o protocolo se aplica (spec antropometria-completa, CA-2011)', () =
 
   it('CA-2011 e CB-1000: dobra 0 ou negativa conta como faltando', () => {
     const a = aplicacaoDoProtocolo('jackson-pollock-3', paciente('F', 30), dobras({ tricipital: 0, suprailiaca: -2, coxa: 20 }))
-    expect(a.dobrasQueFaltam).toEqual(['tricipital', 'suprailiaca'])
+    // D-1039: a falta da suprailíaca aponta o campo da linha do protocolo (JP: axilar anterior).
+    expect(a.dobrasQueFaltam).toEqual(['tricipital', 'suprailiacaAnt'])
   })
 
   it('CB-1001: sem sexo ou sem idade, não dá para dizer', () => {
@@ -538,5 +539,52 @@ describe('conversão dos dois ids de hoje (spec antropometria-completa, revisão
   it('CA-2077: a conversão escolhida vale também nos dois ids de hoje', () => {
     const r = calculado(calcularProtocolo('jackson-pollock-3', paciente('F', 30), dobras({ tricipital: 25, suprailiaca: 20, coxa: 25 }), { conversao: 'brozek' }))
     expect(r.conversao).toBe('brozek')
+  })
+})
+
+describe('suprailíaca pela linha (spec antropometria-completa, revisão, CA-2078 e CA-2079)', () => {
+  const mulher = paciente('F', 30, { pesoKg: 60, estaturaCm: 165 })
+  const jp3 = (d: Partial<Dobras>) => calcularProtocolo('jackson-pollock-3', mulher, dobras({ tricipital: 25, coxa: 25, ...d }))
+
+  it('CA-2078: JP 3 dobras usa a da linha axilar anterior, sem aviso de linha; com as duas linhas, a anterior', () => {
+    const r = calculado(jp3({ suprailiacaAnt: 20 }))
+    expect(r.densidade).toBeCloseTo(1.03708, 5)
+    expect(r.avisos.join(' ')).not.toMatch(/linha/)
+    expect(calculado(jp3({ suprailiacaAnt: 20, suprailiacaMed: 30 })).somaMm).toBe(70)
+  })
+
+  it('CA-2078: só com a de linha não informada (plano de antes), o mesmo número e o aviso', () => {
+    const antes = calculado(jp3({ suprailiaca: 20 }))
+    expect(antes.gorduraPct).toBe(calculado(jp3({ suprailiacaAnt: 20 })).gorduraPct)
+    expect(antes.avisos.join(' ')).toMatch(/sem a linha informada.*axilar anterior/)
+  })
+
+  it('CA-2078: só com a da outra linha, calcula e avisa que pode estar deslocado; sem nenhuma, falta a da linha do protocolo', () => {
+    const outra = calculado(jp3({ suprailiacaMed: 20 }))
+    expect(outra.avisos.join(' ')).toMatch(/linha axilar média; o protocolo pede a da linha axilar anterior.*deslocado/)
+    const nenhuma = calcularProtocolo('jackson-pollock-3', mulher, dobras({ tricipital: 25, coxa: 25 }))
+    expect(nenhuma.calculou).toBe(false)
+    if (!nenhuma.calculou) expect(nenhuma.aplicacao?.dobrasQueFaltam).toEqual(['suprailiacaAnt'])
+  })
+
+  it('CA-2078: Durnin & Womersley e Petroski usam a da linha axilar média', () => {
+    const dw = calculado(calcularProtocolo('durnin-womersley', paciente('M', 35), dobras({ bicipital: 10, tricipital: 10, subescapular: 10, suprailiacaMed: 10, suprailiacaAnt: 30 }), { conversao: 'siri' }))
+    expect(dw.somaMm).toBe(40)
+    expect(dw.avisos.join(' ')).not.toMatch(/linha/)
+    const petroski = calculado(calcularProtocolo('petroski', paciente('M', 30), dobras({ subescapular: 15, tricipital: 15, suprailiacaMed: 15, panturrilhaMedial: 15, suprailiacaAnt: 40 })))
+    expect(petroski.densidade).toBeCloseTo(1.05365, 5)
+  })
+
+  it('CA-2079: Guedes e Faulkner, sem linha registrada: a de linha não informada, depois a anterior, depois a média, e avisa qual', () => {
+    const quatro = { tricipital: 10, subescapular: 12, abdominal: 16 }
+    const semLinha = calculado(calcularProtocolo('faulkner-4', paciente('M', 24), dobras({ ...quatro, suprailiaca: 14, suprailiacaAnt: 40, suprailiacaMed: 40 })))
+    expect(semLinha.gorduraPct).toBeCloseTo(13.739, 3)
+    expect(semLinha.avisos.join(' ')).toMatch(/não registra a linha da suprailíaca/)
+    const anterior = calculado(calcularProtocolo('faulkner-4', paciente('M', 24), dobras({ ...quatro, suprailiacaAnt: 14, suprailiacaMed: 40 })))
+    expect(anterior.gorduraPct).toBeCloseTo(13.739, 3)
+    expect(anterior.avisos.join(' ')).toMatch(/usada a da linha axilar anterior/)
+    const media = calculado(calcularProtocolo('guedes', paciente('M', 22), dobras({ tricipital: 15, suprailiacaMed: 15, abdominal: 20 })))
+    expect(media.densidade).toBeCloseTo(1.05743, 5)
+    expect(media.avisos.join(' ')).toMatch(/usada a da linha axilar média/)
   })
 })

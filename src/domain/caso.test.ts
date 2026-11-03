@@ -168,6 +168,8 @@ describe('medidas da antropometria completa (spec antropometria-completa)', () =
       supraespinal: null,
       axilarMedia: null,
       panturrilhaMedial: null,
+      suprailiacaAnt: null,
+      suprailiacaMed: null,
     })
     expect(c.circunferenciaCinturaCm).toBeNull()
     expect(c.circunferenciaPanturrilhaCm).toBeNull()
@@ -205,6 +207,8 @@ describe('medidas da antropometria completa (spec antropometria-completa)', () =
       supraespinal: null,
       axilarMedia: null,
       panturrilhaMedial: null,
+      suprailiacaAnt: null,
+      suprailiacaMed: null,
     })
     expect(lido.composicao.bioimpedancia).toEqual({ gorduraPct: 27, massaMagraKg: null, aguaPct: null, aparelho: 'InBody' })
     expect(lido.medidasCorporais).toEqual(MEDIDAS_CORPORAIS_VAZIAS)

@@ -106,6 +106,8 @@ export const NA_DUPLICACAO: ClassificacaoDoPlano = {
       supraespinal: 'medida do dia',
       axilarMedia: 'medida do dia',
       panturrilhaMedial: 'medida do dia',
+      suprailiacaAnt: 'medida do dia',
+      suprailiacaMed: 'medida do dia',
     },
     bioimpedancia: {
       gorduraPct: 'medida do dia',
