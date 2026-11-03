@@ -28,7 +28,8 @@ export function nomeDaCopia(nome: string): string {
  * - `copiado`: dado do paciente, da prescrição, do documento ou preferência; vai igual;
  * - `novo`: a cópia ganha o seu (id, nome com "(cópia)" e a data da consulta nova);
  * - `medida do dia`: medida tirada na consulta; no retorno de um paciente, vem vazia;
- * - `medida do dia abaixo de 20 anos`: a estatura, que só vai para quem já é adulto na data nova.
+ * - `medida do dia abaixo de 20 anos`: a estatura e os comprimentos e diâmetros ósseos, que só vão para quem já é
+ *   adulto na data nova.
  */
 export type NaDuplicacao = 'copiado' | 'novo' | 'medida do dia' | 'medida do dia abaixo de 20 anos'
 
@@ -67,7 +68,7 @@ export const NA_DUPLICACAO: ClassificacaoDoPlano = {
   circunferenciaCinturaCm: 'medida do dia',
   circunferenciaPanturrilhaCm: 'medida do dia',
   // Spec antropometria-completa (CA-2002): as medidas novas são do dia; o ponto da cintura é protocolo e vai igual,
-  // como o protocolo das dobras.
+  // como o protocolo das dobras. Diâmetros, altura do joelho e semienvergadura são osso: vão como a estatura (D-1041).
   medidasCorporais: {
     bracoRelaxadoDireitoCm: 'medida do dia',
     bracoRelaxadoEsquerdoCm: 'medida do dia',
@@ -86,11 +87,11 @@ export const NA_DUPLICACAO: ClassificacaoDoPlano = {
     coxaProximalDireitaCm: 'medida do dia',
     coxaProximalEsquerdaCm: 'medida do dia',
     panturrilhaEsquerdaCm: 'medida do dia',
-    diametroPunhoCm: 'medida do dia',
-    diametroCotoveloCm: 'medida do dia',
-    diametroJoelhoCm: 'medida do dia',
-    alturaDoJoelhoCm: 'medida do dia',
-    semienvergaduraCm: 'medida do dia',
+    diametroPunhoCm: 'medida do dia abaixo de 20 anos',
+    diametroCotoveloCm: 'medida do dia abaixo de 20 anos',
+    diametroJoelhoCm: 'medida do dia abaixo de 20 anos',
+    alturaDoJoelhoCm: 'medida do dia abaixo de 20 anos',
+    semienvergaduraCm: 'medida do dia abaixo de 20 anos',
   },
   composicao: {
     // Preferências: comparar consultas pede o mesmo protocolo e o mesmo aparelho.
@@ -163,8 +164,8 @@ function adultoNaData(caso: Caso, nascimento: string | null, dia: string): boole
 
 /**
  * Cópia independente do caso e do plano: ids novos em tudo, mesmo paciente, data da consulta trocada pela de hoje.
- * No retorno de um paciente, as medidas do dia ficam vazias (peso, cintura, panturrilha, dobras, bioimpedância e medidas corporais; a
- * estatura abaixo de 20 anos), para ninguém salvar a medida velha como nova; a tela mostra o último peso ao lado
+ * No retorno de um paciente, as medidas do dia ficam vazias (peso, cintura, panturrilha, dobras, bioimpedância e
+ * circunferências; a estatura, os diâmetros, a altura do joelho e a semienvergadura abaixo de 20 anos), para ninguém salvar a medida velha como nova; a tela mostra o último peso ao lado
  * (spec ficha-unica, D-358 e D-367). Plano sem paciente leva tudo, como sempre (CB-356).
  */
 export function duplicarCaso(

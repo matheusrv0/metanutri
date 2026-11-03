@@ -191,11 +191,6 @@ describe('medidas do dia na duplicação (spec ficha-unica, D-367)', () => {
       'medidasCorporais.coxaProximalDireitaCm',
       'medidasCorporais.coxaProximalEsquerdaCm',
       'medidasCorporais.panturrilhaEsquerdaCm',
-      'medidasCorporais.diametroPunhoCm',
-      'medidasCorporais.diametroCotoveloCm',
-      'medidasCorporais.diametroJoelhoCm',
-      'medidasCorporais.alturaDoJoelhoCm',
-      'medidasCorporais.semienvergaduraCm',
       'composicao.dobras.tricipital',
       'composicao.dobras.subescapular',
       'composicao.dobras.suprailiaca',
@@ -212,7 +207,15 @@ describe('medidas do dia na duplicação (spec ficha-unica, D-367)', () => {
       'composicao.bioimpedancia.massaMagraKg',
       'composicao.bioimpedancia.aguaPct',
     ])
-    expect(caminhos('medida do dia abaixo de 20 anos')).toEqual(['estaturaCm'])
+    expect(caminhos('medida do dia abaixo de 20 anos')).toEqual([
+      'estaturaCm',
+      // D-1041 (spec antropometria-completa): comprimentos e diâmetros ósseos vão como a estatura.
+      'medidasCorporais.diametroPunhoCm',
+      'medidasCorporais.diametroCotoveloCm',
+      'medidasCorporais.diametroJoelhoCm',
+      'medidasCorporais.alturaDoJoelhoCm',
+      'medidasCorporais.semienvergaduraCm',
+    ])
     expect(caminhos('novo')).toEqual(['id', 'nome', 'dataConsulta'])
   })
 
@@ -282,6 +285,20 @@ describe('medidas do dia na duplicação (spec ficha-unica, D-367)', () => {
     expect(semFicha(35)).toBe(170)
     // Data de nascimento estragada é o mesmo que não ter.
     expect(duplicarCaso(registro({ ...COMPLETO, idadeAnos: 35 }), contador('copia'), { hoje: '2026-11-03', nascimento: '20/03/1991' }).caso.estaturaCm).toBe(170)
+  })
+
+  it('CA-2087 (spec antropometria-completa): altura do joelho, semienvergadura e diâmetros vão como a estatura', () => {
+    const OSSOS = ['diametroPunhoCm', 'diametroCotoveloCm', 'diametroJoelhoCm', 'alturaDoJoelhoCm', 'semienvergaduraCm'] as const
+    const ossos = (caso: Caso) => OSSOS.map((k) => caso.medidasCorporais[k])
+    const adulto = duplicarCaso(registro(COMPLETO), contador('copia'), { hoje: '2026-11-03', nascimento: '1991-03-20' }).caso
+    expect(ossos(adulto)).toEqual(ossos(registro(COMPLETO).caso))
+    expect(ossos(adulto).every((v) => v !== null)).toBe(true)
+    expect(adulto.medidasCorporais.quadrilCm).toBeNull()
+    expect(adulto.composicao.dobras.tricipital).toBeNull()
+    const adolescente = duplicarCaso(registro(COMPLETO), contador('copia'), { hoje: '2026-11-03', nascimento: '2009-05-01' }).caso
+    expect(ossos(adolescente)).toEqual([null, null, null, null, null])
+    const semIdade = duplicarCaso(registro({ ...COMPLETO, idadeAnos: null }), contador('copia'), { hoje: '2026-11-03', nascimento: null }).caso
+    expect(ossos(semIdade)).toEqual([null, null, null, null, null])
   })
 
   it('CB-359: sem idade conhecida, a estatura fica vazia', () => {

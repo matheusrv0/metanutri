@@ -92,6 +92,7 @@ prioridade, meta de perda e mudança mínima detectável).
 | D-1038 | **Faixa da soma e pico da parábola** (revisão independente, item 2). Cada protocolo guarda a faixa da soma na amostra publicada e, nas quadráticas, o pico da parábola (Σ = b ÷ 2c, onde a densidade para de cair). **Acima do pico a equação inverte** (mais dobra daria menos gordura): o motor não calcula e diz por quê. Fora da faixa da amostra, mas até o pico, calcula e avisa com a faixa. Faixas: JP78 Σ3 14–118 mm e Σ7 32–272 mm (Tabela 1 do original); Durnin & Womersley Σ4 15–210 mm (Tabela 9 do original); Petroski mulher 21–118 mm, inferida pela faixa de cada dobra (Petroski e Pires-Neto 1995, Tabela 1: SE 5–35, SI 3–31, CX 13–52; não é limite publicado, e o aviso diz isso); JPW80, Petroski homem, Guedes, Faulkner e Slaughter, não publicada (sem aviso de faixa). Picos: JP3 homem 258,3 mm; JP3 mulher 215,8; JP7 homem 395,4; JP7 mulher 419,4; Petroski homem 191,5; Petroski mulher 115,5. O Slaughter só usa a quadrática até 35 mm, longe do pico dele (51 e 76 mm) | Pesquisa 2.2 e 2.4.3; a sonda da revisão mostrou o % de gordura caindo com a soma subindo em Petroski mulher acima de 115,5 mm |
 | D-1039 | **Suprailíaca pela linha** (revisão independente, item 5). Cada protocolo diz a linha que usa: Jackson & Pollock 3 e 7, a **axilar anterior** (ACSM/JP); Durnin & Womersley e Petroski, a **axilar média** (D&W: "just above the iliac crest in the mid-axillary line"; Petroski seguiu Harrison 1991, o manual de Lohman, que mede na axilar média); Guedes e Faulkner, a pesquisa não registra. A conta usa a dobra da linha do protocolo; sem ela, a de linha não informada (o valor dos planos de antes: a tela de hoje nunca disse a linha), com aviso; sem as duas, a da outra linha, com o aviso de que o resultado pode estar deslocado (a pesquisa 2.7 D5 manda avisar, não bloquear; quem decide é a nutricionista). No protocolo sem linha registrada: a de linha não informada, depois a anterior, depois a média, com o aviso da linha usada. Falta a suprailíaca só quando as três estão vazias, e a falta aponta o campo da linha do protocolo. **Abdominal:** entre os protocolos daqui só Jackson & Pollock diz o local (2 cm à direita da cicatriz umbilical, vertical, ACSM); Guedes e Faulkner não dizem. Sem variação a resolver, o local da abdominal não ganha campo agora: entra com o primeiro protocolo ISAK (5 cm) ou Lohman (3 cm) | Pesquisa 1.4 (quadro "suprailíaca ≠ crista ilíaca ≠ supraespinal": trocar a linha muda o número) e 1.9 D1 |
 | D-1040 | **Idade não informada** (revisão independente, item 11). Idade é número finito de 0 em diante; vazia, `NaN`, `Infinity` ou negativa conta como **não informada** em todo o motor: a fase da vida não sai, os protocolos com idade na conta pedem a idade (com idade fora da conta, calculam sem o aviso de população), as linhas com faixa por idade dizem que falta a idade (e não "sem referência para a idade"), e compleição, peso ideal, peso ajustado, prioridade, meta de perda, estimativas, gasto de repouso e proteína não vêm. O motor nunca compara uma idade inválida com um corte | A sonda da revisão: idade `NaN` virava adulto nas estimativas, na prioridade e na meta de perda (`NaN < 18` é falso), e idade −3 entrava na conta de JP 3 |
+| D-1041 | **Comprimentos e diâmetros ósseos no retorno** (observação da revisão). A altura do joelho, a semienvergadura e os diâmetros do punho, do cotovelo e do joelho vão na cópia como a estatura (D-367 da `ficha-unica`): copiados para quem tem 20 anos ou mais na data nova; abaixo disso, ou sem idade conhecida, vazios. As circunferências e as dobras continuam medida do dia | Osso não muda entre consultas no adulto; na criança e no adolescente, cresce, como a estatura. Repetir a medida no retorno só soma erro de medida |
 
 ## 3. Critérios de aceite
 
@@ -108,7 +109,8 @@ prioridade, meta de perda e mudança mínima detectável).
   novo vem `null`; dado um plano com só parte das medidas novas, as que vieram ficam e as outras vêm `null`.
 - **CA-2002** · Dado o retorno de um paciente (duplicar), então toda medida nova (circunferências, dobras, diâmetros,
   altura do joelho e semienvergadura) vem vazia e o ponto da cintura vai igual; dado um plano sem paciente, tudo vai
-  igual (CB-356 da `ficha-unica`).
+  igual (CB-356 da `ficha-unica`). *Revisto (D-1041):* a altura do joelho, a semienvergadura e os diâmetros vão como a
+  estatura (CA-2087).
 - **CA-2003** · Dado a lista de classificação da duplicação (D-367), então cada campo novo tem a sua classe, e um campo
   novo de medida sem classe não compila.
 
@@ -319,6 +321,9 @@ prioridade, meta de perda e mudança mínima detectável).
   do braço dizem que falta a idade.
 - **CA-2086** · Dado objetivo "ganhar" ou "manter" e prioridade ≥ 1 (IMC 31,1), então a meta de perda não vem e a
   prioridade vem; sem objetivo, com a mesma prioridade, a meta vem.
+- **CA-2087** · Dado o retorno de um paciente com 35 anos na data nova, então a altura do joelho, a semienvergadura e os
+  três diâmetros vão iguais, como a estatura; com 17 anos, ou sem idade conhecida, vêm vazios; as circunferências e as
+  dobras vêm vazias em qualquer idade.
 
 ## 4. Dobras exigidas por protocolo
 
