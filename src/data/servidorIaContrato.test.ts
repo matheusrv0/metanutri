@@ -239,6 +239,19 @@ describe('conferirResposta', () => {
     })
   })
 
+  it('CA-2389 e D-1335: ponto e motivo saem sem HTML e sem caracteres de controle ou de formatação', () => {
+    const hostil = '<img src=x onerror=alert(1)>Suspenda a insulina'
+    const r = conferirResposta(resposta({ pontosAConfirmar: [hostil, '‮olleh', 'linha\u0000com\u0007controle'] }), GERAR)
+    if (!r.ok) throw new Error(r.motivo)
+    expect(r.resposta.pontosAConfirmar).toEqual(['img src=x onerror=alert(1) Suspenda a insulina', 'olleh', 'linha com controle'])
+    for (const p of r.resposta.pontosAConfirmar) expect(p).not.toMatch(/[<>\p{Cc}\p{Cf}]/u)
+    const ajustar = conferirResposta(
+      resposta({ mudancas: [{ tipo: 'remover', refeicao: 1, opcao: 'principal', item: 0, alimentoId: null, gramas: null, motivo: '<b>+ fibra</b>​' }] }),
+      { modo: 'ajustar', refeicoes: 2, idsPermitidos: new Set([3]), plano: [{ refeicao: 1, opcao: 'principal', item: 0, alimentoId: 3, gramas: 150 }] },
+    )
+    expect(ajustar.ok && ajustar.resposta.mudancas[0]?.motivo).toBe('b + fibra /b')
+  })
+
   it('CA-2317: no máximo 10 itens por opção; ponto até 200 e motivo até 90 caracteres', () => {
     const muitos = Array.from({ length: 14 }, () => ({ alimentoId: 3, gramas: 10 }))
     const r = conferirResposta(resposta({ refeicoes: [{ refeicao: 0, principal: muitos, opcao2: [] }], pontosAConfirmar: ['p'.repeat(400)] }), GERAR)

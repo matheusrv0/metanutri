@@ -548,8 +548,15 @@ function formaDoEsquema(json: unknown): string | null {
   return null
 }
 
+/**
+ * D-1335 e CA-2389: o texto da IA ("motivo" e "pontosAConfirmar") sem `<`, `>` e sem os caracteres de controle e de
+ * formatação (inclusive os que invertem o sentido do texto), com os espaços juntos e cortado no limite.
+ */
 const cortar = (texto: string, limite: number): string => {
-  const limpo = texto.replace(/\s+/g, ' ').trim()
+  const limpo = texto
+    .replace(/[<>\p{Cc}\p{Cf}]+/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
   return limpo.length <= limite ? limpo : `${limpo.slice(0, limite - 1).trimEnd()}…`
 }
 
