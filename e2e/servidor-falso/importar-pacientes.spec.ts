@@ -3,6 +3,7 @@
 import { expect, test, type Locator, type Page } from '@playwright/test'
 import { semRolagemLateral } from '../apoio/fumaca.ts'
 import { ENDERECO_FALSO, ligarServidorFalso, PERFIL_NUTRICIONISTA, type ServidorFalso } from '../apoio/servidorFalso.ts'
+import { montarZip } from '../../src/domain/importar/montarArquivos.test-utils.ts'
 
 test.use({ reducedMotion: 'reduce' })
 
@@ -183,6 +184,27 @@ test('CB-911: 2.000 linhas são lidas sem travar a tela', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Importar 1.999 pacientes' })).toBeVisible()
   await page.getByRole('button', { name: 'Mostrar mais 50' }).click()
   await expect(page.getByRole('table', { name: 'Linhas da planilha' }).getByRole('checkbox')).toHaveCount(100)
+})
+
+test('CB-928: o XLSX de 300 bytes com explosão de entidades é recusado na hora, sem congelar a aba', async ({ page }) => {
+  await abrirImportar(page)
+  const principal = 'http://schemas.openxmlformats.org/spreadsheetml/2006/main'
+  const relacoes = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships'
+  const bytes = await montarZip([
+    { nome: 'xl/workbook.xml', dados: `<workbook xmlns="${principal}" xmlns:r="${relacoes}"><sheets><sheet name="A" sheetId="1" r:id="rId1"/></sheets></workbook>` },
+    {
+      nome: 'xl/_rels/workbook.xml.rels',
+      dados: `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="${relacoes}/worksheet" Target="worksheets/sheet1.xml"/></Relationships>`,
+    },
+    { nome: 'xl/worksheets/sheet1.xml', dados: `<worksheet xmlns="${principal}"><sheetData><row r="1"><c r="A1" t="s"><v>0</v></c></row></sheetData></worksheet>` },
+    // O XML que congelava o Chrome por 14 s (sonda da revisão de 03/11/2026).
+    { nome: 'xl/sharedStrings.xml', dados: `<?xml version="1.0"?><!DOCTYPE sst [<!ENTITY x "${'A'.repeat(50_000)}">]><sst xmlns="${principal}"><si><t>${'&x;'.repeat(20_000)}</t></si></sst>` },
+  ])
+  expect(bytes.length).toBeLessThan(2_000)
+  const inicio = Date.now()
+  await campoDoArquivo(page).setInputFiles({ name: 'entidades.xlsx', mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', buffer: Buffer.from(bytes) })
+  await expect(page.getByRole('alert')).toHaveText('Não foi possível ler esta planilha. Use CSV ou XLSX.')
+  expect(Date.now() - inicio).toBeLessThan(3_000)
 })
 
 test('CA-1946: o que parece código na planilha é texto, na prévia e na ficha', async ({ page }) => {
