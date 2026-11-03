@@ -157,7 +157,8 @@ pesquisa por script para `src/data/frisancho.json`.
   esquema de percentis do braço (D-1025, São Camilo, [V1]); o IMC-alvo do idoso (D-1027: 24,5); o peso ajustado sobre o
   IMC 25 (D-1027, igual à água); a proteína por objetivo (D-1032, com linhas que são proposta nossa); o nível de
   prioridade e a meta de perda (D-1033, D-1034: regras montadas pela pesquisa a partir de fontes fortes e limitadas);
-  a panturrilha do idoso continua Pagotto 2018 (D-1029), e a pesquisa sugere rever para o MS < 31.
+  a panturrilha do idoso continua Pagotto 2018 (D-1029), e a pesquisa sugere rever para o MS < 31; rodada 2: o aviso
+  da ESPEN no idoso com IMC de 27 a 29,99 (D-1034, CA-2092).
 - **Tipo do protocolo gravado:** continua com os dois de hoje (D-1007). A tela nova precisa ampliar o tipo de
   `composicao.protocolo` para `IdProtocolo` e trocar o seletor; sem isso, os protocolos novos não ficam gravados.
 - **Entradas que o plano ainda não guarda:** maturação sexual e grupo do estudo (Slaughter), perfil de atividade,
@@ -283,3 +284,21 @@ retrocompatibilidade não mudam; nenhuma dependência nova.
 - R22: a faixa de 4 a 44% é da amostra de Jackson, Pollock e Ward (1980), a mesma das duas equações das mulheres:
   vale para JP 3 e JP 7 dobras na mulher.
 - R19: a posição da ESPEN no idoso com IMC de 27 a 29,99 vai para a Mor revisar (a meta continua; só ganha o aviso).
+
+**Validação da rodada 2 (R23, 03/11/2026):** `npm run check` verde (lint, typecheck e 338 arquivos de teste, 6.384
+testes; eram 6.366). As sondas da rodada 2 do revisor (`motivo.test.ts`, `correcoes.test.ts` e `protocolos2.test.ts`)
+dão 160 de 160; antes desta rodada davam 156.
+
+**Divergências que ficam (para o dono saber):**
+
+- `composicao.ts` (o motor da tela de hoje) continua com o texto antigo do resultado implausível; a D-1015 revista vale
+  para o motor novo. Os números dos dois ids de hoje continuam iguais (CA-2015).
+- Gasto de repouso, proteína, meta de perda e peso de referência usam o % da bioimpedância quando as dobras recusam,
+  como antes (D-1019); o aviso da D-1042 sai nas linhas de gordura e de massas, não nessas sugestões.
+
+| CA | Teste |
+|---|---|
+| CA-2074 (revisto), CA-2079 (revisto), CA-2088, CA-2093 a CA-2095, CB-1009 (revisto) | `protocolosDeDobras.test.ts` |
+| CA-2088 a CA-2090 | `indicadoresDeGordura.test.ts` |
+| CA-2091 | `pontoDePartida.test.ts` |
+| CA-2092 | `metaDePerda.test.ts` |
