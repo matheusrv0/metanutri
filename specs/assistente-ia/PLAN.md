@@ -104,7 +104,7 @@ protótipo aprovado.
 | DP-IA-3 | **O catálogo é gerado por um teste, não por script `.mjs`.** A regra prescritível e a base ampliada vivem em TypeScript; um `.mjs` teria de copiar a regra. `ATUALIZAR_CATALOGO_IA=1 npx vitest run src/data/iaCatalogo.test.ts` regrava; sem a variável, o teste falha quando a base muda e diz o comando. |
 | DP-IA-4 | **A avaliação real é um teste pulado por padrão** (`src/data/avaliacaoIa.test.ts`), pelo mesmo motivo: ela usa o domínio inteiro. |
 | DP-IA-5 | **A função lê o fluxo inteiro e só então monta a mensagem.** O fluxo existe para a conexão não ficar parada; mostrar o texto parcial não serve (o JSON só vale inteiro). |
-| DP-IA-6 | **A tabela de preços é a da página oficial conferida pela skill da API** (Opus 5.5: US$ 4 / 5 / 0,20 / 20 por milhão de entrada, gravação de cache de 5 min, leitura e saída; Sonnet 5.5: 2 / 2,50 / 0,20 / 10; Haiku 5.5: 0,10 / 0,125 / 0,01 / 0,50; Opus 5 e Opus 4.8, que a troca automática usa: 5 / 6,25 / 0,50 / 25). O custo anotado é uma estimativa; a fatura é a do Console. |
+| DP-IA-6 | **A tabela de preços é a da página oficial, conferida em 03/11/2026 (D-1334)** (Opus 5.5: US$ 4 / 5 / 0,20 / 20 por milhão de entrada, gravação de cache de 5 min, leitura e saída; Sonnet 5.5: 2 / 2,50 / 0,10 / 10; Sonnet 5: 2 / 2,50 / 0,20 / 10; Haiku 5.5: 0,10 / 0,125 / 0,01 / 0,50; Opus 5 e Opus 4.8, que a troca automática usa: 5 / 6,25 / 0,50 / 25). O custo anotado é uma estimativa; a fatura é a do Console. |
 | DP-IA-7 | **A hora conta todo pedido à IA**, com qualquer resultado; o mês conta só o sucesso (D-1318). Assim a recusa não gasta a cota, mas também não vira um jeito de chamar a IA sem fim. |
 | DP-IA-8 | **CRN não encontrado bloqueia a IA na hora**, sem os 7 dias de prazo da exportação: a Política de Uso pede profissional com registro. |
 
@@ -127,3 +127,23 @@ protótipo aprovado.
    decido o modelo pelas metas (desenho, 8.3).
 6. **P2**, depois do protótipo aprovado: telas, textos legais e e2e; publicação do site no dia da versão nova dos
    Termos.
+
+## 6. Rodada de correção (revisão de segurança, 03/11/2026)
+
+A revisão independente reprovou o servidor por 8 achados. Cada um vira decisão na SPEC (D-1329 a D-1336) e teste com o
+ID (CA-2382 a CA-2389, CB-1319), em commits novos:
+
+- [ ] **T13 — Custo do corte e cancelamento (D-1329, D-1330).** `_shared/iaCusto.ts` (novo: preços e estimativa do
+  corte); `iaAnthropic.ts` lê o fluxo aos poucos, junta o sinal do pedido ao prazo e devolve os tokens vistos e
+  estimados; `ia.ts` anota `custo_estimado` e responde 499 no cancelamento; `index.ts` passa `req.signal`; o 016 ganha
+  a coluna `custo_estimado` e o parâmetro em `concluir_uso_da_ia`.
+- [ ] **T14 — Limpeza de contato (D-1331).** `iaContrato.ts`: NFKC, e-mail escrito por extenso, @perfil, endereço web
+  sem http e sequência de 8 ou mais algarismos; os 21 casos da revisão viram teste.
+- [ ] **T15 — A porção depois da soma (D-1332).** `iaConferencia.ts` (conferência 8 no total; ajuste só no alimento
+  com grupo e até 2.000 g) e `iaMudancas.ts` (soma no máximo do grupo, com a marca e o efeito).
+- [ ] **T16 — Modelo, preços e texto da IA (D-1333 a D-1335).**
+- [ ] **T17 — Os testes que faltavam:** CA-2300 (CORS e 405 pelo cabeçalho que a função devolve), CB-1300, CB-1306,
+  CB-1308, CB-1311 e CB-1317.
+
+**P2 (D-1336):** a função passa a conferir a autorização gravada na ficha antes de chamar a IA (tarefa nova da P2, junto
+do consentimento na ficha).
