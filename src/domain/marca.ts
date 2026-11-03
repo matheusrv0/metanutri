@@ -2,7 +2,7 @@
 // no perfil (de onde sai o plano impresso e a prévia) e numa marca publicada, a tabela `marcas`, que a função do link
 // lê junto com as missões, pelo token, sem dizer de quem é (supabase/015-marca-no-link.sql).
 import { avaliarCor, ehCorPadrao, normalizarCor } from './corDaMarca.ts'
-import { ehLogoPublicavel } from './logoDaMarca.ts'
+import { ehLogoPublicavel, logoCabeNoLink } from './logoDaMarca.ts'
 import type { Acompanhamento } from './acompanhamento.ts'
 import type { Perfil } from './perfil.ts'
 
@@ -26,14 +26,15 @@ function corDoLink(valor: unknown): string | null {
 }
 
 /**
- * DP-ML-13 e CA-1973: o link desconfia do que lê. Só PNG em data URI dentro do teto vira logo; o resto (a função de
- * antes, sem as colunas; uma gravação que contornou o app) vira "sem logo" ou "sem cor", e o link abre do mesmo jeito.
+ * DP-ML-13 e CA-1973: o link desconfia do que lê. Só PNG em data URI dentro do teto e do tamanho da cópia (DP-ML-33)
+ * vira logo; o resto (a função de antes, sem as colunas; uma gravação que contornou o app) vira "sem logo" ou "sem cor",
+ * e o link abre do mesmo jeito.
  */
 export function lerMarcaDoLink(linha: unknown): MarcaDoLink {
   if (typeof linha !== 'object' || linha === null) return SEM_MARCA
   const o = linha as Record<string, unknown>
   const logo = o['marca_logo']
-  return { logo: typeof logo === 'string' && ehLogoPublicavel(logo) ? logo : null, cor: corDoLink(o['marca_cor']) }
+  return { logo: typeof logo === 'string' && ehLogoPublicavel(logo) && logoCabeNoLink(logo) ? logo : null, cor: corDoLink(o['marca_cor']) }
 }
 
 /** A marca guardada no perfil: a da prévia e a do plano impresso (D-952). */

@@ -33,6 +33,13 @@ describe('a marca que o link lê (CA-1973, DP-ML-13)', () => {
     }
   })
 
+  it('CA-1973 e DP-ML-33: a logo publicada maior que a cópia do app (24.000 × 24.000 em poucos bytes) vira "sem logo"', () => {
+    // A assinatura do PNG e o IHDR de 24.000 × 24.000 (0x5DC0): passa na trava do banco, mas o app nunca faz isto.
+    const ihdr = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 13, 0x49, 0x48, 0x44, 0x52, 0, 0, 0x5d, 0xc0, 0, 0, 0x5d, 0xc0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    const gigante = `data:image/png;base64,${btoa(String.fromCharCode(...ihdr))}`
+    expect(lerMarcaDoLink({ marca_logo: gigante, marca_cor: '#1f4e8c' })).toEqual({ logo: null, cor: '#1f4e8c' })
+  })
+
   it('DP-ML-13: cor fora do formato, recusada pelo contraste ou a padrão vira "sem cor"', () => {
     for (const cor of ['azul', '#8cc63f', '#0e3b43', 'red;x:y', '#1F4E8C ', null, 3]) {
       expect(lerMarcaDoLink({ marca_logo: null, marca_cor: cor }).cor, String(cor)).toBeNull()

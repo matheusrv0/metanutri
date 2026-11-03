@@ -5,7 +5,7 @@ import { Check, CircleAlert, ImageOff, ImageUp, LoaderCircle, TriangleAlert } fr
 import { useCallback, useEffect, useId, useState } from 'react'
 import { diaLocal } from '@/domain/acompanhamento.ts'
 import { avaliarCor, COR_PADRAO, CORES_PRONTAS, codigoDaCor, ehCorPadrao, formatarContraste } from '@/domain/corDaMarca.ts'
-import { AVISO_LOGO_CLARA, conferirArquivoDeLogo, ehLogoPublicavel, ERROS_DA_LOGO, prepararLogo, tipoDaLogoGuardada, type Desenhista } from '@/domain/logoDaMarca.ts'
+import { AVISO_LOGO_CLARA, conferirArquivoDeLogo, ehLogoPublicavel, ERROS_DA_LOGO, LOGO_ENVIO_MAX_BYTES, prepararLogo, tipoDaLogoGuardada, type Desenhista } from '@/domain/logoDaMarca.ts'
 import type { MarcaDoLink } from '@/domain/marca.ts'
 import { gravarPerfil, lerPerfil, type Perfil } from '@/domain/perfil.ts'
 import { cn } from '@/lib/utils'
@@ -93,14 +93,16 @@ export function TelaSuaMarca({ desenhista = desenhistaDoNavegador, publicar }: T
 
   const escolherArquivo = async (arquivo: File | undefined) => {
     if (!arquivo) return
-    const conferido = conferirArquivoDeLogo({ nome: arquivo.name, tipo: arquivo.type, bytes: arquivo.size })
-    if (conferido.tipo === 'erro') {
-      setErroDaLogo(conferido.mensagem)
-      return
-    }
     setLendoLogo(true)
     setErroDaLogo(null)
     try {
+      // CA-1953 e CB-967: o tipo e os lados da imagem saem dos bytes, não do nome nem do tipo que o navegador diz. Lê até
+      // 1 byte além do teto: o resto não precisa ser lido para recusar.
+      const conferido = conferirArquivoDeLogo(new Uint8Array(await arquivo.slice(0, LOGO_ENVIO_MAX_BYTES + 1).arrayBuffer()))
+      if (conferido.tipo === 'erro') {
+        setErroDaLogo(conferido.mensagem)
+        return
+      }
       const dataUrl = await lerComoDataUrl(arquivo)
       const pronta = await prepararLogo({ dataUrl, mime: conferido.mime }, desenhista)
       if (pronta.tipo === 'erro') {

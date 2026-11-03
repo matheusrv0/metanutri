@@ -18,6 +18,8 @@ const JPG_ANTIGO = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQ'
 
 const BYTES_PNG = Uint8Array.from(atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='), (c) => c.charCodeAt(0))
 const arquivoPng = () => new File([BYTES_PNG], 'logo.png', { type: 'image/png' })
+/** Um GIF de 1 × 1 de verdade (o das provas V2 e V2b da revisão de 03/11/2026). */
+const BYTES_GIF = Uint8Array.from(atob('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'), (c) => c.charCodeAt(0))
 
 interface OpcoesDoDesenhista {
   readonly bytes?: number
@@ -137,18 +139,34 @@ describe('Sua marca: a logo (CA-1951 a CA-1956, CB-950)', () => {
   it('CA-1953: GIF, HEIC, PDF ou mais de 2 MB: "Use PNG, JPG, WebP ou SVG, até 2 MB." e nada muda', async () => {
     guardar({ logo: PNG_REDUZIDO, marcaPublicada: true })
     const usuario = userEvent.setup({ applyAccept: false })
-    render(<TelaSuaMarca desenhista={desenhistaFalso().desenhista} publicar={publicadorFalso().publicar} />)
+    const { desenhista, abertos } = desenhistaFalso()
+    render(<TelaSuaMarca desenhista={desenhista} publicar={publicadorFalso().publicar} />)
     for (const arquivo of [
       new File(['GIF89a'], 'logo.gif', { type: 'image/gif' }),
       new File(['x'], 'foto.heic', { type: 'image/heic' }),
       new File(['%PDF'], 'logo.pdf', { type: 'application/pdf' }),
       new File([new Uint8Array(2 * 1024 * 1024 + 1)], 'grande.png', { type: 'image/png' }),
+      // As provas V2 e V2b da revisão: o GIF de verdade salvo como .png, e como .jpg sem tipo. Vale o conteúdo.
+      new File([BYTES_GIF], 'logo.png', { type: 'image/png' }),
+      new File([BYTES_GIF], 'logo.jpg', { type: '' }),
     ]) {
       await usuario.upload(screen.getByLabelText('Trocar logo'), arquivo)
-      expect(await screen.findByRole('alert')).toHaveTextContent('Use PNG, JPG, WebP ou SVG, até 2 MB.')
+      expect(await screen.findByRole('alert'), arquivo.name).toHaveTextContent('Use PNG, JPG, WebP ou SVG, até 2 MB.')
       expect(screen.getByRole('img', { name: 'Sua logo' })).toHaveAttribute('src', PNG_REDUZIDO)
       expect(salvar()).toBeDisabled()
     }
+    expect(abertos).toEqual([])
+  })
+
+  it('CB-967: a imagem de mais de 8.000 px de lado é recusada pelo cabeçalho, sem abrir: "Use uma logo mais simples."', async () => {
+    const { desenhista, abertos } = desenhistaFalso()
+    const usuario = abrir({ desenhista })
+    const cabecalho = Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 13, 0x49, 0x48, 0x44, 0x52, 0, 0, 0x1f, 0x41, 0, 0, 0, 40, 8, 6, 0, 0, 0])
+    await usuario.upload(screen.getByLabelText('Enviar logo'), new File([cabecalho], 'gigante.png', { type: 'image/png' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('Use uma logo mais simples.')
+    expect(screen.queryByRole('img', { name: 'Sua logo' })).not.toBeInTheDocument()
+    expect(abertos).toEqual([])
+    expect(salvar()).toBeDisabled()
   })
 
   it('CA-1954: a imagem que nem em 240 px cabe em 150 KB: "Use uma logo mais simples." e nada muda', async () => {
