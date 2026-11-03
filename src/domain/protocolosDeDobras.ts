@@ -353,12 +353,20 @@ export interface AplicacaoDoProtocolo {
 
 export const protocoloPorId = (id: IdProtocolo): Protocolo | null => PROTOCOLOS_DE_DOBRAS.find((p) => p.id === id) ?? null
 
+/** Os dois ids de `composicao.ts`: Siri em qualquer idade, para nenhum número já mostrado mudar (D-1007 revista). */
+const IDS_DE_HOJE: ReadonlySet<IdProtocolo> = new Set<IdProtocolo>(['jackson-pollock-3', 'faulkner-4'])
+
+/** A conversão escolhida; sem escolha, Siri nos dois ids de hoje e a automática nos novos (D-1007 e D-1009 revistas). */
+export const conversaoDoProtocolo = (protocolo: Protocolo, opcoes: OpcoesDoProtocolo): Conversao => opcoes.conversao ?? (IDS_DE_HOJE.has(protocolo.id) ? 'siri' : 'automatica')
+
+const AVISO_DE_LOHMAN = 'Conversão de Lohman (abaixo de 20 anos): aos 20 anos a conta passa para Siri, e o % muda de degrau sem a dobra mudar.'
+
 const somaDas = (exigidas: readonly DobraCutanea[], dobras: Dobras): number => exigidas.reduce((total, d) => total + (medidaValida(dobras[d]) ?? 0), 0)
 
 /** As entradas de que a conta precisa: as fixas, a idade da conversão automática e as do Slaughter até 35 mm. */
 function entradasPedidas(protocolo: Protocolo, variante: VarianteDoProtocolo, sexo: Sexo, soma: number | null, opcoes: OpcoesDoProtocolo): EntradaDaEquacao[] {
   const pedidas = [...variante.entradas]
-  const automatica = (opcoes.conversao ?? 'automatica') === 'automatica'
+  const automatica = conversaoDoProtocolo(protocolo, opcoes) === 'automatica'
   if (variante.saida === 'densidade' && automatica && !pedidas.includes('idade')) pedidas.push('idade')
   if (protocolo.id === 'slaughter-triceps-subescapular' && sexo === 'M' && soma !== null && soma <= 35) pedidas.push('maturacao', 'grupo')
   return pedidas
@@ -478,7 +486,7 @@ export function calcularProtocolo(id: IdProtocolo, paciente: PacienteDoProtocolo
   let densidade: number | null = null
   let conversao: DensidadeConvertida['conversao'] | null = null
   if (variante.saida === 'densidade') {
-    const convertida = converterDensidade(valor, opcoes.conversao ?? 'automatica', sexo, paciente.idadeAnos)
+    const convertida = converterDensidade(valor, conversaoDoProtocolo(protocolo, opcoes), sexo, paciente.idadeAnos)
     if (!convertida) return falha('A conversão de Lohman começa aos 7 anos: escolha Siri ou Brozek.', ap)
     densidade = valor
     gorduraPct = convertida.gorduraPct
@@ -500,6 +508,10 @@ export function calcularProtocolo(id: IdProtocolo, paciente: PacienteDoProtocolo
     massaGordaKg,
     massaMagraKg: peso === null || massaGordaKg === null ? null : peso - massaGordaKg,
     fontes: conversao === null ? [variante.fonte] : [variante.fonte, FONTE_DA_CONVERSAO[conversao]],
-    avisos: [...avisosDaSoma(variante, soma), ...avisosDoResultado(protocolo, variante, paciente, opcoes, entradasPedidas(protocolo, variante, sexo, soma, opcoes))],
+    avisos: [
+      ...avisosDaSoma(variante, soma),
+      ...(conversao === 'lohman' ? [AVISO_DE_LOHMAN] : []),
+      ...avisosDoResultado(protocolo, variante, paciente, opcoes, entradasPedidas(protocolo, variante, sexo, soma, opcoes)),
+    ],
   }
 }

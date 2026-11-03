@@ -374,8 +374,8 @@ F,17,18.95`
     expect(calculado(calcularProtocolo('slaughter-triceps-panturrilha', paciente('M', 10), tp, { conversao: 'brozek' })).gorduraPct).toBeCloseTo(19.38, 2)
   })
 
-  it('JP 3 dobras num adolescente de 17 anos, na automática, converte por Lohman (e avisa que está fora da população)', () => {
-    const r = calculado(calcularProtocolo('jackson-pollock-3', paciente('M', 17), dobras({ peitoral: 15, abdominal: 25, coxa: 20 })))
+  it('JP 3 dobras num adolescente de 17 anos, com a automática escolhida, converte por Lohman (e avisa que está fora da população)', () => {
+    const r = calculado(calcularProtocolo('jackson-pollock-3', paciente('M', 17), dobras({ peitoral: 15, abdominal: 25, coxa: 20 }), { conversao: 'automatica' }))
     expect(r.conversao).toBe('lohman')
     expect(r.avisos.join(' ')).toMatch(/fora da população de origem/i)
   })
@@ -503,5 +503,40 @@ describe('pico da parábola e faixa da amostra (spec antropometria-completa, rev
     expect(avisos('durnin-womersley', 'M', 220)).toMatch(/15 a 210 mm/)
     expect(avisos('petroski', 'F', 20)).toMatch(/21 a 118 mm, inferida pela faixa de cada dobra/)
     expect(avisos('guedes', 'M', 200)).not.toMatch(/faixa da amostra/)
+  })
+})
+
+describe('conversão dos dois ids de hoje (spec antropometria-completa, revisão, CA-2015 e CA-2077)', () => {
+  it('CA-2015: JP 3 dobras e Faulkner dão o número de calcularComposicao em toda idade, também abaixo de 20 e de 7 anos', () => {
+    for (const sexo of ['M', 'F'] as const) {
+      for (const idade of [6, 12, 15, 18, 19, 20, 30]) {
+        const d = sexo === 'M' ? dobras({ peitoral: 12, abdominal: 25, coxa: 18 }) : dobras({ tricipital: 25, suprailiaca: 20, coxa: 25 })
+        const hoje = calcularComposicao({ protocolo: 'jackson-pollock-3', sexo, idadeAnos: idade, pesoKg: 60, dobras: d })
+        const novo = calcularProtocolo('jackson-pollock-3', paciente(sexo, idade, { pesoKg: 60, estaturaCm: 165 }), d)
+        expect.soft(novo.calculou && naPrecisao(novo.gorduraPct, 1), `JP3 ${sexo} ${idade}`).toBe(hoje.gorduraPct)
+        expect.soft(novo.calculou && novo.conversao, `JP3 ${sexo} ${idade}`).toBe('siri')
+        const quatro = dobras({ tricipital: 10, subescapular: 12, suprailiaca: 14, abdominal: 16 })
+        const faulknerHoje = calcularComposicao({ protocolo: 'faulkner-4', sexo, idadeAnos: idade, pesoKg: 60, dobras: quatro })
+        const faulkner = calcularProtocolo('faulkner-4', paciente(sexo, idade, { pesoKg: 60 }), quatro)
+        expect.soft(faulkner.calculou && naPrecisao(faulkner.gorduraPct, 1), `Faulkner ${sexo} ${idade}`).toBe(faulknerHoje.gorduraPct)
+      }
+    }
+  })
+
+  it('CA-2077: protocolo novo abaixo de 20 anos converte por Lohman, nomeia a conversão e avisa o degrau dos 20', () => {
+    const sete = dobras({ peitoral: 10, axilarMedia: 10, tricipital: 12, subescapular: 12, abdominal: 18, suprailiaca: 12, coxa: 16 })
+    const aos17 = calculado(calcularProtocolo('jackson-pollock-7', paciente('M', 17), sete))
+    expect(aos17.conversao).toBe('lohman')
+    expect(aos17.avisos.join(' ')).toMatch(/aos 20 anos a conta passa para Siri/)
+    const dw = calculado(calcularProtocolo('durnin-womersley', paciente('F', 17), dobras({ bicipital: 8, tricipital: 14, subescapular: 12, suprailiaca: 12 })))
+    expect(dw.conversao).toBe('lohman')
+    const aos20 = calculado(calcularProtocolo('jackson-pollock-7', paciente('M', 20), sete))
+    expect(aos20.conversao).toBe('siri')
+    expect(aos20.avisos.join(' ')).not.toMatch(/aos 20 anos/)
+  })
+
+  it('CA-2077: a conversão escolhida vale também nos dois ids de hoje', () => {
+    const r = calculado(calcularProtocolo('jackson-pollock-3', paciente('F', 30), dobras({ tricipital: 25, suprailiaca: 20, coxa: 25 }), { conversao: 'brozek' }))
+    expect(r.conversao).toBe('brozek')
   })
 })
