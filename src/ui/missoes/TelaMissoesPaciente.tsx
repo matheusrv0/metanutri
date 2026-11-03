@@ -1,15 +1,25 @@
 // A tela que o paciente abre pelo link, no aparelho dele. Sem conta, sem menu e sem
 // nada para aprender: a lista do dia e um toque para marcar. É a Fase 1 do
 // `docs/plano-negocio.md`, e a métrica do produto nasce aqui. Com a dieta no link
-// (spec dieta-no-link), uma segunda parte, "Meu plano", mostra o que comer. Com a marca
-// da nutricionista (spec marca-no-link), a logo e a cor dela. O desenho do link aberto
-// mora em `LinkDoPaciente`; aqui ficam a busca, a marcação e os avisos.
+// (spec dieta-no-link), o Plano mostra o que comer. Com a marca da nutricionista (spec
+// marca-no-link), a logo e a cor dela. Com o lado do paciente (spec lado-do-paciente),
+// o link é fixo por paciente, o aparelho lembra dele e o ícone "Meu plano" o instala.
+// O desenho do link aberto mora em `LinkDoPaciente`; aqui ficam a busca, a marcação e os avisos.
 import { CircleAlert, Link2Off, WifiOff } from 'lucide-react'
 import { useEffect, useState, type ReactNode } from 'react'
 import { diaLocal, marcarMissao, missoesDoDia, type Acompanhamento } from '@/domain/acompanhamento.ts'
+import { separarDadosDoLink, SEM_DADOS_DO_LINK, type DadosDoLink } from '@/domain/dadosDoLink.ts'
+import { registrarAcesso, type ClienteDosEmails } from '@/domain/emailsDoLink.ts'
 import { separarMarca, SEM_MARCA, type MarcaDoLink } from '@/domain/marca.ts'
+import { lembrarPlano, trocarTokenLembrado } from '@/domain/meusPlanos.ts'
 import { MarcacaoRecusada, type FonteAcompanhamentos } from '@/domain/repositorioAcompanhamentos.ts'
 import { Button } from '@ds/componentes/forms/button.tsx'
+import { Logo } from '@ds/componentes/display/Logo.tsx'
+import { armazenamentoLocal } from '../estado/armazenamentoLocal.ts'
+import { obterSupabase } from '../estado/supabase.ts'
+import { irParaOApp } from './endereco.ts'
+import { useMeuPlanoNaPagina } from './link/manifesto.ts'
+import { primeiroNomeDoLink } from './link/textosDoLink.ts'
 import { LinkDoPaciente } from './LinkDoPaciente.tsx'
 import { MolduraDoLink } from './MolduraDoLink.tsx'
 
@@ -18,9 +28,13 @@ interface TelaMissoesPacienteProps {
   readonly fonte: FonteAcompanhamentos
   /** Injetável para o teste não depender do relógio da máquina. */
   readonly hoje?: string
+  /** A hora de agora (a refeição da hora, a consulta que passou); injetável no teste. */
+  readonly agora?: Date
+  /** As funções do servidor (registrar o acesso, os e-mails); por padrão, o Supabase do app. Nulo, sem servidor. */
+  readonly cliente?: ClienteDosEmails | null
 }
 
-function Aviso({ icone, titulo, texto, acao }: { readonly icone: ReactNode; readonly titulo: string; readonly texto: string; readonly acao?: ReactNode }) {
+function Aviso({ icone, titulo, texto, acao }: { readonly icone: ReactNode; readonly titulo: string; readonly texto: string | null; readonly acao?: ReactNode }) {
   return (
     <MolduraDoLink>
       <div className="rounded-2xl border border-border bg-card p-8 text-center">
@@ -28,8 +42,29 @@ function Aviso({ icone, titulo, texto, acao }: { readonly icone: ReactNode; read
           {icone}
         </span>
         <h1 className="font-titulo text-xl font-bold text-heading">{titulo}</h1>
-        <p className="mt-2 text-sm text-muted-foreground">{texto}</p>
+        {texto ? <p className="mt-2 text-sm text-muted-foreground">{texto}</p> : null}
         {acao ? <div className="mt-6">{acao}</div> : null}
+      </div>
+    </MolduraDoLink>
+  )
+}
+
+/** D-1222 e CA-2238: o link removido ou de endereço trocado. */
+function LinkQueNaoAbre() {
+  return (
+    <MolduraDoLink>
+      <div className="flex flex-col gap-10">
+        <Logo tamanho={22} />
+        <div className="flex flex-col items-center gap-4 pt-8 text-center">
+          <span aria-hidden="true" className="grid size-15 place-content-center rounded-full bg-surfacesunken text-muted-foreground">
+            <Link2Off className="size-7" />
+          </span>
+          <h1 className="font-titulo text-2xl font-extrabold tracking-tight text-heading">Este link não abre mais</h1>
+          <Button size="lg" onClick={() => irParaOApp('#/recuperar-link')}>
+            Recuperar pelo e-mail
+          </Button>
+          <p className="max-w-75 text-base text-muted-foreground">O link também está na mensagem da sua nutricionista no WhatsApp.</p>
+        </div>
       </div>
     </MolduraDoLink>
   )
@@ -44,23 +79,30 @@ interface Carga {
   readonly token: string
   /** Qual pedido respondeu: "Tentar de novo" pede outra vez (CA-753). */
   readonly tentativa: number
-  /** O link sem a marca: é o que se marca e se grava (DP-ML-14). */
+  /** O link sem a marca e sem os dados do link: é o que se marca e se grava (DP-ML-14). */
   readonly acompanhamento: Acompanhamento | null
   /** A marca da nutricionista, lida junto com o link (spec marca-no-link, D-952). */
   readonly marca: MarcaDoLink
+  /** O nome da nutricionista, o e-mail mascarado e os avisos (spec lado-do-paciente). */
+  readonly dados: DadosDoLink
   /** A nuvem não respondeu e o aparelho não tinha cópia (D-232): não dá para dizer que o link não existe. */
   readonly semConexao: boolean
 }
 
-export function TelaMissoesPaciente({ token, fonte, hoje = diaLocal() }: TelaMissoesPacienteProps) {
+const clientePadrao = (): ClienteDosEmails | null => obterSupabase() as unknown as ClienteDosEmails | null
+
+export function TelaMissoesPaciente({ token, fonte, hoje = diaLocal(), agora, cliente: clienteInjetado }: TelaMissoesPacienteProps) {
   // Guardar o token junto com o resultado deixa "carregando" ser derivado do render,
   // em vez de um segundo estado que o efeito teria de ligar e desligar.
   const [carga, setCarga] = useState<Carga | null>(null)
   const [tentativa, setTentativa] = useState(0)
   // D-232: a frase de quando a última marcação não chegou à nuvem; some quando uma marcação salva.
   const [naoSalvou, setNaoSalvou] = useState<string | null>(null)
+  const [cliente] = useState(() => (clienteInjetado === undefined ? clientePadrao() : clienteInjetado))
   const carregando = carga === null || carga.token !== token || carga.tentativa !== tentativa
   const acompanhamento = carregando ? null : carga.acompanhamento
+  // O token do link aberto: o do link fixo, quando o endereço era de um link antigo (D-1217).
+  const tokenAberto = acompanhamento?.token ?? null
 
   useEffect(() => {
     let vivo = true
@@ -68,16 +110,52 @@ export function TelaMissoesPaciente({ token, fonte, hoje = diaLocal() }: TelaMis
       (achado) => {
         if (!vivo) return
         const separado = achado ? separarMarca(achado) : null
-        setCarga({ token, tentativa, acompanhamento: separado?.acompanhamento ?? null, marca: separado?.marca ?? SEM_MARCA, semConexao: false })
+        const comDados = separado ? separarDadosDoLink(separado.acompanhamento) : null
+        setCarga({ token, tentativa, acompanhamento: comDados?.link ?? null, marca: separado?.marca ?? SEM_MARCA, dados: comDados?.dados ?? SEM_DADOS_DO_LINK, semConexao: false })
       },
       () => {
-        if (vivo) setCarga({ token, tentativa, acompanhamento: null, marca: SEM_MARCA, semConexao: true })
+        if (vivo) setCarga({ token, tentativa, acompanhamento: null, marca: SEM_MARCA, dados: SEM_DADOS_DO_LINK, semConexao: true })
       },
     )
     return () => {
       vivo = false
     }
   }, [token, fonte, tentativa])
+
+  // D-1213: o "Meu plano" na página (o manifesto, o ícone e o nome), enquanto o link está aberto.
+  useMeuPlanoNaPagina(tokenAberto)
+
+  // D-1217: o endereço de um link antigo abre o link fixo; o endereço da página passa a ser o dele, sem recarregar.
+  useEffect(() => {
+    if (tokenAberto === null || tokenAberto === token) return
+    globalThis.history?.replaceState(null, '', `/p/${tokenAberto}`)
+    trocarTokenLembrado(armazenamentoLocal(), token, tokenAberto)
+  }, [token, tokenAberto])
+
+  // D-1218: o aparelho lembra o link aberto (sem a dieta e sem as missões).
+  const nomeDaNutricionista = carregando ? '' : (carga.dados.nutricionista ?? '')
+  const nomeDoPaciente = acompanhamento?.nome ?? ''
+  useEffect(() => {
+    if (tokenAberto === null) return
+    lembrarPlano(armazenamentoLocal(), { token: tokenAberto, primeiroNome: primeiroNomeDoLink(nomeDoPaciente), nutricionista: nomeDaNutricionista, ultimoAcesso: hoje })
+  }, [tokenAberto, nomeDoPaciente, nomeDaNutricionista, hoje])
+
+  // D-1223 e CA-2239: o link registra o dia em que foi aberto (a nuvem guarda uma vez por dia, só a data). Sem internet,
+  // o registro fica para quando ela voltar (CB-1205).
+  useEffect(() => {
+    if (tokenAberto === null || cliente === null || !fonte.naNuvem) return
+    let vivo = true
+    const registrar = () => {
+      void registrarAcesso(cliente, tokenAberto).then((ok) => {
+        if (!ok && vivo) globalThis.addEventListener('online', registrar, { once: true })
+      })
+    }
+    registrar()
+    return () => {
+      vivo = false
+      globalThis.removeEventListener('online', registrar)
+    }
+  }, [tokenAberto, cliente, fonte.naNuvem])
 
   /**
    * Marca na hora e grava. A gravação falhando (D-232, CA-756), a tela relê o link e fica com o que a nuvem guardou
@@ -98,10 +176,10 @@ export function TelaMissoesPaciente({ token, fonte, hoje = diaLocal() }: TelaMis
           setCarga((atual) => (atual?.acompanhamento ? { ...atual, acompanhamento: marcarMissao(atual.acompanhamento, hoje, missaoId, !feita) } : atual))
           setNaoSalvou(frase)
         }
-        fonte.porToken(token).then((relido) => {
+        fonte.porToken(novo.token).then((relido) => {
           if (relido === null) return desfazer()
-          // DP-ML-14: o que se marca continua sem a marca; a marca da tela fica a que já estava.
-          const daNuvem = separarMarca(relido).acompanhamento
+          // DP-ML-14: o que se marca continua sem a marca e sem os dados do link; os da tela ficam os que já estavam.
+          const daNuvem = separarDadosDoLink(separarMarca(relido).acompanhamento).link
           setCarga((atual) => (atual?.token === token && atual.acompanhamento ? { ...atual, acompanhamento: daNuvem } : atual))
           const ficou = missoesDoDia(daNuvem, hoje).some((m) => m.id === missaoId && m.feita === feita)
           setNaoSalvou(ficou ? null : frase)
@@ -135,11 +213,7 @@ export function TelaMissoesPaciente({ token, fonte, hoje = diaLocal() }: TelaMis
 
   if (acompanhamento === null) {
     return fonte.naNuvem ? (
-      <Aviso
-        icone={<Link2Off className="size-6" />}
-        titulo="Este link não existe mais"
-        texto="Pode ter sido trocado por um novo. Peça o link atualizado para quem montou seu plano."
-      />
+      <LinkQueNaoAbre />
     ) : (
       <Aviso
         icone={<CircleAlert className="size-6" />}
@@ -149,5 +223,5 @@ export function TelaMissoesPaciente({ token, fonte, hoje = diaLocal() }: TelaMis
     )
   }
 
-  return <LinkDoPaciente acompanhamento={acompanhamento} marca={carga.marca} hoje={hoje} naoSalvou={naoSalvou} aoAlternar={alternar} />
+  return <LinkDoPaciente acompanhamento={acompanhamento} marca={carga.marca} hoje={hoje} naoSalvou={naoSalvou} aoAlternar={alternar} dados={carga.dados} {...(agora ? { agora } : {})} />
 }

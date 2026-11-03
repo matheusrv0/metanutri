@@ -74,14 +74,15 @@ describe('o link com a marca da nutricionista', () => {
     // D-955: a versão do escuro vai junto (a mesma cor clareada até 7:1); o tema escolhe no CSS.
     expect(raiz(container).style.getPropertyValue('--marca-escuro')).toBe('#7ab455')
 
-    expect(screen.getByRole('tab', { name: 'Missões', selected: true }).className).toContain('data-[state=active]:bg-linkacao')
-    expect(screen.getByRole('progressbar').firstElementChild?.className).toContain('bg-linkacao')
+    // Spec lado-do-paciente, CA-2215: a aba escolhida da barra de baixo e o segmento cheio na cor dela.
+    expect(screen.getByRole('link', { name: 'Hoje' }).className).toContain('text-linkacao')
+    expect(screen.getByRole('progressbar').firstElementChild?.firstElementChild?.className).toContain('bg-linkacao')
 
     // O MetaNutri desce para o rodapé, depois das missões, em qualquer assinatura (o link nem sabe qual é).
     const metanutri = screen.getAllByRole('img', { name: 'MetaNutri' })
     expect(metanutri).toHaveLength(1)
     expect(logo.compareDocumentPosition(metanutri[0] as Node) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-    expect(screen.getByRole('tabpanel').compareDocumentPosition(metanutri[0] as Node) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(screen.getByRole('list', { name: 'Missões de hoje' }).compareDocumentPosition(metanutri[0] as Node) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
   it('CA-1965: as missões feitas continuam no verde de "feita", não na cor dela', async () => {
@@ -105,7 +106,8 @@ describe('o link com a marca da nutricionista', () => {
     expect(raiz(container)).not.toHaveClass('marca-da-nutricionista')
     expect(screen.queryByRole('img', { name: ALT_DA_LOGO })).not.toBeInTheDocument()
     expect(screen.getAllByRole('img', { name: 'MetaNutri' })).toHaveLength(1)
-    expect(screen.getByRole('tab', { name: 'Missões', selected: true }).className).toContain('data-[state=active]:bg-card')
+    // Sem a cor dela, a ação é a do MetaNutri (os tokens --link-acao valem o teal e o marfim de sempre).
+    expect(screen.getByRole('link', { name: 'Hoje' }).className).toContain('text-linkacao')
   })
 
   it('CA-1968: link lido sem a marca (a função de antes, o modo local) também é o de hoje', async () => {
