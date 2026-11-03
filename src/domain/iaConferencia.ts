@@ -133,7 +133,7 @@ function arredondarPorcao(alimentoId: number, gramas: number): number {
 }
 
 /** A faixa do alimento na idade: a mínima de servir e a máxima do grupo. Fora dos grupos, sem faixa. */
-function faixaDoAlimento(a: Alimento, idade: number | null): { readonly minima: number; readonly maxima: number } | null {
+export function faixaDoAlimento(a: Alimento, idade: number | null): { readonly minima: number; readonly maxima: number } | null {
   if (porcaoDoGrupo(a) === null) return null
   return { minima: porcaoMinima(a, idade) ?? 0, maxima: porcaoMaximaNaIdade(a, idade) }
 }
