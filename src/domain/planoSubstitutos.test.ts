@@ -86,7 +86,7 @@ describe('D-1114: a opção do item', () => {
     // CB-1106: a terceira, a repetida e a do próprio alimento não entram.
     expect(adicionarOpcaoAoItem(dois, refeicaoId, arroz.id, CARA)).toBe(dois)
     expect(adicionarOpcaoAoItem(um, refeicaoId, arroz.id, BATATA)).toBe(um)
-    expect(adicionarOpcaoAoItem(plano, refeicaoId, arroz.id, { alimentoId: 3, gramas: 100 })).toBe(plano)
+    expect(adicionarOpcaoAoItem(plano, refeicaoId, arroz.id, { alimentoId: 3, gramas: 100, medida: null })).toBe(plano)
   })
 
   it('CA-2120: "Tirar" remove a opção; sem nenhuma, o campo sai', () => {
