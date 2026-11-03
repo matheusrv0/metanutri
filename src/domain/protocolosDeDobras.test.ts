@@ -434,3 +434,74 @@ describe('massas, soma e casos de borda (spec antropometria-completa, CA-2024 e 
     expect(r.avisos.join(' ')).toMatch(/cautela acima de 40 anos/i)
   })
 })
+
+describe('pico da parábola e faixa da amostra (spec antropometria-completa, revisão, CA-2074 e CA-2075)', () => {
+  /** As dobras exigidas com a soma pedida, em partes iguais. */
+  const comSoma = (id: IdProtocolo, sexo: Sexo, soma: number): Dobras => {
+    const exigidas = PROTOCOLOS_DE_DOBRAS.find((p) => p.id === id)?.porSexo[sexo].dobras ?? []
+    return dobras(Object.fromEntries(exigidas.map((d) => [d, soma / exigidas.length])))
+  }
+  const pacienteDe = (sexo: Sexo) => paciente(sexo, 30, { pesoKg: 60, estaturaCm: 165 })
+  const pct = (id: IdProtocolo, sexo: Sexo, soma: number) => {
+    const r = calcularProtocolo(id, pacienteDe(sexo), comSoma(id, sexo, soma), { conversao: 'siri' })
+    return r.calculou ? r.gorduraPct : null
+  }
+  const variante = (id: IdProtocolo, sexo: Sexo) => PROTOCOLOS_DE_DOBRAS.find((p) => p.id === id)?.porSexo[sexo]
+
+  it('CA-2074: o catálogo traz o pico das quadráticas (Σ = b ÷ 2c)', () => {
+    expect(variante('jackson-pollock-3', 'M')?.picoDaSomaMm).toBeCloseTo(258.34, 2)
+    expect(variante('jackson-pollock-3', 'F')?.picoDaSomaMm).toBeCloseTo(215.85, 2)
+    expect(variante('jackson-pollock-7', 'M')?.picoDaSomaMm).toBeCloseTo(395.45, 2)
+    expect(variante('jackson-pollock-7', 'F')?.picoDaSomaMm).toBeCloseTo(419.38, 2)
+    expect(variante('petroski', 'M')?.picoDaSomaMm).toBeCloseTo(191.51, 2)
+    expect(variante('petroski', 'F')?.picoDaSomaMm).toBeCloseTo(115.47, 2)
+    expect(variante('durnin-womersley', 'M')?.picoDaSomaMm).toBeNull()
+    expect(variante('guedes', 'F')?.picoDaSomaMm).toBeNull()
+    expect(variante('faulkner-4', 'M')?.picoDaSomaMm).toBeNull()
+  })
+
+  it('CA-2074: acima do pico não calcula e diz que a equação inverte', () => {
+    for (const [id, sexo, soma] of [
+      ['petroski', 'F', 116],
+      ['petroski', 'M', 192],
+      ['jackson-pollock-3', 'F', 216],
+      ['jackson-pollock-3', 'M', 259],
+    ] as const) {
+      const r = calcularProtocolo(id, pacienteDe(sexo), comSoma(id, sexo, soma), { conversao: 'siri' })
+      expect.soft(r.calculou, `${id} ${sexo} ${soma}`).toBe(false)
+      if (!r.calculou) expect.soft(r.motivo, `${id} ${sexo} ${soma}`).toMatch(/passa do pico.*mais dobra daria menos gordura/)
+    }
+  })
+
+  it('CA-2074: até o pico, o % de gordura cresce com a soma', () => {
+    for (const [id, sexo] of [
+      ['jackson-pollock-3', 'M'],
+      ['jackson-pollock-3', 'F'],
+      ['jackson-pollock-7', 'M'],
+      ['jackson-pollock-7', 'F'],
+      ['petroski', 'M'],
+      ['petroski', 'F'],
+    ] as const) {
+      const pico = variante(id, sexo)?.picoDaSomaMm ?? 0
+      const valores: number[] = []
+      for (let s = 30; s <= pico; s += 5) valores.push(pct(id, sexo, s) ?? Number.NaN)
+      const crescente = valores.every((v, i) => i === 0 || v > (valores[i - 1] ?? Number.POSITIVE_INFINITY))
+      expect.soft(crescente, `${id} ${sexo}`).toBe(true)
+    }
+  })
+
+  it('CA-2075: fora da faixa da amostra e até o pico, calcula e avisa com a faixa', () => {
+    const avisos = (id: IdProtocolo, sexo: Sexo, soma: number) => {
+      const r = calcularProtocolo(id, pacienteDe(sexo), comSoma(id, sexo, soma), { conversao: 'siri' })
+      if (!r.calculou) throw new Error(`não calculou: ${r.motivo}`)
+      return r.avisos.join(' ')
+    }
+    expect(avisos('jackson-pollock-3', 'M', 13)).toMatch(/fora da faixa da amostra da equação \(14 a 118 mm\)/)
+    expect(avisos('jackson-pollock-3', 'M', 119)).toMatch(/14 a 118 mm/)
+    expect(avisos('jackson-pollock-3', 'M', 60)).not.toMatch(/faixa da amostra/)
+    expect(avisos('jackson-pollock-7', 'M', 280)).toMatch(/32 a 272 mm/)
+    expect(avisos('durnin-womersley', 'M', 220)).toMatch(/15 a 210 mm/)
+    expect(avisos('petroski', 'F', 20)).toMatch(/21 a 118 mm, inferida pela faixa de cada dobra/)
+    expect(avisos('guedes', 'M', 200)).not.toMatch(/faixa da amostra/)
+  })
+})

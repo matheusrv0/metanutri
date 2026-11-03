@@ -89,6 +89,7 @@ prioridade, meta de perda e mudança mínima detectável).
 | D-1035 | **Mudança mínima detectável** entre duas avaliações = 1,96 × √2 × ETM (≈ 2,77 × ETM). Sem o ETM do avaliador, o padrão ISAK nível 1: 7,5% da medida nas dobras (e na soma) e 1,5% nas outras medidas, aplicado sobre a média das duas medidas (conta nossa). Diferença igual ou maior que a MMD: "mudança provavelmente real"; menor: "dentro do erro de medida". Avaliadores diferentes: aviso de erro maior | Pesquisa 4.7 (R4.7a–f) e 4.10 (D13) |
 | D-1036 | **Fontes num lugar só**, cada uma com a citação curta (para a linha) e a completa (para o "Fontes" da tela e o PDF) | A tela clínica mostra a fonte (pesquisa 4.10, D16) |
 | D-1037 | **Tabelas de Frisancho por script, sem redigitar:** `scripts/dados/importar-frisancho.mjs` lê as tabelas copiadas da pesquisa (`dados-brutos/antropometria/frisancho-percentis.md`) e grava `src/data/frisancho.json` nas unidades da fonte (1981: CB e CMB em mm, AMB em mm²); o código converte. Os testes conferem a ordem crescente de cada linha e as células que a pesquisa resolveu | Pesquisa 3.18 e D-B10 |
+| D-1038 | **Faixa da soma e pico da parábola** (revisão independente, item 2). Cada protocolo guarda a faixa da soma na amostra publicada e, nas quadráticas, o pico da parábola (Σ = b ÷ 2c, onde a densidade para de cair). **Acima do pico a equação inverte** (mais dobra daria menos gordura): o motor não calcula e diz por quê. Fora da faixa da amostra, mas até o pico, calcula e avisa com a faixa. Faixas: JP78 Σ3 14–118 mm e Σ7 32–272 mm (Tabela 1 do original); Durnin & Womersley Σ4 15–210 mm (Tabela 9 do original); Petroski mulher 21–118 mm, inferida pela faixa de cada dobra (Petroski e Pires-Neto 1995, Tabela 1: SE 5–35, SI 3–31, CX 13–52; não é limite publicado, e o aviso diz isso); JPW80, Petroski homem, Guedes, Faulkner e Slaughter, não publicada (sem aviso de faixa). Picos: JP3 homem 258,3 mm; JP3 mulher 215,8; JP7 homem 395,4; JP7 mulher 419,4; Petroski homem 191,5; Petroski mulher 115,5. O Slaughter só usa a quadrática até 35 mm, longe do pico dele (51 e 76 mm) | Pesquisa 2.2 e 2.4.3; a sonda da revisão mostrou o % de gordura caindo com a soma subindo em Petroski mulher acima de 115,5 mm |
 
 ## 3. Critérios de aceite
 
@@ -275,6 +276,13 @@ prioridade, meta de perda e mudança mínima detectável).
   de risco nutricional liga; no corte (34,0 / 33,0), não; abaixo de 60 anos, a panturrilha não entra.
 - **CA-2073** · Dado um idoso com objetivo "emagrecer", então não há meta de perda com IMC de 22 ou menos (65 anos, 20,6;
   68 anos, 21,6), nem de 22 a 27 (72 anos, 22,5), e o motivo diz qual; com IMC 28, há.
+- **CA-2074** · Dado um protocolo quadrático com a soma acima do pico, então ele não calcula e o motivo diz que a equação
+  inverte: Petroski mulher com 116 mm (pico 115,5), Petroski homem com 192 (191,5), JP3 mulher com 216 (215,8), JP3
+  homem com 259 (258,3); até o pico, calcula, e o % de gordura cresce com a soma; o catálogo traz a faixa e o pico de
+  cada protocolo.
+- **CA-2075** · Dado a soma fora da faixa da amostra e até o pico, então calcula e avisa com a faixa: JP3 homem com 13 e
+  com 119 mm (14 a 118); JP7 homem com 280 (32 a 272); Durnin & Womersley com 220 (15 a 210); Petroski mulher com 20
+  (21 a 118, inferida); dentro da faixa, sem esse aviso.
 
 ## 4. Dobras exigidas por protocolo
 

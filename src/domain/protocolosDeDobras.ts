@@ -2,7 +2,7 @@
 // Coeficientes da pesquisa de 03/11/2026, seção 2: só os [V2] do lançamento (2.5.2), com todos os dígitos publicados.
 // Dobras em mm, idade em anos completos, densidade (D) em g/ml, massa em kg, estatura em cm.
 import { FONTES, type Fonte } from './fontesAntropometria.ts'
-import { medidaValida } from './linhaDoResultado.ts'
+import { medidaValida, naPrecisao } from './linhaDoResultado.ts'
 import type { ComposicaoCorporal, Sexo } from './tipos.ts'
 
 export type Dobras = ComposicaoCorporal['dobras']
@@ -42,6 +42,10 @@ export interface VarianteDoProtocolo {
   readonly forma: FormaDaEquacao
   readonly saida: 'densidade' | 'gordura'
   readonly fonte: Fonte
+  /** Faixa da soma das dobras exigidas na amostra, em mm; `inferida` quando sai da faixa de cada dobra; `null` = não publicada (D-1038). */
+  readonly somaNaAmostra: { readonly min: number; readonly max: number; readonly inferida: boolean } | null
+  /** Nas quadráticas, a soma (mm) em que a densidade para de cair; acima dela a equação inverte e não calcula (D-1038). */
+  readonly picoDaSomaMm: number | null
 }
 
 export interface Protocolo {
@@ -68,18 +72,44 @@ export interface OpcoesDoProtocolo {
   readonly durninTodasAsIdades?: boolean
 }
 
+/** Densidade = a − b·Σ + c·Σ² − idade·anos (pesquisa 2.2); o pico da parábola é Σ = b ÷ 2c (D-1038). */
+interface Quadratica {
+  readonly a: number
+  readonly b: number
+  readonly c: number
+  readonly idade: number
+}
+
+/** Coeficientes das quadráticas, com todos os dígitos publicados (pesquisa 2.2.1, 2.2.2 e 2.2.5). */
+const QUADRATICAS = {
+  // JP78 Eq5 (homem, 3 dobras) [V2, original] e JPW80 3 dobras (mulher) [V2].
+  jp3M: { a: 1.10938, b: 0.0008267, c: 0.0000016, idade: 0.0002574 },
+  jp3F: { a: 1.0994921, b: 0.0009929, c: 0.0000023, idade: 0.0001392 },
+  // JP78 Eq1 (homem, 7 dobras) [V2, original] e JPW80 7 dobras (mulher) [V2].
+  jp7M: { a: 1.112, b: 0.00043499, c: 0.00000055, idade: 0.00028826 },
+  jp7F: { a: 1.097, b: 0.00046971, c: 0.00000056, idade: 0.00012828 },
+  // Petroski: homem 4 dobras [V2]; mulher 3 dobras, mais − 0,00059076·massa (kg) + 0,0005105·estatura (cm) [V2].
+  petroskiM: { a: 1.10726863, b: 0.00081201, c: 0.00000212, idade: 0.00041761 },
+  petroskiF: { a: 1.04127059, b: 0.00087756, c: 0.0000038, idade: 0.00025821 },
+} as const satisfies Readonly<Record<string, Quadratica>>
+
+const densidadeQuadratica = (q: Quadratica, soma: number, idade: number) => q.a - q.b * soma + q.c * soma ** 2 - q.idade * idade
+const pico = (q: Quadratica) => q.b / (2 * q.c)
+
 const JP_DOBRAS_7: readonly DobraCutanea[] = ['peitoral', 'axilarMedia', 'tricipital', 'subescapular', 'abdominal', 'suprailiaca', 'coxa']
 const JP78 = 'homens dos EUA (Jackson e Pollock, 1978)'
 const JPW80 = 'mulheres dos EUA (Jackson, Pollock e Ward, 1980)'
 const SLAUGHTER = 'crianças e adolescentes (Slaughter et al., 1988)'
+/** D-1038: as faixas da soma publicadas (JP78, Tabela 1; Durnin & Womersley, Tabela 9) e a inferida de Petroski. */
+const publicada = (min: number, max: number) => ({ min, max, inferida: false })
 
 export const PROTOCOLOS_DE_DOBRAS: readonly Protocolo[] = [
   {
     id: 'jackson-pollock-3',
     nome: 'Jackson & Pollock, 3 dobras',
     porSexo: {
-      M: { populacao: JP78, idade: { min: 18, max: 61 }, dobras: ['peitoral', 'abdominal', 'coxa'], entradas: ['idade'], forma: 'quadratica', saida: 'densidade', fonte: FONTES.jacksonPollock1978 },
-      F: { populacao: JPW80, idade: { min: 18, max: 55 }, dobras: ['tricipital', 'suprailiaca', 'coxa'], entradas: ['idade'], forma: 'quadratica', saida: 'densidade', fonte: FONTES.jacksonPollockWard1980 },
+      M: { populacao: JP78, idade: { min: 18, max: 61 }, dobras: ['peitoral', 'abdominal', 'coxa'], entradas: ['idade'], forma: 'quadratica', saida: 'densidade', fonte: FONTES.jacksonPollock1978, somaNaAmostra: publicada(14, 118), picoDaSomaMm: pico(QUADRATICAS.jp3M) },
+      F: { populacao: JPW80, idade: { min: 18, max: 55 }, dobras: ['tricipital', 'suprailiaca', 'coxa'], entradas: ['idade'], forma: 'quadratica', saida: 'densidade', fonte: FONTES.jacksonPollockWard1980, somaNaAmostra: null, picoDaSomaMm: pico(QUADRATICAS.jp3F) },
     },
     aviso: null,
   },
@@ -87,8 +117,8 @@ export const PROTOCOLOS_DE_DOBRAS: readonly Protocolo[] = [
     id: 'jackson-pollock-7',
     nome: 'Jackson & Pollock, 7 dobras',
     porSexo: {
-      M: { populacao: JP78, idade: { min: 18, max: 61 }, dobras: JP_DOBRAS_7, entradas: ['idade'], forma: 'quadratica', saida: 'densidade', fonte: FONTES.jacksonPollock1978 },
-      F: { populacao: JPW80, idade: { min: 18, max: 55 }, dobras: JP_DOBRAS_7, entradas: ['idade'], forma: 'quadratica', saida: 'densidade', fonte: FONTES.jacksonPollockWard1980 },
+      M: { populacao: JP78, idade: { min: 18, max: 61 }, dobras: JP_DOBRAS_7, entradas: ['idade'], forma: 'quadratica', saida: 'densidade', fonte: FONTES.jacksonPollock1978, somaNaAmostra: publicada(32, 272), picoDaSomaMm: pico(QUADRATICAS.jp7M) },
+      F: { populacao: JPW80, idade: { min: 18, max: 55 }, dobras: JP_DOBRAS_7, entradas: ['idade'], forma: 'quadratica', saida: 'densidade', fonte: FONTES.jacksonPollockWard1980, somaNaAmostra: null, picoDaSomaMm: pico(QUADRATICAS.jp7F) },
     },
     aviso: null,
   },
@@ -96,8 +126,8 @@ export const PROTOCOLOS_DE_DOBRAS: readonly Protocolo[] = [
     id: 'durnin-womersley',
     nome: 'Durnin & Womersley, 4 dobras',
     porSexo: {
-      M: { populacao: 'homens de Glasgow, Escócia', idade: { min: 17, max: 72 }, dobras: ['bicipital', 'tricipital', 'subescapular', 'suprailiaca'], entradas: ['idade'], forma: 'log10', saida: 'densidade', fonte: FONTES.durninWomersley1974 },
-      F: { populacao: 'mulheres de Glasgow, Escócia', idade: { min: 16, max: 68 }, dobras: ['bicipital', 'tricipital', 'subescapular', 'suprailiaca'], entradas: ['idade'], forma: 'log10', saida: 'densidade', fonte: FONTES.durninWomersley1974 },
+      M: { populacao: 'homens de Glasgow, Escócia', idade: { min: 17, max: 72 }, dobras: ['bicipital', 'tricipital', 'subescapular', 'suprailiaca'], entradas: ['idade'], forma: 'log10', saida: 'densidade', fonte: FONTES.durninWomersley1974, somaNaAmostra: publicada(15, 210), picoDaSomaMm: null },
+      F: { populacao: 'mulheres de Glasgow, Escócia', idade: { min: 16, max: 68 }, dobras: ['bicipital', 'tricipital', 'subescapular', 'suprailiaca'], entradas: ['idade'], forma: 'log10', saida: 'densidade', fonte: FONTES.durninWomersley1974, somaNaAmostra: publicada(15, 210), picoDaSomaMm: null },
     },
     aviso: null,
   },
@@ -105,8 +135,9 @@ export const PROTOCOLOS_DE_DOBRAS: readonly Protocolo[] = [
     id: 'petroski',
     nome: 'Petroski',
     porSexo: {
-      M: { populacao: 'homens do sul do Brasil', idade: { min: 18, max: 61 }, dobras: ['subescapular', 'tricipital', 'suprailiaca', 'panturrilhaMedial'], entradas: ['idade'], forma: 'quadratica', saida: 'densidade', fonte: FONTES.petroski1995 },
-      F: { populacao: 'mulheres do Rio Grande do Sul e de Santa Catarina', idade: { min: 18, max: 51 }, dobras: ['subescapular', 'suprailiaca', 'coxa'], entradas: ['idade', 'peso', 'estatura'], forma: 'quadratica', saida: 'densidade', fonte: FONTES.petroski1995 },
+      M: { populacao: 'homens do sul do Brasil', idade: { min: 18, max: 61 }, dobras: ['subescapular', 'tricipital', 'suprailiaca', 'panturrilhaMedial'], entradas: ['idade'], forma: 'quadratica', saida: 'densidade', fonte: FONTES.petroski1995, somaNaAmostra: null, picoDaSomaMm: pico(QUADRATICAS.petroskiM) },
+      // Faixa inferida: a soma dos mínimos e dos máximos de cada dobra na amostra feminina (Petroski e Pires-Neto 1995, Tab. 1).
+      F: { populacao: 'mulheres do Rio Grande do Sul e de Santa Catarina', idade: { min: 18, max: 51 }, dobras: ['subescapular', 'suprailiaca', 'coxa'], entradas: ['idade', 'peso', 'estatura'], forma: 'quadratica', saida: 'densidade', fonte: FONTES.petroski1995, somaNaAmostra: { min: 21, max: 118, inferida: true }, picoDaSomaMm: pico(QUADRATICAS.petroskiF) },
     },
     aviso: null,
   },
@@ -114,8 +145,8 @@ export const PROTOCOLOS_DE_DOBRAS: readonly Protocolo[] = [
     id: 'guedes',
     nome: 'Guedes',
     porSexo: {
-      M: { populacao: 'universitários de Santa Maria (RS)', idade: { min: 17, max: 27 }, dobras: ['tricipital', 'suprailiaca', 'abdominal'], entradas: [], forma: 'log10', saida: 'densidade', fonte: FONTES.guedes1985 },
-      F: { populacao: 'universitárias de Santa Maria (RS)', idade: { min: 18, max: 29 }, dobras: ['subescapular', 'suprailiaca', 'coxa'], entradas: [], forma: 'log10', saida: 'densidade', fonte: FONTES.guedes1985 },
+      M: { populacao: 'universitários de Santa Maria (RS)', idade: { min: 17, max: 27 }, dobras: ['tricipital', 'suprailiaca', 'abdominal'], entradas: [], forma: 'log10', saida: 'densidade', fonte: FONTES.guedes1985, somaNaAmostra: null, picoDaSomaMm: null },
+      F: { populacao: 'universitárias de Santa Maria (RS)', idade: { min: 18, max: 29 }, dobras: ['subescapular', 'suprailiaca', 'coxa'], entradas: [], forma: 'log10', saida: 'densidade', fonte: FONTES.guedes1985, somaNaAmostra: null, picoDaSomaMm: null },
     },
     aviso: null,
   },
@@ -123,8 +154,8 @@ export const PROTOCOLOS_DE_DOBRAS: readonly Protocolo[] = [
     id: 'faulkner-4',
     nome: 'Faulkner (Yuhasz), 4 dobras',
     porSexo: {
-      M: { populacao: 'amostra de origem desconhecida', idade: null, dobras: ['tricipital', 'subescapular', 'suprailiaca', 'abdominal'], entradas: [], forma: 'linear', saida: 'gordura', fonte: FONTES.faulknerYuhasz },
-      F: { populacao: 'amostra de origem desconhecida', idade: null, dobras: ['tricipital', 'subescapular', 'suprailiaca', 'abdominal'], entradas: [], forma: 'linear', saida: 'gordura', fonte: FONTES.faulknerYuhasz },
+      M: { populacao: 'amostra de origem desconhecida', idade: null, dobras: ['tricipital', 'subescapular', 'suprailiaca', 'abdominal'], entradas: [], forma: 'linear', saida: 'gordura', fonte: FONTES.faulknerYuhasz, somaNaAmostra: null, picoDaSomaMm: null },
+      F: { populacao: 'amostra de origem desconhecida', idade: null, dobras: ['tricipital', 'subescapular', 'suprailiaca', 'abdominal'], entradas: [], forma: 'linear', saida: 'gordura', fonte: FONTES.faulknerYuhasz, somaNaAmostra: null, picoDaSomaMm: null },
     },
     // D-1014: Pires Neto e Glaner (2007).
     aviso: 'Amostra de origem desconhecida; só há indicação para homens jovens treinados. A 4ª dobra é a abdominal ("umbilical" no original).',
@@ -132,9 +163,10 @@ export const PROTOCOLOS_DE_DOBRAS: readonly Protocolo[] = [
   {
     id: 'slaughter-triceps-subescapular',
     nome: 'Slaughter, tríceps e subescapular',
+    // A quadrática só vale até 35 mm, longe do pico dela (51 mm nas meninas; 76 nos meninos): sem pico a vigiar.
     porSexo: {
-      M: { populacao: SLAUGHTER, idade: { min: 8, max: 18 }, dobras: ['tricipital', 'subescapular'], entradas: [], forma: 'quadratica-ate-35-linear-acima', saida: 'gordura', fonte: FONTES.slaughter1988 },
-      F: { populacao: SLAUGHTER, idade: { min: 8, max: 18 }, dobras: ['tricipital', 'subescapular'], entradas: [], forma: 'quadratica-ate-35-linear-acima', saida: 'gordura', fonte: FONTES.slaughter1988 },
+      M: { populacao: SLAUGHTER, idade: { min: 8, max: 18 }, dobras: ['tricipital', 'subescapular'], entradas: [], forma: 'quadratica-ate-35-linear-acima', saida: 'gordura', fonte: FONTES.slaughter1988, somaNaAmostra: null, picoDaSomaMm: null },
+      F: { populacao: SLAUGHTER, idade: { min: 8, max: 18 }, dobras: ['tricipital', 'subescapular'], entradas: [], forma: 'quadratica-ate-35-linear-acima', saida: 'gordura', fonte: FONTES.slaughter1988, somaNaAmostra: null, picoDaSomaMm: null },
     },
     aviso: null,
   },
@@ -142,8 +174,8 @@ export const PROTOCOLOS_DE_DOBRAS: readonly Protocolo[] = [
     id: 'slaughter-triceps-panturrilha',
     nome: 'Slaughter, tríceps e panturrilha medial',
     porSexo: {
-      M: { populacao: SLAUGHTER, idade: { min: 8, max: 18 }, dobras: ['tricipital', 'panturrilhaMedial'], entradas: [], forma: 'linear', saida: 'gordura', fonte: FONTES.slaughter1988 },
-      F: { populacao: SLAUGHTER, idade: { min: 8, max: 18 }, dobras: ['tricipital', 'panturrilhaMedial'], entradas: [], forma: 'linear', saida: 'gordura', fonte: FONTES.slaughter1988 },
+      M: { populacao: SLAUGHTER, idade: { min: 8, max: 18 }, dobras: ['tricipital', 'panturrilhaMedial'], entradas: [], forma: 'linear', saida: 'gordura', fonte: FONTES.slaughter1988, somaNaAmostra: null, picoDaSomaMm: null },
+      F: { populacao: SLAUGHTER, idade: { min: 8, max: 18 }, dobras: ['tricipital', 'panturrilhaMedial'], entradas: [], forma: 'linear', saida: 'gordura', fonte: FONTES.slaughter1988, somaNaAmostra: null, picoDaSomaMm: null },
     },
     aviso: null,
   },
@@ -276,20 +308,17 @@ function equacao(id: IdProtocolo, e: Entradas): number | null {
   const i = idade ?? 0
   switch (id) {
     case 'jackson-pollock-3':
-      // JP78 Eq5 (homem) [V2, original] e JPW80 3 dobras quadrática (mulher) [V2].
-      return sexo === 'M' ? 1.10938 - 0.0008267 * s + 0.0000016 * s ** 2 - 0.0002574 * i : 1.0994921 - 0.0009929 * s + 0.0000023 * s ** 2 - 0.0001392 * i
+      return densidadeQuadratica(sexo === 'M' ? QUADRATICAS.jp3M : QUADRATICAS.jp3F, s, i)
     case 'jackson-pollock-7':
-      // JP78 Eq1 (homem) [V2, original] e JPW80 7 dobras quadrática (mulher) [V2].
-      return sexo === 'M' ? 1.112 - 0.00043499 * s + 0.00000055 * s ** 2 - 0.00028826 * i : 1.097 - 0.00046971 * s + 0.00000056 * s ** 2 - 0.00012828 * i
+      return densidadeQuadratica(sexo === 'M' ? QUADRATICAS.jp7M : QUADRATICAS.jp7F, s, i)
     case 'durnin-womersley': {
       const { c, m } = coeficientesDurnin(sexo, idade, opcoes.durninTodasAsIdades === true)
       return c - m * Math.log10(s)
     }
     case 'petroski':
-      // Homem 4 dobras (SE+TR+SI+PM) [V2]; mulher 3 dobras (SE+SI+CX) com massa (kg) e estatura (cm) [V2].
-      if (sexo === 'M') return 1.10726863 - 0.00081201 * s + 0.00000212 * s ** 2 - 0.00041761 * i
+      if (sexo === 'M') return densidadeQuadratica(QUADRATICAS.petroskiM, s, i)
       if (peso === null || estatura === null) return null
-      return 1.04127059 - 0.00087756 * s + 0.0000038 * s ** 2 - 0.00025821 * i - 0.00059076 * peso + 0.0005105 * estatura
+      return densidadeQuadratica(QUADRATICAS.petroskiF, s, i) - 0.00059076 * peso + 0.0005105 * estatura
     case 'guedes':
       // D-1013: coeficientes de 5 casas (as versões de 4 casas, [V2], são o arredondamento delas).
       return sexo === 'M' ? 1.17136 - 0.06706 * Math.log10(s) : 1.1665 - 0.07063 * Math.log10(s)
@@ -382,6 +411,27 @@ export type ResultadoDoProtocolo =
 
 const FONTE_DA_CONVERSAO: Readonly<Record<DensidadeConvertida['conversao'], Fonte>> = { siri: FONTES.siri1961, brozek: FONTES.brozek1963, lohman: FONTES.lohman1986 }
 
+const formatadores = new Map<number, Intl.NumberFormat>()
+/** Um limite de referência (não um valor do paciente), como a tela escreve. */
+function emMm(valor: number, casas: number): string {
+  let f = formatadores.get(casas)
+  if (!f) {
+    f = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: casas, maximumFractionDigits: casas })
+    formatadores.set(casas, f)
+  }
+  return f.format(valor)
+}
+
+/** D-1038: a soma fora da faixa da amostra calcula, com o aviso e a faixa. */
+function avisosDaSoma(variante: VarianteDoProtocolo, soma: number): string[] {
+  const faixa = variante.somaNaAmostra
+  if (!faixa) return []
+  const exibida = naPrecisao(soma, 1)
+  if (exibida >= faixa.min && exibida <= faixa.max) return []
+  const origem = faixa.inferida ? ', inferida pela faixa de cada dobra' : ''
+  return [`A soma das dobras está fora da faixa da amostra da equação (${emMm(faixa.min, 0)} a ${emMm(faixa.max, 0)} mm${origem}).`]
+}
+
 const frase = (itens: readonly string[]) => (itens.length <= 1 ? itens.join('') : `${itens.slice(0, -1).join(', ')} e ${itens[itens.length - 1] ?? ''}`)
 
 function avisosDoResultado(protocolo: Protocolo, variante: VarianteDoProtocolo, paciente: PacienteDoProtocolo, opcoes: OpcoesDoProtocolo, entradas: readonly EntradaDaEquacao[]): string[] {
@@ -416,6 +466,10 @@ export function calcularProtocolo(id: IdProtocolo, paciente: PacienteDoProtocolo
 
   const variante = protocolo.porSexo[sexo]
   const soma = somaDas(variante.dobras, dobras)
+  // D-1038: acima do pico da parábola, mais dobra daria menos gordura.
+  if (variante.picoDaSomaMm !== null && soma > variante.picoDaSomaMm) {
+    return falha(`Com essa soma de dobras a equação passa do pico (${emMm(variante.picoDaSomaMm, 1)} mm): acima dele, mais dobra daria menos gordura. Use outro protocolo.`, ap)
+  }
   const peso = medidaValida(paciente.pesoKg)
   const valor = equacao(id, { sexo, soma, idade: paciente.idadeAnos, peso, estatura: medidaValida(paciente.estaturaCm), opcoes })
   if (valor === null || !Number.isFinite(valor)) return falha('As dobras informadas não permitem a conta. Confira as medidas.', ap)
@@ -446,6 +500,6 @@ export function calcularProtocolo(id: IdProtocolo, paciente: PacienteDoProtocolo
     massaGordaKg,
     massaMagraKg: peso === null || massaGordaKg === null ? null : peso - massaGordaKg,
     fontes: conversao === null ? [variante.fonte] : [variante.fonte, FONTE_DA_CONVERSAO[conversao]],
-    avisos: avisosDoResultado(protocolo, variante, paciente, opcoes, entradasPedidas(protocolo, variante, sexo, soma, opcoes)),
+    avisos: [...avisosDaSoma(variante, soma), ...avisosDoResultado(protocolo, variante, paciente, opcoes, entradasPedidas(protocolo, variante, sexo, soma, opcoes))],
   }
 }
