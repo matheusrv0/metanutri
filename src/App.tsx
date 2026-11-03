@@ -196,6 +196,7 @@ function Conteudo({ conta, usuarioId, perfilConta }: ConteudoProps) {
         <TelaEntrar
           conta={conta}
           pedidoPorTela={!ehEnderecoDaRaiz(globalThis.location.hash)}
+          aoSouPaciente={() => navegar({ tela: 'recuperar-link' })}
           aoEntrou={() => undefined}
           aoCriarConta={() => navegar(rotaCriarConta(null, 'mensal'))}
           aoEsqueci={() => navegar({ tela: 'esqueci-senha' })}
@@ -230,6 +231,7 @@ function Conteudo({ conta, usuarioId, perfilConta }: ConteudoProps) {
       <TelaEntrar
         conta={conta}
         aoEntrou={() => navegar(tirarDestino(armazenamentoLocal()) ?? { tela: 'painel' })}
+        aoSouPaciente={() => navegar({ tela: 'recuperar-link' })}
         aoCriarConta={() => navegar(rotaCriarConta(null, 'mensal'))}
         aoEsqueci={() => navegar({ tela: 'esqueci-senha' })}
         aoConfirmarEmail={irParaCodigo}
