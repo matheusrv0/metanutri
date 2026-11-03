@@ -2,7 +2,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { ReactNode } from 'react'
-import { criarRepositorioPacientes, type Paciente } from '@/domain/pacientes.ts'
+import { criarPacienteVazio, criarRepositorioPacientes, type Paciente } from '@/domain/pacientes.ts'
 import { criarRepositorio, type ArmazenamentoListavel } from '@/domain/persistencia.ts'
 import { emUtf8 } from '@/domain/importar/montarArquivos.test-utils.ts'
 import { ContextoArmazenamento } from '../../estado/contextoArmazenamento.ts'
@@ -64,6 +64,9 @@ export function montarTela({ armazenamento = new Memoria(), pacientes = [] }: Op
 
 export const arquivo = (nome: string, conteudo: string | Uint8Array, tipo = 'text/csv'): File =>
   new File([new Uint8Array(typeof conteudo === 'string' ? emUtf8(conteudo) : conteudo)], nome, { type: tipo })
+
+/** A paciente do protótipo que já está na conta: a linha 9 da planilha vira "Já está na conta". */
+export const NA_CONTA: readonly Paciente[] = [{ ...criarPacienteVazio('fernanda', '2026-10-01T12:00:00.000Z'), nome: 'Fernanda Almeida Costa', nascimento: '1996-09-28' }]
 
 /** O CSV do protótipo, com CPF e peso, que não entram. */
 export const CSV_DO_PROTOTIPO = [

@@ -1,13 +1,17 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { diaLocal } from '@/domain/acompanhamento.ts'
 import { mudarDestino } from '@/domain/importar/colunas.ts'
 import { lerPlanilha } from '@/domain/importar/lerPlanilha.ts'
+import { corrigir, marcarTodas, montarPrevia, type EntradaDaPrevia } from '@/domain/importar/previa.ts'
 import { textoDaRecusa } from '@/domain/importar/textos.ts'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { Passos } from '@ds/componentes/navigation/Passos.tsx'
 import { useArmazenamento } from '../../estado/contextoArmazenamento.ts'
+import { usePacientes } from '../../estado/contextoPacientes.ts'
 import { comAba, comPlanilha, ESTADO_INICIAL, maisAdiante, PASSOS, type EstadoDaImportacao, type Passo } from './estadoDaImportacao.ts'
 import { PassoArquivo } from './PassoArquivo.tsx'
 import { PassoColunas } from './PassoColunas.tsx'
+import { PassoPrevia } from './PassoPrevia.tsx'
 import { esquecerRascunho, guardarRascunho, lerRascunho } from './rascunhoDaImportacao.ts'
 
 /**
@@ -28,6 +32,9 @@ interface TelaImportarPacientesProps {
  */
 export function TelaImportarPacientes({ moldura, aoSair }: TelaImportarPacientesProps) {
   const armazenamento = useArmazenamento()
+  const { pacientes } = usePacientes()
+  // O dia de hoje, para a data futura ser inválida (D-908).
+  const [hoje] = useState(() => diaLocal(new Date()))
   const [estado, setEstado] = useState<EstadoDaImportacao>(() => lerRascunho(armazenamento) ?? ESTADO_INICIAL)
   const [lendo, setLendo] = useState(false)
   const [recusa, setRecusa] = useState<string | null>(null)
@@ -95,6 +102,31 @@ export function TelaImportarPacientes({ moldura, aoSair }: TelaImportarPacientes
     aoSair()
   }
 
+  // A prévia é refeita do estado a cada mudança (CA-1932): o mapeamento, as correções, as marcas e a lista da conta.
+  const naConta = useMemo(() => pacientes.map((p) => ({ nome: p.nome, nascimento: p.nascimento })), [pacientes])
+  const analise = estado.planilha?.lida.abas[estado.aba]?.analise ?? null
+  const entradaDe = useCallback(
+    (atual: EstadoDaImportacao): EntradaDaPrevia | null => {
+      const daAba = atual.planilha?.lida.abas[atual.aba]?.analise
+      return daAba ? { linhas: daAba.linhas, colunas: daAba.colunas, destinos: atual.destinos, correcoes: atual.correcoes, marcas: atual.marcas, pacientes: naConta, hoje } : null
+    },
+    [naConta, hoje],
+  )
+  const previa = useMemo(() => {
+    const entrada = entradaDe(estado)
+    return entrada && estado.passo === 'previa' ? montarPrevia(entrada) : null
+  }, [entradaDe, estado])
+
+  const marcar = useCallback((numero: number, marcada: boolean) => mudar((atual) => ({ ...atual, marcas: { ...atual.marcas, [numero]: marcada }, aviso: null })), [mudar])
+  const corrigirLinha = useCallback(
+    (numero: number, mudanca: Parameters<typeof corrigir>[2]) =>
+      mudar((atual) => {
+        const entrada = entradaDe(atual)
+        return entrada ? { ...atual, ...corrigir(entrada, numero, mudanca), aviso: null } : atual
+      }),
+    [mudar, entradaDe],
+  )
+
   const irPara = (passo: Passo) => mudar((atual) => ({ ...atual, passo, alcancado: maisAdiante(atual.alcancado, passo) }))
   const alcancados = PASSOS.map((p) => p.valor).filter((p) => estado.planilha !== null && maisAdiante(estado.alcancado, p) === estado.alcancado)
 
@@ -124,12 +156,19 @@ export function TelaImportarPacientes({ moldura, aoSair }: TelaImportarPacientes
             aoVerPrevia={() => irPara('previa')}
             tituloRef={titulo}
           />
-        ) : estado.passo === 'previa' ? (
-          <section aria-labelledby="importar-previa">
-            <h2 id="importar-previa" ref={titulo} tabIndex={-1} className="sr-only">
-              Prévia
-            </h2>
-          </section>
+        ) : estado.passo === 'previa' && previa && analise ? (
+          <PassoPrevia
+            previa={previa}
+            paginas={estado.paginas}
+            aviso={estado.aviso}
+            aoMarcar={marcar}
+            aoMarcarTodas={(marcadas) => mudar((atual) => ({ ...atual, marcas: marcarTodas(previa, atual.marcas, marcadas), aviso: null }))}
+            aoCorrigir={corrigirLinha}
+            aoMostrarMais={() => mudar((atual) => ({ ...atual, paginas: atual.paginas + 1 }))}
+            aoVoltar={() => irPara('colunas')}
+            aoImportar={() => undefined}
+            tituloRef={titulo}
+          />
         ) : null}
     </div>,
   )
