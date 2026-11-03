@@ -103,6 +103,24 @@ test.describe('o link do paciente com a marca', () => {
     await expect(page.getByRole('tab', { name: 'Missões', selected: true })).toHaveCSS('background-color', 'rgb(63, 95, 42)')
   })
 
+  test('CB-958: no papel, a aba escolhida e a barra do dia levam a cor dela mesmo sem "Gráficos de fundo"', async ({ page }) => {
+    const cenario: { link: Linha | null } = { link: null }
+    await page.emulateMedia({ colorScheme: 'light' })
+    await ligarServidorFalso(page, cenario as Cenario)
+    await abrirLink(page, cenario, linhaComMarca({ logo: null, cor: VERDE_FOLHA }))
+    const aba = page.getByRole('tab', { name: 'Missões', selected: true })
+    const barra = page.locator('[role="progressbar"] > div')
+    const ajuste = (alvo: Locator) => alvo.evaluate((el) => getComputedStyle(el).printColorAdjust)
+    // Na tela, nada muda; no papel, o navegador não pode economizar o fundo da cor dela (DP-ML-37).
+    expect(await ajuste(aba)).toBe('economy')
+    await page.emulateMedia({ media: 'print' })
+    expect(await ajuste(aba)).toBe('exact')
+    expect(await ajuste(barra)).toBe('exact')
+    await expect(aba).toHaveCSS('background-color', 'rgb(63, 95, 42)')
+    // A aba que não está escolhida segue a regra do navegador: só o que leva a cor dela vai ao papel assim.
+    expect(await ajuste(page.getByRole('tab', { name: 'Meu plano' }))).toBe('economy')
+  })
+
   test('CA-1967 e CA-1968: sem marca, o link de hoje; salva a marca, o mesmo link mostra a marca ao abrir de novo', async ({ page }) => {
     const cenario: { link: Linha | null } = { link: null }
     await page.emulateMedia({ colorScheme: 'light' })

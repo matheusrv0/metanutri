@@ -506,6 +506,15 @@
     print-color-adjust: exact;
   }
 
+  /* O link do paciente com a cor da nutricionista (spec marca-no-link, CB-958 e DP-ML-37): a aba escolhida e a barra do
+     dia levam a cor ao papel mesmo sem "Gráficos de fundo". Sem isto, o navegador tira o fundo, e o nome da aba, que é
+     branco, sai cinza-claro no papel. */
+  .marca-da-nutricionista [role='tab'][data-state='active'],
+  .marca-da-nutricionista [role='progressbar'] > div {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
   /* Com "Gráficos de fundo" ligado e o app no escuro, nada escuro em volta da folha (CA-622). */
   body > [role='dialog']:has(.area-impressao),
   .area-impressao {
