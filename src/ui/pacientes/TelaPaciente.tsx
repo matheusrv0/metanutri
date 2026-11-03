@@ -5,10 +5,11 @@ import { resumoDaAdesao } from '@/domain/adesaoNoRetorno.ts'
 import type { AssinaturaDoPlano } from '@/domain/assinaturaDoPlano.ts'
 import { proximoDoLink } from '@/domain/avisosNaFicha.ts'
 import { dietaDoPlano } from '@/domain/dietaDoLink.ts'
-import { definirEmailDaFicha } from '@/domain/emailsDoLink.ts'
+import { apagarEmailsDoLink, definirEmailDaFicha } from '@/domain/emailsDoLink.ts'
 import { perfilDaFicha } from '@/domain/fichaNoPlano.ts'
 import { dataCompleta } from '@/domain/formatarData.ts'
 import { linkDoPaciente } from '@/domain/linkFixo.ts'
+import { pacienteDoAcompanhamento } from '@/domain/retorno.ts'
 import type { Paciente } from '@/domain/pacientes.ts'
 import { lerPerfil } from '@/domain/perfil.ts'
 import { ultimoLinkPorPaciente } from '@/domain/retorno.ts'
@@ -72,6 +73,8 @@ export function TelaPaciente({
   const acompanhamentos = contextoDosLinks?.acompanhamentos ?? null
   const salvarLink = contextoDosLinks?.salvar ?? null
   const [confirmandoExclusao, setConfirmandoExclusao] = useState(false)
+  const [excluindo, setExcluindo] = useState(false)
+  const [falhaAoExcluir, setFalhaAoExcluir] = useState(false)
   const idConduta = useId()
 
   const paciente = repositorio.obter(pacienteId)
@@ -164,6 +167,28 @@ export function TelaPaciente({
   const perfil = perfilDaFicha(paciente, hoje, planos.length > 0)
   const proximo = link !== null && emailsDoLink.emails !== null ? proximoDoLink(link, emailsDoLink.emails, agora) : null
 
+  /**
+   * DP-LP-26 e CA-2284: excluir o paciente apaga o link dele (os antigos, substituídos, também), com o e-mail, os aceites
+   * e os envios; a supressão do endereço fica (D-1243). A nuvem primeiro: se ela não apagar, a ficha fica e a tela avisa.
+   */
+  const excluirPaciente = async () => {
+    setExcluindo(true)
+    setFalhaAoExcluir(false)
+    const doPaciente = (contextoDosLinks?.repositorio.listar() ?? []).filter((l) => pacienteDoAcompanhamento(l, casos) === paciente.id || l.pacienteId === paciente.id)
+    for (const l of doPaciente) {
+      await apagarEmailsDoLink(clienteDosEmails, l.id)
+      const motivo = (await contextoDosLinks?.remover(l.id)) ?? null
+      if (motivo !== null) {
+        setExcluindo(false)
+        setFalhaAoExcluir(true)
+        return
+      }
+    }
+    repositorio.excluir(paciente.id)
+    atualizar()
+    aoVoltar()
+  }
+
   /** CA-2261: "Cadastrar na ficha" e "Corrigir na ficha" levam o cursor ao campo E-mail desta ficha. */
   const irParaOEmail = () => {
     const campo = Array.from(document.querySelectorAll('label')).find((rotulo) => rotulo.textContent?.trim() === 'E-mail')?.control
@@ -205,18 +230,20 @@ export function TelaPaciente({
         <Card className="gap-3">
           <CardHeader>
             <CardTitle>Excluir paciente</CardTitle>
-            <CardDescription>Os planos continuam salvos, mas perdem o vínculo com esta ficha.</CardDescription>
+            <CardDescription>
+              {link !== null
+                ? 'Os planos continuam salvos, mas perdem o vínculo com esta ficha. O link do paciente deixa de abrir.'
+                : 'Os planos continuam salvos, mas perdem o vínculo com esta ficha.'}
+            </CardDescription>
           </CardHeader>
+          {falhaAoExcluir ? (
+            <p role="alert" className="text-sm text-errortext">
+              Não foi possível apagar o link do paciente. Confira a internet e tente de novo.
+            </p>
+          ) : null}
           {confirmandoExclusao ? (
             <div className="flex flex-wrap items-center gap-2">
-              <Button
-                variant="destructive"
-                onClick={() => {
-                  repositorio.excluir(paciente.id)
-                  atualizar()
-                  aoVoltar()
-                }}
-              >
+              <Button variant="destructive" loading={excluindo} onClick={() => void excluirPaciente()}>
                 <Trash aria-hidden="true" />
                 Excluir paciente
               </Button>
