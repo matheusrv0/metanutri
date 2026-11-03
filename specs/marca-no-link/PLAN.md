@@ -1,6 +1,6 @@
 # PLAN — A marca da nutricionista no link do paciente
 
-**Spec de origem:** `./SPEC.md` (D-950 a D-963, CA-1950 a CA-1981, CB-950 a CB-963)
+**Spec de origem:** `./SPEC.md` (D-950 a D-963, CA-1950 a CA-1982, CB-950 a CB-967)
 **Protótipo aprovado:** `MarcaNoLink.dc.html` (canvas "MetaNutri Redesenho", 29/10/2026).
 **Status:** o dono aprovou o protótipo e a SPEC em 29/10/2026 ("use skills para deixar mais profissional ainda e mantendo
 esse mesmo padrão"). Regra do dono: "apenas faça"; as decisões deste plano estão registradas abaixo (DP-ML-1 em diante).
@@ -56,13 +56,15 @@ nutricionista vê na prévia saem do mesmo código.
   texto do SVG é lido antes só para recusar o que pede recurso de fora (`http:`, `https:`, `//`, `@import`) com "Não
   foi possível ler esta imagem. Tente PNG ou JPG." (CB-952): desenhado sem o recurso, ele sairia diferente do que ela
   vê no programa de desenho. O SVG nunca é guardado, nem no perfil nem na nuvem.
-- **DP-ML-4** · **Envio**: até 2 MB = 2 × 1024 × 1024 bytes. O tipo vem do MIME do arquivo; quando o navegador não diz,
-  da extensão. GIF, HEIC, PDF e o resto: "Use PNG, JPG, WebP ou SVG, até 2 MB." (CA-1953). Reduções em 600, 480, 360 e
+- **DP-ML-4** · **Envio**: até 2 MB = 2 × 1024 × 1024 bytes. O tipo vem do conteúdo, pela assinatura nos primeiros bytes
+  (PNG, JPEG, WebP; SVG pelo texto, depois do `<?xml`, de comentários e do `<!DOCTYPE`), nunca do MIME nem da extensão
+  (revisão de 03/11/2026: um GIF salvo como `.png` passava). GIF, HEIC, PDF e o resto: "Use PNG, JPG, WebP ou SVG, até
+  2 MB." (CA-1953). A tela lê só até 1 byte além dos 2 MB. Reduções em 600, 480, 360 e
   240 px no lado maior, nunca aumentando a imagem; vale a primeira que couber em 150 KB.
 - **DP-ML-5** · **Logo clara** (CB-950): a cópia reduzida é clara demais quando menos de 2% dos pixels visíveis (alfa de
   50% ou mais) têm contraste de 3:1 ou mais com o branco (o mínimo da WCAG 2.2 para gráfico, 1.4.11). A "média das
   partes visíveis" da SPEC acusaria todo JPG de fundo branco; contar os pixels que aparecem no branco tem a mesma
-  intenção sem esse alarme falso. É aviso: "Salvar" continua habilitado. *(Divergência de redação com o CB-950.)*
+  intenção sem esse alarme falso. É aviso: "Salvar" continua habilitado. *(A SPEC foi alinhada em 03/11/2026.)*
 - **DP-ML-6** · **Contraste e cores derivadas**: WCAG 2.2 (linearização em 0,04045). A sugestão (D-954) e a versão do
   escuro (D-955) mantêm matiz e saturação HSL e andam a claridade em passos de 0,01, para baixo até 4,5:1 com o branco
   e para cima até 7:1 com `#101a1d`, como o protótipo: `#8CC63F` sugere `#587F26` (4,69:1). O número aparece com duas
@@ -127,17 +129,45 @@ Decisões acrescentadas durante a implementação:
   com a classe e as variáveis da cor) e `marcaNoLink.ts` (a cor, a aba escolhida, a barra e a logo que não abre). O
   `LinkDoPaciente` só as monta; a tela não foi reorganizada.
 - **DP-ML-26** · **O termo é "logo"** nesta função (D-963, aprovado no protótipo). A guarda de "logo" no lugar de
-  "logotipo" (D-400 da `textos-e-promessas`) saiu de `src/textosDaFrente.test.ts`; a landing ("com o seu logotipo"), que
-  é do site, não muda nesta entrega.
+  "logotipo" (D-400 da `textos-e-promessas`) saiu de `src/textosDaFrente.test.ts`. *Revisão de 03/11/2026:* a guarda
+  volta ao contrário (CA-1982): nenhum texto de tela diz "logotipo", exceto o texto alternativo da imagem do MetaNutri
+  ("Logotipo do MetaNutri em fundo…", no `index.html` e em `src/seo/cabecalho.ts`); a landing passa a "com a sua logo";
+  a guarda passa a ler também `src/ui/marca` e os arquivos de domínio da marca.
 - **DP-ML-27** · **Texto alternativo**: no link, "Logo de quem montou seu plano" (o link não sabe o nome dela); em Sua
   marca e no cartão da Conta, "Sua logo".
 - **DP-ML-28** · **A legenda de cada celular** traz o código da cor que ele usa ("Celular claro · #3F5F2A", "Celular
-  escuro · #7AB455"), como o protótipo aprovado; a SPEC (D-963) lista só "Celular claro" e "Celular escuro".
+  escuro · #7AB455"), como o protótipo aprovado. *(A SPEC, D-963, foi alinhada em 03/11/2026.)*
 - **DP-ML-29** · **Na prévia, as abas usam a altura do toque** (44 px) em qualquer largura: é um celular.
 - **DP-ML-30** · **Hexadecimal nos e2e da marca**: os dois arquivos desligam a regra de cor solta com o motivo escrito
   (o código da cor é o dado do critério, digitado e conferido como a nutricionista o vê).
 - **DP-ML-31** · **O seletor de arquivo** é um `<input>` dentro de um `<label>` com a cara do botão suave do sistema
   (`buttonVariants`): o `Button` com `asChild` não aceita o ícone de carregando junto do filho.
+
+Decisões da revisão de 03/11/2026 (T12):
+
+- **DP-ML-32** · **Largura e altura pelo cabeçalho, antes de abrir** (CB-967): PNG pelo IHDR; JPEG pelo primeiro SOF
+  (C0 a CF, menos C4, C8 e CC), andando pelos segmentos e pulando bytes soltos como o próprio decodificador; WebP por
+  VP8X, VP8 ou VP8L. Acima de **8.000 px** de lado, "Use uma logo mais simples." (a frase de imagem pesada que já existe;
+  não há outra de imagem grande). Cabeçalho que não dá para ler: "Não foi possível ler esta imagem. Tente PNG ou JPG."
+  O SVG não tem conta de pixels: o navegador o desenha direto no tamanho da cópia. A logo antiga de Configurações
+  (DP-ML-12) continua pelo tipo do data URI: é dela, de até 500 KB, e sai em PNG de qualquer jeito.
+- **DP-ML-33** · **O link desconfia do tamanho também** (CA-1973): `lerMarcaDoLink` lê o IHDR da logo publicada (os
+  primeiros 24 bytes, sem decodificar o resto) e a recusa acima de 600 px de lado, o maior lado da cópia (D-951). A
+  trava do banco (o 015) não muda: ela confere o prefixo, o base64 e o tamanho.
+- **DP-ML-34** · **Função ainda não disponível** (CB-964): `publicarMarca` traduz PGRST205 (a API não conhece a tabela) e
+  42P01 (o banco não tem a tabela) para "Esta função ainda não está disponível. Tente de novo mais tarde." O resto
+  continua com a tradução de sempre (D-98).
+- **DP-ML-35** · **Outra aba** (CB-965): quando o perfil relido traz outra marca e o rascunho da tela era igual ao perfil
+  anterior (logo e cor), o rascunho passa a ser o novo; com mudança não salva, a mudança fica e só a base de comparação
+  muda.
+- **DP-ML-36** · **Cor salva fora da regra** (CB-966): `corValeNoLink` (de `marca.ts`, a mesma regra do link, DP-ML-13)
+  decide o aviso no cartão da Conta; o cartão continua mostrando a cor salva, o nome e o código.
+- **DP-ML-37** · **Impressão** (CB-958): no `@media print`, a aba escolhida e a barra do dia dentro de
+  `.marca-da-nutricionista` levam `print-color-adjust: exact` (e o prefixo `-webkit-`), como a folha do plano já faz.
+- **DP-ML-38** · **Raio da prévia** (D-805 da `ajustes-mobile`): o celular usa `rounded-2xl` (28 px) por fora e
+  `rounded-xl` (20 px) por dentro, tokens do design system, no lugar de `rounded-[2.5rem]` e `rounded-[2rem]`.
+- **DP-ML-39** · **e2e do CA-1966**: a cor da aba depois do `beforeprint` é conferida com `toHaveCSS`, que espera a
+  transição de 150 ms da aba acabar (a leitura única pegava a cor velha às vezes).
 
 ## Specs que mudam (SPEC, seção 5)
 
@@ -188,6 +218,17 @@ Cada uma ganha uma nota curta "*Atualizado pela `marca-no-link` (29/10/2026)*" n
 | `e2e/marca-no-link.spec.ts`, `e2e/servidor-falso/marca-no-link.spec.ts` | criar | T10 |
 | `e2e/csp.spec.ts`, `e2e/design-system.spec.ts` | alterar: a logo por "Sua marca"; a seção nova | T10 |
 | `README.md` | alterar: o 015 na lista e a ordem | T11 |
+| `specs/marca-no-link/SPEC.md`, `PLAN.md`, `specs/landing-v3/SPEC.md`, `specs/textos-e-promessas/SPEC.md` | alterar: a revisão de 03/11 | T12 |
+| `e2e/servidor-falso/marca-no-link.spec.ts` | alterar: CA-1966 com `toHaveCSS`; CB-958 na impressão | T12 |
+| `src/ui/tema/globals.css` | alterar: `print-color-adjust` da marca (DP-ML-37) | T12 |
+| `src/ui/marca/TelaSuaMarca.tsx` (+ teste) | alterar: texto da ajuda, leitura dos bytes, outra aba | T12 |
+| `src/ui/publico/inicio/Funcionalidades.tsx`, `src/ui/publico/TelaInicio.test.tsx`, `src/textosDaFrente.test.ts` | alterar: "com a sua logo" e a guarda (CA-1982) | T12 |
+| `src/domain/logoDaMarca.ts` (+ teste) | alterar: tipo pelo conteúdo, lados pelo cabeçalho (DP-ML-4, DP-ML-32, DP-ML-33) | T12 |
+| `src/domain/marca.ts` (+ teste) | alterar: `corValeNoLink`, o tamanho da logo no link | T12 |
+| `src/domain/marcaNaNuvem.ts` (+ teste em `marca.test.ts`) | alterar: a frase da tabela que não existe (DP-ML-34) | T12 |
+| `src/ui/marca/CartaoSuaMarca.tsx` (+ teste) | alterar: o aviso da cor (DP-ML-36) | T12 |
+| `src/ui/marca/PreviaDoLink.tsx` | alterar: os tokens de raio (DP-ML-38) | T12 |
+| `e2e/marca-no-link.spec.ts` | alterar: o GIF disfarçado e a imagem de mais de 8.000 px no navegador | T12 |
 
 ## Tarefas
 
@@ -230,11 +271,17 @@ Cada uma ganha uma nota curta "*Atualizado pela `marca-no-link` (29/10/2026)*" n
   - Depende de: T8
   - Cobre: CA-1952, CA-1955 (no navegador), CA-1965, CA-1966, CA-1972, CA-1977, CA-1981
 - [x] **T11** — README (o 015 e a ordem) e a validação no topo deste plano.
+- [ ] **T12** — Revisão de 03/11/2026: o e2e instável do CA-1966 (M1), a SPEC alinhada ao plano (M2) e os leves L1 a L8.
+  - Depende de: T1 a T11
+  - Cobre: CA-1953 (pelo conteúdo), CA-1966, CA-1973 (tamanho), CA-1982, CB-958, CB-964, CB-965, CB-966, CB-967
+  - Feito quando: `npm run check`, o e2e da marca com `--repeat-each=10`, `npm run e2e`, `npm run test:csp` e
+    `npm run test:seguranca` passam.
 
 ## Riscos
 
-- **R-ML-1** · O dono publicar o site antes de rodar o 015: "Salvar" falha com a frase de rede e o link continua o de
-  hoje (a função antiga não traz as colunas, e o link lê como sem marca). Nada quebra; a marca só não sai.
+- **R-ML-1** · O dono publicar o site antes de rodar o 015: "Salvar" diz "Esta função ainda não está disponível. Tente
+  de novo mais tarde." (CB-964, DP-ML-34) e o link continua o de hoje (a função antiga não traz as colunas, e o link lê
+  como sem marca). Nada quebra; a marca só não sai.
 - **R-ML-2** · Rodar o 004 ou o 012 de novo depois do 015 refaz a função do link sem a marca: o 015 avisa no topo para
   rodar ele de novo logo depois, como o 012 já faz com o 004.
 - **R-ML-3** · `zoom` na prévia: Chrome, Edge e Safari têm há anos; o Firefox desde a versão 126 (2024). Num Firefox mais
