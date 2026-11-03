@@ -142,6 +142,9 @@ function numeroComoTexto(valor: string): string {
 }
 
 /** A coluna da referência ("B2" → 1). */
+/** O máximo de linhas do Excel: `r` além dele não é número de linha de verdade (D-921, CB-934). */
+const MAXIMO_DE_LINHAS = 1_048_576
+
 /** XFD, a última coluna do Excel (a 16.384ª): referência além dela não existe (D-919, CB-927). */
 const ULTIMA_COLUNA = 16_383
 
@@ -223,7 +226,8 @@ export async function lerXlsx(bytes: Uint8Array, { limiteDeLinhas, sinal, pausar
       await pausar?.()
       // D-921 e CB-925: as marcas e as correções são guardadas pelo número; o que não avança vira o seguinte.
       const declarado = Number(linha.getAttribute('r'))
-      const numero = Number.isInteger(declarado) && declarado > anterior ? declarado : anterior + 1
+      // CB-934: além do máximo de linhas do Excel, o número não é de verdade (e perto de 2^53 nem soma certo).
+      const numero = Number.isInteger(declarado) && declarado > anterior && declarado <= MAXIMO_DE_LINHAS ? declarado : anterior + 1
       anterior = numero
       const celulas: string[] = []
       let coluna = -1
