@@ -1,17 +1,11 @@
 // Composição corporal por dobras cutâneas e por bioimpedância.
 // Fórmulas clássicas, com a fonte junto de cada uma. Nenhuma foi conferida por nutricionista ainda.
-import type { Sexo } from './tipos.ts'
+import type { ComposicaoCorporal, Sexo } from './tipos.ts'
 
 export type ProtocoloDobras = 'jackson-pollock-3' | 'faulkner-4'
 
-export interface Dobras {
-  readonly tricipital: number | null
-  readonly subescapular: number | null
-  readonly suprailiaca: number | null
-  readonly abdominal: number | null
-  readonly peitoral: number | null
-  readonly coxa: number | null
-}
+/** As dobras do plano (spec antropometria-completa, D-1002); os dois protocolos daqui usam só 6 delas. */
+export type Dobras = ComposicaoCorporal['dobras']
 
 export const DOBRAS_VAZIAS: Dobras = {
   tricipital: null,
@@ -20,6 +14,10 @@ export const DOBRAS_VAZIAS: Dobras = {
   abdominal: null,
   peitoral: null,
   coxa: null,
+  bicipital: null,
+  supraespinal: null,
+  axilarMedia: null,
+  panturrilhaMedial: null,
 }
 
 export interface Protocolo {

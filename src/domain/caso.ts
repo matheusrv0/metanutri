@@ -1,5 +1,5 @@
 // Criação e validação do caso (SPEC CA-01, CB-01, CB-02, CB-02a, CB-02b, CB-03, CB-12).
-import type { Caso, ModoQuantidade } from './tipos.ts'
+import type { Caso, ComposicaoCorporal, MedidasCorporais, ModoQuantidade } from './tipos.ts'
 
 export type CampoCaso = keyof Caso
 
@@ -26,6 +26,45 @@ export const FAIXAS = {
   idadeGestacaoLactacao: { min: 14, max: 50 },
 } as const
 
+/** As medidas da antropometria completa, todas vazias (spec antropometria-completa, CA-2000). */
+export const MEDIDAS_CORPORAIS_VAZIAS: MedidasCorporais = {
+  bracoRelaxadoDireitoCm: null,
+  bracoRelaxadoEsquerdoCm: null,
+  bracoContraidoDireitoCm: null,
+  bracoContraidoEsquerdoCm: null,
+  antebracoCm: null,
+  punhoCm: null,
+  pescocoCm: null,
+  ombroCm: null,
+  peitoralCm: null,
+  pontoDaCintura: null,
+  abdomenCm: null,
+  quadrilCm: null,
+  coxaDireitaCm: null,
+  coxaEsquerdaCm: null,
+  coxaProximalDireitaCm: null,
+  coxaProximalEsquerdaCm: null,
+  panturrilhaEsquerdaCm: null,
+  diametroPunhoCm: null,
+  diametroCotoveloCm: null,
+  diametroJoelhoCm: null,
+  alturaDoJoelhoCm: null,
+  semienvergaduraCm: null,
+}
+
+const DOBRAS_VAZIAS: ComposicaoCorporal['dobras'] = {
+  tricipital: null,
+  subescapular: null,
+  suprailiaca: null,
+  abdominal: null,
+  peitoral: null,
+  coxa: null,
+  bicipital: null,
+  supraespinal: null,
+  axilarMedia: null,
+  panturrilhaMedial: null,
+}
+
 export function criarCasoVazio(id: string): Caso {
   return {
     id,
@@ -45,12 +84,13 @@ export function criarCasoVazio(id: string): Caso {
     observacoes: '',
     circunferenciaCinturaCm: null,
     circunferenciaPanturrilhaCm: null,
+    medidasCorporais: MEDIDAS_CORPORAIS_VAZIAS,
     condicao: { tipo: 'nenhuma' },
     modo: 'completo',
     metaEnergiaKcal: null,
     composicao: {
       protocolo: 'jackson-pollock-3',
-      dobras: { tricipital: null, subescapular: null, suprailiaca: null, abdominal: null, peitoral: null, coxa: null },
+      dobras: DOBRAS_VAZIAS,
       bioimpedancia: { gorduraPct: null, massaMagraKg: null, aguaPct: null, aparelho: '' },
     },
     energia: { fator: 1.2, formula: 'mifflin', getManual: null },
@@ -63,6 +103,31 @@ export function criarCasoVazio(id: string): Caso {
     linhaDaAgua: null,
     metodoAgua: 'ml-kg',
     aguaLitros: null,
+  }
+}
+
+/** O objeto gravado, ou `{}` quando o plano antigo não tem o grupo. */
+const grupoGravado = (valor: unknown): Readonly<Record<string, unknown>> =>
+  typeof valor === 'object' && valor !== null && !Array.isArray(valor) ? (valor as Record<string, unknown>) : {}
+
+/**
+ * O plano gravado por uma versão anterior, completo (spec antropometria-completa, CA-2001): todo campo que ele não tem
+ * vem do plano vazio, também dentro da composição, das dobras e das medidas corporais. Nenhum valor gravado muda, nem o
+ * de uma versão mais nova que esta não conhece (CB-1008).
+ */
+export function completarCasoLido(lido: Caso): Caso {
+  const vazio = criarCasoVazio(lido.id)
+  const composicao = grupoGravado(lido.composicao)
+  // Os grupos vêm do JSON gravado: o que a versão antiga não tinha é completado; o que ela tinha fica como veio.
+  return {
+    ...vazio,
+    ...lido,
+    composicao: {
+      ...vazio.composicao,
+      ...(composicao as Partial<ComposicaoCorporal>),
+      dobras: { ...vazio.composicao.dobras, ...(grupoGravado(composicao['dobras']) as Partial<ComposicaoCorporal['dobras']>) },
+    },
+    medidasCorporais: { ...MEDIDAS_CORPORAIS_VAZIAS, ...(grupoGravado(lido.medidasCorporais) as Partial<MedidasCorporais>) },
   }
 }
 

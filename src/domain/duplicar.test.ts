@@ -36,9 +36,44 @@ const COMPLETO: Partial<Caso> = {
   condicao: { tipo: 'nenhuma' },
   modo: 'completo',
   metaEnergiaKcal: 2100,
+  medidasCorporais: {
+    bracoRelaxadoDireitoCm: 31,
+    bracoRelaxadoEsquerdoCm: 30.5,
+    bracoContraidoDireitoCm: 33,
+    bracoContraidoEsquerdoCm: 32.5,
+    antebracoCm: 27,
+    punhoCm: 17,
+    pescocoCm: 38,
+    ombroCm: 112,
+    peitoralCm: 98,
+    pontoDaCintura: 'ponto-medio',
+    abdomenCm: 97,
+    quadrilCm: 102,
+    coxaDireitaCm: 55,
+    coxaEsquerdaCm: 54.5,
+    coxaProximalDireitaCm: 60,
+    coxaProximalEsquerdaCm: 59.5,
+    panturrilhaEsquerdaCm: 35.5,
+    diametroPunhoCm: 5.8,
+    diametroCotoveloCm: 7,
+    diametroJoelhoCm: 9.8,
+    alturaDoJoelhoCm: 52,
+    semienvergaduraCm: 86,
+  },
   composicao: {
     protocolo: 'faulkner-4',
-    dobras: { tricipital: 12, subescapular: 18, suprailiaca: 20, abdominal: 25, peitoral: 10, coxa: 15 },
+    dobras: {
+      tricipital: 12,
+      subescapular: 18,
+      suprailiaca: 20,
+      abdominal: 25,
+      peitoral: 10,
+      coxa: 15,
+      bicipital: 6,
+      supraespinal: 14,
+      axilarMedia: 13,
+      panturrilhaMedial: 11,
+    },
     bioimpedancia: { gorduraPct: 28, massaMagraKg: 59, aguaPct: 52, aparelho: 'InBody 270' },
   },
   energia: { fator: 1.55, formula: 'harris-benedict', getManual: 2300 },
@@ -137,12 +172,38 @@ describe('medidas do dia na duplicação (spec ficha-unica, D-367)', () => {
       'pesoKg',
       'circunferenciaCinturaCm',
       'circunferenciaPanturrilhaCm',
+      // CA-2002 (spec antropometria-completa): as medidas novas também são do dia.
+      'medidasCorporais.bracoRelaxadoDireitoCm',
+      'medidasCorporais.bracoRelaxadoEsquerdoCm',
+      'medidasCorporais.bracoContraidoDireitoCm',
+      'medidasCorporais.bracoContraidoEsquerdoCm',
+      'medidasCorporais.antebracoCm',
+      'medidasCorporais.punhoCm',
+      'medidasCorporais.pescocoCm',
+      'medidasCorporais.ombroCm',
+      'medidasCorporais.peitoralCm',
+      'medidasCorporais.abdomenCm',
+      'medidasCorporais.quadrilCm',
+      'medidasCorporais.coxaDireitaCm',
+      'medidasCorporais.coxaEsquerdaCm',
+      'medidasCorporais.coxaProximalDireitaCm',
+      'medidasCorporais.coxaProximalEsquerdaCm',
+      'medidasCorporais.panturrilhaEsquerdaCm',
+      'medidasCorporais.diametroPunhoCm',
+      'medidasCorporais.diametroCotoveloCm',
+      'medidasCorporais.diametroJoelhoCm',
+      'medidasCorporais.alturaDoJoelhoCm',
+      'medidasCorporais.semienvergaduraCm',
       'composicao.dobras.tricipital',
       'composicao.dobras.subescapular',
       'composicao.dobras.suprailiaca',
       'composicao.dobras.abdominal',
       'composicao.dobras.peitoral',
       'composicao.dobras.coxa',
+      'composicao.dobras.bicipital',
+      'composicao.dobras.supraespinal',
+      'composicao.dobras.axilarMedia',
+      'composicao.dobras.panturrilhaMedial',
       'composicao.bioimpedancia.gorduraPct',
       'composicao.bioimpedancia.massaMagraKg',
       'composicao.bioimpedancia.aguaPct',
@@ -161,7 +222,18 @@ describe('medidas do dia na duplicação (spec ficha-unica, D-367)', () => {
     }
     expect(copia.caso.circunferenciaCinturaCm).toBeNull()
     expect(copia.caso.circunferenciaPanturrilhaCm).toBeNull()
-    expect(copia.caso.composicao.dobras).toEqual({ tricipital: null, subescapular: null, suprailiaca: null, abdominal: null, peitoral: null, coxa: null })
+    expect(copia.caso.composicao.dobras).toEqual({
+      tricipital: null,
+      subescapular: null,
+      suprailiaca: null,
+      abdominal: null,
+      peitoral: null,
+      coxa: null,
+      bicipital: null,
+      supraespinal: null,
+      axilarMedia: null,
+      panturrilhaMedial: null,
+    })
     expect(copia.caso.composicao.bioimpedancia).toEqual({ gorduraPct: null, massaMagraKg: null, aguaPct: null, aparelho: 'InBody 270' })
   })
 
@@ -172,6 +244,9 @@ describe('medidas do dia na duplicação (spec ficha-unica, D-367)', () => {
     for (const caminho of caminhos('copiado')) expect.soft(valorEm(copia.caso, caminho), caminho).toEqual(valorEm(original.caso, caminho))
     expect(copia.caso.estaturaCm).toBe(170)
     expect(copia.caso.composicao.protocolo).toBe('faulkner-4')
+    // CA-2002 (spec antropometria-completa): o ponto da cintura é protocolo, não medida: vai igual.
+    expect(copia.caso.medidasCorporais.pontoDaCintura).toBe('ponto-medio')
+    expect(copia.caso.medidasCorporais.quadrilCm).toBeNull()
     expect(copia.caso.composicao.bioimpedancia.aparelho).toBe('InBody 270')
     expect(copia.caso.energia).toEqual({ fator: 1.55, formula: 'harris-benedict', getManual: 2300 })
     expect(copia.caso.aguaLitros).toBe(2.4)

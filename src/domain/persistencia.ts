@@ -1,5 +1,5 @@
 // Salvamento dos casos no próprio navegador (SPEC CA-49, CA-50, CB-08, CB-09, D-3).
-import { criarCasoVazio } from './caso.ts'
+import { completarCasoLido, criarCasoVazio } from './caso.ts'
 import { duplicarCaso, type OpcoesDuplicar } from './duplicar.ts'
 import { criarPlanoPadrao, type GerarId } from './plano.ts'
 import type { Caso, Plano } from './tipos.ts'
@@ -104,9 +104,10 @@ export function criarRepositorio(armazenamento: Armazenamento | null, opcoes: Op
       // Casos gravados por versões antigas podem não ter todos os campos: completa com os padrões. A escolha de
       // quantidade que falta é a de antes ("Só medida"), não a de plano novo (spec alimentos-e-gramaturas, D-376). Um
       // modo que esta versão não conhece (de uma versão mais nova) fica como veio, para não ser apagado ao salvar; quem
-      // lê para a tela e os documentos usa `modoDeQuantidade` (spec ficha-unica, D-463).
+      // lê para a tela e os documentos usa `modoDeQuantidade` (spec ficha-unica, D-463). As medidas da antropometria
+      // completa que o plano antigo não tem vêm vazias, e as de antes ficam (spec antropometria-completa, CA-2001).
       return {
-        caso: { ...criarCasoVazio(v.caso.id), ...v.caso, quantidades: Object.hasOwn(v.caso, 'quantidades') ? v.caso.quantidades : 'medida-caseira' },
+        caso: { ...completarCasoLido(v.caso), quantidades: Object.hasOwn(v.caso, 'quantidades') ? v.caso.quantidades : 'medida-caseira' },
         plano: v.plano,
         versao: v.versao,
         atualizadoEm: v.atualizadoEm,

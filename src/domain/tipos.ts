@@ -67,7 +67,9 @@ export type ModoPlano = 'rapido' | 'completo'
 
 /** Medidas de composição corporal deste atendimento. */
 export interface ComposicaoCorporal {
+  /** Só os dois protocolos da tela de hoje; a tela nova amplia para `IdProtocolo` (spec antropometria-completa, D-1007). */
   readonly protocolo: 'jackson-pollock-3' | 'faulkner-4'
+  /** Dobras cutâneas em mm. As 4 últimas entraram com a antropometria completa (spec antropometria-completa, D-1002). */
   readonly dobras: {
     readonly tricipital: number | null
     readonly subescapular: number | null
@@ -75,6 +77,11 @@ export interface ComposicaoCorporal {
     readonly abdominal: number | null
     readonly peitoral: number | null
     readonly coxa: number | null
+    readonly bicipital: number | null
+    /** Supraespinal (ISAK): não é a suprailíaca (pesquisa 1.4). */
+    readonly supraespinal: number | null
+    readonly axilarMedia: number | null
+    readonly panturrilhaMedial: number | null
   }
   readonly bioimpedancia: {
     readonly gorduraPct: number | null
@@ -82,6 +89,46 @@ export interface ComposicaoCorporal {
     readonly aguaPct: number | null
     readonly aparelho: string
   }
+}
+
+/**
+ * Onde a cintura foi medida (spec antropometria-completa, D-1004): cada corte só vale no ponto em que foi criado.
+ * `ponto-medio`: entre a última costela e a crista ilíaca (OMS, SISVAN); `crista-iliaca`: topo da crista (NIH);
+ * `menor-perimetro`: a cintura mínima (ACSM).
+ */
+export type PontoDaCintura = 'ponto-medio' | 'crista-iliaca' | 'menor-perimetro'
+
+/**
+ * Circunferências, diâmetros e comprimentos da antropometria completa (spec antropometria-completa, D-1002 e D-1003),
+ * em cm. A cintura e a panturrilha direita continuam em `circunferenciaCinturaCm` e `circunferenciaPanturrilhaCm`.
+ */
+export interface MedidasCorporais {
+  readonly bracoRelaxadoDireitoCm: number | null
+  readonly bracoRelaxadoEsquerdoCm: number | null
+  readonly bracoContraidoDireitoCm: number | null
+  readonly bracoContraidoEsquerdoCm: number | null
+  readonly antebracoCm: number | null
+  readonly punhoCm: number | null
+  readonly pescocoCm: number | null
+  readonly ombroCm: number | null
+  readonly peitoralCm: number | null
+  /** `null`: não registrado (todo plano gravado antes). */
+  readonly pontoDaCintura: PontoDaCintura | null
+  /** Na altura da cicatriz umbilical. */
+  readonly abdomenCm: number | null
+  readonly quadrilCm: number | null
+  /** No meio da coxa. */
+  readonly coxaDireitaCm: number | null
+  readonly coxaEsquerdaCm: number | null
+  readonly coxaProximalDireitaCm: number | null
+  readonly coxaProximalEsquerdaCm: number | null
+  readonly panturrilhaEsquerdaCm: number | null
+  /** Diâmetros ósseos: biestiloide, biepicondiliano do úmero e bicondiliano do fêmur. */
+  readonly diametroPunhoCm: number | null
+  readonly diametroCotoveloCm: number | null
+  readonly diametroJoelhoCm: number | null
+  readonly alturaDoJoelhoCm: number | null
+  readonly semienvergaduraCm: number | null
 }
 
 /** Dados e medidas (CA-01). Campos numéricos ficam `null` enquanto não preenchidos. */
@@ -104,7 +151,9 @@ export interface Caso {
   readonly objetivo: Objetivo | null
   readonly observacoes: string
   readonly circunferenciaCinturaCm: number | null
+  /** A panturrilha direita (spec antropometria-completa, D-1003); a esquerda fica em `medidasCorporais`. */
   readonly circunferenciaPanturrilhaCm: number | null
+  readonly medidasCorporais: MedidasCorporais
   readonly condicao: CondicaoFisiologica
   readonly modo: ModoPlano
   /** Meta de energia digitada no modo rápido, em kcal. */

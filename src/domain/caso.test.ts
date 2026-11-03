@@ -1,4 +1,4 @@
-import { criarCasoVazio, lerNumero, modoDeQuantidade, validarCaso } from './caso.ts'
+import { MEDIDAS_CORPORAIS_VAZIAS, completarCasoLido, criarCasoVazio, lerNumero, modoDeQuantidade, validarCaso } from './caso.ts'
 import type { Caso } from './tipos.ts'
 
 describe('quantidades para o paciente (spec conduta-da-nutricionista, D-297)', () => {
@@ -124,5 +124,103 @@ describe('criarCasoVazio', () => {
     expect(c.pesoKg).toBeNull()
     expect(c.condicao).toEqual({ tipo: 'nenhuma' })
     expect(c.idadeMesesAdicionais).toBe(0)
+  })
+})
+
+describe('medidas da antropometria completa (spec antropometria-completa)', () => {
+  const NOVAS: readonly (keyof typeof MEDIDAS_CORPORAIS_VAZIAS)[] = [
+    'bracoRelaxadoDireitoCm',
+    'bracoRelaxadoEsquerdoCm',
+    'bracoContraidoDireitoCm',
+    'bracoContraidoEsquerdoCm',
+    'antebracoCm',
+    'punhoCm',
+    'pescocoCm',
+    'ombroCm',
+    'peitoralCm',
+    'pontoDaCintura',
+    'abdomenCm',
+    'quadrilCm',
+    'coxaDireitaCm',
+    'coxaEsquerdaCm',
+    'coxaProximalDireitaCm',
+    'coxaProximalEsquerdaCm',
+    'panturrilhaEsquerdaCm',
+    'diametroPunhoCm',
+    'diametroCotoveloCm',
+    'diametroJoelhoCm',
+    'alturaDoJoelhoCm',
+    'semienvergaduraCm',
+  ]
+
+  it('CA-2000: plano novo nasce com cada medida nova vazia, e as de hoje nos campos de hoje', () => {
+    const c = criarCasoVazio('novo')
+    expect(Object.keys(c.medidasCorporais)).toEqual(NOVAS)
+    for (const campo of NOVAS) expect.soft(c.medidasCorporais[campo], campo).toBeNull()
+    expect(c.composicao.dobras).toEqual({
+      tricipital: null,
+      subescapular: null,
+      suprailiaca: null,
+      abdominal: null,
+      peitoral: null,
+      coxa: null,
+      bicipital: null,
+      supraespinal: null,
+      axilarMedia: null,
+      panturrilhaMedial: null,
+    })
+    expect(c.circunferenciaCinturaCm).toBeNull()
+    expect(c.circunferenciaPanturrilhaCm).toBeNull()
+  })
+
+  it('CA-2001: o plano lido sem as medidas novas fica com os valores de antes e as novas vazias', () => {
+    // Um plano gravado antes desta versão: sem `medidasCorporais` e com as 6 dobras de sempre.
+    const semMedidas = JSON.parse(JSON.stringify(criarCasoVazio('antigo'))) as Record<string, unknown>
+    delete semMedidas['medidasCorporais']
+    const antigo = {
+      ...semMedidas,
+      pesoKg: 70,
+      circunferenciaCinturaCm: 88,
+      circunferenciaPanturrilhaCm: 35,
+      composicao: {
+        protocolo: 'faulkner-4',
+        dobras: { tricipital: 12, subescapular: 15, suprailiaca: 18, abdominal: 22, peitoral: 9, coxa: 20 },
+        bioimpedancia: { gorduraPct: 27, massaMagraKg: null, aguaPct: null, aparelho: 'InBody' },
+      },
+    } as unknown as Caso
+    const lido = completarCasoLido(antigo)
+
+    expect(lido.pesoKg).toBe(70)
+    expect(lido.circunferenciaCinturaCm).toBe(88)
+    expect(lido.circunferenciaPanturrilhaCm).toBe(35)
+    expect(lido.composicao.protocolo).toBe('faulkner-4')
+    expect(lido.composicao.dobras).toEqual({
+      tricipital: 12,
+      subescapular: 15,
+      suprailiaca: 18,
+      abdominal: 22,
+      peitoral: 9,
+      coxa: 20,
+      bicipital: null,
+      supraespinal: null,
+      axilarMedia: null,
+      panturrilhaMedial: null,
+    })
+    expect(lido.composicao.bioimpedancia).toEqual({ gorduraPct: 27, massaMagraKg: null, aguaPct: null, aparelho: 'InBody' })
+    expect(lido.medidasCorporais).toEqual(MEDIDAS_CORPORAIS_VAZIAS)
+  })
+
+  it('CA-2001: com só parte das medidas novas, as que vieram ficam e as outras vêm vazias', () => {
+    const parcial = { ...criarCasoVazio('p'), medidasCorporais: { quadrilCm: 102, pontoDaCintura: 'ponto-medio' } } as unknown as Caso
+    const lido = completarCasoLido(parcial)
+    expect(lido.medidasCorporais.quadrilCm).toBe(102)
+    expect(lido.medidasCorporais.pontoDaCintura).toBe('ponto-medio')
+    expect(lido.medidasCorporais.bracoRelaxadoDireitoCm).toBeNull()
+    expect(Object.keys(lido.medidasCorporais)).toHaveLength(NOVAS.length)
+  })
+
+  it('CB-1008: o ponto da cintura de uma versão mais nova fica como veio', () => {
+    const futuro = { ...criarCasoVazio('f'), medidasCorporais: { ...MEDIDAS_CORPORAIS_VAZIAS, pontoDaCintura: 'umbigo' } } as unknown as Caso
+    expect(completarCasoLido(futuro).medidasCorporais.pontoDaCintura).toBe('umbigo')
   })
 })
