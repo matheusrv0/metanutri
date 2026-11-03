@@ -30,6 +30,7 @@ import { TelaConfirmarEmail } from './ui/publico/conta/TelaConfirmarEmail.tsx'
 import { TelaEsqueciSenha } from './ui/publico/conta/TelaEsqueciSenha.tsx'
 import { TelaNovaSenha } from './ui/publico/conta/TelaNovaSenha.tsx'
 import { TelaVoltaPagamento } from './ui/publico/TelaVoltaPagamento.tsx'
+import { TelaRecuperarLink } from './ui/publico/conta/TelaRecuperarLink.tsx'
 import { Redirecionar } from './ui/Redirecionar.tsx'
 import { AvisoDeInatividade } from './ui/sessao/AvisoDeInatividade.tsx'
 import { CapaEncerrando } from './ui/sessao/CapaEncerrando.tsx'
@@ -169,6 +170,9 @@ function Conteudo({ conta, usuarioId, perfilConta }: ConteudoProps) {
 
   // O link do paciente abre sozinho: sem menu, sem conta e sem nada da área do nutricionista.
   if (rota.tela === 'missoes') return areaDeTrabalho
+
+  // Spec lado-do-paciente, D-1220: "Recuperar meu link", sem conta.
+  if (rota.tela === 'recuperar-link') return <TelaRecuperarLink aoVoltar={() => navegar({ tela: 'entrar' })} />
 
   const telaCarregando = (
     <div role="status" className="grid min-h-dvh place-content-center bg-background text-sm text-muted-foreground">
