@@ -6,7 +6,7 @@ import { build } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 import { APP_EM_PRODUCAO, enderecoOuPadrao } from '@/ui/enderecos.ts'
 import { MARCA_FIM, MARCA_INICIO } from './marcas.ts'
-import { APP_PADRAO, cabecaDoApp, enderecoDoApp, limparSaida, opcoesDoAplicativo, prepararHtml, pluginAlvo, SO_DO_APP, SO_DO_SITE } from './pluginAlvo.ts'
+import { APP_PADRAO, BASE_DO_APP, cabecaDoApp, enderecoDoApp, limparSaida, opcoesDoAplicativo, prepararHtml, pluginAlvo, SO_DO_APP, SO_DO_SITE } from './pluginAlvo.ts'
 
 const APP = 'https://app.metanutri.com.br/'
 const CORES = { fundo: 'cor-do-fundo', tema: 'cor-do-tema' }
@@ -64,6 +64,14 @@ describe('o alvo do build (spec separacao-site-app, DP-SA-1 e DP-SA-2)', () => {
     expect(cabeca).toContain('<meta name="robots" content="noindex" />')
     expect(cabeca.match(/<title>([^<]*)<\/title>/)?.[1]).toBe('MetaNutri')
     expect(cabeca).not.toMatch(/name="description"|og:description|twitter:|diz o que comer|Comece grátis/)
+  })
+
+  it('DP-LP-1 (spec lado-do-paciente): no app, o <base href="/"> vem logo depois do charset; no site, não', () => {
+    const app = prepararHtml(HTML, 'app', APP)
+    expect(app).toMatch(/<meta charset="UTF-8" \/>\s*<base href="\/" \/>/)
+    expect(app.indexOf(BASE_DO_APP)).toBeLessThan(app.indexOf('preparar-app.js'))
+    expect(prepararHtml(HTML, 'site', APP)).not.toContain('<base')
+    expect(() => prepararHtml(HTML.replace('<meta charset="UTF-8" />', ''), 'app', APP)).toThrow(/charset/)
   })
 
   it('DP-SA-2: sem as marcas que troca, o build para com o motivo', () => {

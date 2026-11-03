@@ -47,10 +47,12 @@ const CLOUDFLARE = 'metanutri.pages.dev'
  * D-509 e CA-1417: o app aberto no endereço da Cloudflare (ou numa prévia, `<algo>.metanutri.pages.dev`) vai para o
  * oficial, com a mesma consulta e o mesmo `#`. Em qualquer outro endereço, nulo.
  */
-export function enderecoOficial(local: { readonly hostname: string; readonly search: string; readonly hash: string }): string | null {
+export function enderecoOficial(local: { readonly hostname: string; readonly search: string; readonly hash: string; readonly pathname?: string }): string | null {
   const host = local.hostname.toLowerCase()
   if (host !== CLOUDFLARE && !host.endsWith(`.${CLOUDFLARE}`)) return null
-  return telaNoApp(local.hash, local.search)
+  // Spec lado-do-paciente (DP-LP-1): o link do paciente e as páginas de aviso levam o caminho junto.
+  const caminho = local.pathname !== undefined && /^\/(p|avisos)\/[A-Za-z0-9]+$/.test(local.pathname) ? local.pathname.slice(1) : ''
+  return telaNoApp(local.hash, `${caminho}${local.search}`)
 }
 
 /**

@@ -52,6 +52,13 @@ function trocar(html: string, de: string, para: string): string {
   return html.replace(de, para)
 }
 
+/**
+ * Spec lado-do-paciente, DP-LP-1: no app, os endereços relativos da página resolvem a partir da raiz. Sem isto, o link do
+ * paciente em `/p/<token>` pediria `/p/assets/...`. Logo depois do charset, antes de qualquer endereço relativo.
+ */
+export const BASE_DO_APP = '<base href="/" />'
+const CHARSET = /<meta\s+charset=["']?utf-8["']?\s*\/?>/i
+
 /** O index.html do alvo (DP-SA-2). */
 export function prepararHtml(html: string, alvo: AlvoDoBuild, app: string): string {
   if (alvo === 'site') {
@@ -63,7 +70,11 @@ export function prepararHtml(html: string, alvo: AlvoDoBuild, app: string): stri
   const fim = html.indexOf(MARCA_FIM)
   if (inicio < 0 || fim < inicio) throw new Error('index.html sem as marcas do bloco de busca (seo:inicio e seo:fim).')
   const semBusca = `${html.slice(0, inicio)}${cabecaDoApp(app)}${html.slice(fim + MARCA_FIM.length)}`
-  return trocar(semBusca, `src="${SCRIPT_DO_SITE}"`, `src="${SCRIPT_DO_APP}"`)
+  const doApp = trocar(semBusca, `src="${SCRIPT_DO_SITE}"`, `src="${SCRIPT_DO_APP}"`)
+  const charset = CHARSET.exec(doApp)
+  if (!charset) throw new Error('index.html sem <meta charset="UTF-8">: o <base> do app entra logo depois dele.')
+  const fimDoCharset = charset.index + charset[0].length
+  return `${doApp.slice(0, fimDoCharset)}\n    ${BASE_DO_APP}${doApp.slice(fimDoCharset)}`
 }
 
 /** As cores do manifest do app, que o vite.config.ts passa (o manifest é JSON puro: não lê var()). */

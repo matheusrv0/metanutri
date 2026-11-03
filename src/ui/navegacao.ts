@@ -4,15 +4,35 @@ import { paginaDoSite } from './enderecos.ts'
 
 export type AbaPlanejador = 'caso' | 'plano' | 'adequacao'
 
-/** Onde a ficha do paciente abre: no Telefone (CA-517) ou na Suplementação prescrita (D-476). */
-export type CampoDaFicha = 'telefone' | 'suplementos'
+/**
+ * Onde a ficha do paciente abre: no Telefone (CA-517), na Suplementação prescrita (D-476) ou no E-mail (spec
+ * lado-do-paciente, CA-2261: "Cadastrar na ficha").
+ */
+export type CampoDaFicha = 'telefone' | 'suplementos' | 'email'
+
+const ehCampoDaFicha = (valor: unknown): valor is CampoDaFicha => valor === 'telefone' || valor === 'suplementos' || valor === 'email'
 
 /** Os planos que se paga pelo checkout. Clínica é conversa; Free e Estudante não pagam. */
 export type PlanoPago = 'solo' | 'pro'
 export const ehPlanoPago = (valor: unknown): valor is PlanoPago => valor === 'solo' || valor === 'pro'
 
 /** Telas que abrem sem sessão, mesmo com o servidor configurado (spec estilo-spora, CA-149). */
-export const TELAS_LIVRES = ['inicio', 'precos', 'entrar', 'criar-conta', 'confirmar-email', 'esqueci-senha', 'nova-senha', 'termos', 'privacidade', 'fontes', 'missoes'] as const
+export const TELAS_LIVRES = [
+  'inicio',
+  'precos',
+  'entrar',
+  'criar-conta',
+  'confirmar-email',
+  'esqueci-senha',
+  'nova-senha',
+  'termos',
+  'privacidade',
+  'fontes',
+  'missoes',
+  // Spec lado-do-paciente: "Recuperar meu link" (D-1220) e as páginas do aceite e do descadastro (DP-LP-20), sem conta.
+  'recuperar-link',
+  'avisos',
+] as const
 
 /** Telas fora da moldura do app (sem menu lateral). Checkout e volta do pagamento pedem sessão. */
 export const TELAS_PUBLICAS = [...TELAS_LIVRES, 'assinar', 'pagamento', 'comprovar-matricula', 'mudanca'] as const
@@ -20,8 +40,13 @@ export type TelaPublica = (typeof TELAS_PUBLICAS)[number]
 
 export type Rota =
   | { readonly tela: 'inicio' }
-  // Tela do paciente: abre pelo link, no aparelho dele, sem conta e sem menu.
+  // Tela do paciente: abre pelo link, no aparelho dele, sem conta e sem menu. O endereço é `/p/<token>` (spec
+  // lado-do-paciente, D-1213); o antigo `#/missoes/<token>` ainda é lido e vira o novo ao abrir (CA-2220).
   | { readonly tela: 'missoes'; readonly token: string }
+  // Spec lado-do-paciente, D-1220: "Recuperar meu link", pelo e-mail, sem conta.
+  | { readonly tela: 'recuperar-link' }
+  // Spec lado-do-paciente, DP-LP-20: a página do aceite ou do descadastro, em `/avisos/<chave>`, aberta pelo e-mail.
+  | { readonly tela: 'avisos'; readonly chave: string }
   | { readonly tela: 'precos'; readonly destaque?: IdPlano }
   | { readonly tela: 'entrar' }
   // Sem `plano`, é o Free. Sem `ciclo`, é o mensal.
@@ -73,6 +98,7 @@ export function lerRota(hash: string): Rota {
   const partes = hash.replace(/^#\/?/, '').split('/').filter(Boolean).map(decodeURIComponent)
   const [tela, id, aba] = partes
   if (tela === 'missoes' && id) return { tela: 'missoes', token: id }
+  if (tela === 'recuperar-link') return { tela: 'recuperar-link' }
   if (tela === 'inicio') return { tela: 'inicio' }
   if (tela === 'precos') return ehIdPlano(id) ? { tela: 'precos', destaque: id } : { tela: 'precos' }
   if (tela === 'entrar') return { tela: 'entrar' }
@@ -95,7 +121,7 @@ export function lerRota(hash: string): Rota {
   if (tela === 'casos') return { tela: 'casos' }
   if (tela === 'pacientes') return { tela: 'pacientes' }
   if (tela === 'adesao') return { tela: 'adesao' }
-  if (tela === 'paciente' && id) return aba === 'telefone' || aba === 'suplementos' ? { tela: 'paciente', pacienteId: id, campo: aba } : { tela: 'paciente', pacienteId: id }
+  if (tela === 'paciente' && id) return ehCampoDaFicha(aba) ? { tela: 'paciente', pacienteId: id, campo: aba } : { tela: 'paciente', pacienteId: id }
   if (tela === 'aprovacoes') return { tela: 'aprovacoes' }
   if (tela === 'negocio') return { tela: 'negocio' }
   if (tela === 'comprovar-matricula') return { tela: 'comprovar-matricula' }
@@ -110,6 +136,10 @@ export function escreverRota(rota: Rota): string {
   switch (rota.tela) {
     case 'missoes':
       return `#/missoes/${encodeURIComponent(rota.token)}`
+    case 'recuperar-link':
+      return '#/recuperar-link'
+    case 'avisos':
+      return `#/avisos/${encodeURIComponent(rota.chave)}`
     case 'inicio':
       return '#/inicio'
     case 'precos':
@@ -191,6 +221,49 @@ export const ETAPAS: readonly Etapa[] = [
 /** A moldura da área pública é outra: sem menu lateral. */
 export function ehTelaPublica(rota: Rota): boolean {
   return (TELAS_PUBLICAS as readonly string[]).includes(rota.tela)
+}
+
+/** O token do link do paciente: letras minúsculas e números (o banco aceita de 12 a 64, supabase/010). */
+const TOKEN = /^[a-z0-9]{12,64}$/
+/** A chave das páginas de aviso: 32 letras e números (DP-LP-20). */
+const CHAVE = /^[A-Za-z0-9]{32}$/
+
+const decodificar = (texto: string): string => {
+  try {
+    return decodeURIComponent(texto)
+  } catch {
+    return ''
+  }
+}
+
+/**
+ * A rota pelo endereço inteiro (spec lado-do-paciente, DP-LP-1 e DP-LP-3): `/p/<token>` é o link do paciente e
+ * `/avisos/<chave>` a página do aceite ou do descadastro; fora disso, vale o `#` de sempre. Caminho estranho debaixo de
+ * `/p/` ou `/avisos/` cai no `#`, como qualquer endereço que o app não conhece.
+ */
+export function lerRotaDoEndereco(caminho: string, hash: string): Rota {
+  const [inicio, valor, ...resto] = caminho.split('/').filter(Boolean)
+  if (resto.length === 0 && valor !== undefined) {
+    const decodificado = decodificar(valor)
+    if (inicio === 'p' && TOKEN.test(decodificado)) return { tela: 'missoes', token: decodificado }
+    if (inicio === 'avisos' && CHAVE.test(decodificado)) return { tela: 'avisos', chave: decodificado }
+  }
+  return lerRota(hash)
+}
+
+/** A rota de um endereço escrito como caminho mais `#` (o que `useSyncExternalStore` guarda). */
+export function rotaDoEndereco(endereco: string): Rota {
+  const corte = endereco.indexOf('#')
+  return corte < 0 ? lerRotaDoEndereco(endereco, '') : lerRotaDoEndereco(endereco.slice(0, corte), endereco.slice(corte))
+}
+
+/** O caminho mais o `#` da página: muda quando a rota muda (o `useSyncExternalStore` do App compara este texto). */
+export const enderecoDaPagina = (): string => `${globalThis.location?.pathname ?? '/'}${globalThis.location?.hash ?? ''}`
+
+/** CA-2220: o endereço antigo do link (`#/missoes/<token>`) vira `/p/<token>`; nulo para qualquer outro. */
+export function caminhoNovoDoLink(hash: string): string | null {
+  const rota = lerRota(hash)
+  return rota.tela === 'missoes' && TOKEN.test(rota.token) ? `/p/${rota.token}` : null
 }
 
 /** O endereço do site sem caminho (sem hash, `#` ou `#/`): sem sessão, abre a landing (spec estilo-spora, CA-730). */

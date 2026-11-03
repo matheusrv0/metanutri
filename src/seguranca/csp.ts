@@ -97,7 +97,8 @@ export function diretivasDaPolitica({ supabase }: OpcoesDaPolitica): Politica {
     // DP-CSP-5 (CB-128): reserva para o navegador que não entende frame-src ou worker-src.
     ['child-src', ["'self'", ...molduras]],
     ['worker-src', ["'self'"]],
-    ['manifest-src', ["'self'"]],
+    // Spec lado-do-paciente, DP-LP-2: o manifesto "Meu plano" de cada link nasce na tela, em `data:`.
+    ['manifest-src', ["'self'", 'data:']],
     ['base-uri', ["'self'"]],
     ['form-action', ["'self'"]],
     ['object-src', ["'none'"]],

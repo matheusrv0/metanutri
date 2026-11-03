@@ -14,7 +14,7 @@ import { armazenamentoLocal } from './ui/estado/armazenamentoLocal.ts'
 import { estaEmMoldura } from './ui/moldura.ts'
 import { obterSupabase } from './ui/estado/supabase.ts'
 import { tirarDestino } from './ui/fluxoConta.ts'
-import { escreverRota } from './ui/navegacao.ts'
+import { caminhoNovoDoLink, escreverRota } from './ui/navegacao.ts'
 import { ProvedorTema } from './ui/tema/ProvedorTema.tsx'
 import { destinoDaVolta, lerVolta } from './ui/voltaExterna.ts'
 
@@ -25,6 +25,11 @@ const oficial = enderecoOficial(globalThis.location)
 
 // D-172: o service worker do aplicativo; a versão nova avisa na área de trabalho em vez de recarregar sozinha.
 if (oficial === null) registrarAplicativo(avisarVersaoNova)
+
+// Spec lado-do-paciente, CA-2220: o endereço antigo do link (`#/missoes/<token>`) vira `/p/<token>`, sem recarregar,
+// antes de o app ler a rota.
+const caminhoDoLink = oficial === null ? caminhoNovoDoLink(globalThis.location.hash) : null
+if (caminhoDoLink !== null) globalThis.history.replaceState(null, '', caminhoDoLink)
 
 const raiz = document.getElementById('root')
 if (!raiz) throw new Error('Elemento #root não encontrado em index.html')

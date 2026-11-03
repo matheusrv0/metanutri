@@ -17,7 +17,7 @@ describe('a regra de conteúdo do site (D-135)', () => {
         'frame-src https://secure-fields.mercadopago.com https://api-static.mercadopago.com https://challenges.cloudflare.com',
         "child-src 'self' https://secure-fields.mercadopago.com https://api-static.mercadopago.com https://challenges.cloudflare.com",
         "worker-src 'self'",
-        "manifest-src 'self'",
+        "manifest-src 'self' data:",
         "base-uri 'self'",
         "form-action 'self'",
         "object-src 'none'",

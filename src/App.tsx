@@ -15,7 +15,7 @@ import { usePedidoEstudante } from './ui/estado/usarPedidoEstudante.ts'
 import { usePerfilConta, type ValorPerfilConta } from './ui/estado/usarPerfilConta.ts'
 import { esquecerEmailPendente, guardarEmailPendente, lerEmailPendente } from './ui/emailPendente.ts'
 import { destinoDepoisDoCadastro, destinoDoPlano, guardarDestino, tirarDestino } from './ui/fluxoConta.ts'
-import { ehEnderecoDaRaiz, ehRotaLivre, enderecoNoSite, escreverRota, lerRota, rotaCriarConta, type Rota } from './ui/navegacao.ts'
+import { ehEnderecoDaRaiz, ehRotaLivre, enderecoDaPagina, enderecoNoSite, escreverRota, rotaCriarConta, rotaDoEndereco, type Rota } from './ui/navegacao.ts'
 import { sairParaOSite } from './ui/enderecos.ts'
 import { PortaoDaNuvem } from './ui/nuvem/PortaoDaNuvem.tsx'
 import { processadorDoSite } from './ui/pagamento/processadorMercadoPago.ts'
@@ -397,7 +397,7 @@ const assinarEndereco = (avisar: () => void): (() => void) => {
   globalThis.addEventListener('hashchange', avisar)
   return () => globalThis.removeEventListener('hashchange', avisar)
 }
-const lerEndereco = (): string => globalThis.location.hash
+const lerEndereco = enderecoDaPagina
 
 /** D-517, passo 5: depois da saída por tempo, Entrar; recarregar descarta o que ainda estava a caminho, como o "Sair". */
 const irParaEntrar = (): void => {
@@ -420,7 +420,9 @@ function ContaComTempo({ conta, usuarioId, confirmacao, aoConfirmada }: ContaCom
   const sessao = conta.sessao
   useConfirmarMudanca(confirmacao, aoConfirmada)
   const perfilConta = usePerfilConta(sessao?.id ?? null)
-  const noLinkDoPaciente = lerRota(useSyncExternalStore(assinarEndereco, lerEndereco)).tela === 'missoes'
+  const telaDoEndereco = rotaDoEndereco(useSyncExternalStore(assinarEndereco, lerEndereco)).tela
+  // O paciente (o link e as páginas de aviso) não tem sessão para vigiar.
+  const noLinkDoPaciente = telaDoEndereco === 'missoes' || telaDoEndereco === 'avisos'
   const tempo = useTempoDeSessao({
     ativo: conta.disponivel && sessao !== null && !noLinkDoPaciente,
     usuarioId: sessao?.id ?? null,
@@ -448,7 +450,7 @@ export function App() {
   const usuarioId = conta.disponivel ? (conta.sessao?.id ?? null) : null
   // Spec separacao-site-app, D-512 e DP-SA-11: na aba que o "Continuar" do site abriu, os dados da conta esperam a
   // mudança terminar (recebida, recusada ou 10 s); a sessão já existe, só os dados esperam.
-  const rota = lerRota(useSyncExternalStore(assinarEndereco, lerEndereco))
+  const rota = rotaDoEndereco(useSyncExternalStore(assinarEndereco, lerEndereco))
   const mudanca = useMudanca({ rota, usuarioId: conta.carregando ? null : usuarioId })
   const dadosDe = mudanca.segurar ? null : usuarioId
   return (
