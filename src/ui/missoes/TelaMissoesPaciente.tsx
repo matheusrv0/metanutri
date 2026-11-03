@@ -8,18 +8,23 @@
 import { CircleAlert, Link2Off, WifiOff } from 'lucide-react'
 import { useEffect, useState, type ReactNode } from 'react'
 import { diaLocal, marcarMissao, missoesDoDia, type Acompanhamento } from '@/domain/acompanhamento.ts'
-import { separarDadosDoLink, SEM_DADOS_DO_LINK, type DadosDoLink } from '@/domain/dadosDoLink.ts'
+import { separarDadosDoLink, SEM_DADOS_DO_LINK, temAvisoOferecido, textoDosAvisosLigados, type DadosDoLink } from '@/domain/dadosDoLink.ts'
 import { registrarAcesso, type ClienteDosEmails } from '@/domain/emailsDoLink.ts'
 import { separarMarca, SEM_MARCA, type MarcaDoLink } from '@/domain/marca.ts'
-import { lembrarPlano, trocarTokenLembrado } from '@/domain/meusPlanos.ts'
+import { esquecerPlano, lembrarPlano, trocarTokenLembrado } from '@/domain/meusPlanos.ts'
 import { MarcacaoRecusada, type FonteAcompanhamentos } from '@/domain/repositorioAcompanhamentos.ts'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { Logo } from '@ds/componentes/display/Logo.tsx'
 import { armazenamentoLocal } from '../estado/armazenamentoLocal.ts'
+import { useAcompanhamentosOpcional } from '../estado/contextoAcompanhamentos.ts'
 import { obterSupabase } from '../estado/supabase.ts'
 import { irParaOApp } from './endereco.ts'
 import { CartaoInstalar } from './link/CartaoInstalar.tsx'
+import { FolhaAvisos } from './link/FolhaAvisos.tsx'
+import { FolhaEsquecer } from './link/FolhaEsquecer.tsx'
 import { FolhaInstalar } from './link/FolhaInstalar.tsx'
+import { FolhaMeuPlano } from './link/FolhaMeuPlano.tsx'
+import { FolhaReceberPorEmail } from './link/FolhaReceberPorEmail.tsx'
 import { useMeuPlanoNaPagina } from './link/manifesto.ts'
 import { useInstalar } from './link/usarInstalar.ts'
 import { primeiroNomeDoLink } from './link/textosDoLink.ts'
@@ -35,7 +40,12 @@ interface TelaMissoesPacienteProps {
   readonly agora?: Date
   /** As funções do servidor (registrar o acesso, os e-mails); por padrão, o Supabase do app. Nulo, sem servidor. */
   readonly cliente?: ClienteDosEmails | null
+  /** Para onde "Esquecer neste aparelho" leva (o jsdom não navega). Por padrão, "Recuperar meu link". */
+  readonly aoEsquecido?: () => void
 }
+
+/** As folhas do link (D-1212): "Meu plano" e as que abrem a partir dela. */
+type Folha = 'mais' | 'email' | 'avisos' | 'esquecer' | null
 
 function Aviso({ icone, titulo, texto, acao }: { readonly icone: ReactNode; readonly titulo: string; readonly texto: string | null; readonly acao?: ReactNode }) {
   return (
@@ -94,7 +104,7 @@ interface Carga {
 
 const clientePadrao = (): ClienteDosEmails | null => obterSupabase() as unknown as ClienteDosEmails | null
 
-export function TelaMissoesPaciente({ token, fonte, hoje = diaLocal(), agora, cliente: clienteInjetado }: TelaMissoesPacienteProps) {
+export function TelaMissoesPaciente({ token, fonte, hoje = diaLocal(), agora, cliente: clienteInjetado, aoEsquecido = () => irParaOApp('#/recuperar-link') }: TelaMissoesPacienteProps) {
   // Guardar o token junto com o resultado deixa "carregando" ser derivado do render,
   // em vez de um segundo estado que o efeito teria de ligar e desligar.
   const [carga, setCarga] = useState<Carga | null>(null)
@@ -108,6 +118,9 @@ export function TelaMissoesPaciente({ token, fonte, hoje = diaLocal(), agora, cl
   const tokenAberto = acompanhamento?.token ?? null
   // D-1219: o cartão Instalar e a folha com os passos.
   const instalar = useInstalar(hoje)
+  const [folha, setFolha] = useState<Folha>(null)
+  // A cópia do aparelho, que "Esquecer neste aparelho" apaga (CA-2228); sem o provedor (o teste da tela), não há cópia.
+  const copiaDoAparelho = useAcompanhamentosOpcional()?.repositorio ?? null
 
   useEffect(() => {
     let vivo = true
@@ -230,19 +243,75 @@ export function TelaMissoesPaciente({ token, fonte, hoje = diaLocal(), agora, cl
     )
   }
 
+  const { dados, marca } = carga
+  const primeiroNome = primeiroNomeDoLink(acompanhamento.nome)
+  // "Juliana · com Ana Lima" (seção 6 da SPEC); sem um dos nomes, o que houver.
+  const quem = [primeiroNome, dados.nutricionista ? `com ${dados.nutricionista}` : ''].filter(Boolean).join(' · ') || null
+  /** CA-2256: o aviso que o paciente desligou (ou que voltou, quando o servidor não respondeu). */
+  const mudarAviso = (tipo: keyof DadosDoLink['avisos'], estado: 'ligado' | 'desligado') =>
+    setCarga((atual) => (atual ? { ...atual, dados: { ...atual.dados, avisos: { ...atual.dados.avisos, [tipo]: estado } } } : atual))
+
+  /** CA-2228: esquecer apaga a lembrança e a cópia sem internet daquele link; o link continua valendo. */
+  const esquecer = () => {
+    esquecerPlano(armazenamentoLocal(), acompanhamento.token)
+    copiaDoAparelho?.remover(acompanhamento.id)
+    setFolha(null)
+    aoEsquecido()
+  }
+
   return (
     <>
       <LinkDoPaciente
         acompanhamento={acompanhamento}
-        marca={carga.marca}
+        marca={marca}
         hoje={hoje}
         naoSalvou={naoSalvou}
         aoAlternar={alternar}
-        dados={carga.dados}
+        dados={dados}
         {...(agora ? { agora } : {})}
         instalar={instalar.mostrarCartao ? <CartaoInstalar aoInstalar={instalar.instalar} aoAgoraNao={instalar.agoraNao} /> : null}
+        aoAbrirMais={() => setFolha('mais')}
       />
-      <FolhaInstalar aberta={instalar.folhaAberta} aoFechar={instalar.fecharFolha} plataforma={instalar.plataforma} cor={carga.marca.cor} />
+      <FolhaMeuPlano
+        aberta={folha === 'mais'}
+        aoFechar={() => setFolha(null)}
+        cor={marca.cor}
+        quem={quem}
+        aoInstalar={
+          instalar.naFolha
+            ? () => {
+                setFolha(null)
+                instalar.instalar()
+              }
+            : null
+        }
+        aoReceberPorEmail={() => setFolha('email')}
+        // Sem e-mail no link, os avisos começam por receber o link por e-mail (o aceite precisa do endereço).
+        avisos={temAvisoOferecido(dados.avisos) ? { estado: textoDosAvisosLigados(dados.avisos), aoAbrir: () => setFolha(dados.emailMascarado ? 'avisos' : 'email') } : null}
+        aoEsquecer={() => setFolha('esquecer')}
+      />
+      <FolhaReceberPorEmail
+        aberta={folha === 'email'}
+        aoFechar={() => setFolha(null)}
+        cor={marca.cor}
+        token={acompanhamento.token}
+        cliente={cliente}
+        emailMascarado={dados.emailMascarado}
+        avisos={dados.avisos}
+      />
+      <FolhaAvisos
+        aberta={folha === 'avisos'}
+        aoFechar={() => setFolha(null)}
+        cor={marca.cor}
+        token={acompanhamento.token}
+        cliente={cliente}
+        emailMascarado={dados.emailMascarado}
+        nutricionista={dados.nutricionista}
+        avisos={dados.avisos}
+        aoMudar={mudarAviso}
+      />
+      <FolhaEsquecer aberta={folha === 'esquecer'} aoFechar={() => setFolha(null)} aoEsquecer={esquecer} cor={marca.cor} />
+      <FolhaInstalar aberta={instalar.folhaAberta} aoFechar={instalar.fecharFolha} plataforma={instalar.plataforma} cor={marca.cor} />
     </>
   )
 }
