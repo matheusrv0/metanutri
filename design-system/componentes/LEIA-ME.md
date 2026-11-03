@@ -96,6 +96,23 @@ um `Label` ao lado, não uma prop.
 <Switch id="crus" checked={v} onCheckedChange={setV} />
 ```
 
+### CampoEscolha
+Lista de escolha nativa (`<select>`), com o rótulo ligado: no celular abre o seletor do próprio aparelho. Mesma
+altura e letra do Input; `compacto` tem 32 px com mouse e 44 px no toque. `valor={null}` (ou um valor que a lista
+não tem) mostra o `vazio`, que não se escolhe de volta. Para lista com conteúdo rico, o `Select`. *Nasceu na
+antropometria (spec antropometria-telas, D-1404).*
+
+```tsx
+<CampoEscolha
+  rotulo="Origem do peso e da estatura"
+  vazio="Origem não informada"
+  opcoes={[{ valor: 'aferidas', rotulo: 'Aferidos na consulta' }, { valor: 'estimadas', rotulo: 'Estimados' }]}
+  valor={origem}
+  aoEscolher={setOrigem}
+/>
+<CampoEscolha rotulo="Modalidade" rotuloOculto compacto opcoes={modalidades} valor={m} aoEscolher={setM} />
+```
+
 ### GrupoOpcoes
 Escolha única entre 2 a 4 opções curtas (sexo, preset, fórmula), todas visíveis — mais
 rápido que uma lista suspensa. `valor={null}` é o estado vazio.
