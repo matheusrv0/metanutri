@@ -133,13 +133,13 @@ describe('percentis de Frisancho (spec antropometria-completa, CA-2042)', () => 
 describe('adequação (spec antropometria-completa, CA-2043)', () => {
   it('CA-2043: homem de 30 anos com CB 35 cm → 107,7% (P50 32,5) → Eutrofia', () => {
     const l = linhaAdequacao(caso(35, 13.5), 'cb')
-    expect(l.valor).toBeCloseTo(107.6923, 4)
-    expect(l.situacao).toEqual({ rotulo: 'Eutrofia', nivel: 'adequado' })
-    expect(l.detalhes).toContainEqual({ tipo: 'numero', rotulo: 'P50 de referência', valor: 32.5, unidade: 'cm', casas: 1 })
+    expect(l?.valor).toBeCloseTo(107.6923, 4)
+    expect(l?.situacao).toEqual({ rotulo: 'Eutrofia', nivel: 'adequado' })
+    expect(l?.detalhes).toContainEqual({ tipo: 'numero', rotulo: 'P50 de referência', valor: 32.5, unidade: 'cm', casas: 1 })
   })
 
   it('CA-2043: as faixas de Blackburn com os sinais do UFMA', () => {
-    const adequacao = (pct: number) => linhaAdequacao(caso((32.5 * pct) / 100, 13.5), 'cb').situacao?.rotulo
+    const adequacao = (pct: number) => linhaAdequacao(caso((32.5 * pct) / 100, 13.5), 'cb')?.situacao?.rotulo
     expect(adequacao(70)).toBe('Desnutrição grave')
     expect(adequacao(70.1)).toBe('Desnutrição moderada')
     expect(adequacao(80.1)).toBe('Desnutrição leve')
@@ -151,14 +151,14 @@ describe('adequação (spec antropometria-completa, CA-2043)', () => {
   it('CA-2043: a CMB não tem faixa de excesso (125% → Eutrofia), com o P50 de 1981', () => {
     const p50 = (linha1981('cmb', 'M', 25)[3] ?? 0) / 10
     const l = linhaAdequacao(caso(1.25 * p50 + Math.PI / 10, 1), 'cmb')
-    expect(l.valor).toBeCloseTo(125, 6)
-    expect(l.situacao?.rotulo).toBe('Eutrofia')
-    expect(l.recomendacao?.texto).toBe('Acima de 90%')
+    expect(l?.valor).toBeCloseTo(125, 6)
+    expect(l?.situacao?.rotulo).toBe('Eutrofia')
+    expect(l?.recomendacao?.texto).toBe('Acima de 90%')
   })
 
   it('a adequação da DCT usa o P50 de Frisancho 1990', () => {
     const p50 = linha1990('dct', 'F', 45)[4] ?? 0
-    expect(linhaAdequacao(caso(30, p50, { sexo: 'F', idadeAnos: 45 }), 'dct').valor).toBeCloseTo(100, 10)
+    expect(linhaAdequacao(caso(30, p50, { sexo: 'F', idadeAnos: 45 }), 'dct')?.valor).toBeCloseTo(100, 10)
   })
 })
 
@@ -180,5 +180,28 @@ describe('idade e gestação (spec antropometria-completa, CA-2045 e CB-1002)', 
 
   it('as oito linhas do braço, na ordem', () => {
     expect(linhasDoBraco(caso(35, 13.5)).map((l) => l.id)).toEqual(['cb', 'dct', 'cmb', 'amb', 'agb', 'adequacao-cb', 'adequacao-dct', 'adequacao-cmb'])
+  })
+})
+
+describe('critério de adultos (spec antropometria-completa, revisão, CA-2080)', () => {
+  it('CA-2080: aos 17 anos, valor e percentil sem situação nem recomendação; a adequação não vem', () => {
+    const adolescente = caso(28, 10, { idadeAnos: 17 })
+    for (const l of [linhaCb(adolescente), linhaDct(adolescente), linhaCmb(adolescente), linhaAmb(adolescente), linhaAgb(adolescente)]) {
+      expect.soft(l.valor, l.id).not.toBeNull()
+      expect.soft(l.situacao, l.id).toBeNull()
+      expect.soft(l.recomendacao, l.id).toBeNull()
+      expect.soft(l.detalhes.some((d) => d.rotulo === 'Percentil'), l.id).toBe(true)
+      expect.soft(l.avisos.join(' '), l.id).toMatch(/critério .* é de adultos/)
+    }
+    expect(linhaAdequacao(adolescente, 'cb')).toBeNull()
+    expect(linhaAdequacao(adolescente, 'dct')).toBeNull()
+    expect(linhaAdequacao(adolescente, 'cmb')).toBeNull()
+    expect(linhasDoBraco(adolescente).map((l) => l.id)).toEqual(['cb', 'dct', 'cmb', 'amb', 'agb'])
+  })
+
+  it('CA-2080: aos 18, vêm todas, com a situação', () => {
+    const adulto = caso(28, 10, { idadeAnos: 18 })
+    expect(linhasDoBraco(adulto).map((l) => l.id)).toEqual(['cb', 'dct', 'cmb', 'amb', 'agb', 'adequacao-cb', 'adequacao-dct', 'adequacao-cmb'])
+    for (const l of linhasDoBraco(adulto)) expect.soft(l.situacao, l.id).not.toBeNull()
   })
 })

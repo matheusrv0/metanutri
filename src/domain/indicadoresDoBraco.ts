@@ -138,6 +138,9 @@ interface Entrada {
 
 const AVISO_75 = 'Frisancho vai até 74,9 anos: sem referência para a idade.'
 const AVISO_GESTACAO = 'As referências de Frisancho não são de gestantes.'
+/** D-1025 revista: o critério do São Camilo é de adultos; a pesquisa não traz critério pediátrico com fonte. */
+const IDADE_DO_CRITERIO = 18
+const AVISO_MENOR = 'Abaixo de 18 anos, o percentil sai sem classificação: o critério do São Camilo 2025 é de adultos.'
 
 /** A linha com a situação pelos percentis da idade, ou sem situação com o motivo (75 anos ou mais, gestação). */
 function linhaPorPercentis(
@@ -160,6 +163,10 @@ function linhaPorPercentis(
   if (sexo === null || idadeAnos === null) return semSituacao(null, [...(sexo === null ? [CAMPOS.sexo] : []), ...(idadeAnos === null ? [CAMPOS.idade] : [])])
   const percentis = percentisDaIdade(referencia, sexo, idadeAnos)
   if (!percentis) return semSituacao(idadeAnos >= 75 ? AVISO_75 : 'Sem referência de Frisancho para a idade.')
+  if (idadeAnos < IDADE_DO_CRITERIO) {
+    const percentil: Detalhe = { tipo: 'texto', rotulo: 'Percentil', texto: posicaoNosPercentis(naPrecisao(valor, entrada.casas), percentis) }
+    return { ...semSituacao(AVISO_MENOR), fonte: extra.fonte ?? referencia.fonte, detalhes: [...detalhes, percentil] }
+  }
   const [min, max] = esquema === 'gordura' ? [p(percentis, 15), p(percentis, 85)] : [p(percentis, 10), p(percentis, 90)]
   const casasDaTabela = referencia.divisor === 100 ? 2 : 1
   const unidade = entrada.unidade === '' ? '' : ` ${entrada.unidade}`
@@ -248,7 +255,9 @@ const ADEQUACAO_CMB: readonly FaixaRotulada[] = [...ADEQUACAO.slice(0, 3), { min
 const NOME_DA_ADEQUACAO = { cb: 'Adequação da CB', dct: 'Adequação da DCT', cmb: 'Adequação da CMB' } as const
 
 /** Adequação = valor ÷ P50 × 100: CB e DCT com o P50 de Frisancho 1990; CMB com o de 1981 (D-1026). */
-export function linhaAdequacao(caso: Caso, medida: 'cb' | 'dct' | 'cmb'): LinhaDoResultado {
+export function linhaAdequacao(caso: Caso, medida: 'cb' | 'dct' | 'cmb'): LinhaDoResultado | null {
+  // D-1026 revista: Blackburn e Thornton avaliam o adulto; abaixo de 18 anos, a linha não vem.
+  if (caso.idadeAnos !== null && caso.idadeAnos < IDADE_DO_CRITERIO) return null
   const entrada = { id: `adequacao-${medida}`, nome: NOME_DA_ADEQUACAO[medida], unidade: '%', casas: 1 } as const
   const braco = bracoDoCaso(caso)
   const cb = cbDoCaso(caso)
@@ -281,13 +290,7 @@ export function linhaAdequacao(caso: Caso, medida: 'cb' | 'dct' | 'cmb'): LinhaD
 }
 
 /** As linhas do braço na ordem da tela. */
-export const linhasDoBraco = (caso: Caso): LinhaDoResultado[] => [
-  linhaCb(caso),
-  linhaDct(caso),
-  linhaCmb(caso),
-  linhaAmb(caso),
-  linhaAgb(caso),
-  linhaAdequacao(caso, 'cb'),
-  linhaAdequacao(caso, 'dct'),
-  linhaAdequacao(caso, 'cmb'),
-]
+export const linhasDoBraco = (caso: Caso): LinhaDoResultado[] =>
+  [linhaCb(caso), linhaDct(caso), linhaCmb(caso), linhaAmb(caso), linhaAgb(caso), linhaAdequacao(caso, 'cb'), linhaAdequacao(caso, 'dct'), linhaAdequacao(caso, 'cmb')].filter(
+    (l): l is LinhaDoResultado => l !== null,
+  )
