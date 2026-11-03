@@ -29,6 +29,21 @@ export function renovaEm(agora: Date): string {
   return proximo.toISOString().slice(0, 10)
 }
 
+export const MESES: readonly string[] = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro']
+
+/** O mês de `agora` no calendário de Brasília, pelo nome. */
+export function mesEmBrasilia(agora: Date): string {
+  return MESES[inicioDoMesEmBrasilia(agora).getUTCMonth()] ?? ''
+}
+
+/** "Renovam em 1º de dezembro", do dia AAAA-MM-DD de `renovaEm`. */
+export function textoDaRenovacao(dia: string): string {
+  return `Renovam em 1º de ${MESES[Number(dia.slice(5, 7)) - 1] ?? ''}`
+}
+
+/** CA-2374: "As 20 sugestões de novembro foram usadas. Renovam em 1º de dezembro." */
+export const textoDoLimite = (limite: number, agora: Date): string => `As ${limite} sugestões de ${mesEmBrasilia(agora)} foram usadas. ${textoDaRenovacao(renovaEm(agora))}.`
+
 export interface UsoDoMes {
   readonly usados: number
   readonly limite: number

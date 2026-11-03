@@ -1,5 +1,7 @@
 // O pedido, o banco e o modelo de mentira dos testes da função sugerir-plano (spec assistente-ia). O nome não termina
 // em `.test.ts`, então o Vitest não roda este arquivo como teste.
+import type { ModoIa } from '../../supabase/functions/_shared/iaContrato.ts'
+import type { BancoDaIa, ChamadaDaIa, ConclusaoDoUso, ContaParaIa, ModeloDaIa, RespostaDoModelo } from '../../supabase/functions/_shared/iaPortas.ts'
 
 /** Um pedido completo do modo gerar, como o navegador manda (a gestante do desenho, seção 10.2). */
 export const PEDIDO_BASE = {
@@ -85,4 +87,90 @@ export function fluxoSse(o: OpcoesDoFluxo): string {
     usage: { output_tokens: 6000, ...(o.iteracoes ? { iterations: o.iteracoes } : {}) },
   })
   return saida + evento('message_stop', {})
+}
+
+// ---------- O banco e o modelo de mentira ----------
+
+
+/** 3/11/2026, 12h em Brasília. */
+export const AGORA_IA = new Date('2026-11-03T15:00:00.000Z')
+export const CONTA_IA = { id: '11111111-2222-3333-4444-555555555555', email: 'ana@exemplo.com' }
+
+export interface UsoGuardado {
+  readonly id: number
+  readonly conta: string
+  readonly modo: ModoIa
+  status: 'reservado' | 'ok' | 'recusa' | 'erro'
+  readonly criadoEm: Date
+  custo: number
+  conclusao: ConclusaoDoUso | null
+}
+
+export type MetodoDoBanco = keyof BancoDaIa
+
+export const CONTA_PADRAO: ContaParaIa = {
+  perfil: { situacao: 'nutricionista', crnStatus: 'conferido' },
+  pedidoAprovado: false,
+  assinatura: { plano: 'solo', status: 'ativa', expiraEm: null },
+}
+
+/**
+ * O banco da IA em memória, com a mesma conta do 016: o mês conta 'ok' e as reservas de menos de 10 minutos desde o
+ * início do mês; a hora conta tudo da última hora. `falhas` faz um método rejeitar. `ordem` guarda cada consulta.
+ */
+export function bancoDaIaFalso(o: { readonly conta?: ContaParaIa; readonly usos?: readonly Omit<UsoGuardado, 'id' | 'conclusao'>[]; readonly gastoDoDia?: number; readonly falhas?: readonly MetodoDoBanco[]; readonly agora?: () => Date } = {}) {
+  const agora = o.agora ?? (() => AGORA_IA)
+  const usos: UsoGuardado[] = (o.usos ?? []).map((u, i) => ({ ...u, id: i + 1, conclusao: null }))
+  const ordem: string[] = []
+  const falhas = new Set(o.falhas ?? [])
+  const talvezFalhar = (metodo: MetodoDoBanco) => {
+    ordem.push(metodo)
+    if (falhas.has(metodo)) throw new Error(`o banco não respondeu (${metodo})`)
+  }
+  const contaDoMes = (conta: string, inicio: Date) =>
+    usos.filter((u) => u.conta === conta && u.criadoEm.getTime() >= inicio.getTime() && (u.status === 'ok' || (u.status === 'reservado' && u.criadoEm.getTime() > agora().getTime() - 10 * 60_000))).length
+  const banco: BancoDaIa = {
+    async lerConta() {
+      talvezFalhar('lerConta')
+      return o.conta ?? CONTA_PADRAO
+    },
+    async reservar(conta, modo, limiteMes, inicio, limiteHora) {
+      talvezFalhar('reservar')
+      if (contaDoMes(conta, inicio) >= limiteMes) return { motivo: 'limite-mes' }
+      if (usos.filter((u) => u.conta === conta && u.criadoEm.getTime() > agora().getTime() - 3_600_000).length >= limiteHora) return { motivo: 'limite-hora' }
+      const id = usos.length + 1
+      usos.push({ id, conta, modo, status: 'reservado', criadoEm: agora(), custo: 0, conclusao: null })
+      return { reserva: id }
+    },
+    async concluir(reserva, conclusao) {
+      ordem.push('concluir')
+      const uso = usos.find((u) => u.id === reserva && u.status === 'reservado')
+      if (!uso || falhas.has('concluir')) return
+      uso.status = conclusao.status
+      uso.custo = conclusao.custoMicrodolares
+      uso.conclusao = conclusao
+    },
+    async usosNoMes(conta, inicio) {
+      talvezFalhar('usosNoMes')
+      return contaDoMes(conta, inicio)
+    },
+    async custoDesde(desde) {
+      talvezFalhar('custoDesde')
+      return (o.gastoDoDia ?? 0) + usos.filter((u) => u.criadoEm.getTime() > desde.getTime()).reduce((s, u) => s + u.custo, 0)
+    },
+  }
+  return { banco, usos, ordem }
+}
+
+/** O modelo de mentira: cada chamada tira a primeira resposta da lista (a última fica valendo). */
+export function modeloFalsoDeTeste(respostas: readonly RespostaDoModelo[]) {
+  const chamadas: ChamadaDaIa[] = []
+  const fila = [...respostas]
+  const modelo: ModeloDaIa = async (chamada) => {
+    chamadas.push(chamada)
+    const resposta = fila.length > 1 ? fila.shift() : fila[0]
+    if (!resposta) throw new Error('o teste não deu resposta ao modelo')
+    return resposta
+  }
+  return { modelo, chamadas }
 }
