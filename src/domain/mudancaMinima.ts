@@ -34,8 +34,9 @@ export interface ComparacaoDeAvaliacoes extends MudancaMinima {
 }
 
 /**
- * A variação entre a avaliação anterior e a atual contra a MMD, com o ETM padrão sobre a média das duas medidas (conta
- * nossa). |Δ| ≥ MMD: mudança provavelmente real; menor: dentro do erro de medida (R4.7d). Medida vazia: `null` (CB-1014).
+ * A variação de uma medida só (uma dobra, a cintura) entre a avaliação anterior e a atual contra a MMD, com o ETM
+ * padrão sobre a média das duas medidas (conta nossa). |Δ| ≥ MMD: mudança provavelmente real; menor: dentro do erro de
+ * medida (R4.7d). Medida vazia: `null` (CB-1014). A soma de dobras vai por `compararSomasDeDobras`.
  */
 export function compararAvaliacoes(
   anterior: number | null,
@@ -55,6 +56,43 @@ export function compararAvaliacoes(
   if (opcoes.avaliadoresDiferentes) avisos.push('Medido por outro avaliador: a comparação tem erro maior que o habitual.')
   return {
     ...minima,
+    diferenca,
+    interpretacao: real ? 'provavelmente-real' : 'dentro-do-erro',
+    texto: real ? 'Mudança provavelmente real.' : 'Dentro do erro de medida: não interpretar como mudança.',
+    fonte: FONTES.mudancaMinima,
+    avisos,
+  }
+}
+
+/**
+ * A variação da soma de dobras entre duas avaliações (D-1035 revista; R4.7c): o ETM da soma é √Σ ETM² das dobras, com o
+ * ETM de cada dobra do avaliador ou 7,5% da média dela nas duas avaliações. As listas trazem as dobras na mesma ordem;
+ * dobra vazia, listas vazias ou de tamanhos diferentes: `null`.
+ */
+export function compararSomasDeDobras(
+  anteriores: readonly (number | null)[],
+  atuais: readonly (number | null)[],
+  opcoes: { readonly etmPorDobra?: readonly number[] | null; readonly avaliadoresDiferentes?: boolean } = {},
+): ComparacaoDeAvaliacoes | null {
+  if (anteriores.length === 0 || anteriores.length !== atuais.length) return null
+  const a = anteriores.map(medidaValida)
+  const b = atuais.map(medidaValida)
+  if (a.some((v) => v === null) || b.some((v) => v === null)) return null
+  const proprios = opcoes.etmPorDobra?.length === a.length ? opcoes.etmPorDobra.map(medidaValida) : null
+  const etmPadrao = proprios === null || proprios.some((v) => v === null)
+  const etms = a.map((v, i) => (etmPadrao ? (((v ?? 0) + (b[i] ?? 0)) / 2) * (ETM_PADRAO_PCT.dobra / 100) : (proprios?.[i] ?? 0)))
+  const etm = Math.sqrt(etms.reduce((total, e) => total + e * e, 0))
+  const mmd = FATOR_DA_MMD * etm
+  const diferenca = b.reduce<number>((t, v) => t + (v ?? 0), 0) - a.reduce<number>((t, v) => t + (v ?? 0), 0)
+  // Igual à MMD conta como real; a folga de 1e-9 absorve o ponto flutuante (como em `compararAvaliacoes`).
+  const real = Math.abs(diferenca) + 1e-9 >= mmd
+  const avisos = ['ETM da soma pela raiz da soma dos quadrados dos ETM das dobras (supõe erros independentes).']
+  if (etmPadrao) avisos.push('Sem o ETM do avaliador: usado o limite da ISAK nível 1 (7,5% de cada dobra).')
+  if (opcoes.avaliadoresDiferentes) avisos.push('Medido por outro avaliador: a comparação tem erro maior que o habitual.')
+  return {
+    etm,
+    mmd,
+    etmPadrao,
     diferenca,
     interpretacao: real ? 'provavelmente-real' : 'dentro-do-erro',
     texto: real ? 'Mudança provavelmente real.' : 'Dentro do erro de medida: não interpretar como mudança.',
