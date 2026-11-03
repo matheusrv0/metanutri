@@ -31,7 +31,7 @@ export interface ManifestoDoLink {
  * O manifesto de um link. `id`, `start_url` e `scope` são o endereço absoluto do link: o manifesto em `data:` não tem
  * endereço próprio para resolver caminho relativo. As cores, quando a página as tem (o tema lido do CSS), vão junto.
  */
-export function manifestoDoLink(origem: string, token: string, cores: { readonly fundo?: string; readonly tema?: string } = {}): ManifestoDoLink {
+export function manifestoDoLink(origem: string, token: string, cores: { readonly fundo?: string | undefined; readonly tema?: string | undefined } = {}): ManifestoDoLink {
   const link = `${origem}/p/${token}`
   return {
     id: link,
