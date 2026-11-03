@@ -265,7 +265,7 @@ export function porcaoMinima(alimento: Alimento, idadeAnos?: number | null): num
  * unidade em qualquer idade (D-477). O alimento próprio com porção do rótulo não passa dela (spec alimentos-e-gramaturas,
  * D-494): a rosquinha ganhava a porção de um prato de cereal.
  */
-function porcaoMaximaNaIdade(alimento: Alimento, idadeAnos: number | null | undefined): number {
+export function porcaoMaximaNaIdade(alimento: Alimento, idadeAnos: number | null | undefined): number {
   const grupo = porcaoDoGrupo(alimento)
   const doGrupo = grupo?.maxima ?? PORCAO_MAXIMA_PADRAO_G
   const porcao = alimento.proprio ? alimento.porcaoPadrao : undefined
