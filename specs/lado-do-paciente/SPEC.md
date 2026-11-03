@@ -403,19 +403,27 @@ Canvas "MetaNutri Redesenho", três pranchetas novas, escuras, na faixa de y = 2
    **Instalar no Android** (barra do Chrome e o pedido do navegador), **Receber por e-mail** (e-mail mascarado,
    "Usar outro", correção de digitação, avisos desmarcados, enviado), **Abrir sem o link** (a tela de entrar com
    "Abrir meu plano" e "Sou paciente") e **Link que não abre** (com "Recuperar meu link"). O botão Mais abre a folha
-   "Meu plano", "Avisos por e-mail" e "Esquecer neste aparelho". Ao lado: as notas de cada estado com as decisões,
-   a tabela de tempos do movimento, a tela inicial com o ícone (toque abre o plano), e as chaves de prévia: celular
-   escuro ou claro, com ou sem a marca de Ana Lima, e "Menos movimento".
+   "Meu plano", "Avisos por e-mail" e "Esquecer neste aparelho". O celular principal é escuro, com a marca de Ana
+   Lima. Ao lado: as notas de cada estado com as decisões, a tabela de tempos do movimento, a tela inicial com o
+   ícone (toque abre o plano) e, parados, Hoje em mais dois celulares: um claro, com a marca, e um sem marca (o
+   padrão do MetaNutri).
 2. **`EmailsPaciente.dc.html`**: os nove e-mails (e o S1 de dois planos), um de cada vez, no Gmail do Android
    (aberto, com "Cancelar inscrição" ao lado do remetente nos que têm descadastro) e no Gmail do computador (caixa de
    entrada com o assunto e o pré-cabeçalho, e o e-mail aberto no painel de leitura); a ficha de cada e-mail (tipo,
-   hora, teto, descadastro, resposta); e "Depois do toque" (a página do aceite e a do descadastro, com "Desfazer").
-   Chaves: com ou sem marca, conta de nutricionista ou de estudante, e o resumo com 5, 2 ou nenhum dia.
+   hora, teto, descadastro, resposta); e "Depois do toque" (a página do aceite e a do descadastro, com
+   "Desfazer"). Embaixo, as variações fixas: sem marca, conta de estudante e o resumo com 2 e com nenhum dia.
 3. **`AvisosNutri.dc.html`**: a ficha (Pacientes › Juliana Martins) com "Link do paciente" (endereço fixo, Copiar,
    WhatsApp, E-mail, plano no link, mensagem com contador, "Trocar o endereço") e "Avisos por e-mail" (interruptores,
-   estados, "Enviar convite"), "Próximo e-mail" (a prévia) e "Enviados"; quatro pacientes de exemplo (aceitou,
-   esperando o aceite, sem e-mail, e-mail devolvido); os diálogos de enviar e de trocar o endereço; e Configurações
-   › E-mails, com a prévia do resumo da adesão.
+   estados, "Enviar convite"), "Próximo e-mail" (a prévia) e "Enviados", na ficha de Juliana (aceitou); embaixo, o
+   cartão "Avisos por e-mail" nas fichas de Carlos (esperando o aceite), Beatriz (sem e-mail) e Pedro (e-mail
+   devolvido); os diálogos de enviar e de trocar o endereço; e Configurações › E-mails, com a prévia do resumo da
+   adesão.
+
+**Regra do protótipo:** nenhuma prancheta tem controle que não existe no produto. Tema, marca e estado de exemplo
+aparecem em celulares e cartões parados, lado a lado.
+
+**Reduzir movimento** não aparece no protótipo: vale o D-1204 e o CA-2205. Com a opção ligada no celular, marcar só
+troca as cores, em 120 ms, sem encolher, sem visto desenhado, sem número subindo, sem brilho e sem vibração.
 
 Não desenhados: a Adesão com o envelope e o último acesso (muda uma linha), o Painel do dono (D-1240), o diálogo
 "Atualizar com este plano?", a folha de instalar dentro do WhatsApp (CA-2231) e o computador (CB-1219).
