@@ -75,6 +75,14 @@ const LIBERADOS_PELA_CONDUTA: ReadonlyMap<string, { readonly segundaEscolha: boo
 
 /** A descrição como a regra compara: sem espaço nas pontas nem repetido (CA-677). */
 const limpar = (descricao: string): string => descricao.trim().replace(/\s+/g, ' ')
+
+/**
+ * Café e chá são prescritíveis, mas não são fonte (spec sugestoes-com-criterio, D-193): infusão quase sem caloria
+ * passa na frente de qualquer alimento pelo critério de kcal, e a TACO traz para chá B1 e B2 que não se sustentam.
+ * Vale em qualquer forma: o café em pó também não entra, nem com a chave ligada (revisão I1). O Cobrir e a busca de
+ * substitutos usam esta mesma constante (spec busca-substitutos, D-1120).
+ */
+export const CAFE_OU_CHA = /^(Café|Chá),/i
 const chaveDoNome = (descricao: string): string => limpar(descricao).toLowerCase()
 
 const BEBIDA_ADOCADA =

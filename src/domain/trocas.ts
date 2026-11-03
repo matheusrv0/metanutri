@@ -41,9 +41,11 @@ const kcalPorCem = (a: Alimento): number | null => {
  * A categoria da TACO é grossa: "Cereais e derivados" junta arroz e biscoito recheado.
  * Numa folha entregue ao paciente, isso é conselho ruim, então esses saem da lista.
  * O que é prescritível decide a regra comum (prescritivel.ts); esta lista diz só o que não é troca justa.
+ * Spec busca-substitutos, D-1121: a palavra não corta o que não é doce: a batata-doce e o peixe de água doce, o caqui
+ * "chocolate", o macarrão à bolonhesa e a folha de mostarda.
  */
 const NAO_EQUIVALE =
-  /(^|[\s,])(biscoito|bolo|torta|chocolate|bombom|brigadeiro|doce|docinho|goiabada|geleia|sorvete|picol(é|e)|pudim|mousse|refrigerante|suco em p(ó|o)|achocolatado|salgadinho|pizza|hamb(ú|u)rguer|nuggets|empanado|salsicha|lingui(ç|c)a|mortadela|salame|presunto|bacon|toucinho|maionese|catchup|ketchup|mostarda|leite condensado|creme de leite|a(ç|c)(ú|u)car)/i
+  /(^|[\s,])(biscoito|bolo(?!gn)|torta|(?<!caqui, )chocolate|bombom|brigadeiro|(?<!batata, |água )doce|docinho|goiabada|geleia|sorvete|picol(é|e)|pudim|mousse|refrigerante|suco em p(ó|o)|achocolatado|salgadinho|pizza|hamb(ú|u)rguer|nuggets|empanado|salsicha|lingui(ç|c)a|mortadela|salame|presunto|bacon|toucinho|maionese|catchup|ketchup|mostarda(?!, folha)|leite condensado|creme de leite|a(ç|c)(ú|u)car)/i
 
 export const ehTrocaRazoavel = (a: Alimento): boolean => !NAO_EQUIVALE.test(a.descricao)
 

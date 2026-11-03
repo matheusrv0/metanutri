@@ -6,7 +6,7 @@ import { MAXIMO_DE_PEDACOS, MEDIDAS_DE_CONTAR, medidaParaMostrar, medidasDoAlime
 import { posicaoNoConsumo } from './consumoPof.ts'
 import { noMesmoGrupo } from './grupoDeSubstituicao.ts'
 import { unidadeDo } from './liquido.ts'
-import { ehDeUsoComum, ehFrito, ehPratoComposto, ehProcessado, ehSegundaEscolha, ehUltraprocessado } from './prescritivel.ts'
+import { CAFE_OU_CHA, ehDeUsoComum, ehFrito, ehPratoComposto, ehProcessado, ehSegundaEscolha, ehUltraprocessado } from './prescritivel.ts'
 import { casaRestricao, comoRestricoes, ehNaoGosta, type RestricoesDoPaciente } from './restricoes.ts'
 import { ehPrescritivelParaSugerir } from './sugestaoDoProprio.ts'
 import { ehTrocaRazoavel } from './trocas.ts'
@@ -200,8 +200,11 @@ function porcaoDe(a: Alimento, gramasIdeais: number): Pick<Candidato, 'gramas' |
   if (medida && MEDIDAS_DE_CONTAR.has(medida.medida) && medida.quantidade > MAXIMO_DE_PEDACOS) return null
   const peso = medida ? medidasDoAlimento(a.id).find((m) => m.nome === medida.medida)?.gramas : undefined
   if (!medida || !peso) return { gramas, medida: null, textoDaMedida: null }
+  const naMedida = Math.round(medida.quantidade * peso * 10) / 10
+  // CA-2107 (revisão, achado 2): a faixa vale também para a porção final, depois da meia medida (mamão 620 g não entra).
+  if (naMedida < PORCAO_MINIMA_G || naMedida > PORCAO_MAXIMA_G) return null
   return {
-    gramas: Math.round(medida.quantidade * peso * 10) / 10,
+    gramas: naMedida,
     medida: { nome: medida.medida, quantidade: medida.quantidade, gramasPorMedida: peso },
     textoDaMedida: medida.texto,
   }
@@ -224,31 +227,37 @@ interface Ordenavel {
   readonly naoGosta: boolean
 }
 
-/** D-1109: não gosta por último, uso comum, faixa de 5%, desempate clínico, medida caseira, POF, proximidade, nome. */
-function compararCandidatos({ candidato: x, naoGosta: xNaoGosta }: Ordenavel, { candidato: y, naoGosta: yNaoGosta }: Ordenavel): number {
-  const faixa = (c: Candidato) => Math.floor(c.proximidade / FAIXA_DE_PROXIMIDADE + 1e-9)
-  return (
-    Number(xNaoGosta) - Number(yNaoGosta) ||
-    Number(ehDeUsoComum(y.alimento)) - Number(ehDeUsoComum(x.alimento)) ||
-    faixa(x) - faixa(y) ||
-    Number(ehPratoComposto(x.alimento)) - Number(ehPratoComposto(y.alimento)) ||
-    Number(ehProcessado(x.alimento)) - Number(ehProcessado(y.alimento)) ||
-    Number(ehSegundaEscolha(x.alimento)) - Number(ehSegundaEscolha(y.alimento)) ||
-    Number(y.medida !== null) - Number(x.medida !== null) ||
-    Math.min(posicaoNoConsumo(x.alimento.id), 1e6) - Math.min(posicaoNoConsumo(y.alimento.id), 1e6) ||
-    x.proximidade - y.proximidade ||
-    x.alimento.descricao.localeCompare(y.alimento.descricao, 'pt-BR')
-  )
+/**
+ * D-1109 e CA-2135: a faixa de 5% contada a partir do melhor candidato. Quem fica a menos de 5 pontos do melhor está na
+ * faixa 0, mesmo que os dois caiam em lados diferentes de um múltiplo de 5.
+ */
+export function faixaDeProximidade(proximidade: number, melhor: number): number {
+  return Math.floor((proximidade - melhor) / FAIXA_DE_PROXIMIDADE + 1e-9)
 }
+
+/** D-1109: não gosta por último, uso comum, faixa de 5%, desempate clínico, medida caseira, POF, proximidade, nome. */
+const compararCandidatos =
+  (melhor: number) =>
+  ({ candidato: x, naoGosta: xNaoGosta }: Ordenavel, { candidato: y, naoGosta: yNaoGosta }: Ordenavel): number => {
+    const faixa = (c: Candidato) => faixaDeProximidade(c.proximidade, melhor)
+    return (
+      Number(xNaoGosta) - Number(yNaoGosta) ||
+      Number(ehDeUsoComum(y.alimento)) - Number(ehDeUsoComum(x.alimento)) ||
+      faixa(x) - faixa(y) ||
+      Number(ehPratoComposto(x.alimento)) - Number(ehPratoComposto(y.alimento)) ||
+      Number(ehProcessado(x.alimento)) - Number(ehProcessado(y.alimento)) ||
+      Number(ehSegundaEscolha(x.alimento)) - Number(ehSegundaEscolha(y.alimento)) ||
+      Number(y.medida !== null) - Number(x.medida !== null) ||
+      Math.min(posicaoNoConsumo(x.alimento.id), 1e6) - Math.min(posicaoNoConsumo(y.alimento.id), 1e6) ||
+      x.proximidade - y.proximidade ||
+      x.alimento.descricao.localeCompare(y.alimento.descricao, 'pt-BR')
+    )
+  }
 
 const listaDeNomes = (nomes: readonly string[]): string => nomes.join(' nem ')
 
-/**
- * A "troca razoável" das trocas da folha corta todo nome com a palavra "doce" (doce de leite, goiabada); a batata-doce
- * não é doce. Aqui ela fica; a folha não muda (D-1106).
- */
-const BATATA_DOCE = /^Batata, doce/i
-const ehRazoavel = (a: Alimento): boolean => ehTrocaRazoavel(a) || BATATA_DOCE.test(a.descricao.trim())
+/** D-1120: o mel e o chocolate que a conduta da parceira libera no Cobrir (D-290) não são substitutos. */
+const ACUCARADOS = 'Produtos açucarados'
 
 /**
  * Os substitutos do alimento `original` na quantidade dele, pelos nutrientes escolhidos. A lista sai ordenada e cortada
@@ -282,7 +291,9 @@ export function buscarSubstitutos(
   for (const a of opcoes.alimentos) {
     if (a.id === base.id || !doGrupo(a)) continue
     // D-1106: os filtros clínicos das trocas da folha.
-    if (!ehPrescritivelParaSugerir(a) || !ehRazoavel(a) || FIGADO.test(a.descricao) || ehFrito(a)) continue
+    if (!ehPrescritivelParaSugerir(a) || !ehTrocaRazoavel(a) || FIGADO.test(a.descricao) || ehFrito(a)) continue
+    // D-1120: café e chá (a constante do Cobrir) e os açucarados nunca são substitutos.
+    if (CAFE_OU_CHA.test(a.descricao.trim()) || a.categoria === ACUCARADOS) continue
     if (!baseUltraprocessada && ehUltraprocessado(a)) continue
     if (baseSimples && ehPratoComposto(a)) continue
     const porCem = nutrientes.map((k) => a.nutrientes[k])
@@ -307,8 +318,9 @@ export function buscarSubstitutos(
     candidatos.push({ candidato: { alimento: a, ...porcao, diferencas, proximidade, ajuste: ideal.ajuste }, naoGosta: ehNaoGosta(a, restricoes) })
   }
 
+  const melhor = candidatos.reduce((m, o) => Math.min(m, o.candidato.proximidade), Number.POSITIVE_INFINITY)
   const ordenados = candidatos
-    .sort(compararCandidatos)
+    .sort(compararCandidatos(melhor))
     .slice(0, opcoes.limite ?? LIMITE_DA_BUSCA)
     .map((o) => o.candidato)
   return { tipo: 'lista', candidatos: ordenados, restricaoTirou }

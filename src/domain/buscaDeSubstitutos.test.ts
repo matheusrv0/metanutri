@@ -12,12 +12,13 @@ import {
   nutrienteInicial,
   OUTROS_NUTRIENTES_DA_BUSCA,
   textoDaPorcao,
+  faixaDeProximidade,
   type Candidato,
   type OpcoesDaBusca,
   type ResultadoDaBusca,
 } from './buscaDeSubstitutos.ts'
-import { ehDeUsoComum, ehFrito, ehPratoComposto, ehPrescritivel, ehUltraprocessado } from './prescritivel.ts'
-import { montarRestricoes } from './restricoes.ts'
+import { CAFE_OU_CHA, ehDeUsoComum, ehFrito, ehPratoComposto, ehPrescritivel, ehUltraprocessado } from './prescritivel.ts'
+import { comCuidadosDaFase, montarRestricoes, SEM_RESTRICOES } from './restricoes.ts'
 import { ALIMENTOS, alimentosParaSugerir, buscarAlimento, registrarBaseAmpliada, registrarProdutos } from './tabelas.ts'
 import type { Alimento, ChaveNutrienteAlimento } from './tipos.ts'
 import { MICRONUTRIENTES_ADEQUACAO } from './adequacao.ts'
@@ -73,7 +74,9 @@ describe('D-1103 a D-1105: a conta, com o gabarito do protótipo (D-1119)', () =
     expect(cartaoDe(candidatos, 'Polenta, pré-cozida')).toBe('Polenta, pré-cozida · 3 colheres de servir · 180 g · 0,1 g de carboidrato a menos')
     expect(cartaoDe(candidatos, 'Batata, inglesa, cozida')).toBe('Batata, inglesa, cozida · 2 unidades e meia · 350 g · 0,3 g de carboidrato a menos')
     expect(cartaoDe(candidatos, 'Cará, cozido')).toBe('Cará, cozido · 7 colheres de sopa e meia · 225 g · 0,3 g de carboidrato a mais')
-    expect(cartaoDe(candidatos, 'Cuscuz, de milho, cozido com sal')).toBe('Cuscuz, de milho, cozido com sal · 7 colheres de servir · 168 g · 0,4 g de carboidrato a mais')
+    expect(cartaoDe(candidatos, 'Cuscuz, de milho, cozido com sal')).toBe(
+      'Cuscuz, de milho, cozido com sal · 7 colheres de servir · 168 g · 0,4 g de carboidrato a mais',
+    )
     expect(cartaoDe(candidatos, 'Batata, baroa, cozida')).toBe('Batata, baroa, cozida · 4 colheres de servir · 220 g · 0,4 g de carboidrato a menos')
     expect(cartaoDe(candidatos, 'Batata, doce, cozida')).toBe('Batata, doce, cozida · 5 colheres de sopa e meia · 231 g · 0,5 g de carboidrato a mais')
     expect(cartaoDe(candidatos, 'Arroz, integral, cozido')).toBe('Arroz, integral, cozido · 8 colheres de sopa · 160 g · 0,8 g de carboidrato a menos')
@@ -90,8 +93,12 @@ describe('D-1103 a D-1105: a conta, com o gabarito do protótipo (D-1119)', () =
     expect(cartaoDe(candidatos, 'Cuscuz, de milho, cozido com sal')).toBe(
       'Cuscuz, de milho, cozido com sal · 7 colheres de servir · 168 g · 0,4 g de carboidrato a mais · 0,2 g de proteína a menos',
     )
-    expect(cartaoDe(candidatos, 'Batata, inglesa, cozida')).toBe('Batata, inglesa, cozida · 2 unidades e meia · 350 g · 0,3 g de carboidrato a menos · 0,3 g de proteína a mais')
-    expect(cartaoDe(candidatos, 'Polenta, pré-cozida')).toBe('Polenta, pré-cozida · 5 colheres de sopa · 175 g · 1,3 g de carboidrato a menos · 0,2 g de proteína a mais')
+    expect(cartaoDe(candidatos, 'Batata, inglesa, cozida')).toBe(
+      'Batata, inglesa, cozida · 2 unidades e meia · 350 g · 0,3 g de carboidrato a menos · 0,3 g de proteína a mais',
+    )
+    expect(cartaoDe(candidatos, 'Polenta, pré-cozida')).toBe(
+      'Polenta, pré-cozida · 5 colheres de sopa · 175 g · 1,3 g de carboidrato a menos · 0,2 g de proteína a mais',
+    )
     for (const nome of ['Mandioca, cozida', 'Batata, doce, cozida', 'Batata, baroa, cozida']) expect(cartaoDe(candidatos, nome)).toBeUndefined()
     for (const c of candidatos) expect(c.ajuste).not.toBeNull()
     for (const c of candidatos) expect(c.ajuste ?? 1).toBeLessThanOrEqual(0.25)
@@ -103,7 +110,9 @@ describe('D-1103 a D-1105: a conta, com o gabarito do protótipo (D-1119)', () =
     for (const id of [377, 370, 301]) expect(doFrango.some((c) => c.alimento.id === id)).toBe(false)
 
     const doFeijao = lista(buscar(FEIJAO_CARIOCA, 140, [PTN, CHO]))
-    expect(cartaoDe(doFeijao, 'Feijão, preto, cozido')).toBe('Feijão, preto, cozido · 1 concha · 140 g · 0,4 g de proteína a menos · 0,6 g de carboidrato a mais')
+    expect(cartaoDe(doFeijao, 'Feijão, preto, cozido')).toBe(
+      'Feijão, preto, cozido · 1 concha · 140 g · 0,4 g de proteína a menos · 0,6 g de carboidrato a mais',
+    )
   })
 
   it('com 1 nutriente, a mesma porção da calculadora de hoje (sem nota de ajuste)', () => {
@@ -155,6 +164,21 @@ describe('D-1104: a porção', () => {
     }
   })
 
+  it('CA-2107 (revisão, achado 2): a faixa vale para a porção final, depois da meia medida', () => {
+    // Mamão 2 unidades · 620 g, frango 3 peitos e meio · 630 g, leite em pó meia colher · 4,5 g, melão 1 unidade · 660 g.
+    for (const [id, gramas, nutriente, mesmoGrupo] of [
+      [210, 400, 'lipideos_g', true],
+      [318, 400, 'potassio_mg', true],
+      [448, 30, PTN, true],
+      [ARROZ, 150, CHO, false],
+    ] as const) {
+      const fora = lista(buscar(id, gramas, [nutriente], { mesmoGrupo, limite: 1000 }))
+        .filter((c) => c.gramas < 5 || c.gramas > 600)
+        .map((c) => `${c.alimento.descricao} · ${textoDaPorcao(c)}`)
+      expect(fora).toEqual([])
+    }
+  })
+
   it('a porção em ml no líquido', () => {
     const leite = lista(buscar(448, 150, [PTN])).find((c) => c.alimento.id === 458)
     expect(leite && textoDaPorcao(leite)).toMatch(/ ml$/)
@@ -162,18 +186,55 @@ describe('D-1104: a porção', () => {
 })
 
 describe('D-1106: os filtros clínicos', () => {
-  it('CA-2108: a batata-doce não é "doce"', () => {
+  it('CA-2108 e CA-2129: a batata-doce não é "doce", e o caqui "chocolate" é fruta', () => {
     expect(lista(buscar(ARROZ, 150, [CHO])).some((c) => c.alimento.id === 88)).toBe(true)
+    expect(lista(buscar(182, 75, [CHO], { limite: 1000 })).some((c) => c.alimento.id === 189)).toBe(true)
+  })
+
+  it('CA-2128 (revisão, achado 1): café e chá nunca, nem em 1º lugar com o filtro desligado, nem na gestante', () => {
+    const gestante = comCuidadosDaFase(SEM_RESTRICOES, { condicao: { tipo: 'gestante', semanasGestacao: null, pesoPreGestacionalKg: null }, idadeAnos: 30 })
+    for (const [id, gramas, nutriente, restricoes] of [
+      [ARROZ, 150, PTN, undefined],
+      [91, 150, 'potassio_mg', undefined],
+      [182, 150, 'potassio_mg', undefined],
+      [62, 150, PTN, undefined],
+      [ARROZ, 150, PTN, gestante],
+    ] as const) {
+      const candidatos = lista(buscar(id, gramas, [nutriente], { mesmoGrupo: false, limite: 1000, restricoes }))
+      expect(candidatos.length).toBeGreaterThan(0)
+      expect(candidatos.filter((c) => CAFE_OU_CHA.test(c.alimento.descricao.trim())).map((c) => c.alimento.descricao)).toEqual([])
+    }
+  })
+
+  it('CA-2128 (revisão, achado 5): nada do grupo "Produtos açucarados", nem o mel que o Cobrir libera', () => {
+    for (const [id, nutriente] of [
+      [ARROZ, CHO],
+      [ARROZ, 'energia_kcal'],
+      [182, CHO],
+      [182, 'energia_kcal'],
+      [91, CHO],
+    ] as const) {
+      const acucarados = lista(buscar(id, 150, [nutriente], { mesmoGrupo: false, limite: 1000 }))
+        .filter(
+          (c) =>
+            c.alimento.categoria === 'Produtos açucarados' ||
+            /(^|[\s,])(doce|goiabada|marmelada|mel|melado)([\s,]|$)/i.test(c.alimento.descricao.replace(/^Batata, doce/, '')),
+        )
+        .map((c) => c.alimento.descricao)
+      expect(acucarados).toEqual([])
+    }
   })
 
   it('CA-2108: nada frito, fígado, não prescritível, ultraprocessado nem prato composto, em todos os grupos', () => {
     for (const [id, gramas, nutriente] of [
       [ARROZ, 150, CHO],
+      [ARROZ, 150, PTN],
       [FRANGO_GRELHADO, 100, PTN],
       [377, 100, 'ferro_mg'],
       [OVO_COZIDO, 45, PTN],
       [458, 200, 'calcio_mg'],
       [182, 75, 'energia_kcal'],
+      [182, 150, 'potassio_mg'],
     ] as const) {
       for (const c of lista(buscar(id, gramas, [nutriente], { mesmoGrupo: false, limite: 500 }))) {
         const a = c.alimento
@@ -182,7 +243,10 @@ describe('D-1106: os filtros clínicos', () => {
         expect(ehPrescritivel(a), a.descricao).toBe(true)
         expect(ehUltraprocessado(a), a.descricao).toBe(false)
         expect(ehPratoComposto(a), a.descricao).toBe(false)
-        expect(a.descricao).not.toMatch(/biscoito|bolo|chocolate|^doce|doce em|salsicha|lingui[çc]a|presunto|bacon|cerveja|vinho|cacha[çc]a/i)
+        expect(a.descricao).not.toMatch(
+          /biscoito|bolo(?!gn)|(?<!caqui, )chocolate|^doce|doce em|salsicha|lingui[çc]a|presunto|bacon|cerveja|vinho|cacha[çc]a|^(caf[ée]|ch[áa]|mel),/i,
+        )
+        expect(a.categoria, a.descricao).not.toBe('Produtos açucarados')
       }
     }
   })
@@ -252,12 +316,13 @@ describe('D-1102: as bases que entram', () => {
 
   it('CA-2113: o alimento próprio só com "Pode aparecer no Cobrir e nas trocas" ligado', () => {
     const batata = buscarAlimento(91) as Alimento
-    const proprio = (sugerir: boolean): Alimento => ({
-      ...batata,
-      id: 900_001,
-      descricao: 'Batata da roça cozida',
-      proprio: { tipo: 'alimento', sugerir, energiaIncoerente: false },
-    }) as Alimento
+    const proprio = (sugerir: boolean): Alimento =>
+      ({
+        ...batata,
+        id: 900_001,
+        descricao: 'Batata da roça cozida',
+        proprio: { tipo: 'alimento', sugerir, energiaIncoerente: false },
+      }) as Alimento
     registrarProdutos([proprio(true)])
     expect(lista(buscar(ARROZ, 150, [CHO], { limite: 500 })).some((c) => c.alimento.id === 900_001)).toBe(true)
     registrarProdutos([proprio(false)])
@@ -266,6 +331,15 @@ describe('D-1102: as bases que entram', () => {
 })
 
 describe('D-1109: a ordem e o limite', () => {
+  it('CA-2135 (revisão, leve 1): a faixa de 5% conta a partir do melhor candidato', () => {
+    expect(faixaDeProximidade(0, 0)).toBe(0)
+    expect(faixaDeProximidade(0.049, 0)).toBe(0)
+    // Com degraus fixos, 0,04 e 0,051 caíam em faixas diferentes; a partir do melhor (0,04), os dois estão na primeira.
+    expect(faixaDeProximidade(0.051, 0.04)).toBe(0)
+    expect(faixaDeProximidade(0.095, 0.04)).toBe(1)
+    expect(faixaDeProximidade(0.04 + 0.05 * 3 + 0.001, 0.04)).toBe(3)
+  })
+
   it('CA-2114: com o filtro desligado, a polenta com medida caseira vem antes da melancia em gramas', () => {
     const candidatos = lista(buscar(ARROZ, 150, [CHO], { mesmoGrupo: false, limite: 500 }))
     const posicao = (id: number) => candidatos.findIndex((c) => c.alimento.id === id)
@@ -289,7 +363,10 @@ describe('D-1109: a ordem e o limite', () => {
 
 describe('D-1111: sem alvo', () => {
   it('CA-2116: o alimento sem o nutriente na tabela', () => {
-    expect(buscar(ARROZ, 150, ['vitamina_c_mg'])).toEqual({ tipo: 'sem-alvo', motivo: 'Arroz, tipo 1, cozido não tem vitamina C na tabela. Escolha outro nutriente.' })
+    expect(buscar(ARROZ, 150, ['vitamina_c_mg'])).toEqual({
+      tipo: 'sem-alvo',
+      motivo: 'Arroz, tipo 1, cozido não tem vitamina C na tabela. Escolha outro nutriente.',
+    })
     expect(buscar(ARROZ, 150, ['vitamina_c_mg', 'vitamina_b12_mcg'])).toEqual({
       tipo: 'sem-alvo',
       motivo: 'Arroz, tipo 1, cozido não tem vitamina C nem vitamina B12 na tabela. Escolha outro nutriente.',
@@ -311,7 +388,19 @@ describe('D-1112: Comparar alimentos', () => {
     const arroz = buscarAlimento(ARROZ) as Alimento
     const batata = buscarAlimento(91) as Alimento
     const linhas = compararNaPorcao({ alimento: arroz, gramas: 150 }, { alimento: batata, gramas: 350 }, [CHO, PTN])
-    expect(linhas.map((l) => l.rotulo)).toEqual(['Energia', 'Carboidrato', 'Proteína', 'Lipídeos', 'Fibra alimentar', 'Cálcio', 'Ferro', 'Magnésio', 'Potássio', 'Sódio', 'Vitamina C'])
+    expect(linhas.map((l) => l.rotulo)).toEqual([
+      'Energia',
+      'Carboidrato',
+      'Proteína',
+      'Lipídeos',
+      'Fibra alimentar',
+      'Cálcio',
+      'Ferro',
+      'Magnésio',
+      'Potássio',
+      'Sódio',
+      'Vitamina C',
+    ])
     expect(linhas.filter((l) => l.escolhido).map((l) => l.rotulo)).toEqual(['Carboidrato', 'Proteína'])
     const carboidrato = linhas[1]
     expect(carboidrato).toMatchObject({ original: '42,1 g', substituto: '41,8 g', diferenca: '−0,3 g' })
