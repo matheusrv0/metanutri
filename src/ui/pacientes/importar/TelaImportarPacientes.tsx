@@ -1,12 +1,20 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { diaLocal } from '@/domain/acompanhamento.ts'
+import { dataCompleta } from '@/domain/formatarData.ts'
 import { mudarDestino } from '@/domain/importar/colunas.ts'
+import { prepararImportacao } from '@/domain/importar/criar.ts'
+import { csvDasQueFicaramDeFora, linhasDeFora } from '@/domain/importar/csvDeFora.ts'
+import { pacientesQueSaem } from '@/domain/importar/importacao.ts'
 import { lerPlanilha } from '@/domain/importar/lerPlanilha.ts'
 import { corrigir, marcarTodas, montarPrevia, type EntradaDaPrevia } from '@/domain/importar/previa.ts'
 import { textoDaRecusa } from '@/domain/importar/textos.ts'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { Passos } from '@ds/componentes/navigation/Passos.tsx'
+import { useAcompanhamentosOpcional } from '../../estado/contextoAcompanhamentos.ts'
 import { useArmazenamento } from '../../estado/contextoArmazenamento.ts'
+import { useCasos } from '../../estado/contextoCasos.ts'
+import { baixarBlob } from '../../exportar/baixar.ts'
+import { ConclusaoDaImportacao } from './ConclusaoDaImportacao.tsx'
 import { usePacientes } from '../../estado/contextoPacientes.ts'
 import { comAba, comPlanilha, ESTADO_INICIAL, maisAdiante, PASSOS, type EstadoDaImportacao, type Passo } from './estadoDaImportacao.ts'
 import { PassoArquivo } from './PassoArquivo.tsx'
@@ -32,7 +40,9 @@ interface TelaImportarPacientesProps {
  */
 export function TelaImportarPacientes({ moldura, aoSair }: TelaImportarPacientesProps) {
   const armazenamento = useArmazenamento()
-  const { pacientes } = usePacientes()
+  const { pacientes, repositorio, atualizar } = usePacientes()
+  const { repositorio: repoCasos } = useCasos()
+  const acompanhamentos = useAcompanhamentosOpcional()?.acompanhamentos ?? null
   // O dia de hoje, para a data futura ser inválida (D-908).
   const [hoje] = useState(() => diaLocal(new Date()))
   const [estado, setEstado] = useState<EstadoDaImportacao>(() => lerRascunho(armazenamento) ?? ESTADO_INICIAL)
@@ -40,7 +50,9 @@ export function TelaImportarPacientes({ moldura, aoSair }: TelaImportarPacientes
   const [recusa, setRecusa] = useState<string | null>(null)
   const leitura = useRef<AbortController | null>(null)
   const titulo = useRef<HTMLHeadingElement>(null)
-  const passoAnterior = useRef(estado.passo)
+  // O título que recebe o foco muda com o passo e com o "Desfazer" (CA-1947).
+  const chaveDoTitulo = `${estado.passo}:${estado.resultado?.desfeita ? 'desfeita' : ''}`
+  const tituloAnterior = useRef(chaveDoTitulo)
 
   const mudar = useCallback(
     (mudanca: (atual: EstadoDaImportacao) => EstadoDaImportacao) => {
@@ -55,13 +67,20 @@ export function TelaImportarPacientes({ moldura, aoSair }: TelaImportarPacientes
 
   // CA-1947: cada passo leva o foco ao título dele (não na primeira abertura: aí o foco é do conteúdo da página).
   useEffect(() => {
-    if (passoAnterior.current === estado.passo) return
-    passoAnterior.current = estado.passo
+    if (tituloAnterior.current === chaveDoTitulo) return
+    tituloAnterior.current = chaveDoTitulo
     titulo.current?.focus()
-  }, [estado.passo])
+  }, [chaveDoTitulo])
 
-  // A leitura em andamento para quando a tela sai (CB-916).
-  useEffect(() => () => leitura.current?.abort(), [])
+  // A leitura em andamento para quando a tela sai (CB-916). Depois de importar, a planilha não fica na memória: quem volta
+  // a "Importar planilha" começa de novo, e o "Desfazer" continua na linha das 24 horas em Pacientes (D-913).
+  useEffect(
+    () => () => {
+      leitura.current?.abort()
+      if (lerRascunho(armazenamento)?.passo === 'concluida') esquecerRascunho(armazenamento)
+    },
+    [armazenamento],
+  )
 
   // DP-IP-25: o arquivo solto fora da área não abre no navegador, que trocaria de página e perderia a prévia.
   useEffect(() => {
@@ -127,6 +146,57 @@ export function TelaImportarPacientes({ moldura, aoSair }: TelaImportarPacientes
     [mudar, entradaDe],
   )
 
+  /** D-910: confere de novo a lista da conta e o teto da cópia; só então cria todos de uma vez. */
+  const importar = () => {
+    const entrada = entradaDe(estado)
+    if (!entrada || !previa) return
+    const importacaoId = globalThis.crypto.randomUUID()
+    const preparo = prepararImportacao({
+      entrada,
+      previaNaTela: previa,
+      // DP-IP-30: a lista lida agora do armazenamento, não a que a tela tinha.
+      pacientesAgora: repositorio.listar(),
+      armazenamento,
+      agora: new Date().toISOString(),
+      importacaoId,
+      gerarId: () => globalThis.crypto.randomUUID(),
+    })
+    if (preparo.tipo === 'mudou') {
+      atualizar()
+      mudar((atual) => ({ ...atual, aviso: { tipo: 'mudou' } }))
+      return
+    }
+    if (preparo.tipo === 'nao-cabe') {
+      mudar((atual) => ({ ...atual, aviso: { tipo: 'nao-cabe', cabem: preparo.cabem } }))
+      return
+    }
+    repositorio.criarVarios(preparo.pacientes)
+    atualizar()
+    const importados = preparo.pacientes.map((p) => ({
+      id: p.id,
+      nome: p.nome,
+      detalhe: [p.sexo, p.nascimento ? dataCompleta(p.nascimento) : null].filter(Boolean).join(' · ') || 'Sem sexo e sem data',
+    }))
+    mudar((atual) => ({ ...atual, passo: 'concluida', aviso: null, resultado: { importacaoId, importados, deFora: linhasDeFora(previa), desfeita: null } }))
+  }
+
+  /** D-913: tira os daquela importação que não mudaram; os outros ficam, e a tela diz quantos. */
+  const desfazer = () => {
+    const resultado = estado.resultado
+    if (!resultado) return
+    const { saem, ficam } = pacientesQueSaem(resultado.importacaoId, repositorio.listar(), repoCasos.listar(), acompanhamentos ?? [])
+    repositorio.excluirVarios(saem)
+    atualizar()
+    mudar((atual) => (atual.resultado ? { ...atual, resultado: { ...atual.resultado, desfeita: { ficaram: ficam } } } : atual))
+  }
+
+  /** D-915: o CSV das que ficaram de fora, gerado aqui, com o separador do arquivo original. */
+  const baixarDeFora = () => {
+    if (!analise || !estado.planilha || !estado.resultado) return
+    const texto = csvDasQueFicaramDeFora({ colunas: analise.colunas, linhas: analise.linhas, deFora: estado.resultado.deFora, separador: estado.planilha.lida.separador })
+    baixarBlob(new Blob([texto], { type: 'text/csv;charset=utf-8' }), 'ficaram-de-fora.csv')
+  }
+
   const irPara = (passo: Passo) => mudar((atual) => ({ ...atual, passo, alcancado: maisAdiante(atual.alcancado, passo) }))
   const alcancados = PASSOS.map((p) => p.valor).filter((p) => estado.planilha !== null && maisAdiante(estado.alcancado, p) === estado.alcancado)
 
@@ -166,7 +236,16 @@ export function TelaImportarPacientes({ moldura, aoSair }: TelaImportarPacientes
             aoCorrigir={corrigirLinha}
             aoMostrarMais={() => mudar((atual) => ({ ...atual, paginas: atual.paginas + 1 }))}
             aoVoltar={() => irPara('colunas')}
-            aoImportar={() => undefined}
+            aoImportar={importar}
+            tituloRef={titulo}
+          />
+        ) : estado.passo === 'concluida' && estado.resultado ? (
+          <ConclusaoDaImportacao
+            resultado={estado.resultado}
+            aoDesfazer={desfazer}
+            aoVerPacientes={sair}
+            aoBaixarDeFora={baixarDeFora}
+            aoEscolherOutro={() => mudar(() => ESTADO_INICIAL)}
             tituloRef={titulo}
           />
         ) : null}
