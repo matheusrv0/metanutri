@@ -27,7 +27,7 @@ describe('"E-mail" no cartão do link: o S2 (D-1224)', () => {
     expect(await pedir('enviar')).toEqual({ status: 200, corpo: { enviadoPara: 'j•••s@gmail.com', agendadoPara: null } })
     const [s2] = resend.lotes[0]?.emails ?? []
     expect(s2).toMatchObject({ tipo: 'S2', para: 'juliana.martins@gmail.com', assunto: 'Ana Lima enviou seu plano', nomeDoRemetente: 'Ana Lima via MetaNutri' })
-    expect(s2?.preCabecalho).toBe('Atualizado em 3 de novembro.')
+    expect(s2?.html).toContain('mso-hide:all;">Atualizado em 3 de novembro.</div>')
     expect(estado.envios.map((e) => [e.tipo, e.estado])).toEqual([['S2', 'enviado']])
   })
 
