@@ -147,3 +147,25 @@ describe('objetivo do plano (spec antropometria-completa, revisão, CA-2086)', (
     expect(metaDePerda(caso({ objetivo: null }))?.mostra).toBe(true)
   })
 })
+
+describe('idoso com IMC de 27 a 29,99: a posição da ESPEN (spec antropometria-completa, rodada 2, CA-2092)', () => {
+  const comImc = (idadeAnos: number, imc: number): Caso => ({ ...criarCasoVazio('i'), sexo: 'F', idadeAnos, pesoKg: imc * 1.55 ** 2, estaturaCm: 155, objetivo: 'emagrecer' })
+  const ESPEN = /ESPEN em geriatria só considera dieta para perder peso com obesidade e problema de saúde ligado ao peso, e junto com exercício \(ESPEN, geriatria, 2019 e 2022\)/
+
+  it('CA-2092: idoso com IMC 27,00, 28 e 29,99 → a meta vem, com o aviso da ESPEN', () => {
+    for (const imc of [27, 28, 29.99]) {
+      const r = metaDePerda(comImc(70, imc))
+      expect.soft(r?.mostra, `IMC ${imc}`).toBe(true)
+      if (r?.mostra) expect.soft(r.avisos.join(' '), `IMC ${imc}`).toMatch(ESPEN)
+    }
+  })
+
+  it('CA-2092: com IMC 30, e no adulto de 59 anos com IMC 28, sem esse aviso', () => {
+    expect(mostrada(metaDePerda(comImc(70, 30))).avisos.join(' ')).not.toMatch(/ESPEN/)
+    expect(mostrada(metaDePerda(comImc(59, 28))).avisos.join(' ')).not.toMatch(/ESPEN/)
+  })
+
+  it('CA-2092: a fonte está no lugar das fontes, com a citação completa', () => {
+    expect(FONTES.espenGeriatria.citacao).toMatch(/Volkert D et al\..*Clin Nutr 2019;38:10-47.*PMID 35306388/)
+  })
+})

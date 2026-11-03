@@ -97,6 +97,12 @@ export function metaDePerda(caso: Caso, entrada: EntradaDaMeta = {}): ResultadoD
     'A perda desacelera: cerca de metade do efeito de um corte calórico permanente aparece em ~1 ano (Hall 2011).',
     `${PROPOSTA_DO_APP}: o prazo mínimo e o peso-alvo são contas a partir das fontes.`,
   ]
+  // Rodada 2 (D-1034 revista; a Mor revisa): o idoso com sobrepeso, abaixo da obesidade, leva a posição da ESPEN.
+  if (idade >= 60 && imc < 30) {
+    avisos.push(
+      `Idoso com IMC de 27 a 29,99: a ESPEN em geriatria só considera dieta para perder peso com obesidade e problema de saúde ligado ao peso, e junto com exercício (${FONTES.espenGeriatria.curta}).`,
+    )
+  }
   let alvoKg: PesoAlvo | null = null
   if (alvo !== null && gordura !== null) {
     alvoKg = pesoAlvo(peso, gordura.gorduraPct, alvo)

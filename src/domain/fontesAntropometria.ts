@@ -190,6 +190,10 @@ export const FONTES = {
     curta: 'GLIM, 2019',
     citacao: 'Cederholm T et al. (GLIM). Clin Nutr 2019;38(1):1-9. doi:10.1016/j.clnu.2018.08.002.',
   },
+  espenGeriatria: {
+    curta: 'ESPEN, geriatria, 2019 e 2022',
+    citacao: 'Volkert D et al. (ESPEN, nutrição clínica e hidratação em geriatria). Clin Nutr 2019;38:10-47. Diretriz prática de 2022: PMID 35306388.',
+  },
   metaDePerda: {
     curta: 'ABESO, 2016; NHLBI, 2000; AHA/ACC/TOS, 2013',
     citacao:
