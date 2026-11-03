@@ -65,6 +65,8 @@ interface OpcoesDoFalso {
   readonly semResposta?: boolean
   /** Banco sem o 012: o PostgREST recusa o pedido que traz a coluna `dieta` (CB-151). */
   readonly semColunaDieta?: boolean
+  /** Banco sem o 017 (spec lado-do-paciente, DP-LP-30): o PostgREST recusa o pedido que traz uma destas colunas. */
+  readonly semColunas?: readonly string[]
 }
 
 /** O que o PostgREST responde quando a coluna não existe (conferido no PostgREST local em 14/10/2026). */
@@ -77,8 +79,13 @@ function clienteFalso(opcoes: OpcoesDoFalso = {}) {
 
   // Um pedido do cliente: é uma promessa, aceita `.select()` e guarda o sinal de desistir.
   const pedido = (tipo: Tipo, linha: Record<string, unknown> = {}) => {
+    const faltando = (opcoes.semColunas ?? []).find((coluna) => coluna in linha)
     const resposta: RespostaFalsa =
-      opcoes.semColunaDieta && 'dieta' in linha ? { data: null, error: SEM_COLUNA_DIETA } : { data: opcoes.dadosPor?.[tipo] ?? opcoes.dados ?? null, error: erro }
+      opcoes.semColunaDieta && 'dieta' in linha
+        ? { data: null, error: SEM_COLUNA_DIETA }
+        : faltando !== undefined
+          ? { data: null, error: { code: 'PGRST204', message: `Could not find the '${faltando}' column of 'acompanhamentos' in the schema cache` } }
+          : { data: opcoes.dadosPor?.[tipo] ?? opcoes.dados ?? null, error: erro }
     // A nuvem que não responde: a promessa nunca termina.
     const promessa = opcoes.semResposta ? new Promise<RespostaFalsa>(() => undefined) : Promise.resolve(resposta)
     const comSinal = Object.assign(promessa, {
@@ -662,5 +669,85 @@ describe('a marca no link do paciente (spec marca-no-link)', () => {
     await fonte.salvar({ ...acompanhamento(), marca: { logo: LOGO, cor: '#1f4e8c' } })
     expect(JSON.stringify(chamadas)).not.toContain('iVBORw0KGgo')
     expect(JSON.stringify(repo.listar())).not.toContain('iVBORw0KGgo')
+  })
+})
+
+describe('O link do paciente com a mensagem, a consulta e o link fixo (spec lado-do-paciente)', () => {
+  const NOVO = { jaEsteveNaNuvem: false } as const
+  const LINHA_NOVA = {
+    ...LINHA,
+    mensagem: 'Juliana, foco no café da manhã.',
+    mensagem_em: '2026-11-03T10:00:00.000Z',
+    proxima_consulta: '2026-11-17T14:30',
+    ultimo_acesso: '2026-11-03',
+    substituido_por: null,
+    plano_em: '2026-11-01T09:00:00.000Z',
+    nutricionista: 'Ana Lima',
+    email_mascarado: 'j•••a@gmail.com',
+    avisos: { plano: 'ligado', semana: 'desligado', lembrete: 'nao-oferecido' },
+  }
+
+  it('CA-2212, CA-2214 e CA-2239: a linha traz a mensagem, a consulta e o último acesso', () => {
+    expect(daLinha(LINHA_NOVA)).toMatchObject({
+      mensagem: 'Juliana, foco no café da manhã.',
+      mensagemEm: '2026-11-03T10:00:00.000Z',
+      proximaConsulta: '2026-11-17T14:30',
+      ultimoAcesso: '2026-11-03',
+      substituidoPor: null,
+      planoEm: '2026-11-01T09:00:00.000Z',
+    })
+  })
+
+  it('DP-LP-30: a função de antes do 017 não traz as colunas, e o link abre sem elas', () => {
+    expect(daLinha(LINHA)).toMatchObject({ mensagem: null, proximaConsulta: null, ultimoAcesso: null, substituidoPor: null })
+  })
+
+  it('D-1210, CA-2235 e CA-2256: o link aberto traz o nome da nutricionista, o e-mail mascarado e os avisos', async () => {
+    const { cliente } = clienteFalso({ dados: [LINHA_NOVA] })
+    const link = await fonteSupabase(cliente).porToken('kf3mq9zt7bnd')
+    expect(link?.doLink).toEqual({
+      nutricionista: 'Ana Lima',
+      emailMascarado: 'j•••a@gmail.com',
+      avisos: { plano: 'ligado', semana: 'desligado', lembrete: 'nao-oferecido' },
+    })
+  })
+
+  it('CA-2242: aviso com estado estranho conta como não oferecido', async () => {
+    const { cliente } = clienteFalso({ dados: [{ ...LINHA_NOVA, avisos: { plano: 'talvez', semana: 7 } }] })
+    const link = await fonteSupabase(cliente).porToken('kf3mq9zt7bnd')
+    expect(link?.doLink?.avisos).toEqual({ plano: 'nao-oferecido', semana: 'nao-oferecido', lembrete: 'nao-oferecido' })
+  })
+
+  it('D-1208: criar o link grava a mensagem, a consulta e o fixo; o último acesso e a data do plano são da nuvem', async () => {
+    const { cliente, chamadas } = clienteFalso({ usuario: 'user-99', dadosPor: { upsert: [{ id: 'ac-1' }] } })
+    const link = { ...acompanhamento(), mensagem: 'Olá', mensagemEm: '2026-11-03T10:00:00.000Z', proximaConsulta: '2026-11-17', ultimoAcesso: '2026-11-03', planoEm: 'x' }
+    expect(await salvarLinkNaNuvem(cliente, link, NOVO)).toEqual({ tipo: 'salvo' })
+    const linha = chamadas[0]?.parametros ?? {}
+    expect(linha).toMatchObject({ mensagem: 'Olá', mensagem_em: '2026-11-03T10:00:00.000Z', proxima_consulta: '2026-11-17', substituido_por: null })
+    expect(linha).not.toHaveProperty('ultimo_acesso')
+    expect(linha).not.toHaveProperty('plano_em')
+  })
+
+  it('DP-LP-30: banco sem o 017: o link salva de novo sem as colunas novas, uma de cada vez', async () => {
+    const { cliente, chamadas } = clienteFalso({ usuario: 'user-99', semColunas: ['mensagem', 'proxima_consulta'], dadosPor: { upsert: [{ id: 'ac-1' }] } })
+    expect(await salvarLinkNaNuvem(cliente, acompanhamento(), NOVO)).toEqual({ tipo: 'salvo' })
+    expect(chamadas).toHaveLength(3)
+    expect(chamadas[2]?.parametros).not.toHaveProperty('mensagem')
+    expect(chamadas[2]?.parametros).not.toHaveProperty('proxima_consulta')
+    expect(chamadas[2]?.parametros).toHaveProperty('mensagem_em')
+  })
+
+  it('DP-ML-14: a tela do paciente nunca grava os dados do link nem a marca, nem na nuvem nem no aparelho', async () => {
+    const { cliente, chamadas } = clienteFalso({ dados: [LINHA_NOVA] })
+    const repositorio = criarRepositorioAcompanhamentos(null)
+    const fonte = fonteDoPaciente(cliente, repositorio, () => undefined)
+    const aberto = await fonte.porToken('kf3mq9zt7bnd')
+    if (!aberto) throw new Error('o link devia abrir')
+    await fonte.salvar(aberto)
+    expect(chamadas.at(-1)).toMatchObject({ tipo: 'rpc', nome: 'marcar_missoes' })
+    const guardado = repositorio.porToken('kf3mq9zt7bnd')
+    expect(guardado).not.toBeNull()
+    expect(guardado).not.toHaveProperty('doLink')
+    expect(guardado).not.toHaveProperty('marca')
   })
 })

@@ -45,7 +45,25 @@ export interface Acompanhamento {
    * missões: muda só quando o nutricionista liga, desliga ou atualiza. Nula quando desligada.
    */
   readonly dieta: DietaDoLink | null
+  /**
+   * A mensagem da nutricionista no link (spec lado-do-paciente, D-1208): texto livre de até 400 caracteres, que aparece em
+   * Hoje e nunca vai por e-mail. Nula ou ausente: sem mensagem (o link de antes não tem o campo).
+   */
+  readonly mensagem?: string | null
+  /** Quando a mensagem foi salva (ISO): "Ana Lima · 3 nov." (CA-2212). */
+  readonly mensagemEm?: string | null
+  /** A próxima consulta da ficha, `AAAA-MM-DD` ou `AAAA-MM-DDTHH:MM` (D-1209, D-143); sobe para o link quando a ficha muda. */
+  readonly proximaConsulta?: string | null
+  /** O dia em que o paciente abriu o link pela última vez (AAAA-MM-DD, Brasília; D-1223). Só a nuvem escreve. */
+  readonly ultimoAcesso?: string | null
+  /** O link fixo do mesmo paciente que substitui este (migração, D-1217). Substituído, o link some da Adesão e do limite. */
+  readonly substituidoPor?: string | null
+  /** Quando as missões, a dieta ou o plano do link mudaram por último (ISO). Só a nuvem escreve (D-1228, D-1230). */
+  readonly planoEm?: string | null
 }
+
+/** Os limites da mensagem do link (D-1208, CA-2213). */
+export const MENSAGEM_MAXIMA = 400
 
 /**
  * Dia do calendário de quem está olhando, não em UTC. `toISOString()` daria o dia

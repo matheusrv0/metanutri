@@ -4,6 +4,7 @@
 import type { Acompanhamento } from './acompanhamento.ts'
 import { lerDieta } from './dietaDoLink.ts'
 import type { Armazenamento } from './persistencia.ts'
+import type { DadosDoLink } from './dadosDoLink.ts'
 import type { MarcaDoLink } from './marca.ts'
 
 const CHAVE = 'metanutri:acompanhamentos'
@@ -211,7 +212,25 @@ function canonico(valor: unknown): string {
 
 /** O que importa num link, para comparar o daqui com o da nuvem (a dieta já lida dos dois lados). */
 const essencia = (a: Acompanhamento): string =>
-  canonico([a.id, a.token, a.casoId, a.pacienteId, a.nome, a.criadoEm, a.missoes, a.marcacoes, a.usoNaoComercial, lerDieta(a.dieta)])
+  canonico([
+    a.id,
+    a.token,
+    a.casoId,
+    a.pacienteId,
+    a.nome,
+    a.criadoEm,
+    a.missoes,
+    a.marcacoes,
+    a.usoNaoComercial,
+    lerDieta(a.dieta),
+    // Spec lado-do-paciente: ausente e nulo são o mesmo (o link de antes do 017 não tem os campos).
+    a.mensagem ?? null,
+    a.mensagemEm ?? null,
+    a.proximaConsulta ?? null,
+    a.ultimoAcesso ?? null,
+    a.substituidoPor ?? null,
+    a.planoEm ?? null,
+  ])
 
 /**
  * O mesmo link nos dois lados (spec dados-na-nuvem, CA-601, DP-37): então a leitura da nuvem não o regrava. A ordem
@@ -247,7 +266,7 @@ export function semMudancasPendentes(guardado: string): string {
  * O link como o paciente o abre: o acompanhamento e, quando lido da nuvem, a marca da nutricionista (spec marca-no-link,
  * D-952). A marca não é do link: a tela a separa ao abrir, e ela nunca volta numa gravação (DP-ML-14).
  */
-export type AcompanhamentoDoLink = Acompanhamento & { readonly marca?: MarcaDoLink }
+export type AcompanhamentoDoLink = Acompanhamento & { readonly marca?: MarcaDoLink; readonly doLink?: DadosDoLink }
 
 export interface FonteAcompanhamentos {
   /** Nulo quando o link não existe. Pode rejeitar com `LinkSemConexao` quando nem a nuvem nem o aparelho responderam. */
