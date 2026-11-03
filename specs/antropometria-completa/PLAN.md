@@ -203,3 +203,53 @@ Cada CA com o arquivo de teste que o cobre:
 | CA-2065, CA-2066 | `prioridadeClinica.test.ts` |
 | CA-2067 a CA-2069 | `metaDePerda.test.ts` |
 | CA-2070 | `mudancaMinima.test.ts` |
+
+## Rodada da revisão independente (03/11/2026)
+
+A revisão deu **não aprovado** (lógica clínica; coeficientes certos). Cada item virou uma tarefa com o mesmo ciclo:
+spec revista (com o motivo), teste que falha, código, `vitest` + `tsc` + `eslint` de `src/domain`, um commit.
+
+| Tarefa | Item | Spec | Arquivos (além da SPEC) | CA |
+|---|---|---|---|---|
+| R1 | 1. idoso | D-1033, D-1034 | `prioridadeClinica.ts`, `metaDePerda.ts` (+ testes) | CA-2071 a CA-2073 |
+| R2 | 2. parábola | D-1038 (nova) | `protocolosDeDobras.ts` (+ teste) | CA-2074, CA-2075 |
+| R3 | 3. déficit abaixo de IMC 25 | D-1034 | `metaDePerda.ts` (+ teste) | CA-2076 |
+| R4 | 4. Siri nos ids de hoje, Lohman nos novos | D-1007, D-1009 | `protocolosDeDobras.ts` (+ teste) | CA-2015, CA-2077 |
+| R5 | 5. suprailíaca pela linha | D-1005, D-1039 (nova) | `tipos.ts`, `caso.ts`, `composicao.ts` (tipo), `duplicar.ts`, `protocolosDeDobras.ts`, `indicadoresDeGordura.ts` (+ testes) | CA-2078, CA-2079 |
+| R6 | 6. Blackburn só de 18 em diante | D-1025, D-1026 | `indicadoresDoBraco.ts` (+ teste) | CA-2080 |
+| R7 | 7. MMD da soma por √Σ ETM² | D-1035 | `mudancaMinima.ts` (+ teste) | CA-2070, CA-2081 |
+| R8 | 8. Helms só para o atleta magro | D-1032 | `pontoDePartida.ts`, `indicadoresDeGordura.ts` (+ teste) | CA-2082, CB-1013 |
+| R9 | 9. "Proposta do app (sem diretriz)" | D-1036 | `fontesAntropometria.ts`, `prioridadeClinica.ts`, `metaDePerda.ts`, `pontoDePartida.ts`, `mudancaMinima.ts` (+ testes) | CA-2083 |
+| R10 | 10. Rabito pelo lado esquerdo | D-1030 | `estimativas.ts` (+ teste) | CA-2084 |
+| R11 | 11. idade inválida = não informada | D-1040 (nova), CB-1016 | `linhaDoResultado.ts` (`idadeValida`) e cada módulo que lê a idade; teste novo `idadeNaoInformada.test.ts` | CA-2085 |
+| R12 | Obs. objetivo "ganhar"/"manter" | D-1034 | `metaDePerda.ts` (+ teste) | CA-2086 |
+| R13 | Obs. ossos no retorno | D-1041 (nova), CA-2002 | `duplicar.ts` (+ teste) | CA-2087 |
+| R14 | Obs. IDF | seção 6 | — | — |
+| R15 | Validação | este plano | `npm run check` e as sondas do revisor | todos |
+
+**Divergências e decisões desta rodada (para o dono revisar):**
+
+- Idoso: meta de perda só com IMC ≥ 27 (a revisão pediu "nunca com IMC ≤ 22"; 22–27 é a faixa de referência do idoso
+  e também fica sem meta).
+- Parábola: acima do pico, não calcula; a sonda A do revisor (Petroski mulher com Σ 150 > Σ 115) agora recebe a
+  recusa, de propósito.
+- Suprailíaca: só a da outra linha → calcula com aviso de resultado deslocado (pesquisa 2.7 D5: avisar, não
+  bloquear). Abdominal sem variação entre os protocolos daqui → sem campo novo.
+- Helms: "magro" = % de gordura abaixo do início do sobrepeso de Gallagher (20 a 79 anos).
+- `nivelDePrioridade` recebe a idade já conferida (`prioridadeDoCaso` confere); as funções que recebem o caso ou o
+  paciente do protocolo normalizam a idade sozinhas.
+- O teste do CA-2085 ficou num arquivo próprio (`idadeNaoInformada.test.ts`), porque cobre dez módulos de uma vez.
+
+| CA | Teste |
+|---|---|
+| CA-2071, CA-2072 | `prioridadeClinica.test.ts` |
+| CA-2073, CA-2076, CA-2086 | `metaDePerda.test.ts` |
+| CA-2074, CA-2075, CA-2077, CA-2079 | `protocolosDeDobras.test.ts` |
+| CA-2078 | `protocolosDeDobras.test.ts`, `indicadoresDeGordura.test.ts` |
+| CA-2080 | `indicadoresDoBraco.test.ts` |
+| CA-2081 | `mudancaMinima.test.ts` |
+| CA-2082 | `pontoDePartida.test.ts` |
+| CA-2083 | `prioridadeClinica.test.ts`, `metaDePerda.test.ts`, `pontoDePartida.test.ts`, `mudancaMinima.test.ts` |
+| CA-2084 | `estimativas.test.ts` |
+| CA-2085 | `idadeNaoInformada.test.ts` |
+| CA-2087 | `duplicar.test.ts` |

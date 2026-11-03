@@ -5,7 +5,7 @@ e estão escritas para o dono e a Mor revisarem. A tela de Antropometria está e
 faz parte desta spec.
 
 **Revisão independente (03/11/2026): NÃO APROVADO.** Os coeficientes estão todos certos; os problemas estavam na lógica
-clínica. A rodada revisa, com o motivo, as decisões D-1007, D-1009, D-1025, D-1026, D-1030, D-1032 a D-1036 e as
+clínica. A rodada revisa, com o motivo, as decisões D-1005, D-1007, D-1009, D-1025, D-1026, D-1030, D-1032 a D-1036 e as
 regras de duplicação, e cria as D-1038 a D-1041, os CA-2071 em diante e os CB-1016 em diante. Cada item da revisão
 tem o seu commit (spec, teste que falha, código).
 
@@ -394,6 +394,12 @@ e Marinha (estimativas sem adipômetro); FMI e FFMI; panturrilha com o ajuste de
 de gordura; Frisancho 2008 (75 anos ou mais); Chumlea 1994 e 1998 (por raça); tabelas do MUST; Rabito I, II e VI;
 amputados (Osterkamp); somatotipo (Heath-Carter); fórmulas clássicas de peso ideal (Devine, Robinson e outras);
 critérios GLIM além do IMC; etiqueta de progresso ABESO/SBEM 2022.
+
+**Cintura pela IDF (observação da revisão):** não entra agora; a cintura segue a OMS (D-1020). Se entrar, o
+brasileiro usa os cortes dos sul-asiáticos, **≥ 90 cm no homem e ≥ 80 cm na mulher** (IDF 2006, Tabela 2, sul e
+centro-americanos; ABESO 2016, Tabela 5: "usar referências dos sul-asiáticos") [V2 na pesquisa 3.4], como critério de
+síndrome metabólica e com a fonte na linha; antes, conferir o ponto de medida da IDF (a pesquisa não o achou nos
+trechos lidos, [NV]). Os 94/80 dos europídeos não valem para o brasileiro.
 
 ## 7. Fontes
 
