@@ -1,0 +1,375 @@
+// Busca de substitutos por nutriente (spec busca-substitutos). Dado o alimento de um item do plano e um ou mais
+// nutrientes, procura na base o que dá a mesma quantidade deles, na meia medida caseira, com os filtros clínicos das
+// trocas da folha e as restrições do paciente. A tela mostra; a conta mora aqui.
+import { MICRONUTRIENTES_ADEQUACAO } from './adequacao.ts'
+import { MAXIMO_DE_PEDACOS, MEDIDAS_DE_CONTAR, medidaParaMostrar, medidasDoAlimento } from './busca.ts'
+import { posicaoNoConsumo } from './consumoPof.ts'
+import { noMesmoGrupo } from './grupoDeSubstituicao.ts'
+import { unidadeDo } from './liquido.ts'
+import { ehDeUsoComum, ehFrito, ehPratoComposto, ehProcessado, ehSegundaEscolha, ehUltraprocessado } from './prescritivel.ts'
+import { casaRestricao, comoRestricoes, ehNaoGosta, type RestricoesDoPaciente } from './restricoes.ts'
+import { ehPrescritivelParaSugerir } from './sugestaoDoProprio.ts'
+import { ehTrocaRazoavel } from './trocas.ts'
+import type { Alimento, BuscarAlimento, ChaveNutrienteAlimento, MedidaDoItem } from './tipos.ts'
+import { FIGADO } from './vitaminaA.ts'
+
+// ---------- Os nutrientes (D-1110) ----------
+
+export interface InfoDoNutriente {
+  readonly chave: ChaveNutrienteAlimento
+  /** No chip e na lista: "Carboidratos", "Cálcio". */
+  readonly nome: string
+  /** Na frase: "0,7 g de carboidrato a mais". */
+  readonly curto: string
+  /** Na linha do Comparar e no "igual": "Carboidrato", "Cálcio". */
+  readonly rotulo: string
+  readonly unidade: 'g' | 'kcal' | 'mg' | 'µg'
+}
+
+const MICROS: Readonly<Partial<Record<ChaveNutrienteAlimento, readonly [nome: string, curto: string, unidade: 'g' | 'mg' | 'µg']>>> = {
+  calcio_mg: ['Cálcio', 'cálcio', 'mg'],
+  ferro_mg: ['Ferro', 'ferro', 'mg'],
+  magnesio_mg: ['Magnésio', 'magnésio', 'mg'],
+  zinco_mg: ['Zinco', 'zinco', 'mg'],
+  potassio_mg: ['Potássio', 'potássio', 'mg'],
+  fosforo_mg: ['Fósforo', 'fósforo', 'mg'],
+  sodio_mg: ['Sódio', 'sódio', 'mg'],
+  cobre_mg: ['Cobre', 'cobre', 'mg'],
+  manganes_mg: ['Manganês', 'manganês', 'mg'],
+  selenio_mcg: ['Selênio', 'selênio', 'µg'],
+  vitamina_a_rae_mcg: ['Vitamina A (RAE)', 'vitamina A', 'µg'],
+  vitamina_c_mg: ['Vitamina C', 'vitamina C', 'mg'],
+  vitamina_d_mcg: ['Vitamina D', 'vitamina D', 'µg'],
+  vitamina_e_mg: ['Vitamina E', 'vitamina E', 'mg'],
+  tiamina_mg: ['Tiamina (B1)', 'tiamina', 'mg'],
+  riboflavina_mg: ['Riboflavina (B2)', 'riboflavina', 'mg'],
+  piridoxina_mg: ['Piridoxina (B6)', 'piridoxina', 'mg'],
+  niacina_mg: ['Niacina (B3)', 'niacina', 'mg'],
+  folato_dfe_mcg: ['Folato (DFE)', 'folato', 'µg'],
+  vitamina_b12_mcg: ['Vitamina B12', 'vitamina B12', 'µg'],
+  fibra_g: ['Fibra alimentar', 'fibra', 'g'],
+}
+
+const DOS_MACROS: Readonly<Partial<Record<ChaveNutrienteAlimento, InfoDoNutriente>>> = {
+  carboidrato_g: { chave: 'carboidrato_g', nome: 'Carboidratos', curto: 'carboidrato', rotulo: 'Carboidrato', unidade: 'g' },
+  proteina_g: { chave: 'proteina_g', nome: 'Proteínas', curto: 'proteína', rotulo: 'Proteína', unidade: 'g' },
+  lipideos_g: { chave: 'lipideos_g', nome: 'Lipídeos', curto: 'lipídeo', rotulo: 'Lipídeos', unidade: 'g' },
+  energia_kcal: { chave: 'energia_kcal', nome: 'Energia', curto: 'energia', rotulo: 'Energia', unidade: 'kcal' },
+}
+
+/** O nome, a frase e a unidade de um nutriente da busca. */
+export function infoDoNutriente(chave: ChaveNutrienteAlimento): InfoDoNutriente {
+  const macro = DOS_MACROS[chave]
+  if (macro) return macro
+  const micro = MICROS[chave]
+  if (micro) {
+    const [nome, curto, unidade] = micro
+    return { chave, nome, curto, rotulo: nome.replace(/ \(.+\)$/, ''), unidade }
+  }
+  return { chave, nome: chave, curto: chave, rotulo: chave, unidade: 'g' }
+}
+
+/** Os chips: Carboidratos, Proteínas e Lipídeos. */
+export const MACROS_DA_BUSCA: readonly ChaveNutrienteAlimento[] = ['carboidrato_g', 'proteina_g', 'lipideos_g']
+
+/** "Outro nutriente": energia, fibra e os micronutrientes da Adequação, na ordem dela (D-1110). */
+export const OUTROS_NUTRIENTES_DA_BUSCA: readonly ChaveNutrienteAlimento[] = [
+  'energia_kcal',
+  'fibra_g',
+  ...MICRONUTRIENTES_ADEQUACAO.filter((c) => c !== 'fibra_g'),
+]
+
+const KCAL_POR_GRAMA: readonly (readonly [ChaveNutrienteAlimento, number])[] = [
+  ['carboidrato_g', 4],
+  ['proteina_g', 4],
+  ['lipideos_g', 9],
+]
+
+/** CA-2102: o macro que mais dá energia ao alimento (o "macro dominante" das trocas); sem macro, a energia. */
+export function nutrienteInicial(a: Alimento): ChaveNutrienteAlimento {
+  let melhor: { chave: ChaveNutrienteAlimento; kcal: number } | null = null
+  for (const [chave, fator] of KCAL_POR_GRAMA) {
+    const kcal = (a.nutrientes[chave] ?? 0) * fator
+    if (kcal > 0 && (melhor === null || kcal > melhor.kcal)) melhor = { chave, kcal }
+  }
+  return melhor?.chave ?? 'energia_kcal'
+}
+
+// ---------- Números e frases (D-1105) ----------
+
+const formatadores = new Map<number, Intl.NumberFormat>()
+function formatar(valor: number, casas: number): string {
+  let f = formatadores.get(casas)
+  if (!f) {
+    f = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: casas, maximumFractionDigits: casas })
+    formatadores.set(casas, f)
+  }
+  return f.format(valor)
+}
+
+/** Energia sem casa; o resto com uma casa abaixo de 100 e nenhuma de 100 em diante (a precisão da Adequação). */
+function casasDe(chave: ChaveNutrienteAlimento, valor: number): number {
+  if (chave === 'energia_kcal') return 0
+  return Math.round(Math.abs(valor) * 10) / 10 < 100 ? 1 : 0
+}
+
+const arredondar = (valor: number, casas: number): number => Math.round(valor * 10 ** casas) / 10 ** casas
+
+/** "1,2 g", "543 mg", "192 kcal". */
+function quantidade(chave: ChaveNutrienteAlimento, valor: number): string {
+  return `${formatar(Math.abs(valor), casasDe(chave, valor))} ${infoDoNutriente(chave).unidade}`
+}
+
+/** CA-2106: "0,7 g de carboidrato a mais", "12 kcal a menos", "Carboidrato igual". */
+export function fraseDaDiferenca(chave: ChaveNutrienteAlimento, valor: number): { readonly texto: string; readonly igual: boolean } {
+  const info = infoDoNutriente(chave)
+  if (arredondar(valor, casasDe(chave, valor)) === 0) return { texto: `${info.rotulo} igual`, igual: true }
+  const quanto = info.unidade === 'kcal' ? quantidade(chave, valor) : `${quantidade(chave, valor)} de ${info.curto}`
+  return { texto: `${quanto} ${valor > 0 ? 'a mais' : 'a menos'}`, igual: false }
+}
+
+// ---------- A busca (D-1103 a D-1109) ----------
+
+/** No máximo 20 candidatos (D-1109). */
+export const LIMITE_DA_BUSCA = 20
+/** Acima desta nota de ajuste, o candidato não equivale à combinação de nutrientes (D-1103). */
+export const MAXIMO_DE_AJUSTE = 0.25
+/** A faixa de proximidade em que o desempate clínico decide (D-1109). */
+const FAIXA_DE_PROXIMIDADE = 0.05
+/** A porção que alguém come (a faixa das trocas da folha). */
+const PORCAO_MINIMA_G = 5
+const PORCAO_MAXIMA_G = 600
+
+export interface OpcoesDaBusca {
+  readonly nutrientes: readonly ChaveNutrienteAlimento[]
+  readonly mesmoGrupo: boolean
+  /** A lista onde procurar: `alimentosParaSugerir()` (D-1102). */
+  readonly alimentos: readonly Alimento[]
+  readonly restricoes?: RestricoesDoPaciente | readonly string[] | undefined
+  /** Padrão: `LIMITE_DA_BUSCA`. */
+  readonly limite?: number | undefined
+}
+
+export interface DiferencaNaPorcao {
+  readonly chave: ChaveNutrienteAlimento
+  /** Substituto na porção − original no item. */
+  readonly valor: number
+  readonly texto: string
+  readonly igual: boolean
+}
+
+export interface Candidato {
+  readonly alimento: Alimento
+  /** A porção: quantidade × peso da medida, ou os gramas inteiros sem medida. */
+  readonly gramas: number
+  /** A medida que vai para o item (D-379); `null` = só gramas. */
+  readonly medida: MedidaDoItem | null
+  /** "2 unidades e meia"; `null` sem medida. */
+  readonly textoDaMedida: string | null
+  /** Só dos nutrientes buscados, na ordem deles. */
+  readonly diferencas: readonly DiferencaNaPorcao[]
+  /** Soma dos erros relativos dos nutrientes buscados, na porção. */
+  readonly proximidade: number
+  /** A nota de ajuste, com 2 ou mais nutrientes; `null` com 1. */
+  readonly ajuste: number | null
+}
+
+export type ResultadoDaBusca =
+  | { readonly tipo: 'lista'; readonly candidatos: readonly Candidato[]; readonly restricaoTirou: boolean }
+  | { readonly tipo: 'sem-alvo'; readonly motivo: string }
+
+/** "2 unidades e meia · 350 g"; sem medida, "259 g"; no líquido, ml. */
+export function textoDaPorcao(c: Pick<Candidato, 'alimento' | 'gramas' | 'textoDaMedida'>): string {
+  const peso = `${formatar(c.gramas, 0)} ${unidadeDo(c.alimento)}`
+  return c.textoDaMedida ? `${c.textoDaMedida} · ${peso}` : peso
+}
+
+/** CB-1100 e CA-2110. */
+export function mensagemSemCandidato(restricaoTirou: boolean): string {
+  return `Nenhum substituto com esses nutrientes${restricaoTirou ? ' dentro das restrições do paciente' : ''}. Tire um nutriente, desligue “Só do mesmo grupo” ou adicione manualmente.`
+}
+
+/** A porção na meia medida caseira (D-1104); `null` quando ela não serve (fora de 5 a 600 g ou mais de 4 pedaços). */
+function porcaoDe(a: Alimento, gramasIdeais: number): Pick<Candidato, 'gramas' | 'medida' | 'textoDaMedida'> | null {
+  const gramas = Math.round(gramasIdeais)
+  if (gramas < PORCAO_MINIMA_G || gramas > PORCAO_MAXIMA_G) return null
+  const medida = medidaParaMostrar(a.id, gramas)
+  if (medida && MEDIDAS_DE_CONTAR.has(medida.medida) && medida.quantidade > MAXIMO_DE_PEDACOS) return null
+  const peso = medida ? medidasDoAlimento(a.id).find((m) => m.nome === medida.medida)?.gramas : undefined
+  if (!medida || !peso) return { gramas, medida: null, textoDaMedida: null }
+  return {
+    gramas: Math.round(medida.quantidade * peso * 10) / 10,
+    medida: { nome: medida.medida, quantidade: medida.quantidade, gramasPorMedida: peso },
+    textoDaMedida: medida.texto,
+  }
+}
+
+/**
+ * D-1103: os gramas que deixam o erro relativo menor. Com 1 nutriente, `alvo / b`; com 2 ou mais, mínimos quadrados,
+ * `Σ(b/alvo) ÷ Σ(b/alvo)²`, e a nota de ajuste, `√ média((b·g/alvo − 1)²)`.
+ */
+function gramasIdeais(porGrama: readonly number[], alvos: readonly number[]): { readonly gramas: number; readonly ajuste: number | null } {
+  if (porGrama.length === 1) return { gramas: (alvos[0] ?? 0) / (porGrama[0] ?? 1), ajuste: null }
+  const razoes = porGrama.map((b, i) => b / (alvos[i] ?? 1))
+  const gramas = razoes.reduce((s, r) => s + r, 0) / razoes.reduce((s, r) => s + r * r, 0)
+  const ajuste = Math.sqrt(razoes.reduce((s, r) => s + (r * gramas - 1) ** 2, 0) / razoes.length)
+  return { gramas, ajuste }
+}
+
+interface Ordenavel {
+  readonly candidato: Candidato
+  readonly naoGosta: boolean
+}
+
+/** D-1109: não gosta por último, uso comum, faixa de 5%, desempate clínico, medida caseira, POF, proximidade, nome. */
+function compararCandidatos({ candidato: x, naoGosta: xNaoGosta }: Ordenavel, { candidato: y, naoGosta: yNaoGosta }: Ordenavel): number {
+  const faixa = (c: Candidato) => Math.floor(c.proximidade / FAIXA_DE_PROXIMIDADE + 1e-9)
+  return (
+    Number(xNaoGosta) - Number(yNaoGosta) ||
+    Number(ehDeUsoComum(y.alimento)) - Number(ehDeUsoComum(x.alimento)) ||
+    faixa(x) - faixa(y) ||
+    Number(ehPratoComposto(x.alimento)) - Number(ehPratoComposto(y.alimento)) ||
+    Number(ehProcessado(x.alimento)) - Number(ehProcessado(y.alimento)) ||
+    Number(ehSegundaEscolha(x.alimento)) - Number(ehSegundaEscolha(y.alimento)) ||
+    Number(y.medida !== null) - Number(x.medida !== null) ||
+    Math.min(posicaoNoConsumo(x.alimento.id), 1e6) - Math.min(posicaoNoConsumo(y.alimento.id), 1e6) ||
+    x.proximidade - y.proximidade ||
+    x.alimento.descricao.localeCompare(y.alimento.descricao, 'pt-BR')
+  )
+}
+
+const listaDeNomes = (nomes: readonly string[]): string => nomes.join(' nem ')
+
+/**
+ * A "troca razoável" das trocas da folha corta todo nome com a palavra "doce" (doce de leite, goiabada); a batata-doce
+ * não é doce. Aqui ela fica; a folha não muda (D-1106).
+ */
+const BATATA_DOCE = /^Batata, doce/i
+const ehRazoavel = (a: Alimento): boolean => ehTrocaRazoavel(a) || BATATA_DOCE.test(a.descricao.trim())
+
+/**
+ * Os substitutos do alimento `original` na quantidade dele, pelos nutrientes escolhidos. A lista sai ordenada e cortada
+ * em `limite`; `restricaoTirou` diz se alguma restrição do paciente tirou um candidato que serviria (CA-2110).
+ */
+export function buscarSubstitutos(
+  original: { readonly alimentoId: number; readonly gramas: number },
+  opcoes: OpcoesDaBusca,
+  buscar: BuscarAlimento,
+): ResultadoDaBusca {
+  const base = buscar(original.alimentoId)
+  if (!base) return { tipo: 'sem-alvo', motivo: 'Este alimento não está mais na base.' }
+  const nutrientes = [...new Set(opcoes.nutrientes)]
+  if (nutrientes.length === 0) return { tipo: 'sem-alvo', motivo: 'Selecione um ou mais nutrientes.' }
+  if (!(original.gramas > 0)) return { tipo: 'sem-alvo', motivo: `Informe os gramas de ${base.descricao.trim()} para buscar substitutos.` }
+  const semAlvo = nutrientes.filter((k) => !((base.nutrientes[k] ?? 0) > 0))
+  if (semAlvo.length > 0) {
+    const nomes = semAlvo.map((k) => infoDoNutriente(k).curto)
+    return { tipo: 'sem-alvo', motivo: `${base.descricao.trim()} não tem ${listaDeNomes(nomes)} na tabela. Escolha outro nutriente.` }
+  }
+  const alvos = nutrientes.map((k) => ((base.nutrientes[k] ?? 0) * original.gramas) / 100)
+
+  const restricoes = comoRestricoes(opcoes.restricoes)
+  const doGrupo = opcoes.mesmoGrupo ? noMesmoGrupo(base) : () => true
+  // D-478 e D-294: ultraprocessado e prato composto só no lugar de quem já é.
+  const baseUltraprocessada = ehUltraprocessado(base)
+  const baseSimples = !ehPratoComposto(base)
+
+  let restricaoTirou = false
+  const candidatos: Ordenavel[] = []
+  for (const a of opcoes.alimentos) {
+    if (a.id === base.id || !doGrupo(a)) continue
+    // D-1106: os filtros clínicos das trocas da folha.
+    if (!ehPrescritivelParaSugerir(a) || !ehRazoavel(a) || FIGADO.test(a.descricao) || ehFrito(a)) continue
+    if (!baseUltraprocessada && ehUltraprocessado(a)) continue
+    if (baseSimples && ehPratoComposto(a)) continue
+    const porCem = nutrientes.map((k) => a.nutrientes[k])
+    if (porCem.some((v) => v === null || !(v > 0))) continue
+    const ideal = gramasIdeais(
+      porCem.map((v) => (v ?? 0) / 100),
+      alvos,
+    )
+    if (ideal.ajuste !== null && ideal.ajuste > MAXIMO_DE_AJUSTE) continue
+    const porcao = porcaoDe(a, ideal.gramas)
+    if (!porcao) continue
+    // D-1107: a restrição tira o candidato; conta para a mensagem só quem serviria (como no Cobrir, revisão N6).
+    if (casaRestricao(a, restricoes)) {
+      restricaoTirou = true
+      continue
+    }
+    const diferencas = nutrientes.map((chave, i): DiferencaNaPorcao => {
+      const valor = ((a.nutrientes[chave] ?? 0) * porcao.gramas) / 100 - (alvos[i] ?? 0)
+      return { chave, valor, ...fraseDaDiferenca(chave, valor) }
+    })
+    const proximidade = diferencas.reduce((s, d, i) => s + Math.abs(d.valor) / (alvos[i] ?? 1), 0)
+    candidatos.push({ candidato: { alimento: a, ...porcao, diferencas, proximidade, ajuste: ideal.ajuste }, naoGosta: ehNaoGosta(a, restricoes) })
+  }
+
+  const ordenados = candidatos
+    .sort(compararCandidatos)
+    .slice(0, opcoes.limite ?? LIMITE_DA_BUSCA)
+    .map((o) => o.candidato)
+  return { tipo: 'lista', candidatos: ordenados, restricaoTirou }
+}
+
+// ---------- Comparar alimentos (D-1112) ----------
+
+/** As linhas fixas do Comparar; os escolhidos de fora entram depois. */
+const LINHAS_DO_COMPARAR: readonly ChaveNutrienteAlimento[] = [
+  'energia_kcal',
+  'carboidrato_g',
+  'proteina_g',
+  'lipideos_g',
+  'fibra_g',
+  'calcio_mg',
+  'ferro_mg',
+  'magnesio_mg',
+  'potassio_mg',
+  'sodio_mg',
+  'vitamina_c_mg',
+]
+
+export const NAO_ANALISADO = 'não analisado'
+
+export interface LinhaDaComparacao {
+  readonly chave: ChaveNutrienteAlimento
+  readonly rotulo: string
+  readonly escolhido: boolean
+  /** "42,1 g" ou "não analisado". */
+  readonly original: string
+  readonly substituto: string
+  /** "+0,3 g", "−12 kcal", "igual" ou "—" quando falta dado. */
+  readonly diferenca: string
+  readonly semDado: { readonly original: boolean; readonly substituto: boolean }
+}
+
+/** CA-2117: os dois alimentos nas porções, nutriente por nutriente. */
+export function compararNaPorcao(
+  original: { readonly alimento: Alimento; readonly gramas: number },
+  substituto: { readonly alimento: Alimento; readonly gramas: number },
+  escolhidos: readonly ChaveNutrienteAlimento[],
+): readonly LinhaDaComparacao[] {
+  const chaves = [...LINHAS_DO_COMPARAR, ...escolhidos.filter((k) => !LINHAS_DO_COMPARAR.includes(k))]
+  const naPorcao = (a: Alimento, gramas: number, k: ChaveNutrienteAlimento): number | null => {
+    const v = a.nutrientes[k]
+    return v === null ? null : (v * gramas) / 100
+  }
+  return chaves.map((chave) => {
+    const a = naPorcao(original.alimento, original.gramas, chave)
+    const b = naPorcao(substituto.alimento, substituto.gramas, chave)
+    const texto = (v: number | null) => (v === null ? NAO_ANALISADO : quantidade(chave, v))
+    let diferenca = '—'
+    if (a !== null && b !== null) {
+      const d = b - a
+      diferenca = arredondar(d, casasDe(chave, d)) === 0 ? 'igual' : `${d > 0 ? '+' : '−'}${quantidade(chave, d)}`
+    }
+    return {
+      chave,
+      rotulo: infoDoNutriente(chave).rotulo,
+      escolhido: escolhidos.includes(chave),
+      original: texto(a),
+      substituto: texto(b),
+      diferenca,
+      semDado: { original: a === null, substituto: b === null },
+    }
+  })
+}
