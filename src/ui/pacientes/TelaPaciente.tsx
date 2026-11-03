@@ -1,9 +1,12 @@
 import { ClipboardList, Copy, Plus, Trash, UserRound } from 'lucide-react'
-import { useId, useMemo, useState } from 'react'
+import { useEffect, useId, useMemo, useState } from 'react'
 import { diaLocal } from '@/domain/acompanhamento.ts'
 import { resumoDaAdesao } from '@/domain/adesaoNoRetorno.ts'
 import type { AssinaturaDoPlano } from '@/domain/assinaturaDoPlano.ts'
+import { dietaDoPlano } from '@/domain/dietaDoLink.ts'
 import { perfilDaFicha } from '@/domain/fichaNoPlano.ts'
+import { dataCompleta } from '@/domain/formatarData.ts'
+import { linkDoPaciente } from '@/domain/linkFixo.ts'
 import type { Paciente } from '@/domain/pacientes.ts'
 import { ultimoLinkPorPaciente } from '@/domain/retorno.ts'
 import type { ModoPlano } from '@/domain/tipos.ts'
@@ -14,9 +17,11 @@ import { Card, CardDescription, CardHeader, CardTitle } from '@ds/componentes/di
 import { useAcompanhamentosOpcional } from '../estado/contextoAcompanhamentos.ts'
 import { useCasos } from '../estado/contextoCasos.ts'
 import { usePacientes } from '../estado/contextoPacientes.ts'
+import { useEmailsDoLink } from '../estado/usarEmailsDoLink.ts'
 import { AnamneseDaFicha } from './AnamneseDaFicha.tsx'
 import { CartaoDadosDoPaciente } from './CartaoDadosDoPaciente.tsx'
 import { CartaoExames } from './CartaoExames.tsx'
+import { CartaoLinkDoPaciente, type PlanoNoLink } from './CartaoLinkDoPaciente.tsx'
 import { CartaoProximaConsulta } from './CartaoProximaConsulta.tsx'
 import { CartaoSuplementos } from './CartaoSuplementos.tsx'
 import type { CampoDaFicha } from '../navegacao.ts'
@@ -35,6 +40,8 @@ interface TelaPacienteProps {
   readonly focar?: CampoDaFicha | undefined
   /** Injetável no teste; decide se a próxima consulta já passou, a idade de hoje e as semanas de gestação. */
   readonly agora?: Date | undefined
+  /** Abre a ficha com o cursor no Telefone, quando o WhatsApp do link não tem número (spec whatsapp-e-retorno, CA-505). */
+  readonly aoCadastrarTelefone?: ((pacienteId: string) => void) | undefined
 }
 
 /**
@@ -50,10 +57,13 @@ export function TelaPaciente({
   aoVoltar,
   focar,
   agora = new Date(),
+  aoCadastrarTelefone,
 }: TelaPacienteProps) {
   const { repositorio, atualizar } = usePacientes()
   const { casos, repositorio: repoCasos, atualizar: atualizarCasos } = useCasos()
-  const acompanhamentos = useAcompanhamentosOpcional()?.acompanhamentos ?? null
+  const contextoDosLinks = useAcompanhamentosOpcional()
+  const acompanhamentos = contextoDosLinks?.acompanhamentos ?? null
+  const salvarLink = contextoDosLinks?.salvar ?? null
   const [confirmandoExclusao, setConfirmandoExclusao] = useState(false)
   const idConduta = useId()
 
@@ -80,6 +90,26 @@ export function TelaPaciente({
     const link = ultimoLinkPorPaciente(acompanhamentos, casos).get(pacienteId)
     return link ? resumoDaAdesao(link, hoje) : null
   }, [acompanhamentos, casos, pacienteId, hoje])
+
+  // Spec lado-do-paciente, D-1214: o link fixo do paciente, que a ficha mostra e atualiza.
+  const link = acompanhamentos !== null && paciente ? linkDoPaciente(acompanhamentos, paciente.id, casos) : null
+  const emailsDoLink = useEmailsDoLink(link?.id ?? null)
+  const registroDoLink = link === null ? null : repoCasos.obter(link.casoId)
+  const planoNoLink: PlanoNoLink | null =
+    link === null || !registroDoLink
+      ? null
+      : {
+          rotulo: registroDoLink.caso.dataConsulta ? `Plano de ${dataCompleta(registroDoLink.caso.dataConsulta)}` : registroDoLink.caso.nome.trim() || 'Plano sem nome',
+          maisRecente: planos[0]?.id === link.casoId,
+          dieta: dietaDoPlano(registroDoLink.caso, registroDoLink.plano),
+        }
+
+  // D-1209 e CA-2214: a próxima consulta da ficha sobe para o link quando a ficha muda, sem link novo.
+  const consultaDaFicha = paciente?.proximaConsulta ?? null
+  useEffect(() => {
+    if (link === null || salvarLink === null || (link.proximaConsulta ?? null) === consultaDaFicha) return
+    void salvarLink({ ...link, proximaConsulta: consultaDaFicha })
+  }, [link, salvarLink, consultaDaFicha])
 
   if (!paciente) {
     return (
@@ -120,6 +150,18 @@ export function TelaPaciente({
           <CartaoSuplementos key={paciente.id} paciente={paciente} assinatura={assinatura} bloqueio={bloqueio} aoAlterar={alterar} focar={focar === 'suplementos'} />
           <CartaoExames key={`exames-${paciente.id}`} paciente={paciente} assinatura={assinatura} bloqueio={bloqueio} aoAlterar={alterar} />
           <CartaoProximaConsulta valor={paciente.proximaConsulta} agora={agora} aoMudar={(proximaConsulta) => alterar({ proximaConsulta })} />
+          {/* D-1214 e D-359: o cartão do link vem depois da próxima consulta. */}
+          {link !== null ? (
+            <CartaoLinkDoPaciente
+              paciente={paciente}
+              link={link}
+              planoNoLink={planoNoLink}
+              emails={emailsDoLink.emails}
+              aoMudarEmails={emailsDoLink.recarregar}
+              hoje={hoje}
+              aoCadastrarTelefone={aoCadastrarTelefone}
+            />
+          ) : null}
         </section>
 
         <Card className="gap-3">

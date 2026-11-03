@@ -229,6 +229,7 @@ export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pe
           aoNovoPlano={(pacienteId, modo) => novoCaso(modo, pacienteId)}
           aoVoltar={() => navegar({ tela: 'pacientes' })}
           focar={rota.campo}
+          aoCadastrarTelefone={cadastrarTelefone}
         />
       </Estrutura>
     )
