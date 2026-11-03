@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { diaLocal } from '@/domain/acompanhamento.ts'
 import { dataCompleta } from '@/domain/formatarData.ts'
-import { mudarDestino } from '@/domain/importar/colunas.ts'
+import { mudarDestino, temNome } from '@/domain/importar/colunas.ts'
 import { prepararImportacao } from '@/domain/importar/criar.ts'
 import { csvDasQueFicaramDeFora, linhasDeFora } from '@/domain/importar/csvDeFora.ts'
 import { pacientesQueSaem } from '@/domain/importar/importacao.ts'
@@ -197,8 +197,15 @@ export function TelaImportarPacientes({ moldura, aoSair }: TelaImportarPacientes
     baixarBlob(new Blob([texto], { type: 'text/csv;charset=utf-8' }), 'ficaram-de-fora.csv')
   }
 
-  const irPara = (passo: Passo) => mudar((atual) => ({ ...atual, passo, alcancado: maisAdiante(atual.alcancado, passo) }))
+  // CA-1914: sem coluna em Nome (ou com a aba acima do limite), a prévia não abre, nem pela barra de passos.
+  const previaBarrada = (atual: EstadoDaImportacao): boolean => {
+    const daAba = atual.planilha?.lida.abas[atual.aba]?.analise
+    return !daAba || !temNome(atual.destinos) || daAba.excede
+  }
+  const irPara = (passo: Passo) =>
+    mudar((atual) => (passo === 'previa' && previaBarrada(atual) ? atual : { ...atual, passo, alcancado: maisAdiante(atual.alcancado, passo) }))
   const alcancados = PASSOS.map((p) => p.valor).filter((p) => estado.planilha !== null && maisAdiante(estado.alcancado, p) === estado.alcancado)
+  const bloqueados: readonly Passo[] = estado.passo !== 'previa' && previaBarrada(estado) ? ['previa'] : []
 
   const acoes =
     estado.passo === 'concluida' ? null : (
@@ -211,7 +218,7 @@ export function TelaImportarPacientes({ moldura, aoSair }: TelaImportarPacientes
     acoes,
     <div className="flex flex-col gap-6">
         {estado.passo === 'concluida' ? null : (
-          <Passos rotulo="Passos da importação" passos={PASSOS} atual={estado.passo} alcancados={alcancados} aoEscolher={irPara} />
+          <Passos rotulo="Passos da importação" passos={PASSOS} atual={estado.passo} alcancados={alcancados} bloqueados={bloqueados} aoEscolher={irPara} />
         )}
         {estado.passo === 'arquivo' ? (
           <PassoArquivo lendo={lendo} recusa={recusa} aoEscolher={(arquivo) => void ler(arquivo)} aoCancelarLeitura={cancelarLeitura} tituloRef={titulo} />

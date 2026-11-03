@@ -62,6 +62,22 @@ describe('CA-1914: nenhuma coluna em Nome', () => {
   })
 })
 
+describe('CA-1914 pela barra de passos', () => {
+  it('depois de uma prévia, tirar o Nome desliga também o passo "Prévia" da barra', async () => {
+    const { usuario } = montarTela()
+    await abrirColunas(usuario)
+    await usuario.click(verPrevia())
+    await usuario.click(await screen.findByRole('button', { name: 'Voltar' }))
+    await usuario.selectOptions(lista('Nome'), 'nao')
+    const passo = screen.getByRole('button', { name: 'Passo 3: Prévia' })
+    expect(passo).toBeDisabled()
+    await usuario.click(passo)
+    expect(screen.queryByRole('heading', { level: 2, name: 'Prévia' })).not.toBeInTheDocument()
+    await usuario.selectOptions(lista('Nome'), 'nome')
+    expect(screen.getByRole('button', { name: 'Passo 3: Prévia' })).toBeEnabled()
+  })
+})
+
 describe('CA-1915: um destino por coluna, menos Observações', () => {
   it('mandar outra coluna para Telefone devolve a primeira a "Não importar"', async () => {
     const { usuario } = montarTela()
