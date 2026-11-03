@@ -7,6 +7,15 @@
 import { IDS_DO_CATALOGO_IA } from './iaCatalogo.ts'
 import {
   conferirResposta,
+  ESTUDANTE_SEM_APROVACAO,
+  IA_DEMOROU,
+  IA_INDISPONIVEL,
+  MUITAS_SUGESTOES,
+  RECUSA_DA_IA,
+  SEM_CONSENTIMENTO,
+  SEM_CRN_IA,
+  SEM_PERFIL_IA,
+  SEM_SESSAO_IA,
   inicioDoMesEmBrasilia,
   LIMITE_DE_SUGESTOES_IA,
   LIMITE_DE_SUGESTOES_IA_POR_HORA,
@@ -21,15 +30,7 @@ import type { BancoDaIa, ConclusaoDoUso, ContaParaIa, EsforcoDaIa, ModeloDaIa, M
 import { montarMensagem } from './iaPrompt.ts'
 import { PEDIDO_INVALIDO, respostaDeErro as erro, type ContaQuePede, type Registro, type RespostaDaFuncao } from './portas.ts'
 
-export const SEM_SESSAO_IA = 'Entre na sua conta para usar a IA.'
-export const SEM_CONSENTIMENTO = 'Registre na ficha a autorização do paciente.'
-export const SEM_PERFIL_IA = 'Complete o cadastro da conta para usar a IA.'
-export const SEM_CRN_IA = 'A IA está bloqueada até você corrigir o CRN, no painel.'
-export const ESTUDANTE_SEM_APROVACAO = 'A IA abre quando o pedido de estudante for aprovado.'
-export const RECUSA_DA_IA = 'A IA não respondeu a este pedido. Mude o texto do pedido e tente de novo.'
-export const IA_DEMOROU = 'A sugestão demorou demais. Tente de novo; esta não conta no limite.'
-export const IA_INDISPONIVEL = 'As sugestões com IA estão indisponíveis agora. Tente mais tarde.'
-export const MUITAS_SUGESTOES = 'Muitas sugestões seguidas. Espere alguns minutos e tente de novo.'
+export { ESTUDANTE_SEM_APROVACAO, IA_DEMOROU, IA_INDISPONIVEL, MUITAS_SUGESTOES, RECUSA_DA_IA, SEM_CONSENTIMENTO, SEM_CRN_IA, SEM_PERFIL_IA, SEM_SESSAO_IA }
 
 const UM_DIA_MS = 24 * 60 * 60 * 1000
 /** O EUA custa 10% a mais (`inference_geo: "us"`, D-1317). */

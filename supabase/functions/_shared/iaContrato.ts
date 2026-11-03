@@ -4,6 +4,18 @@
 // daqui os tipos, a limpeza dos textos e os limites (src/domain/iaPedido.ts e iaLimites.ts), para os dois lados
 // dizerem o mesmo.
 
+// ---------- As frases da função (D-1320, CA-2335 e CA-2374): o navegador diz as mesmas ----------
+
+export const SEM_SESSAO_IA = 'Entre na sua conta para usar a IA.'
+export const SEM_CONSENTIMENTO = 'Registre na ficha a autorização do paciente.'
+export const SEM_PERFIL_IA = 'Complete o cadastro da conta para usar a IA.'
+export const SEM_CRN_IA = 'A IA está bloqueada até você corrigir o CRN, no painel.'
+export const ESTUDANTE_SEM_APROVACAO = 'A IA abre quando o pedido de estudante for aprovado.'
+export const RECUSA_DA_IA = 'A IA não respondeu a este pedido. Mude o texto do pedido e tente de novo.'
+export const IA_DEMOROU = 'A sugestão demorou demais. Tente de novo; esta não conta no limite.'
+export const IA_INDISPONIVEL = 'As sugestões com IA estão indisponíveis agora. Tente mais tarde.'
+export const MUITAS_SUGESTOES = 'Muitas sugestões seguidas. Espere alguns minutos e tente de novo.'
+
 // ---------- Limites (D-1318) ----------
 
 export type PlanoDaConta = 'free' | 'estudante' | 'solo' | 'pro' | 'clinica'
