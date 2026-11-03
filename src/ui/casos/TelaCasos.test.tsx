@@ -94,6 +94,29 @@ describe('Tela Planos', () => {
     expect(screen.getByRole('heading', { name: 'Maria (cópia)' })).toBeInTheDocument()
   })
 
+  it('CA-1097 (spec ficha-unica): duplicar na lista decide a estatura pela data de nascimento da ficha', async () => {
+    const repositorio = criarRepositorio(new MemoriaFalsa(), { agora: relogio() })
+    const pacientes = criarRepositorioPacientes(new MemoriaFalsa())
+    const bia = pacientes.salvar({ ...pacientes.criar('Bia'), nascimento: '2014-05-01' })
+    const plano = repositorio.criar('Bia, retorno')
+    // O plano gravou 35 anos; a ficha dá 12 em 15/09/2026, e a criança cresce entre as consultas.
+    repositorio.salvar({ ...plano, caso: { ...plano.caso, pacienteId: bia.id, idadeAnos: 35, pesoKg: 40, estaturaCm: 150 } })
+    render(
+      <ProvedorPacientes repositorio={pacientes}>
+        <ProvedorCasos repositorio={repositorio}>
+          <TelaCasos aoAbrir={vi.fn()} aoNovoCaso={vi.fn()} />
+        </ProvedorCasos>
+      </ProvedorPacientes>,
+    )
+    const usuario = userEvent.setup()
+
+    await usuario.click((await acoesDo(usuario, 'Bia, retorno')).getByRole('menuitem', { name: 'Duplicar' }))
+    const copia = repositorio.listar().find((c) => c.nome === 'Bia, retorno (cópia)')
+    const caso = copia ? repositorio.obter(copia.id)?.caso : undefined
+    expect(caso?.pesoKg).toBeNull()
+    expect(caso?.estaturaCm).toBeNull()
+  })
+
   it('CA-50: excluir pede confirmação; cancelar mantém e confirmar remove', async () => {
     const repositorio = criarRepositorio(new MemoriaFalsa(), { agora: relogio() })
     repositorio.criar('Maria')

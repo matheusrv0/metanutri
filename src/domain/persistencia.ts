@@ -1,6 +1,6 @@
 // Salvamento dos casos no próprio navegador (SPEC CA-49, CA-50, CB-08, CB-09, D-3).
 import { criarCasoVazio } from './caso.ts'
-import { duplicarCaso } from './duplicar.ts'
+import { duplicarCaso, type OpcoesDuplicar } from './duplicar.ts'
 import { criarPlanoPadrao, type GerarId } from './plano.ts'
 import type { Caso, Plano } from './tipos.ts'
 
@@ -202,9 +202,10 @@ export function criarRepositorio(armazenamento: Armazenamento | null, opcoes: Op
 
     salvar,
 
-    duplicar(id: string): CasoSalvo {
+    /** `nascimento` é o da ficha do paciente do plano: a idade na data nova decide a estatura (spec ficha-unica, D-367). */
+    duplicar(id: string, opcoes: Pick<OpcoesDuplicar, 'nascimento'> = {}): CasoSalvo {
       const original = exigir(id)
-      return salvar(duplicarCaso(original, gerarId, { hoje: agora().slice(0, 10) }))
+      return salvar(duplicarCaso(original, gerarId, { ...opcoes, hoje: agora().slice(0, 10) }))
     },
 
     renomear(id: string, nome: string): CasoSalvo {
