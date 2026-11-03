@@ -44,6 +44,10 @@ opção do item aparece embaixo dele no plano, na folha, no link e no Word.
 | T6 | O painel na tela | `src/ui/plano/PainelSubstitutos.tsx`, `BuscaDeSubstitutos.tsx`, `CartaoCandidato.tsx`, `CalculadoraDeSubstituto.tsx`, `JanelaComparar.tsx`, `AvisoDeTroca.tsx`, `OpcoesDoItem.tsx`, `rotuloDaOpcao.ts` (novos); na biblioteca, `design-system/componentes/forms/ChipAlternavel.tsx` (novo, a ficha de escolha múltipla dos nutrientes) e a entrada dele no `LEIA-ME.md`; `TelaPlano.tsx`, `CartaoRefeicao.tsx`, `LinhaItem.tsx`; sai `DialogoSubstituto.tsx`; testes: `painelSubstitutos.test.tsx` (novo, no lugar de `DialogoSubstituto.test.tsx`), `LinhaItem.test.tsx`, `receitaNaRefeicao.test.tsx` | CA-2100 a CA-2102, CA-2115 a CA-2121, CA-2125 (linha), CA-2127, CB-1104, CB-1107 | T3, T4 |
 | T7 | No navegador | `e2e/busca-substitutos.spec.ts` (novo); `e2e/planejador.spec.ts` e `e2e/correcao-a.spec.ts` (o fluxo antigo da calculadora vira o modo manual do painel) | CA-2101, CA-2103, CA-2117 a CA-2121, CA-2126 | T6 |
 | T8 | Validação e acabamento | prints em 360, 390 e 1440 px nos dois temas (`scratchpad/substitutos/prints/`); passada de `impeccable`, `emil-design-eng`, `ui-ux-pro-max` e `break-ui`; correções que saírem delas | todos | T7 |
+| T9 | Correções da revisão no domínio da busca e das trocas | `src/domain/prescritivel.ts` (a constante `CAFE_OU_CHA`, que sai de `cobrir.ts`), `src/domain/cobrir.ts` (só o import), `src/domain/trocas.ts` (a regex `NAO_EQUIVALE`), `src/domain/buscaDeSubstitutos.ts` (café e chá, açucarados, faixa na porção final, faixa de 5% a partir do melhor, sem a exceção da batata-doce); testes: `buscaDeSubstitutos.test.ts`, `trocaRazoavel.test.ts` (novo) e os de `trocas` e da folha que a D-1121 mude | CA-2107, CA-2108, CA-2128, CA-2129, CA-2135 | T8 |
+| T10 | A opção da base ampliada e o uso da opção | `src/domain/tipos.ts` (a cópia do nome na opção), `src/domain/opcoesDoItem.ts`, `src/domain/plano.ts`, `src/domain/baseAmpliada.ts` (`planoUsaBaseAmpliada`), `src/domain/folhaDieta.ts`, `src/domain/dietaDoLink.ts`, `src/export/aconselhamento-docx.ts`, `src/domain/usoDaConta.ts` (`planosComAlimento`), `src/ui/plano/OpcoesDoItem.tsx`; testes: `opcaoDaBaseAmpliada.test.ts` (novo), `usoDaConta.test.ts` | CA-2130, CA-2131, CB-1110 | T9 |
+| T11 | Correções da revisão na tela | `src/ui/plano/PainelSubstitutos.tsx` (Esc na gaveta), `CartaoCandidato.tsx` e `JanelaComparar.tsx` (`aria-disabled`, "É o mesmo alimento"), `CalculadoraDeSubstituto.tsx`, `BuscaDeSubstitutos.tsx` (chave de 44 px no toque); testes: `painelSubstitutos.test.tsx`, `e2e/busca-substitutos.spec.ts` | CA-2132, CA-2133, CA-2134 | T10 |
+| T12 | Validação da revisão | `npm run check`, `npm run e2e` (com `busca-substitutos` e `planejador`), `npm run test:csp` e as sondas do revisor (`scratchpad/revisao-substitutos/sondas`) | todos | T11 |
 
 ## Verificação de cada tarefa
 
@@ -56,6 +60,10 @@ opção do item aparece embaixo dele no plano, na folha, no link e no Word.
 - T8: `npm run check`, `npm run e2e`, `npm run test:csp`.
 
 ## Riscos e decisões para revisar
+
+0. **Revisão independente de 03/11/2026 (T9 a T12).** A D-1121 corrige a troca razoável na origem e **muda as trocas da
+   folha impressa** (a batata-doce volta a ser troca do arroz): ponto para a Mor. A D-1122 põe uma cópia do nome na
+   opção da base ampliada, além de segurar o plano até a base chegar.
 
 1. **A coluna do Resumo do dia desce enquanto o painel está aberto (D-1116).** Pôr o painel exatamente no lugar dela
    exigiria mexer em `AreaDeTrabalho.tsx`, que dois ramos em andamento estão mudando. `TelaPlano` ocupa as duas colunas
