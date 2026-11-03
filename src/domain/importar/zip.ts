@@ -6,9 +6,12 @@ const FIM_DO_DIRETORIO = 0x06054b50
 const ENTRADA_DO_DIRETORIO = 0x02014b50
 const CABECALHO_LOCAL = 0x04034b50
 
-/** DP-IP-3: o quanto uma entrada e todas juntas podem ter depois de abertas. */
-const TETO_POR_ENTRADA = 64 * 1024 * 1024
-const TETO_TOTAL = 128 * 1024 * 1024
+/**
+ * DP-IP-3 e D-920: o quanto uma entrada e todas juntas podem ter depois de abertas. Uma aba de 2.000 pacientes tem
+ * poucos megabytes; 16 MB de XML já levam o DOMParser, que é síncrono, a segurar a aba.
+ */
+export const TETO_POR_ENTRADA = 16 * 1024 * 1024
+const TETO_TOTAL = 48 * 1024 * 1024
 
 interface Entrada {
   readonly metodo: number
@@ -111,6 +114,8 @@ export async function abrirZip(bytes: Uint8Array, opcoes: OpcoesDoZip = {}): Pro
       if (guardado.length !== entrada.comprimido) throw new Error('Entrada cortada.')
       const restante = tetoTotal - aberto
       const teto = Math.min(tetoPorEntrada, restante)
+      // CB-929: a entrada que declara mais que o teto não é aberta. A que mente no tamanho para no teto ao abrir.
+      if (entrada.tamanho > teto) throw new Error('Entrada grande demais.')
       let conteudo: Uint8Array
       if (entrada.metodo === 0) {
         if (guardado.length > teto) throw new Error('Entrada grande demais.')

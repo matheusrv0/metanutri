@@ -1,5 +1,5 @@
 // O leitor de zip mínimo do XLSX (spec importar-pacientes, D-902, DP-IP-3).
-import { abrirZip } from './zip.ts'
+import { abrirZip, TETO_POR_ENTRADA } from './zip.ts'
 import { montarZip } from './montarArquivos.test-utils.ts'
 
 const texto = (bytes: Uint8Array | null) => (bytes === null ? null : new TextDecoder().decode(bytes))
@@ -36,6 +36,18 @@ describe('zip', () => {
   it('DP-IP-3: a entrada que abre maior que o teto para no teto, sem ler o resto', async () => {
     const zip = await abrirZip(await montarZip([{ nome: 'grande.xml', dados: 'a'.repeat(200_000) }]), { tetoPorEntrada: 50_000 })
     await expect(zip.ler('grande.xml')).rejects.toThrow()
+  })
+
+  it('CB-929: a entrada que declara mais que o teto é recusada sem ser aberta (D-920)', async () => {
+    const descomprimir = vi.spyOn(globalThis, 'DecompressionStream')
+    const zip = await abrirZip(await montarZip([{ nome: 'grande.xml', dados: 'a'.repeat(200_000) }]), { tetoPorEntrada: 50_000 })
+    await expect(zip.ler('grande.xml')).rejects.toThrow()
+    expect(descomprimir).not.toHaveBeenCalled()
+    descomprimir.mockRestore()
+  })
+
+  it('D-920: o teto de cada entrada é 16 MB', () => {
+    expect(TETO_POR_ENTRADA).toBe(16 * 1024 * 1024)
   })
 
   it('DP-IP-3: o teto total vale para a soma das entradas abertas', async () => {
