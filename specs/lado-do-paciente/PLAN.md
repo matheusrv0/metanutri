@@ -264,6 +264,16 @@ manifesto); `src/ui/publico/conta/TelaEntrar.tsx`, `CartaoMeusPlanos.tsx`, `Tela
 
 **LGPD (L).** `src/ui/publico/TelaPrivacidade.tsx`, `src/domain/legal.ts` e o teste deles.
 
+**Arquivos de apoio** (tocados pelas tarefas acima, no que cada uma precisa): `eslint.config.js` (as cores em
+hexadecimal só no HTML dos e-mails, que não lê token: `_shared/avisos/emails.ts`, como o `vite.config.ts`);
+`src/domain/dadosDoLink.ts` (o nome da nutricionista, o e-mail mascarado e os avisos do link aberto);
+`src/ui/missoes/endereco.ts` (o endereço `/p/<token>`); `src/domain/whatsapp.ts` e `src/ui/whatsapp/` (o texto do link
+e o WhatsApp de "Trocar o endereço"); `src/domain/retorno.ts` (o link do paciente ignora os substituídos);
+`src/ui/estado/contextoAcompanhamentos.ts`; `src/ui/publico/conta/turnstile.ts` e `usarVerificacao.ts` (a ação
+`recuperar-link`); `src/ui/painel/` (o selo do Painel ignora os substituídos); os testes que já existem e mudam com o
+link fixo e com a tela nova (`src/ui/missoes/*.test.tsx`, `e2e/missoes.spec.ts`, `e2e/marca-no-link.spec.ts`,
+`e2e/dieta*`); `testes/seguranca/funcoes.test.ts` (as funções novas do paciente).
+
 ## 5. Tarefas (uma por commit)
 
 Cada tarefa termina com os testes dela verdes (`npx vitest run <arquivos>`), lint e tipos dos arquivos tocados. A
