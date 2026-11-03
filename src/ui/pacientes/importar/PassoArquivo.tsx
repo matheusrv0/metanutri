@@ -122,7 +122,7 @@ export function PassoArquivo({ lendo, recusa, aoEscolher, aoCancelarLeitura, tit
             }}
           />
         </label>
-        <p className="max-w-[44ch] text-sm text-muted-foreground">CSV ou XLSX, até 2.000 linhas. O arquivo não sai deste computador.</p>
+        <p className="max-w-[52ch] text-sm text-muted-foreground">CSV ou XLSX, até 2.000 linhas. O arquivo não sai deste computador.</p>
         <div className="flex min-h-11 w-full max-w-md flex-col items-center justify-center">
           {lendo ? (
             <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">

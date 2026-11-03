@@ -45,7 +45,10 @@ export function LinhaDaImportacao({ agora }: LinhaDaImportacaoProps) {
             <FileSpreadsheet aria-hidden="true" className="size-4 shrink-0 text-primary" />
             <p className="min-w-0 flex-1 text-sm">
               <span className="font-semibold text-heading">{rotulo}</span>
-              <span className="numeros text-muted-foreground">{` · ${importacao.pacientes.toLocaleString('pt-BR')} ${importacao.pacientes === 1 ? 'paciente' : 'pacientes'}`}</span>
+              <span className="numeros text-muted-foreground max-sm:block">
+                <span className="max-sm:hidden"> · </span>
+                {`${importacao.pacientes.toLocaleString('pt-BR')} ${importacao.pacientes === 1 ? 'paciente' : 'pacientes'}`}
+              </span>
             </p>
             <Button variant="ghost" size="sm" aria-label={`Desfazer a ${rotulo.charAt(0).toLowerCase()}${rotulo.slice(1)}`} onClick={() => desfazer(importacao.id)}>
               <Undo2 aria-hidden="true" />

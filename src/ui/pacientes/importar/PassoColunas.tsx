@@ -21,7 +21,9 @@ interface PassoColunasProps {
   readonly tituloRef: Ref<HTMLHeadingElement>
 }
 
-const plural = (n: number, um: string, varios: string): string => `${n.toLocaleString('pt-BR')} ${n === 1 ? um : varios}`
+/** O espaço que não quebra: o número fica com a palavra dele ("8 reconhecidas" não se separa). */
+const ESPACO_FIRME = String.fromCharCode(160)
+const plural = (n: number, um: string, varios: string): string => `${n.toLocaleString('pt-BR')}${ESPACO_FIRME}${n === 1 ? um : varios}`
 
 /** As três colunas da tabela no computador; abaixo de 1024 px, duas linhas por coluna (CA-1948). */
 const GRADE = 'grid grid-cols-[minmax(0,1fr)] gap-x-4 gap-y-1.5 sm:grid-cols-[minmax(0,1fr)_minmax(0,13rem)] lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)_minmax(0,15rem)]'

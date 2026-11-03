@@ -48,7 +48,7 @@ describe('CA-1943: a linha das 24 horas em Pacientes', () => {
   it('o paciente da importação que já foi mudado fica, e a tela diz', async () => {
     const editada = { ...importado('p9', 'Fábio'), atualizadoEm: new Date(2026, 9, 29, 15, 0).toISOString() }
     const repo = montar([...cinco.slice(0, 2), editada], () => <TelaPacientes aoAbrir={vi.fn()} agora={new Date(2026, 9, 29, 16, 0)} />)
-    expect(screen.getByText(/· 3 pacientes/)).toBeInTheDocument()
+    expect(screen.getByText(/^Importação de hoje/).closest('div')).toHaveTextContent('· 3 pacientes')
     await userEvent.click(screen.getByRole('button', { name: /Desfazer a importação/ }))
     expect(screen.getByRole('status')).toHaveTextContent('Importação desfeita. 1 paciente ficou porque já foi mudado.')
     expect(repo.listar().map((p) => p.nome)).toEqual(['Fábio'])

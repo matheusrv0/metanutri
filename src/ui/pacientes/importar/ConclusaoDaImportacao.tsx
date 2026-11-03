@@ -83,6 +83,14 @@ export function ConclusaoDaImportacao({ resultado, aoDesfazer, aoVerPacientes, a
           </h2>
           <p className="text-sm text-muted-foreground">Entram sem plano e não contam como ativos.</p>
         </div>
+        {/* break-ui: com centenas de nomes, as ações ficam à vista, antes da lista. */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <Button variant="outline" onClick={aoDesfazer}>
+            <Undo2 aria-hidden="true" />
+            Desfazer
+          </Button>
+          <Button onClick={aoVerPacientes}>Ver pacientes</Button>
+        </div>
         <ul className="flex flex-col">
           {importados.slice(0, listaDosImportados.visiveis).map((paciente) => (
             <li key={paciente.id} className="flex min-h-11 flex-wrap items-center justify-between gap-x-3 gap-y-0.5 border-t border-border py-2 first:border-t-0">
@@ -94,13 +102,6 @@ export function ConclusaoDaImportacao({ resultado, aoDesfazer, aoVerPacientes, a
           ))}
         </ul>
         <MostrarMais restantes={listaDosImportados.restantes} aoClicar={listaDosImportados.mais} />
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
-          <Button variant="outline" onClick={aoDesfazer}>
-            <Undo2 aria-hidden="true" />
-            Desfazer
-          </Button>
-          <Button onClick={aoVerPacientes}>Ver pacientes</Button>
-        </div>
       </Card>
 
       {deFora.length > 0 ? (

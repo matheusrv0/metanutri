@@ -84,6 +84,18 @@ describe('CA-1929: a linha com "Sexo vazio"', () => {
   })
 })
 
+describe('break-ui: dois problemas na mesma linha', () => {
+  it('cada problema é um selo, e o motivo lido continua um só', async () => {
+    const { usuario } = montarTela()
+    await abrirPrevia(usuario, arquivo('dois.csv', 'Nome;Sexo;Nascimento\nAna Lima;Outro;não sei\n'))
+    const celula = within(linhaDe('Ana Lima')).getAllByRole('cell').at(-1) as HTMLElement
+    expect(celula.textContent).toBe('Data inválida · Sexo não reconhecido')
+    expect(within(celula).getByText('Data inválida')).toBeInTheDocument()
+    expect(within(celula).getByText('Sexo não reconhecido')).toBeInTheDocument()
+    expect(screen.getByRole('checkbox', { name: 'Importar Ana Lima' })).toHaveAccessibleDescription('Data inválida · Sexo não reconhecido')
+  })
+})
+
 describe('CA-1930: desmarcar uma linha pronta', () => {
   it('ela não entra e as contas mudam', async () => {
     const { usuario } = montarTela()

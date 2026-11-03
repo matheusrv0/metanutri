@@ -61,6 +61,21 @@ describe('CA-1933 e CA-1940: "Importar 5 pacientes"', () => {
   })
 })
 
+describe('break-ui: muitos importados', () => {
+  it('"Desfazer" e "Ver pacientes" vêm antes da lista: com 120 nomes, as ações não ficam no fim da página', async () => {
+    const { usuario } = montarTela()
+    await abrirPrevia(usuario, arquivo('muitos.csv', ['Nome;Sexo', ...Array.from({ length: 120 }, (_, i) => `Paciente ${i};F`)].join('\n')))
+    await importar(usuario, 120)
+    const regiao = await screen.findByRole('region', { name: '120 pacientes importados' })
+    const primeiroNome = within(regiao).getAllByRole('listitem')[0] as HTMLElement
+    for (const nome of ['Desfazer', 'Ver pacientes']) {
+      const botao = within(regiao).getByRole('button', { name: nome })
+      expect(botao.compareDocumentPosition(primeiroNome) & Node.DOCUMENT_POSITION_FOLLOWING, nome).toBeTruthy()
+    }
+    expect(within(regiao).getAllByRole('listitem')).toHaveLength(50)
+  })
+})
+
 describe('CA-1941 e CA-1942: "Desfazer"', () => {
   it('logo depois de importar, os 5 saem e a tela diz "Importação desfeita."', async () => {
     const { usuario, repoPacientes } = montarTela({ pacientes: NA_CONTA })

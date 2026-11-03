@@ -1,4 +1,4 @@
-import { memo, useId } from 'react'
+import { Fragment, memo, useId } from 'react'
 import { dataCompleta } from '@/domain/formatarData.ts'
 import type { Correcao, LinhaDaPrevia as Linha } from '@/domain/importar/previa.ts'
 import { Badge } from '@ds/componentes/display/badge.tsx'
@@ -95,9 +95,22 @@ export const LinhaDaPrevia = memo(function LinhaDaPrevia({ linha, aoMarcar, aoCo
         {linha.telefone || '—'}
       </span>
       <span role="cell" className="col-span-2 col-start-2 row-start-2 min-w-0 lg:col-span-1 lg:col-start-auto lg:row-start-auto">
-        <Badge id={idMotivo} variant={varianteDoMotivo(linha)} className="whitespace-normal">
-          {linha.motivo}
-        </Badge>
+        {/* break-ui: dois problemas são dois selos (a pílula de duas linhas não se lê); lidos como um motivo só. */}
+        <span id={idMotivo} className="flex flex-wrap gap-1">
+          {linha.motivo.split(' · ').map((parte, indice) => (
+            <Fragment key={parte}>
+              {indice > 0 ? (
+                <>
+                  {' '}
+                  <span className="sr-only">·</span>{' '}
+                </>
+              ) : null}
+              <Badge variant={varianteDoMotivo(linha)} className="whitespace-normal">
+                {parte}
+              </Badge>
+            </Fragment>
+          ))}
+        </span>
       </span>
     </div>
   )
