@@ -112,6 +112,25 @@ nutricionista vê na prévia saem do mesmo código.
 - **DP-ML-24** · **O cartão na Conta** vem logo depois de "Sua assinatura": a placa com a logo (ou "Sem logo"), a bolinha
   da cor com o nome e o código ("Padrão do MetaNutri" sem cor) e o botão "Editar".
 
+Decisões acrescentadas durante a implementação:
+
+- **DP-ML-25** · **A marca do link em peças próprias** (pedido do coordenador em 03/11/2026: outro agente vai redesenhar o
+  link): `TopoDoLink` (a placa ou a logo do MetaNutri), `RodapeDoLink` (o MetaNutri pequeno), `MolduraDoLink` (a raiz,
+  com a classe e as variáveis da cor) e `marcaNoLink.ts` (a cor, a aba escolhida, a barra e a logo que não abre). O
+  `LinkDoPaciente` só as monta; a tela não foi reorganizada.
+- **DP-ML-26** · **O termo é "logo"** nesta função (D-963, aprovado no protótipo). A guarda de "logo" no lugar de
+  "logotipo" (D-400 da `textos-e-promessas`) saiu de `src/textosDaFrente.test.ts`; a landing ("com o seu logotipo"), que
+  é do site, não muda nesta entrega.
+- **DP-ML-27** · **Texto alternativo**: no link, "Logo de quem montou seu plano" (o link não sabe o nome dela); em Sua
+  marca e no cartão da Conta, "Sua logo".
+- **DP-ML-28** · **A legenda de cada celular** traz o código da cor que ele usa ("Celular claro · #3F5F2A", "Celular
+  escuro · #7AB455"), como o protótipo aprovado; a SPEC (D-963) lista só "Celular claro" e "Celular escuro".
+- **DP-ML-29** · **Na prévia, as abas usam a altura do toque** (44 px) em qualquer largura: é um celular.
+- **DP-ML-30** · **Hexadecimal nos e2e da marca**: os dois arquivos desligam a regra de cor solta com o motivo escrito
+  (o código da cor é o dado do critério, digitado e conferido como a nutricionista o vê).
+- **DP-ML-31** · **O seletor de arquivo** é um `<input>` dentro de um `<label>` com a cara do botão suave do sistema
+  (`buttonVariants`): o `Button` com `asChild` não aceita o ícone de carregando junto do filho.
+
 ## Specs que mudam (SPEC, seção 5)
 
 Cada uma ganha uma nota curta "*Atualizado pela `marca-no-link` (29/10/2026)*" na decisão citada:
@@ -145,7 +164,10 @@ Cada uma ganha uma nota curta "*Atualizado pela `marca-no-link` (29/10/2026)*" n
 | `design-system/componentes/forms/EscolhaDeCor.tsx`, `CampoCor.tsx` | criar | T6 |
 | `design-system/componentes/marca.test.tsx` | criar | T6 |
 | `design-system/index.ts`, `LEIA-ME.md`, `componentes/LEIA-ME.md`, `vitrine/TelaDesignSystem.tsx`, `DESIGN.md` | alterar | T6 |
+| `src/domain/marcaNaNuvem.ts` | criar: `publicarMarca` (fora de `marca.ts`, sem import circular) | T5 |
 | `src/ui/missoes/LinkDoPaciente.tsx` | criar (a parte que desenha) | T7 |
+| `src/ui/missoes/TopoDoLink.tsx`, `RodapeDoLink.tsx`, `MolduraDoLink.tsx`, `marcaNoLink.ts` | criar: a marca em peças (DP-ML-25) | T7 |
+| `src/ui/marca/publicarNaNuvem.ts` | criar: o "Salvar" com o cliente do Supabase | T8 |
 | `src/ui/missoes/TelaMissoesPaciente.tsx` (+ teste novo `marcaNoLink.test.tsx`) | alterar | T7 |
 | `src/ui/marca/desenhistaDoNavegador.ts` | criar: o `<canvas>` | T8 |
 | `src/ui/marca/exemploDoLink.ts`, `PreviaDoLink.tsx`, `TelaSuaMarca.tsx`, `CartaoSuaMarca.tsx` (+ testes) | criar | T8 |

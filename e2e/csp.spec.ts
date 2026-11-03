@@ -100,12 +100,16 @@ test('CA-486: logo do perfil, impressão, Word e link do paciente sem nenhuma vi
   const violacoes = await vigiar(page)
   await abrirLimpo(page)
 
-  // A logo do perfil é `data:` (img-src).
-  await page.goto('/#/config')
-  await page.locator('input[type="file"][accept="image/*"]').setInputFiles({ name: 'logo.png', mimeType: 'image/png', buffer: PNG_1X1 })
-  const logo = page.getByRole('img', { name: 'Seu logotipo' })
+  // A logo do perfil é `data:` (img-src). Spec marca-no-link (CA-1977): ela entra por Sua marca, passa pelo <canvas> e
+  // continua `data:`, sem mudar a regra; a cor vai em estilo.
+  await page.goto('/#/conta/marca')
+  await page.getByLabel('Enviar logo').setInputFiles({ name: 'logo.png', mimeType: 'image/png', buffer: PNG_1X1 })
+  const logo = page.getByRole('img', { name: 'Sua logo' })
   await expect(logo).toBeVisible()
   expect(await logo.evaluate((el) => (el as HTMLImageElement).naturalWidth)).toBeGreaterThan(0)
+  await page.getByTitle('Verde-folha').click()
+  await page.getByRole('button', { name: 'Salvar' }).click()
+  await expect(page.getByText('Salvo', { exact: true })).toBeVisible()
 
   // Um plano com almoço.
   await page.goto('/#/painel')
