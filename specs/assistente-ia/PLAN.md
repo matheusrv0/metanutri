@@ -27,6 +27,7 @@ protótipo aprovado.
 | `supabase/functions/_shared/ia.ts` | T7 | novo: o núcleo (ordem do D-1316, limites, teto, custo, conclusão) |
 | `supabase/functions/_shared/iaFalsa.ts` | T7 | novo: a porta do modelo falso (D-1325) |
 | `src/data/servidorIa.test.ts` | T7 | novo: o núcleo com banco e modelo de mentira |
+| `supabase/functions/_shared/iaCusto.ts` | T13 | novo: a tabela de preços e a estimativa do corte (D-1329, D-1334) |
 | `src/data/servidorIaFalsos.test-utils.ts` | T3 a T7 | novo: o pedido de exemplo, o fluxo SSE, o banco e o modelo da IA de mentira (arquivo próprio, para não mexer no das outras funções) |
 | `supabase/functions/_shared/iaSupabase.ts` | T8 | novo: a porta do banco (RPCs do 016, perfil, assinatura, pedido de estudante) |
 | `supabase/functions/sugerir-plano/index.ts` | T8 | novo: a ligação no Deno |
@@ -133,16 +134,16 @@ protótipo aprovado.
 A revisão independente reprovou o servidor por 8 achados. Cada um vira decisão na SPEC (D-1329 a D-1336) e teste com o
 ID (CA-2382 a CA-2389, CB-1319), em commits novos:
 
-- [ ] **T13 — Custo do corte e cancelamento (D-1329, D-1330).** `_shared/iaCusto.ts` (novo: preços e estimativa do
+- [x] **T13 — Custo do corte e cancelamento (D-1329, D-1330).** `_shared/iaCusto.ts` (novo: preços e estimativa do
   corte); `iaAnthropic.ts` lê o fluxo aos poucos, junta o sinal do pedido ao prazo e devolve os tokens vistos e
   estimados; `ia.ts` anota `custo_estimado` e responde 499 no cancelamento; `index.ts` passa `req.signal`; o 016 ganha
   a coluna `custo_estimado` e o parâmetro em `concluir_uso_da_ia`.
-- [ ] **T14 — Limpeza de contato (D-1331).** `iaContrato.ts`: NFKC, e-mail escrito por extenso, @perfil, endereço web
+- [x] **T14 — Limpeza de contato (D-1331).** `iaContrato.ts`: NFKC, e-mail escrito por extenso, @perfil, endereço web
   sem http e sequência de 8 ou mais algarismos; os 21 casos da revisão viram teste.
-- [ ] **T15 — A porção depois da soma (D-1332).** `iaConferencia.ts` (conferência 8 no total; ajuste só no alimento
+- [x] **T15 — A porção depois da soma (D-1332).** `iaConferencia.ts` (conferência 8 no total; ajuste só no alimento
   com grupo e até 2.000 g) e `iaMudancas.ts` (soma no máximo do grupo, com a marca e o efeito).
-- [ ] **T16 — Modelo, preços e texto da IA (D-1333 a D-1335).**
-- [ ] **T17 — Os testes que faltavam:** CA-2300 (CORS e 405 pelo cabeçalho que a função devolve), CB-1300, CB-1306,
+- [x] **T16 — Modelo, preços e texto da IA (D-1333 a D-1335).**
+- [x] **T17 — Os testes que faltavam:** CA-2300 (CORS e 405 pelo cabeçalho que a função devolve), CB-1300, CB-1306,
   CB-1308, CB-1311 e CB-1317.
 
 **P2 (D-1336):** a função passa a conferir a autorização gravada na ficha antes de chamar a IA (tarefa nova da P2, junto
