@@ -6,14 +6,30 @@ const TABULACAO = 9
 const QUEBRA = 10
 const RETORNO = 13
 
-/** Sem os controles de U+0000 a U+001F (menos tabulação, quebra de linha e retorno), em NFC. */
+const SUBSTITUTO = String.fromCharCode(0xfffd)
+
+const ehAlto = (codigo: number): boolean => codigo >= 0xd800 && codigo <= 0xdbff
+const ehBaixo = (codigo: number): boolean => codigo >= 0xdc00 && codigo <= 0xdfff
+
+/**
+ * D-918 e CB-932: sem os controles de U+0000 a U+001F (menos tabulação, quebra de linha e retorno) e sem os não
+ * caracteres U+FFFE e U+FFFF; o meio par de surrogates vira U+FFFD (o que `toWellFormed` faz, que o alvo ES2022 não
+ * tem). O XML do Word não aceita nenhum deles. Em NFC.
+ */
 export function limparCelula(texto: string): string {
   let limpo = ''
   let inicio = 0
   for (let i = 0; i < texto.length; i += 1) {
     const codigo = texto.charCodeAt(i)
-    if (codigo >= 32 || codigo === TABULACAO || codigo === QUEBRA || codigo === RETORNO) continue
-    limpo += texto.slice(inicio, i)
+    if (codigo >= 32 && codigo < 0xd800) continue
+    if (codigo === TABULACAO || codigo === QUEBRA || codigo === RETORNO) continue
+    if (codigo > 0xdfff && codigo !== 0xfffe && codigo !== 0xffff) continue
+    if (ehAlto(codigo) && ehBaixo(texto.charCodeAt(i + 1))) {
+      i += 1
+      continue
+    }
+    // Controle e não caractere saem; o meio par de surrogates vira U+FFFD.
+    limpo += texto.slice(inicio, i) + (ehAlto(codigo) || ehBaixo(codigo) ? SUBSTITUTO : '')
     inicio = i + 1
   }
   limpo = inicio === 0 ? texto : limpo + texto.slice(inicio)

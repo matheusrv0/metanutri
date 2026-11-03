@@ -24,6 +24,14 @@ describe('limparCelula (D-918)', () => {
     expect(limparCelula(`a${todos}b`)).toBe(`a${c(9)}${c(10)}${c(13)}b`)
   })
 
+  it('CB-932: tira U+FFFE e U+FFFF, e o meio par de surrogates vira U+FFFD (o XML do Word não aceita nenhum)', () => {
+    expect(limparCelula(`Ana${c(0xffff)}Souza${c(0xfffe)}`)).toBe('AnaSouza')
+    expect(limparCelula(`a${c(0xd800)}b${c(0xdc00)}`)).toBe(`a${c(0xfffd)}b${c(0xfffd)}`)
+    // O par inteiro (um emoji) fica.
+    expect(limparCelula(`a${c(0xd83d)}${c(0xde00)}b`)).toBe(`a${c(0xd83d)}${c(0xde00)}b`)
+    expect(limparCelula(desfazerEscapeDoXlsx('Ana_xFFFF_Souza_xD800_'))).toBe(`AnaSouza${c(0xfffd)}`)
+  })
+
   it('CB-930: normaliza em NFC ("João" do Mac vira o "João" de sempre)', () => {
     const doMac = `Joa${TIL}o`
     expect(doMac).not.toBe('João')
