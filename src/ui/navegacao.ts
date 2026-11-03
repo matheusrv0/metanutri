@@ -43,6 +43,8 @@ export type Rota =
   | { readonly tela: 'casos' }
   | { readonly tela: 'planejador'; readonly casoId: string; readonly aba: AbaPlanejador }
   | { readonly tela: 'pacientes' }
+  // Spec importar-pacientes, D-900: importar pacientes de uma planilha.
+  | { readonly tela: 'importar-pacientes' }
   | { readonly tela: 'adesao' }
   // `campo`: a ficha abre com o cursor nele (o WhatsApp sem telefone leva até lá; spec whatsapp-e-retorno, CA-517).
   // 'suplementos': a ficha abre no cartão "Suplementação prescrita" (o Cobrir do ferro da gestante leva até lá, D-476).
@@ -91,7 +93,7 @@ export function lerRota(hash: string): Rota {
   if (tela === 'ajuda') return { tela: 'ajuda' }
   if (tela === 'design-system') return { tela: 'designsystem' }
   if (tela === 'casos') return { tela: 'casos' }
-  if (tela === 'pacientes') return { tela: 'pacientes' }
+  if (tela === 'pacientes') return id === 'importar' ? { tela: 'importar-pacientes' } : { tela: 'pacientes' }
   if (tela === 'adesao') return { tela: 'adesao' }
   if (tela === 'paciente' && id) return aba === 'telefone' || aba === 'suplementos' ? { tela: 'paciente', pacienteId: id, campo: aba } : { tela: 'paciente', pacienteId: id }
   if (tela === 'aprovacoes') return { tela: 'aprovacoes' }
@@ -144,6 +146,8 @@ export function escreverRota(rota: Rota): string {
       return '#/casos'
     case 'pacientes':
       return '#/pacientes'
+    case 'importar-pacientes':
+      return '#/pacientes/importar'
     case 'adesao':
       return '#/adesao'
     case 'paciente':

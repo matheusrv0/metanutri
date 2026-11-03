@@ -71,6 +71,8 @@ describe('SecaoPrecos', () => {
       'Plano impresso em PDF; aconselhamento e memorial em Word',
       'Seu logotipo nos documentos impressos',
       'Meus alimentos e receitas com cálculo',
+      // Spec importar-pacientes, CA-1949: o item novo nas três colunas.
+      'Importar pacientes de planilha (CSV ou Excel)',
     ])
     expect(within(tabela).queryByText('Suporte')).not.toBeInTheDocument()
     expect(within(tabela).queryAllByText('Não incluído')).toHaveLength(0)
