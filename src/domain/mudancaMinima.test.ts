@@ -79,3 +79,10 @@ describe('soma de dobras (spec antropometria-completa, revisão, CA-2081)', () =
     expect(compararSomasDeDobras([], [])).toBeNull()
   })
 })
+
+describe('proposta do app (spec antropometria-completa, revisão, CA-2083)', () => {
+  it('CA-2083: o ETM padrão sobre a média e o ETM da soma avisam que são proposta do app', () => {
+    expect(compararAvaliacoes(90, 88, 'outra')?.avisos.join(' ')).toMatch(/Proposta do app \(sem diretriz\)/)
+    expect(compararSomasDeDobras([10, 20], [12, 18])?.avisos.join(' ')).toMatch(/Proposta do app \(sem diretriz\)/)
+  })
+})

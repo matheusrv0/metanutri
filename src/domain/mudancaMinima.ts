@@ -1,6 +1,6 @@
 // Mudança mínima detectável entre duas avaliações (spec antropometria-completa, D-1035; pesquisa 4.7, R4.7a–f).
 // Na unidade da própria medida: mm nas dobras e na soma de dobras, cm nas circunferências.
-import { FONTES, type Fonte } from './fontesAntropometria.ts'
+import { FONTES, PROPOSTA_DO_APP, type Fonte } from './fontesAntropometria.ts'
 import { medidaValida } from './linhaDoResultado.ts'
 
 /** 1,96 × √2 ≈ 2,77: 95% de confiança, e a diferença carrega o erro das duas medidas (Weir 2005). */
@@ -52,7 +52,10 @@ export function compararAvaliacoes(
   // Igual à MMD conta como real (pesquisa 4.7); a folga de 1e-9 absorve o erro de ponto flutuante da subtração.
   const real = Math.abs(diferenca) + 1e-9 >= minima.mmd
   const avisos: string[] = []
-  if (minima.etmPadrao) avisos.push('Sem o ETM do avaliador: usado o limite da ISAK nível 1 (7,5% nas dobras; 1,5% nas outras medidas).')
+  if (minima.etmPadrao) {
+    avisos.push('Sem o ETM do avaliador: usado o limite da ISAK nível 1 (7,5% nas dobras; 1,5% nas outras medidas).')
+    avisos.push(`${PROPOSTA_DO_APP}: o limite é aplicado sobre a média das duas medidas.`)
+  }
   if (opcoes.avaliadoresDiferentes) avisos.push('Medido por outro avaliador: a comparação tem erro maior que o habitual.')
   return {
     ...minima,
@@ -86,7 +89,7 @@ export function compararSomasDeDobras(
   const diferenca = b.reduce<number>((t, v) => t + (v ?? 0), 0) - a.reduce<number>((t, v) => t + (v ?? 0), 0)
   // Igual à MMD conta como real; a folga de 1e-9 absorve o ponto flutuante (como em `compararAvaliacoes`).
   const real = Math.abs(diferenca) + 1e-9 >= mmd
-  const avisos = ['ETM da soma pela raiz da soma dos quadrados dos ETM das dobras (supõe erros independentes).']
+  const avisos = [`${PROPOSTA_DO_APP}: o ETM da soma é a raiz da soma dos quadrados dos ETM das dobras, supondo erros independentes.`]
   if (etmPadrao) avisos.push('Sem o ETM do avaliador: usado o limite da ISAK nível 1 (7,5% de cada dobra).')
   if (opcoes.avaliadoresDiferentes) avisos.push('Medido por outro avaliador: a comparação tem erro maior que o habitual.')
   return {

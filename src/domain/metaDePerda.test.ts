@@ -128,3 +128,9 @@ describe('déficit abaixo de IMC 25 (spec antropometria-completa, revisão, CA-2
     expect(mostrada(metaDePerda(caso({ pesoKg: 30 * 1.7 ** 2 }))).deficitKcal).toEqual({ min: 500, max: 750, teto: 1000 })
   })
 })
+
+describe('proposta do app (spec antropometria-completa, revisão, CA-2083)', () => {
+  it('CA-2083: o peso-alvo e o prazo mínimo avisam que são proposta do app', () => {
+    expect(mostrada(metaDePerda(caso(), { gorduraAlvoPct: 25 })).avisos.join(' ')).toMatch(/Proposta do app \(sem diretriz\)/)
+  })
+})

@@ -1,7 +1,7 @@
 // "Ponto de partida": gasto de repouso pela massa magra e proteína pelo objetivo (spec antropometria-completa, D-1031 e
 // D-1032). São sugestões para a nutricionista, com a fonte e a base de cálculo ao lado; nada vai sozinho ao paciente.
 import { calcularImc } from './antropometria.ts'
-import { FONTES, type Fonte } from './fontesAntropometria.ts'
+import { FONTES, PROPOSTA_DO_APP, type Fonte } from './fontesAntropometria.ts'
 import { CAMPOS } from './indicadoresCorporais.ts'
 import { gorduraDoCaso, inicioDoSobrepesoDeGallagher, type OpcoesDaGordura } from './indicadoresDeGordura.ts'
 import { medidaValida, naPrecisao, type CampoQueFalta } from './linhaDoResultado.ts'
@@ -12,7 +12,7 @@ import type { Caso } from './tipos.ts'
 export type PerfilDeAtividade = 'sedentario' | 'ativo' | 'atleta'
 
 /** Os selos de evidência da pesquisa (4.10, D17). */
-export type Evidencia = 'forte' | 'limitada' | 'calculo-do-app'
+export type Evidencia = 'forte' | 'limitada' | 'proposta-do-app'
 
 const GORDURA: CampoQueFalta = { campo: 'composicao', nome: 'o % de gordura (dobras ou bioimpedância)' }
 
@@ -64,7 +64,11 @@ export function gastoDeRepouso(caso: Caso, perfil: PerfilDeAtividade, opcoes: Op
   const [constante, b] = de1980 ? [500, 22] : [370, 21.6]
   const kcalDia = constante + b * g.massaMagraKg
   const erro = Math.sqrt((b * peso * ERRO_DO_PERCENTUAL) ** 2 + ERRO_DA_EQUACAO ** 2)
-  const avisos = ['Estimativa; a calorimetria indireta é o padrão.', 'O erro de ± 140 kcal/dia da equação é emprestado de ten Haaf e Weijs (2014).']
+  const avisos = [
+    'Estimativa; a calorimetria indireta é o padrão.',
+    'O erro de ± 140 kcal/dia da equação é emprestado de ten Haaf e Weijs (2014).',
+    `${PROPOSTA_DO_APP}: a faixa soma o erro das dobras ao da equação.`,
+  ]
   if (!de1980) avisos.unshift('Katch-McArdle é a mesma fórmula de Cunningham 1991.')
   if (perfil === 'atleta') avisos.push('Em atletas, todas as equações tendem a subestimar o gasto de repouso.')
   if (imc !== null && imc >= 30) avisos.push('IMC de 30 ou mais: compare com a equação por peso.')
@@ -149,7 +153,7 @@ function regraDaProteina(caso: Caso, entrada: EntradaDaProteina, imc: number | n
     return { motivo: SEM_NUMERO, falta: [] }
   }
   if (imc !== null && imc >= 30) {
-    return { faixa: { min: 1.2, max: 1.5 }, sobre: 'peso', fonte: FONTES.proteinaObesoProposta, evidencia: 'calculo-do-app', avisos: ['Nenhuma diretriz de consultório define a faixa nem o peso de referência na obesidade.'] }
+    return { faixa: { min: 1.2, max: 1.5 }, sobre: 'peso', fonte: FONTES.proteinaObesoProposta, evidencia: 'proposta-do-app', avisos: ['Nenhuma diretriz de consultório define a faixa nem o peso de referência na obesidade.'] }
   }
   // Revisão (item 8): Helms só para o atleta magro, a população de origem; o ativo e o atleta que não é magro, ISSN.
   const issn: Regra = { faixa: { min: 1.4, max: 2 }, sobre: 'peso', fonte: FONTES.issn2017, evidencia: 'limitada', avisos: [] }

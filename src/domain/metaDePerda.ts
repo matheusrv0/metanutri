@@ -1,7 +1,7 @@
 // Meta de perda em ritmo seguro e peso-alvo (spec antropometria-completa, D-1034; pesquisa 4.5, R4.5a–h). Pesos em kg,
 // % de gordura em pontos (25 = 25%), energia em kcal/dia. Sugestão para a nutricionista; nada vai sozinho ao paciente.
 import { calcularImc } from './antropometria.ts'
-import { FONTES, type Fonte } from './fontesAntropometria.ts'
+import { FONTES, PROPOSTA_DO_APP, type Fonte } from './fontesAntropometria.ts'
 import { gorduraDoCaso, type OpcoesDaGordura } from './indicadoresDeGordura.ts'
 import { medidaValida, naPrecisao } from './linhaDoResultado.ts'
 import { prioridadeDoCaso } from './prioridadeClinica.ts'
@@ -90,7 +90,10 @@ export function metaDePerda(caso: Caso, entrada: EntradaDaMeta = {}): ResultadoD
   const tetoKgPorSemana = Math.min(1, 0.01 * peso)
   const gordura = gorduraDoCaso(caso, entrada.gordura)
   const alvo = medidaValida(entrada.gorduraAlvoPct)
-  const avisos: string[] = ['A perda desacelera: cerca de metade do efeito de um corte calórico permanente aparece em ~1 ano (Hall 2011).']
+  const avisos: string[] = [
+    'A perda desacelera: cerca de metade do efeito de um corte calórico permanente aparece em ~1 ano (Hall 2011).',
+    `${PROPOSTA_DO_APP}: o prazo mínimo e o peso-alvo são contas a partir das fontes.`,
+  ]
   let alvoKg: PesoAlvo | null = null
   if (alvo !== null && gordura !== null) {
     alvoKg = pesoAlvo(peso, gordura.gorduraPct, alvo)

@@ -95,3 +95,12 @@ describe('idoso (spec antropometria-completa, revisão, CA-2071 e CA-2072)', () 
     expect(prioridadeDoCaso(idoso)?.riscoNutricional).toBe(true)
   })
 })
+
+describe('proposta do app (spec antropometria-completa, revisão, CA-2083)', () => {
+  it('CA-2083: a escala é marcada como proposta do app, e cada gatilho mantém a sua fonte', () => {
+    const p = nivelDePrioridade(entrada({ sexo: 'M', imc: 28, cinturaCm: 104, estaturaCm: 175 }))
+    expect(p.evidencia).toBe('proposta-do-app')
+    expect(p.avisos.join(' ')).toMatch(/Proposta do app \(sem diretriz\): a escala de 0 a 4 é uma classificação proposta pelo app/)
+    expect(p.gatilhos.every((g) => g.fonte.citacao.length > 20)).toBe(true)
+  })
+})

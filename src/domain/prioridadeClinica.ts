@@ -2,7 +2,7 @@
 // R4.4a e R4.4b). É "risco pelas medidas antropométricas", nunca o risco do paciente, que depende de doenças e outros
 // fatores (R4.4e). Regra montada pela pesquisa a partir de cortes de evidência forte (NHLBI, RCE 0,5) e limitada (Ross, NICE).
 import { calcularImc } from './antropometria.ts'
-import { FONTES, type Fonte } from './fontesAntropometria.ts'
+import { FONTES, PROPOSTA_DO_APP, type Fonte } from './fontesAntropometria.ts'
 import { ladoMedido } from './indicadoresCorporais.ts'
 import { medidaValida, naPrecisao } from './linhaDoResultado.ts'
 import type { Caso, PontoDaCintura, Sexo } from './tipos.ts'
@@ -30,6 +30,8 @@ export interface Prioridade {
   readonly gatilhos: readonly Gatilho[]
   /** IMC baixo pelo GLIM (R4.4b): vale mais que qualquer meta de perda de peso. */
   readonly riscoNutricional: boolean
+  /** A escala é uma classificação proposta pelo app; cada gatilho cita a sua fonte (D-1036 revista). */
+  readonly evidencia: 'proposta-do-app'
   readonly avisos: readonly string[]
 }
 
@@ -106,7 +108,8 @@ export function nivelDePrioridade(e: EntradaDaPrioridade): Prioridade {
   if (panturrilhaBaixa) avisos.push('Panturrilha abaixo do corte do idoso (redução de massa muscular): preservar ou recuperar a massa magra vem antes de qualquer meta de perda de peso.')
   if (idoso) avisos.push('Idoso: a faixa de referência do IMC é > 22 e < 27 kg/m² (SISVAN).')
   avisos.push('Risco pelas medidas antropométricas; o risco do paciente depende também de doenças e fatores de risco.')
-  return { nivel, rotulo: ROTULO_DA_PRIORIDADE[nivel], gatilhos, riscoNutricional, avisos }
+  avisos.push(`${PROPOSTA_DO_APP}: a escala de 0 a 4 é uma classificação proposta pelo app; junta cortes publicados, e cada gatilho cita a sua fonte.`)
+  return { nivel, rotulo: ROTULO_DA_PRIORIDADE[nivel], gatilhos, riscoNutricional, evidencia: 'proposta-do-app', avisos }
 }
 
 const PONTOS: readonly PontoDaCintura[] = ['ponto-medio', 'crista-iliaca', 'menor-perimetro']

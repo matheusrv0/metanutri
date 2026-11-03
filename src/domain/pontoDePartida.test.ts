@@ -115,7 +115,8 @@ describe('proteína pelo objetivo (spec antropometria-completa, CA-2062 a CA-206
     expect(r.base).toBeNull()
     expect(r.bases.map((b) => b.base)).toEqual(['peso-ideal', 'peso-ajustado', 'massa-magra'])
     expect(r.gDia).toBeNull()
-    expect(r.evidencia).toBe('calculo-do-app')
+    expect(r.evidencia).toBe('proposta-do-app')
+    expect(r.fonte.curta).toBe('Proposta do app (sem diretriz)')
     const comBase = proteinaPorObjetivo(obeso, { perfil: 'sedentario', base: 'peso-ajustado' })
     if (!comBase?.calculou) throw new Error('sem sugestão')
     expect(comBase.gDia?.min).toBeCloseTo(1.2 * 79.1875, 10)
@@ -165,5 +166,12 @@ describe('Helms só para o atleta magro (spec antropometria-completa, revisão, 
     const ativo = proteinaPorObjetivo(emagrecer(15), { perfil: 'ativo' })
     expect(ativo?.calculou && ativo.fonte.curta).toBe(FONTES.issn2017.curta)
     expect(proteinaPorObjetivo(emagrecer(15), { perfil: 'sedentario' })?.calculou).toBe(false)
+  })
+})
+
+describe('proposta do app (spec antropometria-completa, revisão, CA-2083)', () => {
+  it('CA-2083: a faixa do gasto de repouso avisa que é proposta do app', () => {
+    const r = gastoDeRepouso(caso({}, { gorduraPct: 25 }), 'sedentario')
+    expect(r?.calculou && r.avisos.join(' ')).toMatch(/Proposta do app \(sem diretriz\)/)
   })
 })

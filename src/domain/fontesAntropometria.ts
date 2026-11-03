@@ -12,6 +12,9 @@ export interface Fonte {
 
 const DO_JSON = referencias.fontes
 
+/** O rótulo curto do que é proposta nossa, sem diretriz que a sustente (spec antropometria-completa, D-1036 revista). */
+export const PROPOSTA_DO_APP = 'Proposta do app (sem diretriz)'
+
 export const FONTES = {
   // Já citadas pelo motor de hoje (`antropometria.json`).
   sisvan2011: { curta: 'SISVAN, 2011', citacao: DO_JSON.sisvan2011 },
@@ -167,7 +170,7 @@ export const FONTES = {
     citacao: 'Helms ER et al. J Int Soc Sports Nutr 2014. doi:10.1186/1550-2783-11-20 (preparação de fisiculturistas naturais).',
   },
   proteinaObesoProposta: {
-    curta: 'Cálculo do app',
+    curta: PROPOSTA_DO_APP,
     citacao:
       'Proposta da pesquisa de 03/11/2026 (seção 4.3): 1,2 a 1,5 g/kg do peso de referência no obeso em perda de peso fora da UTI. Nenhuma diretriz de consultório (ESPEN, ASPEN, ABESO) define a faixa nem o peso de referência.',
   },
