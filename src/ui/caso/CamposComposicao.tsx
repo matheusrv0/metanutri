@@ -25,11 +25,13 @@ const NOME_DOBRA: Record<string, string> = {
 /** Dobras cutâneas e bioimpedância, com o resultado e a fonte da equação usada. Mora dentro de um Recolhivel. */
 export function CamposComposicao({ caso, aoAlterar, comDobras = true }: CamposComposicaoProps) {
   const { composicao } = caso
-  const protocolo = PROTOCOLOS.find((p) => p.id === composicao.protocolo) ?? PROTOCOLOS[0]
+  // O protocolo gravado pode ser um dos 8 do motor (spec antropometria-telas, D-1434); a etapa 1 conhece os 2 de hoje.
+  const deHoje = PROTOCOLOS.find((p) => p.id === composicao.protocolo)
+  const protocolo = deHoje ?? PROTOCOLOS[0]
   const usadas = caso.sexo && protocolo ? protocolo.necessarias(caso.sexo) : []
 
   const resultado = calcularComposicao({
-    protocolo: composicao.protocolo,
+    protocolo: protocolo?.id ?? 'jackson-pollock-3',
     sexo: caso.sexo,
     idadeAnos: caso.idadeAnos,
     pesoKg: caso.pesoKg,
@@ -51,7 +53,7 @@ export function CamposComposicao({ caso, aoAlterar, comDobras = true }: CamposCo
           <GrupoOpcoes<ProtocoloDobras>
             rotulo="Protocolo de dobras"
             opcoes={PROTOCOLOS.map((p) => ({ valor: p.id, rotulo: p.nome }))}
-            valor={composicao.protocolo}
+            valor={deHoje?.id ?? null}
             aoEscolher={(protocoloNovo) => aoAlterar({ composicao: { ...composicao, protocolo: protocoloNovo } })}
           />
 

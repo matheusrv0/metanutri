@@ -1,5 +1,5 @@
 // Criação e validação do caso (SPEC CA-01, CB-01, CB-02, CB-02a, CB-02b, CB-03, CB-12).
-import type { Caso, ComposicaoCorporal, MedidasCorporais, ModoQuantidade } from './tipos.ts'
+import type { Caso, ComposicaoCorporal, DadosDaAvaliacao, MedidasCorporais, ModoQuantidade } from './tipos.ts'
 
 export type CampoCaso = keyof Caso
 
@@ -52,6 +52,25 @@ export const MEDIDAS_CORPORAIS_VAZIAS: MedidasCorporais = {
   semienvergaduraCm: null,
 }
 
+/** O que a tela da avaliação guarda, tudo vazio (spec antropometria-telas, CA-2464). */
+export const AVALIACAO_VAZIA: DadosDaAvaliacao = {
+  origemPesoEstatura: null,
+  modalidade: null,
+  adipometro: null,
+  maturacao: null,
+  grupoDoEstudo: null,
+  perfil: null,
+  imcAlvo: null,
+  gorduraAlvoPct: null,
+  baseDaProteina: null,
+  doencaRenalGrave: null,
+  diagnostico: null,
+  observacoesDaMedida: null,
+  fotosAutorizadasEm: null,
+  fotos: null,
+  anexos: null,
+}
+
 const DOBRAS_VAZIAS: ComposicaoCorporal['dobras'] = {
   tricipital: null,
   subescapular: null,
@@ -87,6 +106,7 @@ export function criarCasoVazio(id: string): Caso {
     circunferenciaCinturaCm: null,
     circunferenciaPanturrilhaCm: null,
     medidasCorporais: MEDIDAS_CORPORAIS_VAZIAS,
+    avaliacao: AVALIACAO_VAZIA,
     condicao: { tipo: 'nenhuma' },
     modo: 'completo',
     metaEnergiaKcal: null,
@@ -114,7 +134,8 @@ const grupoGravado = (valor: unknown): Readonly<Record<string, unknown>> =>
 
 /**
  * O plano gravado por uma versão anterior, completo (spec antropometria-completa, CA-2001): todo campo que ele não tem
- * vem do plano vazio, também dentro da composição, das dobras e das medidas corporais. Nenhum valor gravado muda, nem o
+ * vem do plano vazio, também dentro da composição, das dobras, das medidas corporais e da avaliação (spec
+ * antropometria-telas, CA-2464). Nenhum valor gravado muda, nem o
  * de uma versão mais nova que esta não conhece (CB-1008).
  */
 export function completarCasoLido(lido: Caso): Caso {
@@ -130,6 +151,8 @@ export function completarCasoLido(lido: Caso): Caso {
       dobras: { ...vazio.composicao.dobras, ...(grupoGravado(composicao['dobras']) as Partial<ComposicaoCorporal['dobras']>) },
     },
     medidasCorporais: { ...MEDIDAS_CORPORAIS_VAZIAS, ...(grupoGravado(lido.medidasCorporais) as Partial<MedidasCorporais>) },
+    // Spec antropometria-telas (CA-2464): o grupo da avaliação, completado como as medidas.
+    avaliacao: { ...AVALIACAO_VAZIA, ...(grupoGravado(lido.avaliacao) as Partial<DadosDaAvaliacao>) },
   }
 }
 
