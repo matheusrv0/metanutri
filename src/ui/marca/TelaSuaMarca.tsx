@@ -23,7 +23,7 @@ import { PreviaDoLink } from './PreviaDoLink.tsx'
 
 /** D-963: os textos da tela (mínimos, sem tagline). */
 const TEXTOS_DA_MARCA = {
-  ajudaDaLogo: 'PNG, JPG, WebP ou SVG, até 2 MB. Também sai no plano impresso.',
+  ajudaDaLogo: 'PNG, JPG, WebP ou SVG, até 2 MB. Também aparece no plano impresso.',
   valeParaTodos: 'Vale para todos os links já enviados.',
   sairSemSalvar: 'Sair sem salvar a marca?',
 } as const
