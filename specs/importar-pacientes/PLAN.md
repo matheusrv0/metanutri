@@ -173,6 +173,32 @@ comprimido com `CompressionStream`). **Nenhum SQL novo**: os pacientes sobem pel
   colunas estranhas, arquivo em Latin-1. Cada achado vira teste antes da correção, no arquivo da tela.
 - Depende de: T15.
 
+### Rodada da revisão (03/11/2026)
+
+A revisão independente reprovou por achados médios e baixos; a SPEC mudou primeiro (D-918 a D-922, CB-922 a CB-931,
+a limitação no CB-913). Um commit por item, com o teste antes:
+
+- **R1 · Ano de dois dígitos na detecção de mês/dia** (CA-1920, CB-931): `ordemDasDatas` recebe `hoje` e completa o
+  ano antes de conferir o dia. `valores.ts`, `previa.ts` (+ testes).
+- **R2 · XLSX sem DTD** (D-920, CB-928): `xml()` recusa `<!DOCTYPE` e `<!ENTITY` antes do `DOMParser`. `lerXlsx.ts`.
+- **R3 · Zip com 16 MB por entrada** (D-920, CB-929): recusa pelo tamanho declarado, antes de abrir. `zip.ts`.
+- **R4 · Colunas** (D-919, CB-926, CB-927): a referência além de XFD é ignorada; a análise fica com 200 colunas e diz
+  isso; o passo Colunas mostra o aviso. `lerXlsx.ts`, `colunas.ts`, `PassoColunas.tsx`. As sondas da revisão pedem a
+  planilha lida, não recusada: a decisão é cortar, não recusar.
+- **R5 · Linha que não avança** (D-921, CB-925). `lerXlsx.ts`.
+- **R6 · Limpeza das células** (D-918, CB-922, CB-923, CB-924, CB-930): `_xHHHH_`, controles e NFC.
+  `limparCelula.ts` (novo), `lerTexto.ts`, `lerXlsx.ts`.
+- **R7 · CA-1914 pela barra de passos:** "Prévia" fica desligado na barra sem coluna em Nome (o `Passos` ganha
+  `bloqueados`), e `irPara` barra também. A sonda da revisão espera o botão na barra: ele continua lá, desligado.
+  `Passos.tsx`, `TelaImportarPacientes.tsx`.
+- **R8 · Leitura em fatias de tempo** (DP-IP-32 revisto): a vez é dada a cada 12 ms de leitura, não a cada 500
+  registros; o relógio é injetável no teste. `lerPlanilha.ts`, `lerXlsx.ts`.
+- **R9 · Leitor de tela:** as contas da prévia são anunciadas só quando mudam, depois de uma pausa (não a cada tecla);
+  depois do "Desfazer" na linha das 24 horas, o foco vai para "Importação desfeita.". `PassoPrevia.tsx`,
+  `LinhaDaImportacao.tsx`.
+- **R10 · Textos** (D-922): saem "As outras ficam de fora." e "Sem sexo e sem data".
+- **R11 · CB-917 de verdade:** o teste exclui um importado à mão pelo repositório antes de desfazer.
+
 ### Validação (sem commit)
 `npm run check`, `npm run e2e`, `npm run test:csp`; o tamanho do pedaço novo e do principal, antes e depois
 (`npm run build:app`); prints de 360, 390 e 1440 px, nos dois temas, em
@@ -294,8 +320,8 @@ comprimido com `CompressionStream`). **Nenhum SQL novo**: os pacientes sobem pel
 - **DP-IP-30 · "Já está na conta" no clique** compara com `repositorio.listar()`, lido do armazenamento na hora, não
   com a lista que a tela tinha.
 - **DP-IP-31 · O sexo da linha** se corrige numa lista "—, F, M", como no protótipo.
-- **DP-IP-32 · Leitura em partes:** o CSV dá a vez ao navegador a cada 500 registros e o XLSX a cada 250 linhas, e
-  os dois param no "Cancelar", que volta ao passo Arquivo.
+- **DP-IP-32 · Leitura em partes:** o CSV e o XLSX dão a vez ao navegador a cada 12 ms de leitura (revisão de
+  03/11/2026; antes, a cada 500 registros e 250 linhas), e os dois param no "Cancelar", que volta ao passo Arquivo.
 - **DP-IP-33 · Nome próprio:** as palavras se separam por espaço, hífen e apóstrofo ("MARIA-CLARA D'ÁVILA" vira
   "Maria-Clara D'Ávila"); de, da, do, das, dos e "e" ficam em minúscula, menos na primeira palavra.
 - **DP-IP-34 · Telefone em notação científica** ("5,51199E+12"), só possível no CSV, entra vazio (CB-908).
