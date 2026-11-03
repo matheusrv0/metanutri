@@ -69,6 +69,14 @@ export function rotuloDaImportacao(em: string, agora: Date): string {
   return `Importação de ${dias >= 1 ? 'ontem' : 'hoje'}, ${HORA.format(quando)}`
 }
 
+const DIA = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+
+/** CA-1937: o dia da importação no relógio de quem usa ("Importado em 29/10/2026"). */
+export function diaDaImportacao(em: string): string {
+  const quando = new Date(em)
+  return Number.isNaN(quando.getTime()) ? '' : DIA.format(quando)
+}
+
 /** CA-1941 e CA-1942: o que a tela diz depois do "Desfazer". */
 export function textoDoDesfeito(ficaram: number): string {
   if (ficaram === 0) return 'Importação desfeita.'

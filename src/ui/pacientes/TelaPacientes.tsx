@@ -7,15 +7,21 @@ import { Button } from '@ds/componentes/forms/button.tsx'
 import { Card } from '@ds/componentes/display/card.tsx'
 import { useCasos } from '../estado/contextoCasos.ts'
 import { usePacientes } from '../estado/contextoPacientes.ts'
+import { useAgora } from '../estado/usarAgora.ts'
+import { LinhaDaImportacao } from './LinhaDaImportacao.tsx'
 
 interface TelaPacientesProps {
   readonly aoAbrir: (id: string) => void
   /** Spec importar-pacientes, D-900: abre "Importar planilha". Sem ele, o botão não aparece. */
   readonly aoImportar?: (() => void) | undefined
+  /** Injetável no teste; decide se a importação ainda está nas 24 horas do "Desfazer" (D-913). */
+  readonly agora?: Date | undefined
 }
 
 /** Lista de pacientes: quem é atendido, com quantos planos cada um tem. */
-export function TelaPacientes({ aoAbrir, aoImportar }: TelaPacientesProps) {
+export function TelaPacientes({ aoAbrir, aoImportar, agora: agoraFixo }: TelaPacientesProps) {
+  const agoraVivo = useAgora()
+  const agora = agoraFixo ?? agoraVivo
   const { pacientes, repositorio } = usePacientes()
   const { casos } = useCasos()
   const [busca, setBusca] = useState('')
@@ -43,6 +49,8 @@ export function TelaPacientes({ aoAbrir, aoImportar }: TelaPacientesProps) {
 
   return (
     <div className="flex flex-col gap-6">
+      {/* Spec importar-pacientes, D-913: por 24 horas, a importação recente com o "Desfazer". */}
+      <LinhaDaImportacao agora={agora} />
       {/* D-247 (spec revisao-geral-trabalho): o título da página já diz "Pacientes"; o cartão fica só com a busca. */}
       <Card className="gap-4">
         <div className="flex flex-wrap items-end gap-3">

@@ -6,7 +6,7 @@ import { CHAVE_MUDANCAS, lerMudancas, montarCopia } from '../copiaDaConta.ts'
 import { criarPacienteVazio, criarRepositorioPacientes, type Paciente } from '../pacientes.ts'
 import type { ArmazenamentoListavel } from '../persistencia.ts'
 import { observarMudancas } from '../sincronia.ts'
-import { importacoesRecentes, JANELA_DO_DESFAZER_MS, pacientesQueSaem, rotuloDaImportacao, textoDoDesfeito } from './importacao.ts'
+import { diaDaImportacao, importacoesRecentes, JANELA_DO_DESFAZER_MS, pacientesQueSaem, rotuloDaImportacao, textoDoDesfeito } from './importacao.ts'
 
 class Memoria implements ArmazenamentoListavel {
   readonly dados = new Map<string, string>()
@@ -88,6 +88,11 @@ describe('CA-1943: a linha das 24 horas em Pacientes', () => {
     const pacientes = ['a', 'b', 'c', 'd', 'e'].map((id) => importado(id))
     expect(importacoesRecentes(pacientes, [], [], agora)).toEqual([{ id: 'imp1', em: EM, pacientes: 5, desfaziveis: 5 }])
     expect(rotuloDaImportacao(EM, agora)).toBe('Importação de hoje, 14:32')
+  })
+
+  it('CA-1937: o dia da importação, no relógio de quem usa', () => {
+    expect(diaDaImportacao(new Date(2026, 9, 29, 23, 50).toISOString())).toBe('29/10/2026')
+    expect(diaDaImportacao('estragada')).toBe('')
   })
 
   it('de ontem, diz "de ontem"', () => {
