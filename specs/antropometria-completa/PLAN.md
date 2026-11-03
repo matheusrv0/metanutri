@@ -253,3 +253,33 @@ spec revista (com o motivo), teste que falha, código, `vitest` + `tsc` + `eslin
 | CA-2084 | `estimativas.test.ts` |
 | CA-2085 | `idadeNaoInformada.test.ts` |
 | CA-2087 | `duplicar.test.ts` |
+
+## Rodada 2 da revisão independente (03/11/2026)
+
+A rodada 2 achou um item obrigatório (o motivo da recusa das dobras não chegava à linha) e seis recomendações leves.
+Mesmo ciclo da rodada 1: spec revista (com o motivo), teste que falha, código, `vitest` + `tsc` + `eslint` de
+`src/domain`, um commit por tarefa. A tela (`src/ui`), o tipo gravado do protocolo (D-1007), `NA_DUPLICACAO` e a
+retrocompatibilidade não mudam; nenhuma dependência nova.
+
+| Tarefa | Item | Spec | Arquivos (além da SPEC) | CA |
+|---|---|---|---|---|
+| R16 | Obrigatório: o motivo da recusa chega à linha | D-1042 (nova), D-1015, D-1038, CA-2074, CB-1009 | `protocolosDeDobras.ts`, `indicadoresDeGordura.ts` (+ testes) | CA-2088 a CA-2090 |
+| R17 | a. Guedes e Faulkner: a linha média antes da anterior | D-1039, CA-2079 | `protocolosDeDobras.ts` (+ teste) | CA-2079 (revisto) |
+| R18 | b. O "magro" de Helms é proposta do app | D-1032, D-1036 | `pontoDePartida.ts` (+ teste) | CA-2091 |
+| R19 | c. Idoso com IMC de 27 a 29,99: a posição da ESPEN | D-1034, seção 7 | `metaDePerda.ts`, `fontesAntropometria.ts` (+ teste) | CA-2092 |
+| R20 | d. Soma perto do pico: o resultado satura | D-1038 | `protocolosDeDobras.ts` (+ teste) | CA-2093 |
+| R21 | e. Durnin & Womersley, homem de 17 a 29 anos: soma até 190 mm | D-1038 | `protocolosDeDobras.ts` (+ teste) | CA-2094 |
+| R22 | f. Jackson, Pollock e Ward: % fora de 4 a 44% | D-1038 | `protocolosDeDobras.ts` (+ teste) | CA-2095 |
+| R23 | Validação | este plano | `npm run check` e as sondas da rodada 2 (160 de 160) | todos |
+
+**Decisões desta rodada (para o dono revisar):**
+
+- R16: a recusa leva a causa e o que fazer. A causa do pico começa pelo nome do protocolo ("Petroski só vale até
+  115,5 mm de soma, o pico da equação"), para a mesma frase servir sozinha e dentro do aviso da bioimpedância. O
+  protocolo desconhecido (CB-1009) entra como recusa: a linha deixa de sair "—" sem motivo também nesse caso.
+- R20: o aviso de saturação vale para toda quadrática com pico (Jackson & Pollock e Petroski), não só para Petroski
+  mulher: a conta é a mesma (a 90% do pico, a inclinação já caiu a 10% da inicial). Petroski mulher é o caso que mais
+  importa, porque o pico (115,5 mm) fica dentro da faixa inferida da amostra (21 a 118 mm).
+- R22: a faixa de 4 a 44% é da amostra de Jackson, Pollock e Ward (1980), a mesma das duas equações das mulheres:
+  vale para JP 3 e JP 7 dobras na mulher.
+- R19: a posição da ESPEN no idoso com IMC de 27 a 29,99 vai para a Mor revisar (a meta continua; só ganha o aviso).
