@@ -23,6 +23,8 @@ interface CartaoMedidasProps {
   readonly pesoAnterior?: { readonly pesoKg: number; readonly data: string } | null | undefined
   /** D-356: o nível de atividade que a anamnese sugere. */
   readonly sugestaoNivel?: SugestaoDeNivel | null | undefined
+  /** Abre a avaliação completa, quando o protocolo é um dos que só ela desenha (spec antropometria-telas, D-1437). */
+  readonly aoAbrirAvaliacao?: (() => void) | undefined
 }
 
 const quilos = (kg: number) => String(kg).replace('.', ',')
@@ -32,7 +34,7 @@ const quilos = (kg: number) => String(kg).replace('.', ',')
  * (R8), panturrilha (R7), composição corporal recolhida, nível de atividade (com o lembrete da anamnese) e, na
  * prescrição rápida, a meta.
  */
-export function CartaoMedidas({ caso, aoAlterar, erros, idadeAssentada, pesoAnterior, sugestaoNivel }: CartaoMedidasProps) {
+export function CartaoMedidas({ caso, aoAlterar, erros, idadeAssentada, pesoAnterior, sugestaoNivel, aoAbrirAvaliacao }: CartaoMedidasProps) {
   const rapido = caso.modo === 'rapido'
   const assentado = { ...caso, idadeAnos: idadeAssentada }
   const campos = camposDaPessoa(assentado)
@@ -79,7 +81,7 @@ export function CartaoMedidas({ caso, aoAlterar, erros, idadeAssentada, pesoAnte
           resumo={comDobras ? 'Dobras ou bioimpedância. Opcional.' : 'Bioimpedância. Opcional.'}
           abertoInicial={temDadoDeComposicao(caso)}
         >
-          <CamposComposicao caso={caso} aoAlterar={aoAlterar} comDobras={comDobras} />
+          <CamposComposicao caso={caso} aoAlterar={aoAlterar} comDobras={comDobras} aoAbrirAvaliacao={aoAbrirAvaliacao} />
         </Recolhivel>
       )}
 

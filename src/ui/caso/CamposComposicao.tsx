@@ -1,7 +1,9 @@
 import { PROTOCOLOS, calcularComposicao, completarBioimpedancia, type ProtocoloDobras } from '@/domain/composicao.ts'
+import { protocoloPorId } from '@/domain/protocolosDeDobras.ts'
 import type { Caso } from '@/domain/tipos.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
 import { Fontes } from '@ds/componentes/display/Fontes.tsx'
+import { Button } from '@ds/componentes/forms/button.tsx'
 import { CampoNumero } from '@ds/componentes/forms/CampoNumero.tsx'
 import { CampoTexto } from '@ds/componentes/forms/CampoTexto.tsx'
 import { GrupoOpcoes } from '@ds/componentes/forms/GrupoOpcoes.tsx'
@@ -11,6 +13,8 @@ interface CamposComposicaoProps {
   readonly aoAlterar: (mudanca: Partial<Caso>) => void
   /** As dobras valem para a pessoa (spec ficha-unica, D-458); sem elas, só a bioimpedância. */
   readonly comDobras?: boolean | undefined
+  /** Abre a avaliação completa (spec antropometria-telas, D-1437). */
+  readonly aoAbrirAvaliacao?: (() => void) | undefined
 }
 
 const NOME_DOBRA: Record<string, string> = {
@@ -23,7 +27,7 @@ const NOME_DOBRA: Record<string, string> = {
 }
 
 /** Dobras cutâneas e bioimpedância, com o resultado e a fonte da equação usada. Mora dentro de um Recolhivel. */
-export function CamposComposicao({ caso, aoAlterar, comDobras = true }: CamposComposicaoProps) {
+export function CamposComposicao({ caso, aoAlterar, comDobras = true, aoAbrirAvaliacao }: CamposComposicaoProps) {
   const { composicao } = caso
   // O protocolo gravado pode ser um dos 8 do motor (spec antropometria-telas, D-1434); a etapa 1 conhece os 2 de hoje.
   const deHoje = PROTOCOLOS.find((p) => p.id === composicao.protocolo)
@@ -57,6 +61,22 @@ export function CamposComposicao({ caso, aoAlterar, comDobras = true }: CamposCo
             aoEscolher={(protocoloNovo) => aoAlterar({ composicao: { ...composicao, protocolo: protocoloNovo } })}
           />
 
+          {/* D-1437 (spec antropometria-telas): o protocolo que só a avaliação completa desenha não sai aqui pela metade. */}
+          {deHoje ? null : (
+            <div className="flex flex-col items-start gap-2">
+              <p className="text-sm text-foreground">{`Protocolo da avaliação completa: ${protocoloPorId(composicao.protocolo)?.nome ?? 'desconhecido nesta versão do app'}`}</p>
+              {aoAbrirAvaliacao ? (
+                <Button variant="lightprimary" size="sm" onClick={aoAbrirAvaliacao}>
+                  Abrir a avaliação completa
+                </Button>
+              ) : null}
+            </div>
+          )}
+        </>
+      ) : null}
+
+      {comDobras && deHoje ? (
+        <>
           <div className="grid gap-4 sm:grid-cols-3">
             {(Object.keys(NOME_DOBRA) as (keyof typeof composicao.dobras)[]).map((chave) => (
               <CampoNumero
