@@ -170,7 +170,22 @@ pesquisa por script para `src/data/frisancho.json`.
 
 ## Checklist de validação (T17)
 
-Preenchida no fim da implementação: cada CA com o arquivo de teste que o cobre.
+**Resultado (03/11/2026):** `npm run check` verde (lint, typecheck e 337 arquivos de teste, 6.308 testes; eram 324 e
+6.104 antes). Cada CA tem o seu teste, que cita o ID; os casos de borda CB-1000 a CB-1014 estão nos testes dos módulos
+que os tratam (CB-1015 é a natureza do motor: puro, sem exceção).
+
+**Divergências encontradas e resolvidas na implementação:**
+
+- `naPrecisao` usa o `Intl.NumberFormat`, não o `toFixed`: os dois discordam em valores como 1,005 (o teste do
+  CB-1004 cobre), e a tela formata com o `Intl`.
+- A soma parcial de dobras vai como detalhe numérico, não dentro da frase do aviso (CA-2035 ajustado na spec).
+- `composicao.ts` mudou só o tipo `Dobras` (10 dobras) para a tela de hoje compilar (T3, plano ajustado).
+- As citações levam só o que a pesquisa registra (autor, revista, ano, página inicial, DOI ou PMID); páginas finais e
+  títulos que não estavam nela saíram.
+- Na lactação, a proteína não vem (`null`) e a meta de perda vem com `mostra: false` e o motivo; a tela não mostra
+  nenhuma das duas (CB-1002).
+
+Cada CA com o arquivo de teste que o cobre:
 
 | CA | Teste |
 |---|---|
