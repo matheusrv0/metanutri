@@ -5,6 +5,8 @@ import { unidadeDo } from '@/domain/liquido.ts'
 import { medidaNaLinha } from '@/domain/medidaDoItem.ts'
 import type { Alimento, ItemPlano } from '@/domain/tipos.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
+import { cn } from '@/lib/utils'
+import { cardVariants } from '@ds/componentes/display/card.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { SeletorSegmentado } from '@ds/componentes/navigation/SeletorSegmentado.tsx'
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@ds/componentes/overlay/sheet.tsx'
@@ -105,7 +107,11 @@ export function PainelSubstitutos({ item, alimento, refeicao, aoLado, aoAdiciona
     <aside
       aria-labelledby={idTitulo}
       onKeyDown={aoTeclar}
-      className="sticky top-24 flex max-h-[calc(100dvh-7rem)] flex-col gap-4 self-start overflow-y-auto overscroll-contain rounded-3xl bg-card p-5 motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-right-2 motion-safe:duration-200"
+      // O cartão do sistema, preso ao rolar e com rolagem própria; entra com um deslize curto, só sem "reduzir movimento".
+      className={cn(
+        cardVariants(),
+        'sticky top-24 max-h-[calc(100dvh-7rem)] self-start overflow-y-auto overscroll-contain motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-right-2 motion-safe:duration-200',
+      )}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 flex-col gap-0.5">

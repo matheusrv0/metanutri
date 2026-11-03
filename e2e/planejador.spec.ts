@@ -62,15 +62,18 @@ test('do caso novo ao Word exportado', async ({ page }) => {
   await nomeCeia.fill('Lanche da noite')
   await expect(page.getByRole('textbox', { name: 'Nome da refeição Lanche da noite' })).toBeVisible()
 
-  // CA-41: substituto equivalente para o arroz
-  await page.getByRole('button', { name: /^Substituir Arroz/ }).click()
-  const janelaSubstituto = page.getByRole('dialog', { name: 'Substituto equivalente' })
-  const buscaSubstituto = janelaSubstituto.getByRole('combobox', { name: 'Escolher alimento substituto' })
+  // CA-41 e CA-2121 (spec busca-substitutos): o substituto equivalente para o arroz, no modo manual do painel
+  await page.getByRole('button', { name: 'Buscar substitutos para Arroz, tipo 1, cozido' }).click()
+  const painelSubstitutos = page.getByRole('complementary', { name: 'Substitutos de Arroz, tipo 1, cozido' })
+  await painelSubstitutos.getByRole('radio', { name: 'Adicionar manualmente' }).click()
+  const buscaSubstituto = painelSubstitutos.getByRole('combobox', { name: 'Escolher alimento substituto' })
   await buscaSubstituto.fill('batata inglesa cozida')
   await buscaSubstituto.press('Enter')
-  await expect(janelaSubstituto).toContainText('Diferença em relação ao alimento original')
-  await janelaSubstituto.getByRole('button', { name: 'Usar como substituto 1' }).click()
-  await expect(page.getByRole('tab', { name: 'Substituto 1 (1)' })).toBeVisible()
+  await expect(painelSubstitutos).toContainText('Diferença em relação ao alimento original')
+  await painelSubstitutos.getByRole('button', { name: 'Adicionar como opção' }).click()
+  await expect(page.getByRole('list', { name: 'Opções de Arroz, tipo 1, cozido' })).toContainText('Batata, inglesa, cozida')
+  await painelSubstitutos.getByRole('button', { name: 'Fechar substitutos' }).click()
+  await expect(painelSubstitutos).toBeHidden()
 
   // CA-38: cobrir o ferro pela etapa 3
   await page.getByRole('button', { name: /Próxima etapa: Adequação/ }).click()
