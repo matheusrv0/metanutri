@@ -59,6 +59,8 @@ export interface VarianteDoProtocolo {
   readonly somaNaAmostra: FaixaDaSoma | null
   /** Faixas da soma por idade, quando a fonte as separa; fora delas vale `somaNaAmostra` (D-1038 revista, rodada 2). */
   readonly somaNaAmostraPorIdade?: readonly FaixaDaSomaPorIdade[]
+  /** Faixa do % de gordura da amostra, quando a fonte a dá e não dá a da soma (rodada 2: Jackson, Pollock e Ward). */
+  readonly gorduraNaAmostra?: { readonly min: number; readonly max: number }
   /** Nas quadráticas, a soma (mm) em que a densidade para de cair; acima dela a equação inverte e não calcula (D-1038). */
   readonly picoDaSomaMm: number | null
 }
@@ -114,6 +116,8 @@ const pico = (q: Quadratica) => q.b / (2 * q.c)
 const JP_DOBRAS_7: readonly DobraCutanea[] = ['peitoral', 'axilarMedia', 'tricipital', 'subescapular', 'abdominal', 'suprailiacaAnt', 'coxa']
 const JP78 = 'homens dos EUA (Jackson e Pollock, 1978)'
 const JPW80 = 'mulheres dos EUA (Jackson, Pollock e Ward, 1980)'
+/** Rodada 2: a amostra de JPW80 (249 mulheres, a mesma das equações de 3 e de 7 dobras) foi de 4 a 44% de gordura (PMID 7402053). */
+const GORDURA_JPW80 = { min: 4, max: 44 } as const
 const SLAUGHTER = 'crianças e adolescentes (Slaughter et al., 1988)'
 // D-1039: a suprailíaca de cada protocolo vem pela linha: `suprailiacaAnt` (JP, ACSM), `suprailiacaMed` (D&W; Petroski,
 // que seguiu Harrison 1991) e `suprailiaca` quando a pesquisa não registra a linha (Guedes, Faulkner; rodada 2: a média
@@ -127,7 +131,7 @@ export const PROTOCOLOS_DE_DOBRAS: readonly Protocolo[] = [
     nome: 'Jackson & Pollock, 3 dobras',
     porSexo: {
       M: { populacao: JP78, idade: { min: 18, max: 61 }, dobras: ['peitoral', 'abdominal', 'coxa'], entradas: ['idade'], forma: 'quadratica', saida: 'densidade', fonte: FONTES.jacksonPollock1978, somaNaAmostra: publicada(14, 118), picoDaSomaMm: pico(QUADRATICAS.jp3M) },
-      F: { populacao: JPW80, idade: { min: 18, max: 55 }, dobras: ['tricipital', 'suprailiacaAnt', 'coxa'], entradas: ['idade'], forma: 'quadratica', saida: 'densidade', fonte: FONTES.jacksonPollockWard1980, somaNaAmostra: null, picoDaSomaMm: pico(QUADRATICAS.jp3F) },
+      F: { populacao: JPW80, idade: { min: 18, max: 55 }, dobras: ['tricipital', 'suprailiacaAnt', 'coxa'], entradas: ['idade'], forma: 'quadratica', saida: 'densidade', fonte: FONTES.jacksonPollockWard1980, somaNaAmostra: null, gorduraNaAmostra: GORDURA_JPW80, picoDaSomaMm: pico(QUADRATICAS.jp3F) },
     },
     aviso: null,
   },
@@ -136,7 +140,7 @@ export const PROTOCOLOS_DE_DOBRAS: readonly Protocolo[] = [
     nome: 'Jackson & Pollock, 7 dobras',
     porSexo: {
       M: { populacao: JP78, idade: { min: 18, max: 61 }, dobras: JP_DOBRAS_7, entradas: ['idade'], forma: 'quadratica', saida: 'densidade', fonte: FONTES.jacksonPollock1978, somaNaAmostra: publicada(32, 272), picoDaSomaMm: pico(QUADRATICAS.jp7M) },
-      F: { populacao: JPW80, idade: { min: 18, max: 55 }, dobras: JP_DOBRAS_7, entradas: ['idade'], forma: 'quadratica', saida: 'densidade', fonte: FONTES.jacksonPollockWard1980, somaNaAmostra: null, picoDaSomaMm: pico(QUADRATICAS.jp7F) },
+      F: { populacao: JPW80, idade: { min: 18, max: 55 }, dobras: JP_DOBRAS_7, entradas: ['idade'], forma: 'quadratica', saida: 'densidade', fonte: FONTES.jacksonPollockWard1980, somaNaAmostra: null, gorduraNaAmostra: GORDURA_JPW80, picoDaSomaMm: pico(QUADRATICAS.jp7F) },
     },
     aviso: null,
   },
@@ -566,6 +570,15 @@ function avisosDaSoma(variante: VarianteDoProtocolo, soma: number, idadeAnos: nu
   return avisos
 }
 
+/** Rodada 2: o % calculado fora da faixa da amostra (só onde a fonte a dá) calcula e avisa. */
+function avisosDoPercentual(variante: VarianteDoProtocolo, gorduraPct: number): string[] {
+  const faixa = variante.gorduraNaAmostra
+  if (!faixa) return []
+  const exibido = naPrecisao(gorduraPct, 1)
+  if (exibido >= faixa.min && exibido <= faixa.max) return []
+  return [`O % calculado está fora da faixa da amostra da equação (${emMm(faixa.min, 0)}% a ${emMm(faixa.max, 0)}%).`]
+}
+
 const frase = (itens: readonly string[]) => (itens.length <= 1 ? itens.join('') : `${itens.slice(0, -1).join(', ')} e ${itens[itens.length - 1] ?? ''}`)
 
 function avisosDoResultado(protocolo: Protocolo, variante: VarianteDoProtocolo, paciente: PacienteDoProtocolo, opcoes: OpcoesDoProtocolo, entradas: readonly EntradaDaEquacao[]): string[] {
@@ -639,6 +652,7 @@ export function calcularProtocolo(id: IdProtocolo, pacienteInformado: PacienteDo
     avisos: [
       ...ap.avisos,
       ...avisosDaSoma(variante, soma, paciente.idadeAnos),
+      ...avisosDoPercentual(variante, gorduraPct),
       ...(conversao === 'lohman' ? [AVISO_DE_LOHMAN] : []),
       ...avisosDoResultado(protocolo, variante, paciente, opcoes, entradasPedidas(protocolo, variante, sexo, soma, opcoes)),
     ],

@@ -645,3 +645,32 @@ describe('Durnin & Womersley: faixa da soma por idade (spec antropometria-comple
     expect(avisos('F', 25, 200)).toEqual([])
   })
 })
+
+describe('Jackson, Pollock e Ward: % fora da amostra (spec antropometria-completa, rodada 2, CA-2095)', () => {
+  const AVISO = 'O % calculado está fora da faixa da amostra da equação (4% a 44%).'
+  const jp3 = (sexo: Sexo, soma: number) => {
+    const d = sexo === 'F' ? { tricipital: soma / 3, suprailiacaAnt: soma / 3, coxa: soma / 3 } : { peitoral: soma / 3, abdominal: soma / 3, coxa: soma / 3 }
+    return calculado(calcularProtocolo('jackson-pollock-3', paciente(sexo, 30), dobras(d)))
+  }
+
+  it('CA-2095: JP 3 dobras na mulher avisa acima de 44% e abaixo de 4%, e calcula', () => {
+    const alto = jp3('F', 150)
+    expect(naPrecisao(alto.gorduraPct, 1)).toBe(45.9)
+    expect(alto.avisos).toContain(AVISO)
+    const baixo = jp3('F', 3)
+    expect(naPrecisao(baixo.gorduraPct, 1)).toBe(3.1)
+    expect(baixo.avisos).toContain(AVISO)
+    const dentro = jp3('F', 70)
+    expect(naPrecisao(dentro.gorduraPct, 2)).toBe(27.3)
+    expect(dentro.avisos).not.toContain(AVISO)
+  })
+
+  it('CA-2095: JP 7 dobras na mulher (a mesma amostra) também avisa; no homem, não', () => {
+    const sete = calculado(calcularProtocolo('jackson-pollock-7', paciente('F', 30), dobras(Object.fromEntries(['peitoral', 'axilarMedia', 'tricipital', 'subescapular', 'abdominal', 'suprailiacaAnt', 'coxa'].map((d) => [d, 320 / 7])))))
+    expect(naPrecisao(sete.gorduraPct, 1)).toBe(44.9)
+    expect(sete.avisos).toContain(AVISO)
+    const homem = jp3('M', 200)
+    expect(naPrecisao(homem.gorduraPct, 1)).toBe(44.8)
+    expect(homem.avisos.join(' ')).not.toMatch(/% calculado/)
+  })
+})
