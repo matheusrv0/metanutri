@@ -97,9 +97,10 @@ test.describe('o link do paciente com a marca', () => {
     expect(await cores(page.getByRole('tab', { name: 'Missões', selected: true }))).toEqual({ fundo: 'rgb(122, 180, 85)', texto: 'rgb(16, 26, 29)' })
     expect((await cores(page.getByRole('img', { name: LOGO_DELA }).locator('xpath=..'))).fundo).toBe('rgb(255, 255, 255)')
 
-    // CB-958: ao imprimir, o app sai do escuro (D-240) e a cor volta à do claro.
+    // CB-958: ao imprimir, o app sai do escuro (D-240) e a cor volta à do claro. DP-ML-39: a aba tem transição de cor
+    // (150 ms); o `toHaveCSS` espera ela acabar, a leitura única às vezes pegava a cor velha.
     await page.evaluate(() => window.dispatchEvent(new Event('beforeprint')))
-    expect((await cores(page.getByRole('tab', { name: 'Missões', selected: true }))).fundo).toBe('rgb(63, 95, 42)')
+    await expect(page.getByRole('tab', { name: 'Missões', selected: true })).toHaveCSS('background-color', 'rgb(63, 95, 42)')
   })
 
   test('CA-1967 e CA-1968: sem marca, o link de hoje; salva a marca, o mesmo link mostra a marca ao abrir de novo', async ({ page }) => {
