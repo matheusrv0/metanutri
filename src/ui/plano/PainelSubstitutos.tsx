@@ -16,6 +16,13 @@ import { CalculadoraDeSubstituto } from './CalculadoraDeSubstituto.tsx'
 
 type Modo = 'buscar' | 'manual'
 
+/** O Esc dentro de um campo (a entrada rápida, a lista "Outro nutriente") é do campo, não do painel (D-1116, CA-2133). */
+const ehCampo = (alvo: EventTarget | null): boolean =>
+  alvo instanceof HTMLInputElement ||
+  alvo instanceof HTMLSelectElement ||
+  alvo instanceof HTMLTextAreaElement ||
+  (alvo instanceof HTMLElement && alvo.closest('[role="listbox"], [role="combobox"]') !== null)
+
 interface PainelSubstitutosProps {
   readonly item: ItemPlano
   readonly alimento: Alimento
@@ -84,7 +91,14 @@ export function PainelSubstitutos({ item, alimento, refeicao, aoLado, aoAdiciona
   if (!aoLado) {
     return (
       <Sheet open onOpenChange={(aberto) => !aberto && aoFechar()}>
-        <SheetContent side="bottom" className="gap-0 p-0">
+        <SheetContent
+          side="bottom"
+          className="gap-0 p-0"
+          // CA-2133 (revisão, achado 6): na gaveta também, o Esc num campo limpa o campo e não fecha a gaveta.
+          onEscapeKeyDown={(e) => {
+            if (ehCampo(e.target)) e.preventDefault()
+          }}
+        >
           <div className="flex min-h-0 flex-col gap-4 overflow-y-auto px-5 pb-6 pt-5">
             {/* O "Fechar" tem 44 px no celular (D-246): o título termina antes dele, com folga. */}
             <div className="flex flex-col gap-1 pr-8 max-sm:pr-11">
@@ -105,8 +119,7 @@ export function PainelSubstitutos({ item, alimento, refeicao, aoLado, aoAdiciona
   const aoTeclar = (e: KeyboardEvent<HTMLElement>) => {
     // Esc fecha o painel, como a gaveta; a janela Comparar, aberta por cima, trata o Esc dela antes. Num campo, o Esc é
     // do campo (a entrada rápida limpa o que foi digitado), não do painel.
-    const noCampo = e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement || e.target instanceof HTMLTextAreaElement
-    if (e.key === 'Escape' && !e.defaultPrevented && !noCampo) aoFechar()
+    if (e.key === 'Escape' && !e.defaultPrevented && !ehCampo(e.target)) aoFechar()
   }
 
   return (

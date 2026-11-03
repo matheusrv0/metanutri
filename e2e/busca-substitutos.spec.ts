@@ -67,7 +67,10 @@ test.describe('tela larga (1440 px): o painel ao lado das refeições', () => {
     // CA-2120: a polenta como opção.
     await painel.getByRole('button', { name: 'Adicionar como opção: Polenta, pré-cozida' }).click()
     await expect(page.getByRole('list', { name: `Opções de ${ARROZ}` })).toContainText('Polenta, pré-cozida')
-    await expect(polenta.getByRole('button', { name: 'Já é opção' })).toBeDisabled()
+    // CA-2132: desligado, mas focável (aria-disabled), e o foco continua nele.
+    const jaEOpcao = polenta.getByRole('button', { name: 'Já é opção' })
+    await expect(jaEOpcao).toHaveAttribute('aria-disabled', 'true')
+    await expect(jaEOpcao).toBeFocused()
 
     // CA-2118: substituir pela batata; CA-2119: desfazer.
     await painel.getByRole('button', { name: 'Substituir por Batata, inglesa, cozida' }).click()
@@ -114,6 +117,8 @@ test.describe('celular e tablet: a gaveta (D-1116, D-800, D-802)', () => {
         gaveta.getByRole('button', { name: 'Buscar alimentos' }),
         gaveta.getByRole('button', { name: 'Substituir por Polenta, pré-cozida' }),
         gaveta.getByRole('button', { name: 'Adicionar como opção: Polenta, pré-cozida' }),
+        // A chave "Só do mesmo grupo": a linha inteira é o alvo, com 44 px também no tablet com dedo.
+        gaveta.locator('label').filter({ hasText: 'Só do mesmo grupo' }),
       ]) {
         const b = await alvo.boundingBox()
         expect(b?.height ?? 0, await alvo.textContent()).toBeGreaterThanOrEqual(44)

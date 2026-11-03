@@ -153,7 +153,7 @@ export function BuscaDeSubstitutos({ item, alimento, restricoes, aoAdicionarOpca
           </div>
         ) : null}
 
-        <label className="flex items-center gap-3 text-sm text-foreground max-sm:min-h-11">
+        <label className="flex items-center gap-3 text-sm text-foreground max-sm:min-h-11 sm:pointer-coarse:min-h-11">
           <Switch checked={mesmoGrupo} onCheckedChange={setMesmoGrupo} aria-label={`Só do mesmo grupo: ${grupo}`} />
           <span className="min-w-0 break-words">{`Só do mesmo grupo: ${grupo}`}</span>
         </label>

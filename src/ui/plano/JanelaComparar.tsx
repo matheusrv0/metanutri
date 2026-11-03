@@ -133,7 +133,9 @@ export function JanelaComparar({ original, substituto, escolhidos, vaga, aoAdici
           <Button variant="outline" disabled={vaga !== 'livre'} onClick={aoAdicionarOpcao}>
             {rotuloDaOpcao(vaga)}
           </Button>
-          <Button onClick={aoSubstituir}>Substituir</Button>
+          <Button disabled={vaga === 'e-o-item'} onClick={aoSubstituir}>
+            Substituir
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

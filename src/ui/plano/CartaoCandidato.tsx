@@ -50,9 +50,10 @@ export function CartaoCandidato({ candidato, vaga, aoComparar, aoAdicionarOpcao,
         <Button
           variant="outline"
           size="sm"
-          className="max-sm:flex-1"
-          disabled={vaga !== 'livre'}
-          onClick={aoAdicionarOpcao}
+          // CA-2132 (revisão, leve 2): desligado continua focável, para o foco não cair no corpo da página depois do clique.
+          className="max-sm:flex-1 aria-disabled:pointer-events-none aria-disabled:opacity-50"
+          aria-disabled={vaga !== 'livre' || undefined}
+          onClick={() => vaga === 'livre' && aoAdicionarOpcao()}
           aria-label={vaga === 'livre' ? `Adicionar como opção: ${alimento.descricao}` : undefined}
         >
           {rotuloDaOpcao(vaga)}

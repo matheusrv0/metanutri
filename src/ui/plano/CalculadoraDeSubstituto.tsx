@@ -111,7 +111,13 @@ export function CalculadoraDeSubstituto({ item, alimento, aoAdicionarOpcao, aoSu
               >
                 Comparar
               </Button>
-              <Button variant="outline" size="sm" className="max-sm:flex-1" disabled={vaga !== 'livre'} onClick={() => aoAdicionarOpcao(escolha)}>
+              <Button
+                variant="outline"
+                size="sm"
+                className="max-sm:flex-1 aria-disabled:pointer-events-none aria-disabled:opacity-50"
+                aria-disabled={vaga !== 'livre' || undefined}
+                onClick={() => vaga === 'livre' && aoAdicionarOpcao(escolha)}
+              >
                 {rotuloDaOpcao(vaga)}
               </Button>
               <Button variant="outline" size="sm" className="max-sm:flex-1" disabled={vaga === 'e-o-item'} onClick={() => aoSubstituir(escolha)}>
