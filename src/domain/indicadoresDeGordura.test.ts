@@ -1,7 +1,7 @@
 import { criarCasoVazio } from './caso.ts'
 import { FONTES } from './fontesAntropometria.ts'
-import { gorduraDoCaso, linhaGordura, linhaMassaGorda, linhaMassaMagra, linhaSomaDeDobras } from './indicadoresDeGordura.ts'
-import { calcularProtocolo } from './protocolosDeDobras.ts'
+import { gorduraDoCaso, linhaGordura, linhaMassaGorda, linhaMassaMagra, linhaSomaDeDobras, type OpcoesDaGordura } from './indicadoresDeGordura.ts'
+import { calcularProtocolo, type IdProtocolo } from './protocolosDeDobras.ts'
 import type { Caso, ComposicaoCorporal } from './tipos.ts'
 
 type Dobras = ComposicaoCorporal['dobras']
@@ -123,5 +123,68 @@ describe('suprailíaca pela linha na soma de dobras (spec antropometria-completa
     const l = linhaSomaDeDobras(caso({ sexo: 'F' }, { tricipital: 25, suprailiacaMed: 20, coxa: 25 }))
     expect(l?.valor).toBe(70)
     expect(l?.avisos.join(' ')).toMatch(/deslocado/)
+  })
+})
+
+describe('o motivo da recusa chega à linha (spec antropometria-completa, rodada 2, CA-2088 a CA-2090)', () => {
+  const PICO = 'Petroski só vale até 115,5 mm de soma, o pico da equação'
+  /** Petroski mulher com Σ 140 mm, acima do pico de 115,5. */
+  const acimaDoPico = (bio: Partial<ComposicaoCorporal['bioimpedancia']> = {}) =>
+    caso({ sexo: 'F', idadeAnos: 30, pesoKg: 90, estaturaCm: 160 }, { subescapular: 45, suprailiacaMed: 45, coxa: 50 }, bio)
+  const tresLinhas = (c: Caso, opcoes: OpcoesDaGordura) => [linhaGordura(c, opcoes), linhaMassaGorda(c, opcoes), linhaMassaMagra(c, opcoes)]
+  const petroski = { protocolo: 'petroski' } as const
+
+  it('CA-2088: sem bioimpedância, gordura e massas vêm sem valor, sem falta e com o motivo do pico', () => {
+    for (const l of tresLinhas(acimaDoPico(), petroski)) {
+      expect.soft(l?.valor, l?.id).toBeNull()
+      expect.soft(l?.falta, l?.id).toEqual([])
+      expect.soft(l?.avisos, l?.id).toEqual([`${PICO}: escolha outro protocolo ou informe o % da bioimpedância.`])
+    }
+  })
+
+  it('CA-2089: com a bioimpedância no lugar, as três linhas dizem que as dobras não calcularam', () => {
+    const c = acimaDoPico({ gorduraPct: 35 })
+    const [gordura, massaGorda, massaMagra] = tresLinhas(c, petroski)
+    const aviso = `As dobras não calcularam (${PICO}): usado o % da bioimpedância.`
+    expect(gordura?.valor).toBe(35)
+    expect(gordura?.detalhes).toContainEqual({ tipo: 'texto', rotulo: 'Método', texto: 'Bioimpedância' })
+    expect(gordura?.avisos).toContain(aviso)
+    expect(massaGorda?.valor).toBeCloseTo(31.5, 10)
+    expect(massaGorda?.avisos).toEqual([aviso])
+    expect(massaMagra?.valor).toBeCloseTo(58.5, 10)
+    expect(massaMagra?.avisos).toEqual([aviso])
+    expect(gorduraDoCaso(c, petroski)?.dobrasRecusadas?.causa).toBe(PICO)
+  })
+
+  it('CA-2089: só faltando dobras, a bioimpedância entra sem esse aviso', () => {
+    const c = caso({ sexo: 'F', idadeAnos: 30, pesoKg: 90, estaturaCm: 160 }, { subescapular: 45 }, { gorduraPct: 35 })
+    for (const l of tresLinhas(c, petroski)) {
+      expect.soft(l?.valor, l?.id).not.toBeNull()
+      expect.soft(l?.avisos.join(' '), l?.id).not.toMatch(/não calcularam/)
+    }
+    expect(gorduraDoCaso(c, petroski)?.dobrasRecusadas).toBeNull()
+  })
+
+  it('CA-2090: resultado implausível e Lohman abaixo de 7 anos, cada um com o seu motivo nas três linhas', () => {
+    const implausivel = caso({ idadeAnos: 12 }, { tricipital: 60, subescapular: 60 })
+    for (const l of tresLinhas(implausivel, { protocolo: 'slaughter-triceps-subescapular' })) {
+      expect.soft(l?.avisos, l?.id).toEqual(['O % calculado fica fora do plausível: confira as medidas ou informe o % da bioimpedância.'])
+    }
+    const seisAnos = caso({ idadeAnos: 6 }, { peitoral: 5, axilarMedia: 5, tricipital: 8, subescapular: 5, abdominal: 6, suprailiacaAnt: 5, coxa: 9 })
+    for (const l of tresLinhas(seisAnos, { protocolo: 'jackson-pollock-7' })) {
+      expect.soft(l?.avisos, l?.id).toEqual(['A conversão de Lohman começa aos 7 anos: escolha Siri ou Brozek, ou informe o % da bioimpedância.'])
+    }
+  })
+
+  it('CA-2090: protocolo desconhecido chega à linha com o motivo e o que fazer', () => {
+    const l = linhaGordura(caso({}, { peitoral: 15, abdominal: 25, coxa: 20 }), { protocolo: 'protocolo-do-futuro' as IdProtocolo })
+    expect(l?.valor).toBeNull()
+    expect(l?.avisos.join(' ')).toMatch(/^Protocolo desconhecido.*: escolha outro protocolo ou informe o % da bioimpedância\.$/)
+  })
+
+  it('CA-2090: faltando dobra, a linha diz o que falta, sem motivo de recusa', () => {
+    const l = linhaGordura(caso({}, { peitoral: 15 }))
+    expect(l?.falta.map((f) => f.campo)).toEqual(['composicao.dobras.abdominal', 'composicao.dobras.coxa'])
+    expect(l?.avisos).toEqual(['Ou informe o % de gordura da bioimpedância.'])
   })
 })

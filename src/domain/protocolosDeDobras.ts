@@ -454,6 +454,14 @@ export function aplicacaoDoProtocolo(id: IdProtocolo, paciente: PacienteDoProtoc
   return aplicacao(protocolo, comIdadeValida(paciente), dobras, opcoes)
 }
 
+/** Por que o protocolo, com tudo o que pede, não deu número (D-1042). O motivo é a causa e o que fazer, juntos. */
+export interface RecusaDoProtocolo {
+  /** Cabe no meio da frase: "Petroski só vale até 115,5 mm de soma, o pico da equação". */
+  readonly causa: string
+  /** "escolha outro protocolo ou informe o % da bioimpedância". */
+  readonly oQueFazer: string
+}
+
 export type ResultadoDoProtocolo =
   | {
       readonly calculou: true
@@ -470,7 +478,25 @@ export type ResultadoDoProtocolo =
       readonly fontes: readonly Fonte[]
       readonly avisos: readonly string[]
     }
-  | { readonly calculou: false; readonly protocolo: Protocolo | null; readonly motivo: string; readonly aplicacao: AplicacaoDoProtocolo | null }
+  | {
+      readonly calculou: false
+      readonly protocolo: Protocolo | null
+      readonly motivo: string
+      readonly aplicacao: AplicacaoDoProtocolo | null
+      /** `null` quando falta dado ou o protocolo não vale para o caso (sexo, gestação): o motivo diz o quê. */
+      readonly recusa: RecusaDoProtocolo | null
+    }
+
+const INFORME_A_BIOIMPEDANCIA = 'informe o % da bioimpedância'
+const OUTRO_PROTOCOLO = `escolha outro protocolo ou ${INFORME_A_BIOIMPEDANCIA}`
+const CONFIRA_AS_MEDIDAS = `confira as medidas ou ${INFORME_A_BIOIMPEDANCIA}`
+
+const comMaiuscula = (texto: string) => texto.charAt(0).toLocaleUpperCase('pt-BR') + texto.slice(1)
+
+/** D-1042: a recusa com a causa e o que fazer; o motivo é a frase inteira. */
+function recusado(protocolo: Protocolo | null, aplicacao: AplicacaoDoProtocolo | null, causa: string, oQueFazer: string): ResultadoDoProtocolo {
+  return { calculou: false, protocolo, motivo: `${comMaiuscula(causa)}: ${oQueFazer}.`, aplicacao, recusa: { causa, oQueFazer } }
+}
 
 const FONTE_DA_CONVERSAO: Readonly<Record<DensidadeConvertida['conversao'], Fonte>> = { siri: FONTES.siri1961, brozek: FONTES.brozek1963, lohman: FONTES.lohman1986 }
 
@@ -519,8 +545,9 @@ function avisosDoResultado(protocolo: Protocolo, variante: VarianteDoProtocolo, 
 export function calcularProtocolo(id: IdProtocolo, pacienteInformado: PacienteDoProtocolo, dobras: Dobras, opcoes: OpcoesDoProtocolo = {}): ResultadoDoProtocolo {
   const paciente = comIdadeValida(pacienteInformado)
   const protocolo = protocoloPorId(id)
-  if (!protocolo) return { calculou: false, protocolo: null, motivo: 'Protocolo desconhecido.', aplicacao: null }
-  const falha = (motivo: string, ap: AplicacaoDoProtocolo | null = null): ResultadoDoProtocolo => ({ calculou: false, protocolo, motivo, aplicacao: ap })
+  // CB-1009 revisto: o id de uma versão mais nova também diz o que fazer (D-1042).
+  if (!protocolo) return recusado(null, null, 'protocolo desconhecido nesta versão do app', OUTRO_PROTOCOLO)
+  const falha = (motivo: string, ap: AplicacaoDoProtocolo | null = null): ResultadoDoProtocolo => ({ calculou: false, protocolo, motivo, aplicacao: ap, recusa: null })
   if (paciente.gestante) return falha('As equações de dobras não valem na gestação.')
   const ap = aplicacao(protocolo, paciente, dobras, opcoes)
   const { sexo } = paciente
@@ -532,25 +559,25 @@ export function calcularProtocolo(id: IdProtocolo, pacienteInformado: PacienteDo
   const soma = somaDas(variante.dobras, dobras)
   // D-1038: acima do pico da parábola, mais dobra daria menos gordura.
   if (variante.picoDaSomaMm !== null && soma > variante.picoDaSomaMm) {
-    return falha(`Com essa soma de dobras a equação passa do pico (${emMm(variante.picoDaSomaMm, 1)} mm): acima dele, mais dobra daria menos gordura. Use outro protocolo.`, ap)
+    return recusado(protocolo, ap, `${protocolo.nome} só vale até ${emMm(variante.picoDaSomaMm, 1)} mm de soma, o pico da equação`, OUTRO_PROTOCOLO)
   }
   const peso = medidaValida(paciente.pesoKg)
   const valor = equacao(id, { sexo, soma, idade: paciente.idadeAnos, peso, estatura: medidaValida(paciente.estaturaCm), opcoes })
-  if (valor === null || !Number.isFinite(valor)) return falha('As dobras informadas não permitem a conta. Confira as medidas.', ap)
+  if (valor === null || !Number.isFinite(valor)) return recusado(protocolo, ap, 'a equação não dá número com essas medidas', CONFIRA_AS_MEDIDAS)
 
   let gorduraPct = valor
   let densidade: number | null = null
   let conversao: DensidadeConvertida['conversao'] | null = null
   if (variante.saida === 'densidade') {
     const convertida = converterDensidade(valor, conversaoDoProtocolo(protocolo, opcoes), sexo, paciente.idadeAnos)
-    if (!convertida) return falha('A conversão de Lohman começa aos 7 anos: escolha Siri ou Brozek.', ap)
+    if (!convertida) return recusado(protocolo, ap, 'a conversão de Lohman começa aos 7 anos', `escolha Siri ou Brozek, ou ${INFORME_A_BIOIMPEDANCIA}`)
     densidade = valor
     gorduraPct = convertida.gorduraPct
     conversao = convertida.conversao
   }
   // D-1015: a mesma regra de composicao.ts.
   if (!Number.isFinite(gorduraPct) || gorduraPct <= 0 || gorduraPct >= 70) {
-    return falha('As dobras informadas levam a um resultado fora do plausível. Confira as medidas.', ap)
+    return recusado(protocolo, ap, 'o % calculado fica fora do plausível', CONFIRA_AS_MEDIDAS)
   }
 
   const massaGordaKg = peso === null ? null : (peso * gorduraPct) / 100

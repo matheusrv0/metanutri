@@ -424,10 +424,10 @@ describe('massas, soma e casos de borda (spec antropometria-completa, CA-2024 e 
     if (!r.calculou) expect(r.motivo).toBe('Faltam as dobras: coxa.')
   })
 
-  it('CB-1009: protocolo desconhecido não lança', () => {
+  it('CB-1009 (revisto, rodada 2): protocolo desconhecido não lança e diz o que fazer', () => {
     const r = calcularProtocolo('protocolo-do-futuro' as IdProtocolo, paciente('M', 30), tres)
     expect(r.calculou).toBe(false)
-    if (!r.calculou) expect(r.motivo).toBe('Protocolo desconhecido.')
+    if (!r.calculou) expect(r.motivo).toBe('Protocolo desconhecido nesta versão do app: escolha outro protocolo ou informe o % da bioimpedância.')
   })
 
   it('Jackson, Pollock e Ward: acima de 40 anos, a cautela dos autores', () => {
@@ -461,17 +461,33 @@ describe('pico da parábola e faixa da amostra (spec antropometria-completa, rev
     expect(variante('faulkner-4', 'M')?.picoDaSomaMm).toBeNull()
   })
 
-  it('CA-2074: acima do pico não calcula e diz que a equação inverte', () => {
-    for (const [id, sexo, soma] of [
-      ['petroski', 'F', 116],
-      ['petroski', 'M', 192],
-      ['jackson-pollock-3', 'F', 216],
-      ['jackson-pollock-3', 'M', 259],
+  it('CA-2074 (revisto, rodada 2): acima do pico não calcula e o motivo diz o pico e o que fazer', () => {
+    for (const [id, sexo, soma, nome, pico] of [
+      ['petroski', 'F', 116, 'Petroski', '115,5'],
+      ['petroski', 'M', 192, 'Petroski', '191,5'],
+      ['jackson-pollock-3', 'F', 216, 'Jackson & Pollock, 3 dobras', '215,8'],
+      ['jackson-pollock-3', 'M', 259, 'Jackson & Pollock, 3 dobras', '258,3'],
     ] as const) {
       const r = calcularProtocolo(id, pacienteDe(sexo), comSoma(id, sexo, soma), { conversao: 'siri' })
       expect.soft(r.calculou, `${id} ${sexo} ${soma}`).toBe(false)
-      if (!r.calculou) expect.soft(r.motivo, `${id} ${sexo} ${soma}`).toMatch(/passa do pico.*mais dobra daria menos gordura/)
+      if (!r.calculou) {
+        expect.soft(r.motivo, `${id} ${sexo} ${soma}`).toBe(`${nome} só vale até ${pico} mm de soma, o pico da equação: escolha outro protocolo ou informe o % da bioimpedância.`)
+      }
     }
+  })
+
+  it('CA-2088: a recusa traz a causa e o que fazer, e o motivo é as duas juntas; falta de dado não é recusa', () => {
+    const r = calcularProtocolo('petroski', pacienteDe('F'), comSoma('petroski', 'F', 140))
+    if (r.calculou) throw new Error('acima do pico não devia calcular')
+    expect(r.recusa).toEqual({ causa: 'Petroski só vale até 115,5 mm de soma, o pico da equação', oQueFazer: 'escolha outro protocolo ou informe o % da bioimpedância' })
+    const implausivel = calcularProtocolo('slaughter-triceps-subescapular', paciente('M', 12), dobras({ tricipital: 60, subescapular: 60 }))
+    if (implausivel.calculou) throw new Error('implausível não devia calcular')
+    expect(implausivel.recusa?.causa).toBe('o % calculado fica fora do plausível')
+    expect(implausivel.motivo).toBe('O % calculado fica fora do plausível: confira as medidas ou informe o % da bioimpedância.')
+    const falta = calcularProtocolo('petroski', pacienteDe('F'), dobras({ subescapular: 20 }))
+    expect(!falta.calculou && falta.recusa).toBeNull()
+    const gestante = calcularProtocolo('petroski', { ...pacienteDe('F'), gestante: true }, comSoma('petroski', 'F', 60))
+    expect(!gestante.calculou && gestante.recusa).toBeNull()
   })
 
   it('CA-2074: até o pico, o % de gordura cresce com a soma', () => {

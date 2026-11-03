@@ -1,4 +1,4 @@
-// % de gordura, massa gorda, massa magra e soma de dobras (spec antropometria-completa, D-1018 e D-1019).
+// % de gordura, massa gorda, massa magra e soma de dobras (spec antropometria-completa, D-1018, D-1019 e D-1042).
 import { FONTES, type Fonte } from './fontesAntropometria.ts'
 import { deAte, idadeValida, linhaSemValor, medidaValida, situacaoNaFaixa, type CampoQueFalta, type Detalhe, type FaixaRotulada, type LinhaDoResultado } from './linhaDoResultado.ts'
 import {
@@ -10,6 +10,7 @@ import {
   type IdProtocolo,
   type OpcoesDoProtocolo,
   type PacienteDoProtocolo,
+  type RecusaDoProtocolo,
   type ResultadoDoProtocolo,
 } from './protocolosDeDobras.ts'
 import type { Caso, Sexo } from './tipos.ts'
@@ -43,11 +44,16 @@ export interface GorduraDoCaso {
   readonly massaMagraKg: number | null
   readonly detalhes: readonly Detalhe[]
   readonly avisos: readonly string[]
+  /** As dobras que recusaram quando a bioimpedância entrou no lugar (D-1042); `null` nos outros casos. */
+  readonly dobrasRecusadas: RecusaDoProtocolo | null
 }
+
+/** D-1042: a bioimpedância no lugar das dobras que o protocolo recusou. */
+export const avisoDaBioimpedanciaNoLugar = (recusa: RecusaDoProtocolo): string => `As dobras não calcularam (${recusa.causa}): usado o % da bioimpedância.`
 
 const NOME_DA_CONVERSAO = { siri: 'Siri', brozek: 'Brozek', lohman: 'Lohman' } as const
 
-/** D-1019: das dobras, quando o protocolo calcula; senão, da bioimpedância; nenhum dos dois, `null`. */
+/** D-1019: das dobras, quando o protocolo calcula; senão, da bioimpedância (D-1042: dizendo a recusa); nenhum dos dois, `null`. */
 export function gorduraDoCaso(caso: Caso, opcoes: OpcoesDaGordura = {}): GorduraDoCaso | null {
   const dobras = resultadoDasDobras(caso, opcoes)
   if (dobras.calculou) {
@@ -63,6 +69,7 @@ export function gorduraDoCaso(caso: Caso, opcoes: OpcoesDaGordura = {}): Gordura
       massaMagraKg: dobras.massaMagraKg,
       detalhes,
       avisos: dobras.avisos,
+      dobrasRecusadas: null,
     }
   }
   if (caso.condicao.tipo === 'gestante') return null
@@ -74,6 +81,7 @@ export function gorduraDoCaso(caso: Caso, opcoes: OpcoesDaGordura = {}): Gordura
   // Como `completarBioimpedancia`: a massa magra do aparelho, quando ele dá; senão, peso − massa gorda.
   const massaMagraKg = medidaValida(bioimpedancia.massaMagraKg) ?? (peso === null || massaGordaKg === null ? null : peso - massaGordaKg)
   const aparelho = bioimpedancia.aparelho.trim()
+  const { recusa } = dobras
   return {
     gorduraPct: pct,
     origem: 'bioimpedancia',
@@ -82,7 +90,8 @@ export function gorduraDoCaso(caso: Caso, opcoes: OpcoesDaGordura = {}): Gordura
     massaGordaKg,
     massaMagraKg,
     detalhes: [],
-    avisos: [],
+    avisos: recusa === null ? [] : [avisoDaBioimpedanciaNoLugar(recusa)],
+    dobrasRecusadas: recusa,
   }
 }
 
@@ -127,6 +136,13 @@ function faltaDoProtocolo(caso: Caso, opcoes: OpcoesDaGordura): CampoQueFalta[] 
   return [...ap.entradasQueFaltam.map((e) => NOME_DA_ENTRADA_NO_PLANO[e]), ...ap.dobrasQueFaltam.map(faltaDaDobra)]
 }
 
+/** Sem % de gordura: o motivo da recusa das dobras, sem nada faltando (D-1042), ou o que falta (D-1016). */
+function linhaSemGordura(caso: Caso, opcoes: OpcoesDaGordura, linha: Pick<LinhaDoResultado, 'id' | 'nome' | 'unidade' | 'casas'>, avisosDaFalta: readonly string[]): LinhaDoResultado {
+  const dobras = resultadoDasDobras(caso, opcoes)
+  if (!dobras.calculou && dobras.recusa !== null) return linhaSemValor(linha, [], [dobras.motivo])
+  return linhaSemValor(linha, faltaDoProtocolo(caso, opcoes), avisosDaFalta)
+}
+
 const detalheDoMetodo = (g: GorduraDoCaso): Detalhe => ({
   tipo: 'texto',
   rotulo: 'Método',
@@ -138,7 +154,7 @@ export function linhaGordura(caso: Caso, opcoes: OpcoesDaGordura = {}): LinhaDoR
   if (caso.condicao.tipo === 'gestante') return null
   const linha = { id: 'gordura', nome: 'Gordura corporal', unidade: '%', casas: 1 } as const
   const g = gorduraDoCaso(caso, opcoes)
-  if (!g) return linhaSemValor(linha, faltaDoProtocolo(caso, opcoes), ['Ou informe o % de gordura da bioimpedância.'])
+  if (!g) return linhaSemGordura(caso, opcoes, linha, ['Ou informe o % de gordura da bioimpedância.'])
   const { sexo } = caso
   const idadeAnos = idadeValida(caso.idadeAnos)
   const detalhes = [detalheDoMetodo(g), ...g.detalhes]
@@ -168,10 +184,12 @@ function linhaDeMassa(caso: Caso, opcoes: OpcoesDaGordura, id: 'massa-gorda' | '
   if (caso.condicao.tipo === 'gestante') return null
   const linha = { id, nome: id === 'massa-gorda' ? 'Massa gorda' : 'Massa magra (livre de gordura)', unidade: 'kg', casas: 1 } as const
   const g = gorduraDoCaso(caso, opcoes)
-  if (!g) return linhaSemValor(linha, faltaDoProtocolo(caso, opcoes))
+  if (!g) return linhaSemGordura(caso, opcoes, linha, [])
+  // D-1042: com a bioimpedância no lugar das dobras recusadas, as massas também dizem por quê.
+  const avisos = g.dobrasRecusadas === null ? [] : [avisoDaBioimpedanciaNoLugar(g.dobrasRecusadas)]
   const valor = id === 'massa-gorda' ? g.massaGordaKg : g.massaMagraKg
-  if (valor === null) return linhaSemValor(linha, [{ campo: 'pesoKg', nome: 'o peso' }])
-  return { ...linhaSemValor(linha, []), valor, fonte: g.fontes[0] ?? null, detalhes: [detalheDoMetodo(g)], avisos: [] }
+  if (valor === null) return linhaSemValor(linha, [{ campo: 'pesoKg', nome: 'o peso' }], avisos)
+  return { ...linhaSemValor(linha, []), valor, fonte: g.fontes[0] ?? null, detalhes: [detalheDoMetodo(g)], avisos }
 }
 
 export const linhaMassaGorda = (caso: Caso, opcoes: OpcoesDaGordura = {}) => linhaDeMassa(caso, opcoes, 'massa-gorda')
