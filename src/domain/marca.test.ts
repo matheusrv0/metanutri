@@ -2,7 +2,7 @@
 import { FALHA_DE_REDE } from '@/ui/estado/mensagemDoBanco.ts'
 import { LOGO_MAX_BYTES } from './logoDaMarca.ts'
 import { lerMarcaDoLink, marcaDoPerfil, SEM_MARCA, temMarca } from './marca.ts'
-import { publicarMarca, type ClienteDaMarca } from './marcaNaNuvem.ts'
+import { MARCA_INDISPONIVEL, publicarMarca, type ClienteDaMarca } from './marcaNaNuvem.ts'
 import { PERFIL_VAZIO } from './perfil.ts'
 
 /** Um PNG em data URI com `bytes` bytes (múltiplo de 3). */
@@ -105,10 +105,21 @@ describe('publicar a marca (CA-1963, CB-955)', () => {
   it('D-98: o erro do banco chega traduzido; a trava da logo diz o que fazer', async () => {
     const trava = clienteFalso({ erro: { code: '23514', message: 'new row for relation "marcas" violates check constraint "marcas_logo_png"' } })
     expect(await publicarMarca(trava.cliente, { logo: LOGO, cor: null })).toBe('Use uma logo mais simples.')
-    const banco = clienteFalso({ erro: { code: 'PGRST205', message: "Could not find the table 'public.marcas'" } })
-    expect(await publicarMarca(banco.cliente, SEM_MARCA)).toBe(FALHA_DE_REDE)
+    const fora = clienteFalso({ erro: { code: '08006', message: 'connection failure' } })
+    expect(await publicarMarca(fora.cliente, SEM_MARCA)).toBe(FALHA_DE_REDE)
     const rede = clienteFalso({ erro: 'rede' })
     expect(await publicarMarca(rede.cliente, SEM_MARCA)).toBe(FALHA_DE_REDE)
+  })
+
+  it('CB-964: o site antes do SQL da marca (a tabela não existe) diz que a função ainda não está disponível, não a internet', async () => {
+    for (const erro of [
+      { code: 'PGRST205', message: "Could not find the table 'public.marcas' in the schema cache" },
+      { code: '42P01', message: 'relation "public.marcas" does not exist' },
+    ]) {
+      const banco = clienteFalso({ erro })
+      expect(await publicarMarca(banco.cliente, { logo: LOGO, cor: '#3f5f2a' }), erro.code).toBe('Esta função ainda não está disponível. Tente de novo mais tarde.')
+    }
+    expect(MARCA_INDISPONIVEL).not.toBe(FALHA_DE_REDE)
   })
 
   it('logo que não é publicável nem sai do aparelho', async () => {
