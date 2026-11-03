@@ -71,6 +71,12 @@ export function custoEmMicrodolares(tokens: readonly TokensDoModelo[]): number {
   return Math.round(total * FATOR_DOS_EUA)
 }
 
+/** `IA_TETO_DIARIO_USD`: um número maior que zero; sem ele, ou inválido, US$ 5 (D-1318). */
+export function tetoDoAmbiente(valor: string | undefined): number {
+  const n = Number(valor?.trim() || Number.NaN)
+  return Number.isFinite(n) && n > 0 ? n : 5
+}
+
 const somar = (tokens: readonly TokensDoModelo[], campo: 'entrada' | 'cacheGravados' | 'cacheLidos' | 'saida'): number => tokens.reduce((s, t) => s + t[campo], 0)
 
 /** CA-2307: o plano que vale, como no limite de links: ativo e não vencido, ou pago cancelado ainda no período. */
