@@ -11,7 +11,7 @@ import { criarPortaDaExclusao, quemPedeAExclusao } from '../../supabase/function
 import type { Operadora, Registro } from '../../supabase/functions/_shared/portas.ts'
 import { daLinhaMudanca, receitaNoHistorico, type MudancaDeAssinatura } from '../../src/domain/negocio.ts'
 import { sqlNoBancoLocal } from './bancoLocal.ts'
-import { arquivoPdf, BALDE, barrado, clienteSemSessao, prepararCenario, TABELAS_DA_CONTA, type Cenario, type Conta } from './preparo.ts'
+import { arquivoPdf, BALDE, barrado, clienteSemSessao, prepararCenario, resumoDoEmail, TABELAS_DA_CONTA, type Cenario, type Conta } from './preparo.ts'
 
 const MINUTO_MS = 60_000
 const EXCLUIDA = { status: 200, corpo: { excluida: true } }
@@ -163,6 +163,9 @@ describe('CA-812 a CA-820: a conta com tudo é excluída, e só ela', () => {
     const valor = await c.servico.from('assinaturas').update({ valor_centavos: valorUnico }).eq('nutricionista_id', c.vitima.id)
     if (valor.error) throw new Error(valor.error.message)
     await reservaVencida(c)
+    // Spec lado-do-paciente (CA-2284): o e-mail do paciente da vítima na supressão, que fica depois da exclusão.
+    const suprimido = await c.servico.from('supressao').insert({ email_hash: resumoDoEmail(c.vitima.emailDoPaciente), motivo: 'queixa' })
+    if (suprimido.error) throw new Error(suprimido.error.message)
     fotoDaOutra = await fotoDaConta(c, c.atacante.id)
     fotoDoAdmin = await fotoDaConta(c, c.admin.id)
     avisosAntes = JSON.stringify((await c.servico.from('avisos_da_operadora').select('*').order('id')).data)
@@ -204,6 +207,18 @@ describe('CA-812 a CA-820: a conta com tudo é excluída, e só ela', () => {
   it('CA-812: o login não existe mais, e a senha antiga não entra', async () => {
     expect(await loginExiste(c, c.vitima.id)).toBe(false)
     expect(await consegueEntrar(c, c.vitima)).toBe(false)
+  })
+
+  it('CA-2284: o e-mail, os aceites, as chaves e os envios do link saem com a conta; a supressão fica, só com o resumo', async () => {
+    for (const tabela of ['emails_dos_links', 'aceites', 'chaves_de_aviso', 'envios']) {
+      const r = await c.servico.from(tabela).select('*').eq('link_id', c.vitima.linkId)
+      expect(r.error, tabela).toBeNull()
+      expect(r.data, tabela).toEqual([])
+    }
+    const supressao = await c.servico.from('supressao').select('*').eq('email_hash', resumoDoEmail(c.vitima.emailDoPaciente))
+    expect(supressao.data).toHaveLength(1)
+    expect(Object.keys(supressao.data?.[0] ?? {}).sort()).toEqual(['criado_em', 'email_hash', 'motivo'])
+    expect(JSON.stringify(supressao.data)).not.toContain(c.vitima.emailDoPaciente)
   })
 
   it('CA-813: o link do paciente não acha mais nada', async () => {
