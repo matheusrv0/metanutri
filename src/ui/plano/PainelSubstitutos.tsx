@@ -103,8 +103,10 @@ export function PainelSubstitutos({ item, alimento, refeicao, aoLado, aoAdiciona
   }
 
   const aoTeclar = (e: KeyboardEvent<HTMLElement>) => {
-    // Esc fecha o painel, como a gaveta; a janela Comparar, aberta por cima, trata o Esc dela antes.
-    if (e.key === 'Escape' && !e.defaultPrevented) aoFechar()
+    // Esc fecha o painel, como a gaveta; a janela Comparar, aberta por cima, trata o Esc dela antes. Num campo, o Esc é
+    // do campo (a entrada rápida limpa o que foi digitado), não do painel.
+    const noCampo = e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement || e.target instanceof HTMLTextAreaElement
+    if (e.key === 'Escape' && !e.defaultPrevented && !noCampo) aoFechar()
   }
 
   return (

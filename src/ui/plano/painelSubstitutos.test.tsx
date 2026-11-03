@@ -112,6 +112,22 @@ describe('o botão e o painel (D-1100, D-1116)', () => {
     expect(screen.queryByRole('complementary')).not.toBeInTheDocument()
   })
 
+  it('CA-2101 (tela larga): o foco vai ao título; Esc fecha, menos dentro de um campo', async () => {
+    telaLarga(true)
+    render(<Anfitriao />)
+    const usuario = userEvent.setup()
+    await almocoComArroz(usuario)
+    await usuario.click(screen.getByRole('button', { name: `Buscar substitutos para ${ARROZ}` }))
+    const lado = within(screen.getByRole('complementary', { name: `Substitutos de ${ARROZ}` }))
+    expect(lado.getByRole('heading', { name: `Substitutos de ${ARROZ}` })).toHaveFocus()
+    await usuario.click(lado.getByRole('radio', { name: 'Adicionar manualmente' }))
+    await usuario.type(lado.getByRole('combobox', { name: 'Escolher alimento substituto' }), 'batata{Escape}')
+    expect(screen.getByRole('complementary', { name: `Substitutos de ${ARROZ}` })).toBeInTheDocument()
+    lado.getByRole('heading', { name: `Substitutos de ${ARROZ}` }).focus()
+    await usuario.keyboard('{Escape}')
+    expect(screen.queryByRole('complementary')).not.toBeInTheDocument()
+  })
+
   it('CB-1104: o item removido com o painel aberto fecha o painel', async () => {
     telaLarga(true)
     render(<Anfitriao />)

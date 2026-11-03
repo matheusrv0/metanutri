@@ -38,6 +38,9 @@ interface BuscaDeSubstitutosProps {
   readonly aoSubstituir: (c: Candidato) => void
 }
 
+/** "carboidrato", "carboidrato e proteína", "carboidrato, proteína e ferro". */
+const listaComE = (nomes: readonly string[]): string => (nomes.length <= 1 ? (nomes[0] ?? '') : `${nomes.slice(0, -1).join(', ')} e ${nomes.at(-1) ?? ''}`)
+
 const mesmaSelecao = (a: readonly ChaveNutrienteAlimento[], b: readonly ChaveNutrienteAlimento[]): boolean =>
   a.length === b.length && [...a].sort().join() === [...b].sort().join()
 
@@ -87,7 +90,7 @@ export function BuscaDeSubstitutos({ item, alimento, restricoes, aoAdicionarOpca
   const outros = OUTROS_NUTRIENTES_DA_BUSCA.filter((k) => !selecionados.includes(k))
   const candidatos = resultado.tipo === 'lista' ? resultado.candidatos : []
   const visiveis = todos ? candidatos : candidatos.slice(0, NA_PRIMEIRA_VISTA)
-  const nomesBuscados = buscados.map((k) => infoDoNutriente(k).curto).join(' e ')
+  const nomesBuscados = listaComE(buscados.map((k) => infoDoNutriente(k).curto))
   const unidade = unidadeDo(alimento)
 
   return (

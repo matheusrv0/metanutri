@@ -145,6 +145,9 @@ export function TelaPlano({
     })
     setPainel(null)
     aoAlterarPlano(novo)
+    // O botão que tinha o foco sumiu com o painel: o foco volta ao "⇄" do item trocado, que guarda o mesmo id.
+    const itemId = itemDoPainel.id
+    globalThis.requestAnimationFrame?.(() => devolverFoco(itemId))
   }
   const desfazer = () => {
     if (!troca) return
