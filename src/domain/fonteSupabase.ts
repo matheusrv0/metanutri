@@ -279,8 +279,11 @@ export async function apagarAcompanhamentosDaNuvem(cliente: ClienteMissoes, espe
  */
 export const LIMITE_DE_LINKS_NO_BANCO = 'Você chegou ao limite de links do seu plano.'
 
-/** O que a tela diz no limite (spec textos-e-promessas, D-408): "assinatura" é a cobrança. */
-export const LIMITE_DE_LINKS = 'Você chegou ao limite de links da sua assinatura.'
+/**
+ * O que a tela diz no limite (spec textos-e-promessas, D-408): "assinatura" é a cobrança. Spec lado-do-paciente, CA-2226:
+ * o limite conta pacientes com link (D-1214).
+ */
+export const LIMITE_DE_LINKS = 'Você chegou ao limite de pacientes com link da sua assinatura.'
 
 /** O P0001 é de qualquer `raise exception`: o limite é o P0001 com esta frase. */
 const ehLimiteDeLinks = (erro: ErroDoBanco): boolean => erro.code === 'P0001' && erro.message === LIMITE_DE_LINKS_NO_BANCO

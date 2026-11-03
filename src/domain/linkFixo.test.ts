@@ -110,3 +110,12 @@ describe('CA-2222: atualizar o link com o plano novo', () => {
     expect(precisaAtualizarComPlano(fixo, 'plano-b')).toBe(true)
   })
 })
+
+describe('CA-2226: as frases do limite falam de pacientes', () => {
+  it('CA-2226: o aviso antes de gerar e a recusa da nuvem (CA-442) dizem "pacientes com link"', async () => {
+    const { textoDoLimite } = await import('./linkFixo.ts')
+    const { LIMITE_DE_LINKS } = await import('./fonteSupabase.ts')
+    expect(textoDoLimite(2)).toBe('Você já tem 2 pacientes com link, o limite da sua assinatura. Remova um link em Adesão ou mude de assinatura para gerar outro.')
+    expect(LIMITE_DE_LINKS).toBe('Você chegou ao limite de pacientes com link da sua assinatura.')
+  })
+})
