@@ -102,6 +102,18 @@ describe('repositório de casos', () => {
     expect(repo.duplicar(repo.criar('  ').caso.id).caso.nome).toBe('Cópia do plano')
   })
 
+  it('CA-1097 (spec ficha-unica): a data de nascimento da ficha decide se a estatura vai na cópia do retorno', () => {
+    const repo = criarRepositorio(new MemoriaFalsa(), { agora: relogio(), gerarId: ids() })
+    const criado = repo.criar('Retorno')
+    // O plano gravou 35 anos, mas a ficha (corrigida) dá 12 anos em 15/09/2026: vale a ficha.
+    const a = repo.salvar({ ...criado, caso: { ...criado.caso, pacienteId: 'p1', idadeAnos: 35, pesoKg: 40, estaturaCm: 150 } })
+    expect(repo.duplicar(a.caso.id, { nascimento: '2014-05-01' }).caso.estaturaCm).toBeNull()
+    expect(repo.duplicar(a.caso.id, { nascimento: '1991-03-20' }).caso.estaturaCm).toBe(150)
+    // Sem a ficha, vale a idade gravada no plano.
+    expect(repo.duplicar(a.caso.id).caso.estaturaCm).toBe(150)
+    expect(repo.duplicar(a.caso.id, { nascimento: '2014-05-01' }).caso.pesoKg).toBeNull()
+  })
+
   it('CB-08: caso excluído em outra aba some da lista desta aba', () => {
     const memoria = new MemoriaFalsa()
     const aba1 = criarRepositorio(memoria, { agora: relogio(), gerarId: ids() })

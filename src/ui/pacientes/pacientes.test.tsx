@@ -134,6 +134,36 @@ describe('Pacientes', () => {
     expect(aoAbrirPlano).toHaveBeenCalledWith(plano.caso.id)
   })
 
+  it.each([
+    ['2014-05-01', null],
+    ['1991-03-20', 150],
+  ])('CA-1096 e CA-1097 (spec ficha-unica): duplicar na ficha (nascimento %s) limpa as medidas do dia e decide a estatura pela ficha', async (nascimento, estatura) => {
+    const armazenamento = new MemoriaFalsa()
+    const pacientes = criarRepositorioPacientes(armazenamento, { agora: relogio(), gerarId: () => 'p1' })
+    pacientes.salvar({ ...pacientes.criar('Maria'), nascimento })
+    const casos = criarRepositorio(armazenamento, { agora: relogio() })
+    const plano = casos.criar('Maria, retorno')
+    // O plano gravou 35 anos; a ficha é quem diz a idade na data nova (D-341).
+    casos.salvar({ ...plano, caso: { ...plano.caso, pacienteId: 'p1', idadeAnos: 35, pesoKg: 40, estaturaCm: 150, circunferenciaCinturaCm: 60 } })
+
+    const aoAbrirPlano = vi.fn()
+    render(
+      <ProvedorCasos repositorio={casos}>
+        <ProvedorPacientes repositorio={pacientes}>
+          <TelaPaciente pacienteId="p1" aoAbrirPlano={aoAbrirPlano} aoNovoPlano={vi.fn()} aoVoltar={vi.fn()} />
+        </ProvedorPacientes>
+      </ProvedorCasos>,
+    )
+
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Duplicar Maria, retorno' }))
+    const idDaCopia: unknown = aoAbrirPlano.mock.calls[0]?.[0]
+    expect(idDaCopia).not.toBe(plano.caso.id)
+    const copia = casos.obter(String(idDaCopia))?.caso
+    expect(copia?.pesoKg).toBeNull()
+    expect(copia?.circunferenciaCinturaCm).toBeNull()
+    expect(copia?.estaturaCm ?? null).toBe(estatura)
+  })
+
   it('DP-26 (spec dados-na-nuvem): o paciente que não existe mais pode ter sido excluído em outra aba ou em outro aparelho', () => {
     montar(<TelaPaciente pacienteId="nao-existe" aoAbrirPlano={vi.fn()} aoNovoPlano={vi.fn()} aoVoltar={vi.fn()} />)
     expect(screen.getByText('Este paciente não existe mais. Ele pode ter sido excluído em outra aba ou em outro aparelho.')).toBeInTheDocument()

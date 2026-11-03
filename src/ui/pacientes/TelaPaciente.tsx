@@ -92,9 +92,9 @@ export function TelaPaciente({
     )
   }
 
-  /** O retorno começa do plano anterior: copia tudo, troca a data e abre a cópia. */
+  /** O retorno começa do plano anterior: copia o plano sem as medidas do dia (D-367), troca a data e abre a cópia. */
   const duplicar = (casoId: string) => {
-    const copia = repoCasos.duplicar(casoId)
+    const copia = repoCasos.duplicar(casoId, { nascimento: paciente.nascimento })
     atualizarCasos()
     aoAbrirPlano(copia.caso.id)
   }

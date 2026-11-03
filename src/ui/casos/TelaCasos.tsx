@@ -51,7 +51,10 @@ export function TelaCasos({ aoAbrir, aoNovoCaso }: TelaCasosProps) {
   }
 
   const duplicar = (id: string) => {
-    const copia = repositorio.duplicar(id)
+    // D-367 (spec ficha-unica): a idade da ficha na data nova decide se a estatura vai na cópia.
+    const pacienteId = casos.find((c) => c.id === id)?.pacienteId ?? null
+    const nascimento = pacienteId ? (pacientes?.pacientes.find((p) => p.id === pacienteId)?.nascimento ?? null) : null
+    const copia = repositorio.duplicar(id, { nascimento })
     atualizar()
     setMensagem(`Cópia criada: “${copia.caso.nome}”.`)
   }

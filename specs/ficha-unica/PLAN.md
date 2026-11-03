@@ -123,3 +123,17 @@ conferência da parceira pela tela.
 ## Correção C (22/10/2026; seção 11 da SPEC: D-488)
 
 O plano está em `specs/sugestoes-com-criterio/PLAN.md`, seção "Correção C": tarefa C18 (casa e escola pela idade).
+
+## Correção D (03/11/2026; seção 12 da SPEC: D-367)
+
+**Suposições (para revisar):** o protocolo de dobras e o aparelho da bioimpedância são preferência e vão na cópia; o
+nível de atividade e a meta de água são conduta e vão na cópia; o corte da estatura é o `IDADE_ADULTO` (20 anos) que a
+antropometria já usa.
+
+| # | Tarefa | Arquivos | Critérios |
+|---|---|---|---|
+| D1 | Spec e plano | `specs/ficha-unica/SPEC.md`, `PLAN.md` | — |
+| D2 | Uma lista com a classificação de cada campo do plano; duplicar o plano de paciente limpa as medidas do dia e a estatura abaixo de 20 anos | `src/domain/duplicar.ts`, `src/domain/duplicar.test.ts` | CA-1096 a CA-1098, CB-359 |
+| D3 | A idade da ficha na data nova decide a estatura: o repositório recebe a data de nascimento, e as duas telas que duplicam a passam | `src/domain/persistencia.ts`, `src/domain/persistencia.test.ts`, `src/ui/pacientes/TelaPaciente.tsx`, `src/ui/pacientes/pacientes.test.tsx`, `src/ui/casos/TelaCasos.tsx`, `src/ui/casos/TelaCasos.test.tsx` | CA-1096, CA-1097 |
+
+Cada tarefa vai num commit, com o teste antes do código. Risco: o plano antigo com gestação gravada (seção 12 da SPEC).
