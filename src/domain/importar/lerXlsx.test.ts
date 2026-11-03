@@ -106,6 +106,39 @@ describe('Linhas e colunas', () => {
   })
 })
 
+/** Um XLSX com o XML dos textos compartilhados escrito à mão (para pôr nele o que o Excel nunca escreve). */
+async function comTextos(textos: string): Promise<Uint8Array> {
+  const principal = 'http://schemas.openxmlformats.org/spreadsheetml/2006/main'
+  const relacoes = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships'
+  return montarZip([
+    { nome: 'xl/workbook.xml', dados: `<workbook xmlns="${principal}" xmlns:r="${relacoes}"><sheets><sheet name="A" sheetId="1" r:id="rId1"/></sheets></workbook>` },
+    {
+      nome: 'xl/_rels/workbook.xml.rels',
+      dados: `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="${relacoes}/worksheet" Target="worksheets/sheet1.xml"/></Relationships>`,
+    },
+    { nome: 'xl/worksheets/sheet1.xml', dados: `<worksheet xmlns="${principal}"><sheetData><row r="1"><c r="A1" t="s"><v>0</v></c></row></sheetData></worksheet>` },
+    { nome: 'xl/sharedStrings.xml', dados: textos },
+  ])
+}
+
+describe('CB-928: XML com DTD ou entidade (D-920)', () => {
+  it.each([
+    ['a explosão de entidades', `<?xml version="1.0"?><!DOCTYPE sst [<!ENTITY x "${'A'.repeat(50)}">]><sst><si><t>&x;&x;</t></si></sst>`],
+    ['a entidade externa', '<?xml version="1.0"?><!DOCTYPE sst [<!ENTITY e SYSTEM "file:///C:/Windows/win.ini">]><sst><si><t>&e;</t></si></sst>'],
+    ['só a declaração de entidade', '<?xml version="1.0"?><!ENTITY x "y"><sst><si><t>x</t></si></sst>'],
+  ])('%s é recusada antes de o navegador ler o XML', async (_, textos) => {
+    const ler = vi.spyOn(DOMParser.prototype, 'parseFromString')
+    await expect(lerXlsx(await comTextos(textos), { limiteDeLinhas: 10 })).rejects.toThrow()
+    expect(ler.mock.calls.some(([texto]) => String(texto).includes('<!ENTITY'))).toBe(false)
+    ler.mockRestore()
+  })
+
+  it('o XML de sempre, sem DTD, continua sendo lido', async () => {
+    const [aba] = await lerXlsx(await comTextos('<?xml version="1.0"?><sst><si><t>Nome</t></si></sst>'), { limiteDeLinhas: 10 })
+    expect(celulas(aba)).toEqual([['Nome']])
+  })
+})
+
 describe('CB-910: zip que não é planilha', () => {
   it('um zip qualquer chamado .xlsx é recusado', async () => {
     const bytes = await montarZip([{ nome: 'foto.jpg', dados: 'x' }])

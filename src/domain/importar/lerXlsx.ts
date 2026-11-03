@@ -30,7 +30,14 @@ const FORMATOS_DE_DATA = new Set([14, 15, 16, 17, 22, ...Array.from({ length: 10
 
 const DIA_MS = 86_400_000
 
+/**
+ * D-920 e CB-928: Excel, Google Planilhas e LibreOffice não escrevem DTD. O XML que declara DTD ou entidade é recusado
+ * antes do `DOMParser`, que é síncrono: uma explosão de entidades num arquivo de 300 bytes congelava a aba.
+ */
+const DTD = /<!DOCTYPE|<!ENTITY/i
+
 function xml(texto: string): Document {
+  if (DTD.test(texto)) throw new Error('XML com DTD.')
   const documento = new DOMParser().parseFromString(texto, 'application/xml')
   if (documento.getElementsByTagName('parsererror').length > 0) throw new Error('XML estragado.')
   return documento
