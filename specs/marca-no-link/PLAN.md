@@ -13,6 +13,11 @@ agente e passaram de novo sozinhos), `npm run test:csp` (3) e `npm run test:segu
 Supabase local), tudo verde. Prints em 360, 390 e 1440 px nos dois temas e o pior caso (`break-ui`) em
 `scratchpad/marca-no-link/prints/`.
 
+**Revisão (03/11/2026, T12):** `npm run check` (lint, tipos e 6249 testes em 332 arquivos), o e2e da marca com
+`--repeat-each=10` (190 de 190, o CA-1966 10 de 10), `npm run e2e` (482) e `npm run test:csp` (3), tudo verde.
+`npm run test:seguranca` não rodou nesta rodada: a pilha local de ataques estava ocupada por outro agente. O SQL 015
+não mudou.
+
 ## Abordagem
 
 **Onde a marca mora.** A logo e a cor ficam em dois lugares (D-952):
@@ -229,6 +234,7 @@ Cada uma ganha uma nota curta "*Atualizado pela `marca-no-link` (29/10/2026)*" n
 | `src/ui/marca/CartaoSuaMarca.tsx` (+ teste) | alterar: o aviso da cor (DP-ML-36) | T12 |
 | `src/ui/marca/PreviaDoLink.tsx` | alterar: os tokens de raio (DP-ML-38) | T12 |
 | `e2e/marca-no-link.spec.ts` | alterar: o GIF disfarçado e a imagem de mais de 8.000 px no navegador | T12 |
+| `README.md` | alterar: a frase do "Salvar" antes do 015 e Configurações sem a logo | T12 |
 
 ## Tarefas
 
@@ -271,7 +277,7 @@ Cada uma ganha uma nota curta "*Atualizado pela `marca-no-link` (29/10/2026)*" n
   - Depende de: T8
   - Cobre: CA-1952, CA-1955 (no navegador), CA-1965, CA-1966, CA-1972, CA-1977, CA-1981
 - [x] **T11** — README (o 015 e a ordem) e a validação no topo deste plano.
-- [ ] **T12** — Revisão de 03/11/2026: o e2e instável do CA-1966 (M1), a SPEC alinhada ao plano (M2) e os leves L1 a L8.
+- [x] **T12** — Revisão de 03/11/2026: o e2e instável do CA-1966 (M1), a SPEC alinhada ao plano (M2) e os leves L1 a L8.
   - Depende de: T1 a T11
   - Cobre: CA-1953 (pelo conteúdo), CA-1966, CA-1973 (tamanho), CA-1982, CB-958, CB-964, CB-965, CB-966, CB-967
   - Feito quando: `npm run check`, o e2e da marca com `--repeat-each=10`, `npm run e2e`, `npm run test:csp` e

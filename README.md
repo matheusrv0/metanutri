@@ -91,8 +91,8 @@ completo a qualquer momento; o contrário não, para não apagar medida já regi
 - **Exportar** — dieta para imprimir (vira PDF pelo próprio navegador), aconselhamento
   em Word no modelo do estágio, memorial de cálculo em Word e a tabela de adequação
   copiada para colar no Word.
-- **Configurações** — seu nome e registro na linha de responsabilidade, marca na folha
-  do paciente e backup em arquivo.
+- **Configurações** — seu nome e registro na linha de responsabilidade e backup em
+  arquivo. A logo e a cor do link do paciente ficam em Conta e assinatura › Sua marca.
 - **Dados na nuvem** — com conta, planos, pacientes, produtos, modelos e configurações ficam
   na nuvem, salvos na sua conta, e vão para lá sozinhos poucos segundos depois de cada mudança
   ("Salvo" / "Salvando…" no alto da tela). Dois aparelhos ao mesmo tempo se juntam item por
@@ -231,8 +231,9 @@ Para funcionar de verdade, nesta ordem:
    Depois rode `supabase/015-marca-no-link.sql` (spec marca-no-link): cria a marca publicada (a logo e a cor de
    "Sua marca", uma linha por conta, só a dona lê e grava) e faz a função do link do paciente devolver a marca junto
    com as missões, sem dizer de quem é. Rode **antes** de publicar o site desta versão. Publicado antes, o site
-   continua funcionando, mas "Salvar" em Sua marca falha com a frase de rede e o link continua com a marca do
-   MetaNutri. Também pode rodar de novo; se rodar o 004 ou o 012 de novo, rode o 015 logo depois.
+   continua funcionando, mas "Salvar" em Sua marca diz "Esta função ainda não está disponível. Tente de novo mais
+   tarde." e o link continua com a marca do MetaNutri. Também pode rodar de novo; se rodar o 004 ou o 012 de novo,
+   rode o 015 logo depois.
 5. **Mercado Pago.** Crie a aplicação e guarde o token como `MERCADOPAGO_ACCESS_TOKEN` e o segredo do webhook
    como `MERCADOPAGO_WEBHOOK_SECRET` (`npx supabase secrets set ... --project-ref qmpljfjbdcrdbqutuvmg`). Com o
    `008`, o `009` e o `011` rodados, e com o `MERCADOPAGO_WEBHOOK_SECRET` já guardado em *Edge Functions > Secrets* (a
