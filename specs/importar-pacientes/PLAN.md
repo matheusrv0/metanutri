@@ -100,7 +100,9 @@ comprimido com `CompressionStream`). **Nenhum SQL novo**: os pacientes sobem pel
 - **Altera** `src/domain/conta.ts`: `'importar-pacientes'` em `IdRecurso` e em `RECURSOS_EM_TODOS_OS_PLANOS`
   ("Importar pacientes de planilha (CSV ou Excel)").
 - **Altera** `src/recursosDosPlanos.test.tsx`: a prova (CA-1179) e a tabela de Preços nas três colunas (CA-1949).
-- Depende de: T3 (a prova abre uma planilha de verdade).
+- **Altera** `src/ui/publico/SecaoPrecos.test.tsx` (CA-1178): a lista de linhas da tabela ganha o item novo.
+  Acrescentado ao implementar: o teste lista as linhas uma a uma.
+- Depende de: T3 e T10 (a prova lê a planilha e a rota). Feita depois da T10.
 
 ### T9 · Biblioteca: `Passos`, `CaixaDeMarcar` e `ListaNativa` (DP-IP-26)
 - **Cria** `design-system/componentes/navigation/Passos.tsx`, `forms/CaixaDeMarcar.tsx` e `forms/ListaNativa.tsx`.
@@ -119,7 +121,10 @@ comprimido com `CompressionStream`). **Nenhum SQL novo**: os pacientes sobem pel
   soltar, "Escolher arquivo", "Lendo a planilha…", "Cancelar", recusas), `rascunhoDaImportacao.ts` (DP-IP-23) e
   `estadoDaImportacao.ts` (o redutor dos passos).
 - **Cria** `src/ui/pacientes/importar/passoArquivo.test.tsx`: CA-1900, CA-1901, CA-1902, CA-1909 e CA-1910 na tela,
-  CB-911 (cancelar), CA-1947 (teclado no seletor, foco no título).
+  CB-911 (cancelar), CA-1947 (teclado no seletor, foco no título); `rota.test.tsx` (CA-1900 no app inteiro, com o
+  pedaço separado); `montarTela.test-utils.tsx` (a tela com os provedores, num armazenamento em memória).
+- A tela recebe a moldura (a `Estrutura`) como função, não como componente: assim ela não remonta a cada desenho da
+  área de trabalho. Acrescentado ao implementar.
 - Depende de: T3, T9.
 
 ### T11 · Passo Colunas
@@ -150,8 +155,9 @@ comprimido com `CompressionStream`). **Nenhum SQL novo**: os pacientes sobem pel
 ### T14 · Pacientes e ficha: as 24 horas e "Importado em"
 - **Cria** `src/ui/pacientes/LinhaDaImportacao.tsx`: "Importação de hoje, 14:32 · 5 pacientes · Desfazer" e o
   "Importação desfeita." depois (DP-IP-20).
-- **Altera** `src/ui/pacientes/TelaPacientes.tsx` (a linha no topo) e `src/ui/pacientes/CartaoDadosDoPaciente.tsx`
-  ("Importado em 29/10/2026", DP-IP-27).
+- **Altera** `src/ui/pacientes/TelaPacientes.tsx` (a linha no topo; prop `agora` para o teste) e
+  `src/ui/pacientes/CartaoDadosDoPaciente.tsx` ("Importado em 29/10/2026", DP-IP-27).
+- **Altera** `src/domain/importar/importacao.ts` (+ teste): `diaDaImportacao`, o dia no relógio de quem usa.
 - **Cria** `src/ui/pacientes/importar/vinteEQuatroHoras.test.tsx`: CA-1937, CA-1943 na tela.
 - Depende de: T7.
 
