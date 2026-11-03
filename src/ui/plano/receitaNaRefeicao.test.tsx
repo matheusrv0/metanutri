@@ -173,7 +173,7 @@ describe('a receita no plano (CA-870, CA-873, CA-874)', () => {
     expect(item).toMatchObject({ alimentoId: ID_DE_RECEITA, gramas: 120, receita: PANQUECA })
   })
 
-  it('CA-873: a linha mostra o nome, "Receita · 1 unidade", as gramas e as kcal, sem "Substituir"', () => {
+  it('CA-873: a linha mostra o nome, "Receita · 1 unidade", as gramas e as kcal, sem "Buscar substitutos" (CA-2100)', () => {
     montarPlano(comPanquecaNoDesjejum())
     const desjejum = within(screen.getByRole('tabpanel', { name: 'Principal de Café da manhã' }))
     const linha = desjejum.getByText('Panqueca de banana').closest('li')
@@ -182,7 +182,7 @@ describe('a receita no plano (CA-870, CA-873, CA-874)', () => {
     expect(naLinha.getByText('Receita · 1 unidade')).toBeInTheDocument()
     expect(naLinha.getByLabelText('Gramas de Panqueca de banana')).toHaveValue('120')
     expect(naLinha.getByText('204 kcal')).toBeInTheDocument()
-    expect(naLinha.queryByRole('button', { name: 'Substituir Panqueca de banana' })).not.toBeInTheDocument()
+    expect(naLinha.queryByRole('button', { name: 'Buscar substitutos para Panqueca de banana' })).not.toBeInTheDocument()
     expect(naLinha.getByRole('button', { name: 'Remover Panqueca de banana' })).toBeInTheDocument()
   })
 

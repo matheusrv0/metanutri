@@ -36,7 +36,7 @@ function Itens({ itens, modo }: { readonly itens: readonly ItemDaDieta[]; readon
             {(item.ou ?? []).map((opcao, n) => {
               const daOpcao = paraOPaciente(opcao, modo)
               return (
-                <span key={`${n}-${opcao.alimento}`} className="mt-1.5 flex flex-col border-l-2 border-border pl-3">
+                <span key={`${n}-${opcao.alimento}`} className="mt-1.5 flex flex-col border-l border-border pl-3">
                   <span className="text-sm font-semibold text-muted-foreground">ou</span>
                   <Quantidade quantidade={daOpcao.quantidade} />
                   <span className="text-foreground [overflow-wrap:anywhere]">{daOpcao.nome}</span>

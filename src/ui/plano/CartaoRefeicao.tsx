@@ -13,7 +13,6 @@ import { Card } from '@ds/componentes/display/card.tsx'
 import { Input } from '@ds/componentes/forms/input.tsx'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@ds/componentes/overlay/dropdown-menu.tsx'
 import { DialogoSugestoes } from './DialogoSugestoes.tsx'
-import { DialogoSubstituto } from './DialogoSubstituto.tsx'
 import { EntradaRapida } from './EntradaRapida.tsx'
 import { LinhaItem } from './LinhaItem.tsx'
 import { SugestoesDaRefeicao } from './SugestoesDaRefeicao.tsx'
@@ -46,6 +45,14 @@ interface CartaoRefeicaoProps {
   readonly aoSalvarSugestoes: (lista: readonly SugestaoAlimento[]) => boolean
   /** Conteúdo extra no fim de uma opção de substituto (calculadora de equivalência). */
   readonly extraDaOpcao?: (opcao: OpcaoId) => ReactNode
+  /** Abre o painel de substitutos do item do Principal (spec busca-substitutos, D-1100). */
+  readonly aoBuscarSubstitutos?: ((item: ItemPlano) => void) | undefined
+  /** O item com o painel de substitutos aberto (D-1116). */
+  readonly itemAtivoId?: string | null | undefined
+  /** "Tirar" a opção do item do Principal (D-1114). */
+  readonly aoTirarOpcao?: ((itemId: string, indice: number) => void) | undefined
+  /** O aviso da troca feita nesta refeição, com "Desfazer" (D-1113). */
+  readonly aviso?: ReactNode
 }
 
 /** CA-13, CA-14 e CA-334: refeição com horário, nome, kcal da opção aberta e três opções. */
@@ -65,9 +72,12 @@ export function CartaoRefeicao({
   sugestoes,
   aoSalvarSugestoes,
   extraDaOpcao,
+  aoBuscarSubstitutos,
+  itemAtivoId = null,
+  aoTirarOpcao,
+  aviso,
 }: CartaoRefeicaoProps) {
   const [opcaoAtiva, setOpcaoAtiva] = useState<OpcaoId>('principal')
-  const [itemParaSubstituir, setItemParaSubstituir] = useState<ItemPlano | null>(null)
   const [editandoSugestoes, setEditandoSugestoes] = useState(false)
   // O domínio recusa nome vazio e horário inválido; o texto fica local até ficar válido.
   const [nomeTexto, setNomeTexto] = useState(refeicao.nome)
@@ -177,6 +187,8 @@ export function CartaoRefeicao({
           }
         />
 
+        {opcaoAtiva === 'principal' ? aviso : null}
+
         {itens.length === 0 ? (
           <p className="text-sm text-muted-foreground">Nenhum alimento nesta opção.</p>
         ) : (
@@ -187,7 +199,9 @@ export function CartaoRefeicao({
                 item={item}
                 aoMudarGramas={(g) => aoMudarGramas(opcaoAtiva, item.id, g)}
                 aoRemover={() => aoRemoverItem(opcaoAtiva, item.id)}
-                aoSubstituir={opcaoAtiva === 'principal' ? () => setItemParaSubstituir(item) : undefined}
+                aoBuscarSubstitutos={opcaoAtiva === 'principal' && aoBuscarSubstitutos ? () => aoBuscarSubstitutos(item) : undefined}
+                ativo={opcaoAtiva === 'principal' && item.id === itemAtivoId}
+                aoTirarOpcao={opcaoAtiva === 'principal' && aoTirarOpcao ? (indice) => aoTirarOpcao(item.id, indice) : undefined}
                 aoMudarMedida={aoMudarMedida ? (medida) => aoMudarMedida(opcaoAtiva, item.id, medida) : undefined}
                 modo={modo}
                 aoCriarMedida={aoCriarMedida}
@@ -206,12 +220,6 @@ export function CartaoRefeicao({
       {editandoSugestoes ? (
         <DialogoSugestoes tipo={tipo} lista={sugestoes} aoSalvar={aoSalvarSugestoes} aoFechar={() => setEditandoSugestoes(false)} />
       ) : null}
-
-      <DialogoSubstituto
-        item={itemParaSubstituir}
-        aoFechar={() => setItemParaSubstituir(null)}
-        aoAdicionar={(opcao, alimentoId, gramas, medida) => aoAdicionarItem(opcao, alimentoId, gramas, medida)}
-      />
     </Card>
   )
 }

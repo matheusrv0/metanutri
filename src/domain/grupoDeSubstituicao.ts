@@ -35,10 +35,16 @@ const GRUPOS: readonly (readonly [GrupoDeSubstituicao, (a: Alimento) => boolean]
   [{ id: 'pao', nome: 'pães e torradas' }, (a) => papelDe(a) === 'pao'],
   [{ id: 'cereal-do-cafe', nome: 'cereais do café' }, (a) => papelDe(a) === 'cereal-do-cafe'],
   [{ id: 'oleaginosa', nome: 'castanhas, sementes e amendoim' }, (a) => a.categoria === 'Nozes e sementes' || AMENDOIM.test(nomeLimpo(a))],
-  [{ id: 'leite', nome: 'leites e iogurtes' }, (a) => (a.categoria === 'Leite e derivados' && !QUEIJO.test(nomeLimpo(a))) || EXTRATO_DE_SOJA.test(nomeLimpo(a))],
+  [
+    { id: 'leite', nome: 'leites e iogurtes' },
+    (a) => (a.categoria === 'Leite e derivados' && !QUEIJO.test(nomeLimpo(a))) || EXTRATO_DE_SOJA.test(nomeLimpo(a)),
+  ],
   [{ id: 'leguminosa', nome: 'leguminosas' }, (a) => a.categoria === 'Leguminosas e derivados'],
   [{ id: 'carne', nome: 'carnes, aves e peixes' }, (a) => a.categoria === 'Carnes e derivados' || a.categoria === 'Pescados e frutos do mar'],
-  [{ id: 'ovo-queijo', nome: 'ovos e queijos' }, (a) => a.categoria === 'Ovos e derivados' || (a.categoria === 'Leite e derivados' && QUEIJO.test(nomeLimpo(a)))],
+  [
+    { id: 'ovo-queijo', nome: 'ovos e queijos' },
+    (a) => a.categoria === 'Ovos e derivados' || (a.categoria === 'Leite e derivados' && QUEIJO.test(nomeLimpo(a))),
+  ],
   [{ id: 'fruta', nome: 'frutas' }, (a) => a.categoria === 'Frutas e derivados'],
   [{ id: 'verdura', nome: 'verduras e legumes' }, ehVerdura],
 ]
@@ -69,8 +75,5 @@ export function noMesmoGrupo(base: Alimento): (a: Alimento) => boolean {
   const verduraCozida = ehVerduraCozida(base)
   const acompanhamento = grupo === 'amido'
   return (a) =>
-    grupoDeSubstituicao(a).id === grupo &&
-    mesmaFormaDoOvo(base, a) &&
-    (!verduraCozida || !ehCru(a)) &&
-    (!acompanhamento || ehCru(a) === ehCru(base))
+    grupoDeSubstituicao(a).id === grupo && mesmaFormaDoOvo(base, a) && (!verduraCozida || !ehCru(a)) && (!acompanhamento || ehCru(a) === ehCru(base))
 }

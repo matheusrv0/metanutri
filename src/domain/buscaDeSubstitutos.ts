@@ -174,6 +174,9 @@ export interface Candidato {
   readonly ajuste: number | null
 }
 
+/** O que a tela precisa para substituir ou pôr como opção: o candidato da busca ou o resultado da calculadora. */
+export type PorcaoDoSubstituto = Pick<Candidato, 'alimento' | 'gramas' | 'medida' | 'textoDaMedida'>
+
 export type ResultadoDaBusca =
   | { readonly tipo: 'lista'; readonly candidatos: readonly Candidato[]; readonly restricaoTirou: boolean }
   | { readonly tipo: 'sem-alvo'; readonly motivo: string }

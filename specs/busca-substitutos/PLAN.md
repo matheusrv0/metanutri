@@ -20,7 +20,8 @@ opção do item aparece embaixo dele no plano, na folha, no link e no Word.
   grade da área de trabalho e põe o painel ao lado das refeições (D-1116); abaixo, o painel é um `Sheet` de baixo, pelo
   `useMediaQuery`, como a ficha da Tabela de alimentos. Componentes novos, um por arquivo: `PainelSubstitutos`,
   `BuscaDeSubstitutos`, `CartaoCandidato`, `CalculadoraDeSubstituto` (a calculadora que saiu de `DialogoSubstituto`),
-  `JanelaComparar`, `AvisoDeTroca` e `OpcoesDoItem`. `DialogoSubstituto.tsx` sai.
+  `JanelaComparar`, `AvisoDeTroca` e `OpcoesDoItem`. `DialogoSubstituto.tsx` sai. A ficha que liga e desliga (os chips de
+  nutriente) entra na biblioteca como `ChipAlternavel`, no desenho do `GrupoOpcoes` (atualização do plano durante a T6).
 
 ## Restrições
 
@@ -40,7 +41,7 @@ opção do item aparece embaixo dele no plano, na folha, no link e no Word.
 | T3 | A busca: conta, porção, frases, filtros, restrições, ordem e comparação | `src/domain/buscaDeSubstitutos.ts` (+ teste) | CA-2102 a CA-2116 (domínio), CA-2117 (linhas), CB-1100, CB-1109 | T2 |
 | T4 | A opção do item no domínio | `src/domain/tipos.ts` (`OpcaoDoItem`, campo no item), `src/domain/opcoesDoItem.ts` (+ teste), `src/domain/plano.ts` (+ teste) | CA-2118 a CA-2120 (domínio), CB-1101, CB-1105, CB-1106, CB-1108 | T1 |
 | T5 | A opção para o paciente | `src/domain/folhaDieta.ts`, `src/ui/exportar/FolhaDieta.tsx`, `src/domain/dietaDoLink.ts`, `src/ui/missoes/MeuPlano.tsx`, `src/export/aconselhamento-docx.ts`, `src/domain/restricoes.ts` e os testes deles | CA-2122 a CA-2125, CB-1102, CB-1103 | T4 |
-| T6 | O painel na tela | `src/ui/plano/PainelSubstitutos.tsx`, `BuscaDeSubstitutos.tsx`, `CartaoCandidato.tsx`, `CalculadoraDeSubstituto.tsx`, `JanelaComparar.tsx`, `AvisoDeTroca.tsx`, `OpcoesDoItem.tsx` (novos); `TelaPlano.tsx`, `CartaoRefeicao.tsx`, `LinhaItem.tsx`; sai `DialogoSubstituto.tsx`; testes: `painelSubstitutos.test.tsx` (novo, no lugar de `DialogoSubstituto.test.tsx`), `LinhaItem.test.tsx`, `receitaNaRefeicao.test.tsx` | CA-2100 a CA-2102, CA-2115 a CA-2121, CA-2125 (linha), CA-2127, CB-1104, CB-1107 | T3, T4 |
+| T6 | O painel na tela | `src/ui/plano/PainelSubstitutos.tsx`, `BuscaDeSubstitutos.tsx`, `CartaoCandidato.tsx`, `CalculadoraDeSubstituto.tsx`, `JanelaComparar.tsx`, `AvisoDeTroca.tsx`, `OpcoesDoItem.tsx`, `rotuloDaOpcao.ts` (novos); na biblioteca, `design-system/componentes/forms/ChipAlternavel.tsx` (novo, a ficha de escolha múltipla dos nutrientes) e a entrada dele no `LEIA-ME.md`; `TelaPlano.tsx`, `CartaoRefeicao.tsx`, `LinhaItem.tsx`; sai `DialogoSubstituto.tsx`; testes: `painelSubstitutos.test.tsx` (novo, no lugar de `DialogoSubstituto.test.tsx`), `LinhaItem.test.tsx`, `receitaNaRefeicao.test.tsx` | CA-2100 a CA-2102, CA-2115 a CA-2121, CA-2125 (linha), CA-2127, CB-1104, CB-1107 | T3, T4 |
 | T7 | No navegador | `e2e/busca-substitutos.spec.ts` (novo); `e2e/planejador.spec.ts` e `e2e/correcao-a.spec.ts` (o fluxo antigo da calculadora vira o modo manual do painel) | CA-2101, CA-2103, CA-2117 a CA-2121, CA-2126 | T6 |
 | T8 | Validação e acabamento | prints em 360, 390 e 1440 px nos dois temas (`scratchpad/substitutos/prints/`); passada de `impeccable`, `emil-design-eng`, `ui-ux-pro-max` e `break-ui`; correções que saírem delas | todos | T7 |
 
