@@ -13,6 +13,7 @@ import {
   type ContextoDaResposta,
   type PedidoDeSugestao,
 } from '../../supabase/functions/_shared/iaContrato.ts'
+import { montarMensagem } from '../../supabase/functions/_shared/iaPrompt.ts'
 import { PEDIDO_BASE } from './servidorIaFalsos.test-utils.ts'
 
 
@@ -55,6 +56,55 @@ describe('D-1314 e CA-2311: a limpeza dos textos livres', () => {
       expect(limparTexto(texto)).toBe(texto)
     },
   )
+
+  describe('CA-2384 e D-1331: os 21 jeitos de escrever contato da revisão não chegam à IA', () => {
+    const mensagemCom = (extra: string): string => {
+      const lido = limparPedido({ ...PEDIDO_BASE, rotina: { ...PEDIDO_BASE.rotina, extra } })
+      if (!lido.ok || lido.pedido.modo === 'uso') throw new Error('pedido')
+      return montarMensagem(lido.pedido)
+    }
+    it.each([
+      ['zap +5511987654321', '5511987654321'],
+      ['zap 5511987654321', '5511987654321'],
+      ['wa.me/5511987654321', '5511987654321'],
+      ['tel 11 9 8765 4321', '8765 4321'],
+      ['tel (11) 98765-4321', '98765-4321'],
+      ['tel 11987654321', '11987654321'],
+      ['tel 98 76 54 32 1', '98 76 54 32 1'],
+      ['fixo 3333-4444', '3333-4444'],
+      ['email fulana@gmail.com', 'fulana@gmail.com'],
+      ['email fulana @ gmail.com', 'gmail.com'],
+      ['email fulana arroba gmail ponto com', 'fulana arroba gmail'],
+      ['email fulana[at]gmail.com', 'fulana[at]gmail.com'],
+      ['insta @fulana.nutri', '@fulana.nutri'],
+      ['site instagram.com/fulana', 'instagram.com/fulana'],
+      ['CPF 123.456.789-09', '123.456.789-09'],
+      ['CPF 12345678909', '12345678909'],
+      ['CPF 123 456 789 09', '123 456 789 09'],
+      ['CPF 123.456.789/09', '123.456.789/09'],
+      ['CEP 01310-100', '01310-100'],
+      ['CEP 01.310-100', '01.310-100'],
+      ['digitos largos ０１１９８７６５４３２１', '０１１９８７６５４３２１'],
+    ])('"%s"', (escrito, trecho) => {
+      const mensagem = mensagemCom(escrito)
+      expect(mensagem).not.toContain(trecho)
+      expect(mensagem).not.toContain(trecho.normalize('NFKC'))
+      expect(mensagem).toContain(REMOVIDO)
+    })
+
+    it.each([
+      'meta de 1.800 kcal',
+      '2 colheres de sopa de aveia',
+      'café às 06:30, almoço às 12:00 e jantar às 19:30',
+      'escritório, 8h às 17h',
+      'proteína de 1,1 a 1,5 g/kg',
+      'treina 5 vezes por semana às 18:30',
+      'comprou 1 arroba de carne no mês',
+      'leva marmita (arroz, feijão e frango)',
+    ])('o texto comum fica: "%s"', (texto) => {
+      expect(limparTexto(texto)).toBe(texto)
+    })
+  })
 
   it('textoCurto: não texto vira vazio, tira controle, junta espaços e corta no limite', () => {
     expect(textoCurto(42, 10)).toBe('')

@@ -197,21 +197,34 @@ export type PedidoDaFuncao = { readonly modo: 'uso' } | PedidoDeSugestao
 
 export const REMOVIDO = '[removido]'
 
-const EMAIL = /[\p{L}\p{N}._%+-]+@[\p{L}\p{N}-]+(?:\.[\p{L}\p{N}-]+)+/gu
-const ENDERECO_WEB = /\b(?:https?:\/\/|www\.)\S+/giu
-const CPF = /\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b/g
-const CEP = /\b\d{5}-\d{3}\b/g
-/** Celular e fixo, com ou sem DDI, DDD, parênteses, espaço ou traço: 8 ou 9 algarismos no fim. */
-const TELEFONE = /(?:\+?55[\s.-]?)?(?:\(?\b\d{2}\)?[\s.-]?)?\b9?\d{4}[\s.-]?\d{4}\b/g
+/**
+ * E-mail, também escrito por extenso (D-1331): "fulana@gmail.com", "fulana @ gmail.com", "fulana[at]gmail.com",
+ * "fulana arroba gmail ponto com". A parte depois da arroba precisa de um ponto (ou "ponto"): "1 arroba de carne" fica.
+ */
+const EMAIL =
+  /[\p{L}\p{N}._%+-]+\s*(?:@|\[at\]|\(at\)|\{at\}|(?<![\p{L}\p{N}])arroba(?![\p{L}\p{N}]))\s*[\p{L}\p{N}-]+(?:\s*(?:\.|\[dot\]|\(dot\)|(?<![\p{L}\p{N}])ponto(?![\p{L}\p{N}]))\s*[\p{L}\p{N}-]+)+/giu
+/** Perfil com @ ("@fulana.nutri"). */
+const PERFIL = /(?<![\p{L}\p{N}])@[\p{L}\p{N}._]{2,}/gu
+/** Endereço web com http ou www, e domínio com os finais comuns, com ou sem caminho ("instagram.com/x", "wa.me/55…"). */
+const ENDERECO_WEB = /(?:https?:\/\/|www\.)\S+/giu
+const DOMINIO =
+  /(?<![\p{L}\p{N}@])[\p{L}\p{N}-]+(?:\.[\p{L}\p{N}-]+)*\.(?:com|br|me|net|org|io|app|link|bio|site|info|co|ly|gl|ee|tv|page|online|store|shop)(?![\p{L}\p{N}])(?:\/\S*)?/giu
+/**
+ * Sequência de algarismos com espaço, ponto, parênteses, barra, mais ou traço no meio. Com 8 ou mais algarismos é
+ * telefone (com ou sem DDI), CPF, CEP ou data completa, e sai; "1.800 kcal" e "06:30" ficam (D-1331).
+ */
+const SEQUENCIA_DE_ALGARISMOS = /[+(]?\d[\d\s().+/-]*\d/g
+const MINIMO_DE_ALGARISMOS = 8
 
-/** Tira e-mail, endereço web, CPF, CEP e telefone do texto livre. */
+/** D-1314 e D-1331: tira e-mail (inclusive por extenso), perfil com @, endereço web e sequência longa de algarismos. */
 export function limparTexto(texto: string): string {
   return texto
+    .normalize('NFKC')
     .replace(EMAIL, REMOVIDO)
     .replace(ENDERECO_WEB, REMOVIDO)
-    .replace(CPF, REMOVIDO)
-    .replace(CEP, REMOVIDO)
-    .replace(TELEFONE, REMOVIDO)
+    .replace(DOMINIO, REMOVIDO)
+    .replace(PERFIL, REMOVIDO)
+    .replace(SEQUENCIA_DE_ALGARISMOS, (trecho) => (trecho.replace(/\D/g, '').length >= MINIMO_DE_ALGARISMOS ? REMOVIDO : trecho))
 }
 
 /** O texto limpo, sem controle, com os espaços normalizados e cortado no limite. Não texto vira vazio. */
