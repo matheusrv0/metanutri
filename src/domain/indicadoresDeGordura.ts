@@ -106,6 +106,11 @@ const GALLAGHER: Readonly<Record<Sexo, readonly { readonly de: number; readonly 
   ],
 }
 
+/** Onde começa o sobrepeso de Gallagher 2000 para o sexo e a idade (20 a 79 anos); fora disso, `null`. */
+export function inicioDoSobrepesoDeGallagher(sexo: Sexo, idadeAnos: number): number | null {
+  return GALLAGHER[sexo].find((f) => idadeAnos >= f.de && idadeAnos <= f.ate)?.saudavel[1] ?? null
+}
+
 const faltaDaDobra = (d: keyof Caso['composicao']['dobras']): CampoQueFalta => ({ campo: `composicao.dobras.${d}`, nome: `a dobra ${NOME_DA_DOBRA[d]}` })
 const NOME_DA_ENTRADA_NO_PLANO = {
   sexo: { campo: 'sexo', nome: 'o sexo' },

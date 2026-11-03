@@ -128,15 +128,42 @@ describe('proteína pelo objetivo (spec antropometria-completa, CA-2062 a CA-206
     if (r && !r.calculou) expect(r.motivo).toBe('TFGe abaixo de 30 sem diálise: faixa alta de proteína não sugerida. Pode ser preciso limitar a proteína (PROT-AGE 2013).')
   })
 
-  it('CB-1013: base massa magra sem % de gordura → diz que falta', () => {
+  it('CB-1013 (revisto, item 8): atleta sem % de gordura que emagrece fica com a ISSN, e o aviso diz que o % decide Helms', () => {
     const r = proteinaPorObjetivo(caso({ objetivo: 'emagrecer' }), { perfil: 'atleta' })
-    expect(r?.calculou).toBe(false)
-    if (r && !r.calculou) expect(r.falta).toEqual([{ campo: 'composicao', nome: 'o % de gordura (dobras ou bioimpedância)' }])
+    if (!r?.calculou) throw new Error('sem sugestão')
+    expect(r.faixaGKg).toEqual({ min: 1.4, max: 2 })
+    expect(r.fonte.curta).toBe(FONTES.issn2017.curta)
+    expect(r.avisos.join(' ')).toMatch(/Helms/)
   })
 
   it('sem objetivo, pede o objetivo', () => {
     const r = proteinaPorObjetivo(caso(), { perfil: 'ativo' })
     expect(r?.calculou).toBe(false)
     if (r && !r.calculou) expect(r.falta).toEqual([{ campo: 'objetivo', nome: 'o objetivo' }])
+  })
+})
+
+describe('Helms só para o atleta magro (spec antropometria-completa, revisão, CA-2082)', () => {
+  const emagrecer = (gorduraPct: number | null) => caso({ objetivo: 'emagrecer' }, { gorduraPct })
+
+  it('CA-2082: atleta de 35 anos com 15% → Helms, com o aviso da população de origem', () => {
+    const r = proteinaPorObjetivo(emagrecer(15), { perfil: 'atleta' })
+    if (!r?.calculou) throw new Error('sem sugestão')
+    expect(r.fonte.curta).toBe(FONTES.helms2014.curta)
+    expect(r.avisos.join(' ')).toMatch(/fisiculturistas naturais/)
+  })
+
+  it('CA-2082: atleta com 25% (acima do início do sobrepeso de Gallagher) → ISSN, com o aviso', () => {
+    const r = proteinaPorObjetivo(emagrecer(25), { perfil: 'atleta' })
+    if (!r?.calculou) throw new Error('sem sugestão')
+    expect(r.faixaGKg).toEqual({ min: 1.4, max: 2 })
+    expect(r.base).toBe('peso-atual')
+    expect(r.avisos.join(' ')).toMatch(/Helms/)
+  })
+
+  it('CA-2082: ativo → ISSN; sedentário → sem sugestão', () => {
+    const ativo = proteinaPorObjetivo(emagrecer(15), { perfil: 'ativo' })
+    expect(ativo?.calculou && ativo.fonte.curta).toBe(FONTES.issn2017.curta)
+    expect(proteinaPorObjetivo(emagrecer(15), { perfil: 'sedentario' })?.calculou).toBe(false)
   })
 })

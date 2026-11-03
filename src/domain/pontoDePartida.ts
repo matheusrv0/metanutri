@@ -3,7 +3,7 @@
 import { calcularImc } from './antropometria.ts'
 import { FONTES, type Fonte } from './fontesAntropometria.ts'
 import { CAMPOS } from './indicadoresCorporais.ts'
-import { gorduraDoCaso, type OpcoesDaGordura } from './indicadoresDeGordura.ts'
+import { gorduraDoCaso, inicioDoSobrepesoDeGallagher, type OpcoesDaGordura } from './indicadoresDeGordura.ts'
 import { medidaValida, naPrecisao, type CampoQueFalta } from './linhaDoResultado.ts'
 import { pesoDeReferencia, type BaseDoPeso, type OpcaoDePeso } from './pesoDeReferencia.ts'
 import type { Caso } from './tipos.ts'
@@ -151,7 +151,22 @@ function regraDaProteina(caso: Caso, entrada: EntradaDaProteina, imc: number | n
   if (imc !== null && imc >= 30) {
     return { faixa: { min: 1.2, max: 1.5 }, sobre: 'peso', fonte: FONTES.proteinaObesoProposta, evidencia: 'calculo-do-app', avisos: ['Nenhuma diretriz de consultório define a faixa nem o peso de referência na obesidade.'] }
   }
-  if (ativo) return { faixa: { min: 2.3, max: 3.1 }, sobre: 'massa-magra', fonte: FONTES.helms2014, evidencia: 'limitada', avisos: [] }
+  // Revisão (item 8): Helms só para o atleta magro, a população de origem; o ativo e o atleta que não é magro, ISSN.
+  const issn: Regra = { faixa: { min: 1.4, max: 2 }, sobre: 'peso', fonte: FONTES.issn2017, evidencia: 'limitada', avisos: [] }
+  if (entrada.perfil === 'atleta') {
+    const g = gorduraDoCaso(caso, entrada.gordura)
+    const limite = caso.sexo === null ? null : inicioDoSobrepesoDeGallagher(caso.sexo, idade)
+    if (g !== null && limite !== null && naPrecisao(g.gorduraPct, 1) < limite) {
+      const avisos = ['População de origem: fisiculturistas naturais em preparação para competição, magros e treinados (Helms 2014).']
+      return { faixa: { min: 2.3, max: 3.1 }, sobre: 'massa-magra', fonte: FONTES.helms2014, evidencia: 'limitada', avisos }
+    }
+    const motivo =
+      g === null || limite === null
+        ? 'Sem o % de gordura (ou fora de 20 a 79 anos), não dá para saber se o atleta é magro: vale a ISSN; a faixa de Helms (2014) é de atletas magros.'
+        : 'A faixa de Helms (2014) é de atletas magros (% de gordura abaixo do início do sobrepeso de Gallagher): para este atleta, vale a ISSN.'
+    return { ...issn, avisos: [motivo] }
+  }
+  if (ativo) return issn
   return { motivo: SEM_NUMERO, falta: [] }
 }
 
