@@ -4,6 +4,7 @@
 import type { MudancaSugerida, OpcaoIa } from '../../supabase/functions/_shared/iaContrato.ts'
 import { calcularAdequacao } from './adequacao.ts'
 import { FAIXA_DO_GASTO_PADRAO, percentualDoGasto } from './energia.ts'
+import { QUANTIDADE_MAXIMA_G } from './busca.ts'
 import { conferirOpcao, faixaDoAlimento, motivoParaRetirar, PORCAO_REDUZIDA, QUANTIDADE_FORA, type ContextoDaConferencia, type Retirado } from './iaConferencia.ts'
 import { calcularMacros } from './macros.ts'
 import { ehItemDeReceita } from './receitaNoPlano.ts'
@@ -30,6 +31,11 @@ export interface MudancaConferida {
   readonly marcas: readonly string[]
   /** O motivo de a conferência barrar; nulo quando pode ser aceita. */
   readonly barrada: string | null
+  /**
+   * D-1332: a porção máxima do alimento que entra, na idade (fora dos grupos, 2.000 g). Quando a mudança soma no item que
+   * já existe, o total não passa dela. Nulo em remover.
+   */
+  readonly maximo: number | null
 }
 
 function itemDoPlano(plano: Plano, m: MudancaSugerida): ItemPlano | null {
@@ -55,25 +61,36 @@ function conferirPorcao(alimentoId: number, gramas: number, ctx: ContextoDaConfe
   return { para: { alimentoId, gramas }, marcas: [], barrada: null }
 }
 
+/** D-1332: o máximo da porção do alimento na idade; fora dos grupos, o teto de 2.000 g. */
+function maximoDe(alimentoId: number, ctx: ContextoDaConferencia): number {
+  const a = ctx.buscar(alimentoId)
+  return (a ? faixaDoAlimento(a, ctx.caso.idadeAnos)?.maxima : undefined) ?? QUANTIDADE_MAXIMA_G
+}
+
 /** D-1309: cada mudança conferida contra o plano atual e a ficha. */
 export function conferirMudancas(mudancas: readonly MudancaSugerida[], plano: Plano, ctx: ContextoDaConferencia): readonly MudancaConferida[] {
   return mudancas.map((m): MudancaConferida => {
-    const atual = itemDoPlano(plano, m)
-    const de = atual ? { alimentoId: atual.alimentoId, gramas: atual.gramas } : null
-    if (m.tipo !== 'adicionar' && (!atual || !plano.refeicoes[m.refeicao])) return { mudanca: m, de: null, para: null, marcas: [], barrada: ITEM_SUMIU }
-    if (atual && ehItemDeReceita(atual)) return { mudanca: m, de, para: null, marcas: [], barrada: ITEM_DE_RECEITA }
-    if (m.tipo === 'adicionar' && !plano.refeicoes[m.refeicao]) return { mudanca: m, de: null, para: null, marcas: [], barrada: ITEM_SUMIU }
-    switch (m.tipo) {
-      case 'remover':
-        return { mudanca: m, de, para: null, marcas: [], barrada: null }
-      case 'gramas':
-        // O alimento já está no plano (a nutricionista escolheu): só a porção é conferida.
-        return { mudanca: m, de, ...conferirPorcao(atual?.alimentoId ?? 0, m.gramas ?? atual?.gramas ?? 0, ctx) }
-      case 'trocar':
-      case 'adicionar':
-        return { mudanca: m, de, ...conferirEntrada(m.alimentoId ?? 0, m.gramas ?? atual?.gramas ?? 0, m, ctx) }
-    }
+    const c = conferirUma(m, plano, ctx)
+    return { ...c, maximo: c.para ? maximoDe(c.para.alimentoId, ctx) : null }
   })
+}
+
+function conferirUma(m: MudancaSugerida, plano: Plano, ctx: ContextoDaConferencia): Omit<MudancaConferida, 'maximo'> {
+  const atual = itemDoPlano(plano, m)
+  const de = atual ? { alimentoId: atual.alimentoId, gramas: atual.gramas } : null
+  if (m.tipo !== 'adicionar' && (!atual || !plano.refeicoes[m.refeicao])) return { mudanca: m, de: null, para: null, marcas: [], barrada: ITEM_SUMIU }
+  if (atual && ehItemDeReceita(atual)) return { mudanca: m, de, para: null, marcas: [], barrada: ITEM_DE_RECEITA }
+  if (m.tipo === 'adicionar' && !plano.refeicoes[m.refeicao]) return { mudanca: m, de: null, para: null, marcas: [], barrada: ITEM_SUMIU }
+  switch (m.tipo) {
+    case 'remover':
+      return { mudanca: m, de, para: null, marcas: [], barrada: null }
+    case 'gramas':
+      // O alimento já está no plano (a nutricionista escolheu): só a porção é conferida.
+      return { mudanca: m, de, ...conferirPorcao(atual?.alimentoId ?? 0, m.gramas ?? atual?.gramas ?? 0, ctx) }
+    case 'trocar':
+    case 'adicionar':
+      return { mudanca: m, de, ...conferirEntrada(m.alimentoId ?? 0, m.gramas ?? atual?.gramas ?? 0, m, ctx) }
+  }
 }
 
 /**
@@ -83,16 +100,35 @@ export function conferirMudancas(mudancas: readonly MudancaSugerida[], plano: Pl
  * automática); o alimento que já está na mesma opção soma os gramas no item que existe (CB-1310).
  */
 export function aplicarMudancas(plano: Plano, mudancas: readonly MudancaConferida[], aceitas: ReadonlySet<number>, gerarId: () => string): Plano {
+  return aplicarMudancasComMarcas(plano, mudancas, aceitas, gerarId).plano
+}
+
+export interface MudancasAplicadas {
+  readonly plano: Plano
+  /** D-1332 e CA-2385: as mudanças (pelo índice) cuja soma passou do máximo do grupo e foi reduzida. */
+  readonly reduzidas: ReadonlySet<number>
+}
+
+/**
+ * O mesmo, dizendo quais mudanças foram reduzidas (D-1332, CA-2385): a soma no item que já existe fica no máximo do grupo
+ * (nunca abaixo do que o item já tinha), e a mudança ganha "Porção reduzida ao máximo do grupo".
+ */
+export function aplicarMudancasComMarcas(plano: Plano, mudancas: readonly MudancaConferida[], aceitas: ReadonlySet<number>, gerarId: () => string): MudancasAplicadas {
+  const reduzidas = new Set<number>()
   type Vaga = { item: ItemPlano; sai: boolean }
   const vagas = plano.refeicoes.map((r) => ({
     principal: r.opcoes.principal.map((item): Vaga => ({ item, sai: false })),
     substituto1: r.opcoes.substituto1.map((item): Vaga => ({ item, sai: false })),
     novos: { principal: [] as ItemPlano[], substituto1: [] as ItemPlano[] },
   }))
-  const somarOuPor = (lista: Vaga[], novos: ItemPlano[], entra: ItemDaMudanca, ignorar: Vaga | null): boolean => {
+  const somarOuPor = (lista: Vaga[], novos: ItemPlano[], entra: ItemDaMudanca, ignorar: Vaga | null, maximo: number | null, indice: number): boolean => {
     const igual = [...lista.filter((v) => !v.sai && v !== ignorar).map((v) => v.item), ...novos].find((i) => i.alimentoId === entra.alimentoId && !ehItemDeReceita(i))
     if (!igual) return false
-    const somado: ItemPlano = { id: igual.id, alimentoId: igual.alimentoId, gramas: Math.round((igual.gramas + entra.gramas) * 10) / 10 }
+    const soma = Math.round((igual.gramas + entra.gramas) * 10) / 10
+    const teto = maximo ?? QUANTIDADE_MAXIMA_G
+    const total = Math.max(igual.gramas, Math.min(soma, teto))
+    if (total < soma) reduzidas.add(indice)
+    const somado: ItemPlano = { id: igual.id, alimentoId: igual.alimentoId, gramas: total }
     const vaga = lista.find((v) => v.item === igual)
     if (vaga) vaga.item = somado
     else novos.splice(novos.indexOf(igual), 1, somado)
@@ -113,20 +149,23 @@ export function aplicarMudancas(plano: Plano, mudancas: readonly MudancaConferid
     } else if (m.tipo === 'gramas' && vaga && c.para) {
       vaga.item = { id: vaga.item.id, alimentoId: vaga.item.alimentoId, gramas: c.para.gramas }
     } else if (m.tipo === 'trocar' && vaga && c.para) {
-      if (somarOuPor(lista, refeicao.novos[opcao], c.para, vaga)) vaga.sai = true
+      if (somarOuPor(lista, refeicao.novos[opcao], c.para, vaga, c.maximo, indice)) vaga.sai = true
       else vaga.item = { id: vaga.item.id, alimentoId: c.para.alimentoId, gramas: c.para.gramas }
     } else if (m.tipo === 'adicionar' && c.para) {
-      if (!somarOuPor(lista, refeicao.novos[opcao], c.para, null)) refeicao.novos[opcao].push({ id: gerarId(), alimentoId: c.para.alimentoId, gramas: c.para.gramas })
+      if (!somarOuPor(lista, refeicao.novos[opcao], c.para, null, c.maximo, indice)) refeicao.novos[opcao].push({ id: gerarId(), alimentoId: c.para.alimentoId, gramas: c.para.gramas })
     }
   })
 
   return {
-    refeicoes: plano.refeicoes.map((r, i) => {
-      const v = vagas[i]
-      if (!v) return r
-      const montar = (opcao: 'principal' | 'substituto1') => [...v[opcao].filter((x) => !x.sai).map((x) => x.item), ...v.novos[opcao]]
-      return { ...r, opcoes: { ...r.opcoes, principal: montar('principal'), substituto1: montar('substituto1') } }
-    }),
+    plano: {
+      refeicoes: plano.refeicoes.map((r, i) => {
+        const v = vagas[i]
+        if (!v) return r
+        const montar = (opcao: 'principal' | 'substituto1') => [...v[opcao].filter((x) => !x.sai).map((x) => x.item), ...v.novos[opcao]]
+        return { ...r, opcoes: { ...r.opcoes, principal: montar('principal'), substituto1: montar('substituto1') } }
+      }),
+    },
+    reduzidas,
   }
 }
 
@@ -166,8 +205,8 @@ export function efeitoDasMudancas(
   aceitas: ReadonlySet<number>,
   ctx: Pick<ContextoDaConferencia, 'buscar' | 'caso' | 'metaKcal'>,
   nutrientes: readonly string[],
-): { readonly antes: ResumoDoPlano; readonly depois: ResumoDoPlano } {
+): { readonly antes: ResumoDoPlano; readonly depois: ResumoDoPlano; readonly reduzidas: ReadonlySet<number> } {
   let contador = 0
-  const depois = aplicarMudancas(plano, mudancas, aceitas, () => `efeito-${++contador}`)
-  return { antes: resumoDoPlano(plano, ctx, nutrientes), depois: resumoDoPlano(depois, ctx, nutrientes) }
+  const aplicadas = aplicarMudancasComMarcas(plano, mudancas, aceitas, () => `efeito-${++contador}`)
+  return { antes: resumoDoPlano(plano, ctx, nutrientes), depois: resumoDoPlano(aplicadas.plano, ctx, nutrientes), reduzidas: aplicadas.reduzidas }
 }

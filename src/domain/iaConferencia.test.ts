@@ -19,7 +19,9 @@ import {
 } from './iaConferencia.ts'
 import { gastoCalculado } from './iaPedido.ts'
 import { AVISO_GESTACAO_FIGADO, SEM_RESTRICOES } from './restricoes.ts'
-import { buscarAlimento } from './tabelas.ts'
+import arquivo from '../data/base-ampliada.json'
+import { decodificarBaseAmpliada, type ArquivoBaseAmpliada } from './baseAmpliada.ts'
+import { buscarAlimento, registrarBaseAmpliada } from './tabelas.ts'
 import { totaisDoPlano } from './totais.ts'
 import type { Alimento, BuscarAlimento, Caso } from './tipos.ts'
 
@@ -249,6 +251,56 @@ describe('as marcas do plano', () => {
     expect(p.totais.proteinaGKg).not.toBeNull()
     expect(p.abaixoDaMeta.length).toBeGreaterThan(0)
     expect(p.abaixoDaMeta.map((a) => a.nutriente)).not.toContain('Sódio')
+  })
+})
+
+describe('CA-2386 e D-1332: a quantidade vale depois de somar, e o ajuste não infla o que não tem grupo', () => {
+  it('o mesmo alimento três vezes com 800 g: o total (2.400 g) passa de 2.000 g e sai', () => {
+    const p = semAjuste(resposta([[53, 50]], [[471, 800], [471, 800], [471, 800], [3, 150]]), { caso: adulto(), restricoes: SEM_RESTRICOES })
+    expect(p.retirados).toEqual([{ alimentoId: 471, nome: 'Café, infusão 10%', gramas: 2400, refeicao: 1, opcao: 'principal', motivo: QUANTIDADE_FORA }])
+    expect(p.refeicoes[1]?.principal.map((i) => i.alimentoId)).toEqual([3])
+  })
+
+  it('a revisão: dez vezes 1.000 g de café somam 10.000 g e saem; nada passa de 2.000 g depois do ajuste', () => {
+    const dez = Array.from({ length: 10 }, () => [471, 1000] as const)
+    const p = conferirSugestao(resposta([], dez), contexto({ caso: adulto(), restricoes: SEM_RESTRICOES, metaKcal: 2150 }))
+    expect(p.retirados.map((r) => [r.alimentoId, r.gramas, r.motivo])).toEqual([[471, 10_000, QUANTIDADE_FORA]])
+    for (const item of p.refeicoes.flatMap((r) => [...r.principal, ...r.opcao2])) expect(item.gramas).toBeLessThanOrEqual(2000)
+  })
+
+  it('o ajuste de energia não mexe no café nem no chá (sem porção de grupo)', () => {
+    const p = conferirSugestao(resposta([[471, 100], [53, 50]], [[3, 100], [561, 100], [410, 90]]), contexto({ caso: adulto(), restricoes: SEM_RESTRICOES, metaKcal: 4000 }))
+    const cafe = p.refeicoes[0]?.principal.find((i) => i.alimentoId === 471)
+    expect(cafe).toEqual({ alimentoId: 471, gramas: 100, marcas: [] })
+    expect(p.refeicoes[1]?.principal.some((i) => i.marcas.includes(PORCAO_AJUSTADA))).toBe(true)
+  })
+})
+
+describe('os casos de borda da conferência', () => {
+  it('CB-1306: todos os itens de uma refeição retirados: a refeição sai vazia, com os retirados listados', () => {
+    const p = semAjuste(resposta([[53, 50]], [[458, 200], [356, 100]]))
+    expect(p.refeicoes[1]?.principal).toEqual([])
+    expect(p.retirados.map((r) => [r.refeicao, r.alimentoId])).toEqual([
+      [1, 458],
+      [1, 356],
+    ])
+  })
+
+  it('CB-1308: o alimento próprio apagado entre o pedido e a resposta sai como "Alimento fora da base"', () => {
+    const p = semAjuste(resposta([[900_123, 50], [53, 50]]), { idsProprios: new Set([900_123]) })
+    expect(p.retirados).toEqual([{ alimentoId: 900_123, nome: 'Alimento 900123', gramas: 50, refeicao: 0, opcao: 'principal', motivo: FORA_DA_BASE }])
+  })
+
+  it('CB-1311: o alimento medido em ml fica com a quantidade em ml, conferida pelo grupo, e soma pela energia por 100 ml', () => {
+    registrarBaseAmpliada(decodificarBaseAmpliada(arquivo as unknown as ArquivoBaseAmpliada))
+    const leite = buscarAlimento(100_101)
+    expect(leite?.unidade).toBe('ml')
+    const p = semAjuste(resposta([[100_101, 200], [53, 50]]), { caso: adulto(), restricoes: SEM_RESTRICOES })
+    expect(p.retirados).toEqual([])
+    expect(p.refeicoes[0]?.principal[0]).toEqual({ alimentoId: 100_101, gramas: 200, marcas: [] })
+    const plano = propostaParaPlano(p, gerarId)
+    expect(plano.refeicoes[0]?.opcoes.principal[0]?.gramas).toBe(200)
+    expect(p.refeicoes[0]?.kcal).toBeCloseTo(((leite?.nutrientes.energia_kcal ?? 0) * 200) / 100 + ((buscarAlimento(53)?.nutrientes.energia_kcal ?? 0) * 50) / 100, 6)
   })
 })
 

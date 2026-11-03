@@ -163,16 +163,20 @@ export function conferirOpcao(
   for (const sugerido of itens) {
     const a = ctx.buscar(sugerido.alimentoId)
     const motivo = motivoParaRetirar(sugerido.alimentoId, ctx)
-    // 8. A quantidade absurda sai antes de qualquer redução.
-    const final = motivo ?? (sugerido.gramas > QUANTIDADE_MAXIMA_G ? QUANTIDADE_FORA : null)
-    if (final || !a) {
-      retirados.push({ alimentoId: sugerido.alimentoId, nome: nomeDe(a, sugerido.alimentoId), gramas: sugerido.gramas, refeicao, opcao, motivo: final ?? FORA_DA_BASE })
+    if (motivo || !a) {
+      retirados.push({ alimentoId: sugerido.alimentoId, nome: nomeDe(a, sugerido.alimentoId), gramas: sugerido.gramas, refeicao, opcao, motivo: motivo ?? FORA_DA_BASE })
       continue
     }
     const repetido = ficam.find((i) => i.alimentoId === sugerido.alimentoId)
     const item: ItemDeTrabalho = repetido ?? { alimentoId: sugerido.alimentoId, gramas: 0, marcas: [] }
     item.gramas += sugerido.gramas
     if (!repetido) ficam.push(item)
+  }
+  // 8. A quantidade absurda sai antes de qualquer redução, já somada a do repetido (D-1332, CA-2386).
+  for (const item of [...ficam]) {
+    if (item.gramas <= QUANTIDADE_MAXIMA_G) continue
+    retirados.push({ alimentoId: item.alimentoId, nome: nomeDe(ctx.buscar(item.alimentoId), item.alimentoId), gramas: item.gramas, refeicao, opcao, motivo: QUANTIDADE_FORA })
+    ficam.splice(ficam.indexOf(item), 1)
   }
   for (const item of ficam) {
     const a = ctx.buscar(item.alimentoId)
@@ -216,11 +220,10 @@ function ajustarEnergia(refeicoes: readonly { readonly principal: ItemDeTrabalho
         const a = ctx.buscar(item.alimentoId)
         if (!a) continue
         const faixa = faixaDoAlimento(a, ctx.caso.idadeAnos)
-        let alvo = item.gramas * fator
-        if (faixa) alvo = Math.min(faixa.maxima, Math.max(faixa.minima, alvo))
-        let novo = arredondarPorcao(item.alimentoId, alvo)
-        if (faixa && novo > faixa.maxima) novo = faixa.maxima
-        if (faixa && novo < faixa.minima) novo = faixa.minima
+        // D-1332: o alimento sem porção de grupo (café e chás, quase sem energia) não muda no ajuste.
+        if (!faixa) continue
+        const alvo = Math.min(faixa.maxima, Math.max(faixa.minima, item.gramas * fator))
+        const novo = Math.min(QUANTIDADE_MAXIMA_G, faixa.maxima, Math.max(faixa.minima, arredondarPorcao(item.alimentoId, alvo)))
         if (Math.abs(novo - item.gramas) >= 0.5) {
           item.gramas = novo
           marcar(item, PORCAO_AJUSTADA)
