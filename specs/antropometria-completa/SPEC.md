@@ -166,7 +166,8 @@ prioridade, meta de perda e mudança mínima detectável).
   situação; o método (o nome do protocolo ou "bioimpedância") vem no detalhe.
 - **CA-2035** · Dado o % de gordura e o peso, então massa gorda e massa magra vêm só com o valor (sem recomendação nem
   situação); dado JP 3 dobras num homem com abdominal 25 e peitoral 7 e a coxa vazia, então a soma de dobras vem sem
-  valor, diz que falta a coxa e avisa "soma parcial: 32 mm".
+  valor, diz que falta a coxa e traz a soma parcial (32 mm) no detalhe, com o aviso de que está incompleta (o número
+  vai como valor, e a tela formata).
 - **CA-2036** · Dado um adulto com a cintura no ponto médio ou sem ponto registrado, então homem 93,9 → Sem risco
   aumentado; 94,0 → Risco aumentado; 102,0 → Risco substancialmente aumentado; mulher 80,0 e 88,0 iguais; recomendação
   "Abaixo de 94 cm" / "Abaixo de 80 cm"; sem ponto registrado, o aviso da D-1004. Na crista ilíaca: homem 102,0 → Sem
