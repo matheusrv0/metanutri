@@ -156,6 +156,36 @@ describe('D-1125: a troca equivalente no mesmo grupo', () => {
     expect(naTrocaEquivalente(arroz, 150)({ ...batata, nutrientes: { ...batata.nutrientes, energia_kcal: null } }, 350)).toBe(false)
   })
 
+  it('CA-2143 (D-1130): do arroz tipo 1, só uma variação do arroz, a integral, com o filtro ligado ou não', () => {
+    const arroz = porNome('Arroz, tipo 1, cozido')
+    for (const mesmoGrupo of [true, false]) {
+      const arrozes = vista(arroz, 150, ['carboidrato_g'], mesmoGrupo, 1000)
+        .filter((c) => /^Arroz,/.test(c.alimento.descricao))
+        .map((c) => c.alimento.descricao)
+      expect(arrozes, mesmoGrupo ? 'grupo' : 'todos').toEqual(['Arroz, integral, cozido'])
+    }
+    // A batata inglesa, a doce e a baroa são alimentos diferentes: o limite por nome das trocas não vem (CA-2103).
+    const batatas = vista(arroz, 150, ['carboidrato_g']).filter((c) => /^Batata, (inglesa|doce|baroa), cozida$/.test(c.alimento.descricao))
+    expect(batatas).toHaveLength(3)
+  })
+
+  it('CA-2143 (D-1130): do feijão carioca, a variação mais consumida (POF), o feijão preto, e nenhum outro feijão', () => {
+    const carioca = porNome('Feijão, carioca, cozido')
+    for (const nutrientes of [['proteina_g', 'carboidrato_g'], ['carboidrato_g']] as const) {
+      const feijoes = vista(carioca, 140, nutrientes).filter((c) => /^Feijão,/.test(c.alimento.descricao))
+      expect(feijoes.map((c) => c.alimento.descricao), nutrientes.join('+')).toEqual(['Feijão, preto, cozido'])
+    }
+  })
+
+  it('CA-2143 (D-1130): a fruta inteira não troca pela mesma fruta de outra variedade (D-422); o suco troca por uma', () => {
+    for (const mesmoGrupo of [true, false]) {
+      const bananas = vista(porNome('Banana, prata, crua'), 100, ['carboidrato_g'], mesmoGrupo, 1000).filter((c) => /^Banana,/.test(c.alimento.descricao))
+      expect(bananas.map((c) => c.alimento.descricao)).toEqual([])
+    }
+    const laranjas = vista(porNome('Laranja, pêra, suco'), 200, ['carboidrato_g']).filter((c) => /^Laranja,/.test(c.alimento.descricao))
+    expect(laranjas.length).toBeLessThanOrEqual(1)
+  })
+
   it('CA-2136: pó só no lugar de pó; o que volta cozido não é desidratado', () => {
     const leite = porNome('Leite, de vaca, integral')
     const emPo = porNome('Leite, de vaca, integral, pó')

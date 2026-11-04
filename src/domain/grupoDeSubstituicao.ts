@@ -26,6 +26,17 @@ const ehAmido = (a: Alimento): boolean =>
 
 /** Amendoim, paçoca e pé-de-moleque são leguminosa na tabela e oleaginosa no prato. */
 const AMENDOIM = /^(Amendoim|Paçoca|Pé-de-moleque)/i
+
+const FRUTAS = 'Frutas e derivados'
+const SUCO_OU_POLPA = /(^|[\s,])(suco|polpa)($|[\s,])/i
+/**
+ * O suco e a polpa da fruta ("Laranja, pêra, suco", "Acerola, polpa, congelada"): não são fruta inteira (spec
+ * busca-substitutos, D-1131). O Guia Alimentar para a População Brasileira (Ministério da Saúde, 2014) prefere a fruta
+ * inteira ao suco, que perde a fibra.
+ */
+export const ehSucoOuPolpaDeFruta = (a: Alimento): boolean => a.categoria === FRUTAS && SUCO_OU_POLPA.test(a.descricao)
+/** A fruta inteira: do grupo das frutas, sem ser suco nem polpa. */
+export const ehFrutaInteira = (a: Alimento): boolean => a.categoria === FRUTAS && !ehSucoOuPolpaDeFruta(a)
 /** O extrato de soja (a "bebida de soja") troca com o leite. */
 const EXTRATO_DE_SOJA = /^Soja, extrato solúvel/i
 const QUEIJO = /^Queijo,/i
@@ -45,7 +56,7 @@ const GRUPOS: readonly (readonly [GrupoDeSubstituicao, (a: Alimento) => boolean]
     { id: 'ovo-queijo', nome: 'ovos e queijos' },
     (a) => a.categoria === 'Ovos e derivados' || (a.categoria === 'Leite e derivados' && QUEIJO.test(nomeLimpo(a))),
   ],
-  [{ id: 'fruta', nome: 'frutas' }, (a) => a.categoria === 'Frutas e derivados'],
+  [{ id: 'fruta', nome: 'frutas' }, (a) => a.categoria === FRUTAS],
   [{ id: 'verdura', nome: 'verduras e legumes' }, ehVerdura],
 ]
 

@@ -4,12 +4,12 @@
 import { MICRONUTRIENTES_ADEQUACAO } from './adequacao.ts'
 import { MAXIMO_DE_PEDACOS, MEDIDAS_DE_CONTAR, medidaParaMostrar, medidasDoAlimento } from './busca.ts'
 import { posicaoNoConsumo } from './consumoPof.ts'
-import { noMesmoGrupo } from './grupoDeSubstituicao.ts'
+import { ehFrutaInteira, noMesmoGrupo } from './grupoDeSubstituicao.ts'
 import { unidadeDo } from './liquido.ts'
 import { CAFE_OU_CHA, ehDeUsoComum, ehFrito, ehPoOuDesidratado, ehPratoComposto, ehProcessado, ehSegundaEscolha, ehUltraprocessado } from './prescritivel.ts'
 import { casaRestricao, comoRestricoes, ehNaoGosta, type RestricoesDoPaciente } from './restricoes.ts'
 import { ehPrescritivelParaSugerir } from './sugestaoDoProprio.ts'
-import { ehTrocaRazoavel, macroDominante } from './trocas.ts'
+import { ehTrocaRazoavel, macroDominante, nomeDaVariedade } from './trocas.ts'
 import type { Alimento, BuscarAlimento, ChaveNutrienteAlimento, MedidaDoItem } from './tipos.ts'
 import { FIGADO } from './vitaminaA.ts'
 
@@ -235,6 +235,9 @@ export function faixaDeProximidade(proximidade: number, melhor: number): number 
   return Math.floor((proximidade - melhor) / FAIXA_DE_PROXIMIDADE + 1e-9)
 }
 
+/** A posição no consumo do Brasil (POF 2017-2018); quem não está nela vai para o fim. */
+const naPof = (a: Alimento): number => Math.min(posicaoNoConsumo(a.id), 1e6)
+
 /** D-1109: não gosta por último, uso comum, faixa de 5%, desempate clínico, medida caseira, POF, proximidade, nome. */
 const compararCandidatos =
   (melhor: number) =>
@@ -248,7 +251,7 @@ const compararCandidatos =
       Number(ehProcessado(x.alimento)) - Number(ehProcessado(y.alimento)) ||
       Number(ehSegundaEscolha(x.alimento)) - Number(ehSegundaEscolha(y.alimento)) ||
       Number(y.medida !== null) - Number(x.medida !== null) ||
-      Math.min(posicaoNoConsumo(x.alimento.id), 1e6) - Math.min(posicaoNoConsumo(y.alimento.id), 1e6) ||
+      naPof(x.alimento) - naPof(y.alimento) ||
       x.proximidade - y.proximidade ||
       x.alimento.descricao.localeCompare(y.alimento.descricao, 'pt-BR')
     )
@@ -287,6 +290,28 @@ export function naTrocaEquivalente(base: Alimento, gramas: number): (candidato: 
     const razao = (kcal * gramasDoCandidato) / 100 / energiaDoItem
     return razao >= MENOR_RAZAO_DE_ENERGIA - 1e-9 && razao <= MAIOR_RAZAO_DE_ENERGIA + 1e-9
   }
+}
+
+/**
+ * D-1130: a regra de variedade das trocas da folha ("trocar arroz tipo 1 por arroz tipo 2 não é troca"), sobre a lista já
+ * ordenada. Do alimento do próprio item fica no máximo uma variação: a que o paciente não recusa, a mais consumida no
+ * Brasil (POF 2017-2018, como nas trocas do papel e da fruta) e, empatadas, a primeira na ordem (arroz tipo 1 → arroz
+ * integral; feijão carioca → feijão preto, CA-2105). Da fruta inteira, nenhuma (D-422: banana prata não troca por banana
+ * nanica); do suco e da polpa, uma (D-1131: o suco de laranja troca pela laranja). O limite de duas por nome que as trocas
+ * usam nos outros alimentos não vem: a busca mostra 20, e a batata inglesa, a doce e a baroa são alimentos diferentes
+ * (CA-2103).
+ */
+function semOutraVariedade(base: Alimento, ordenados: readonly Ordenavel[]): readonly Ordenavel[] {
+  const nome = nomeDaVariedade(base)
+  const daMesma = (o: Ordenavel) => nomeDaVariedade(o.candidato.alimento) === nome
+  if (ehFrutaInteira(base)) return ordenados.filter((o) => !daMesma(o))
+  // `x` vem antes na ordem: no empate, ele fica.
+  const melhor = (x: Ordenavel, y: Ordenavel): Ordenavel => {
+    if (x.naoGosta !== y.naoGosta) return x.naoGosta ? y : x
+    return naPof(y.candidato.alimento) < naPof(x.candidato.alimento) ? y : x
+  }
+  const fica = ordenados.filter(daMesma).reduce<Ordenavel | null>((m, o) => (m === null ? o : melhor(m, o)), null)
+  return ordenados.filter((o) => !daMesma(o) || o === fica)
 }
 
 /** D-1120: o mel e o chocolate que a conduta da parceira libera no Cobrir (D-290) não são substitutos. */
@@ -354,8 +379,7 @@ export function buscarSubstitutos(
   }
 
   const melhor = candidatos.reduce((m, o) => Math.min(m, o.candidato.proximidade), Number.POSITIVE_INFINITY)
-  const ordenados = candidatos
-    .sort(compararCandidatos(melhor))
+  const ordenados = semOutraVariedade(base, candidatos.sort(compararCandidatos(melhor)))
     .slice(0, opcoes.limite ?? LIMITE_DA_BUSCA)
     .map((o) => o.candidato)
   return { tipo: 'lista', candidatos: ordenados, restricaoTirou }
