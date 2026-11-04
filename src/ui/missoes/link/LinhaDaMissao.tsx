@@ -53,7 +53,8 @@ export function LinhaDaMissao({ missao, acabouDeMarcar, aoAlternar, ver }: Linha
           <span className={cn('block text-base leading-snug font-semibold [overflow-wrap:anywhere]', missao.feita ? 'text-successtext line-through' : 'text-heading')}>
             {missao.texto}
           </span>
-          <span id={idOrigem} className="mt-0.5 block text-sm text-muted-foreground">
+          {/* CA-2218: com a letra a 200% em 360 px, "Refeição do plano" quebra em vez de empurrar a tela para o lado. */}
+          <span id={idOrigem} className="mt-0.5 block text-sm text-muted-foreground [overflow-wrap:anywhere]">
             {missao.origem}
           </span>
         </span>
