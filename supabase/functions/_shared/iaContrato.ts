@@ -371,6 +371,9 @@ const HORARIO = /^([01]\d|2[0-3]):[0-5]\d$/
 
 /** Ids de alimento: a TACO e a base ampliada (1 a 199.999) e os próprios (900.000 em diante). */
 export const ehIdDeAlimento = (v: unknown): v is number => Number.isInteger(v) && (v as number) >= 1 && (v as number) <= 2_000_000_000
+/** D-1343: o primeiro id de alimento próprio (o mesmo `PRIMEIRO_ID_PROPRIO` de src/domain/busca.ts). */
+export const PRIMEIRO_ID_DE_MEU_ALIMENTO = 900_000
+const ehIdDeMeuAlimento = (v: unknown): v is number => ehIdDeAlimento(v) && v >= PRIMEIRO_ID_DE_MEU_ALIMENTO
 
 function faixa(v: unknown, maxPct: number, maxGKg: number): FaixaIa | null {
   if (!ehObjeto(v)) return null
@@ -468,7 +471,7 @@ function refeicoes(v: unknown): readonly RefeicaoIa[] | null {
 }
 
 function meuAlimento(v: unknown): MeuAlimentoIa | null {
-  if (!ehObjeto(v) || !ehIdDeAlimento(v['id'])) return null
+  if (!ehObjeto(v) || !ehIdDeMeuAlimento(v['id'])) return null
   const id = v['id']
   const nome = textoCurto(v['nome'], LIMITES_DO_PEDIDO.nomeDoAlimento)
   const kcal = numeroNaFaixa(v['kcal'], 0, 900)

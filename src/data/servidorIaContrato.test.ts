@@ -7,6 +7,7 @@ import {
   LIMITE_DE_SUGESTOES_IA,
   limparPedido,
   limparTexto,
+  PRIMEIRO_ID_DE_MEU_ALIMENTO,
   renovaEm,
   REMOVIDO,
   textoCurto,
@@ -14,6 +15,7 @@ import {
   type PedidoDeSugestao,
 } from '../../supabase/functions/_shared/iaContrato.ts'
 import { montarMensagem } from '../../supabase/functions/_shared/iaPrompt.ts'
+import { PRIMEIRO_ID_PROPRIO } from '../domain/busca.ts'
 import { PEDIDO_BASE } from './servidorIaFalsos.test-utils.ts'
 
 
@@ -164,6 +166,16 @@ describe('CA-2394 e D-1341: os formatos novos de contato da revisão (rodada 2) 
     'pesa 72,3 kg e mede 1,65 m',
   ])('o texto comum fica: "%s"', (texto) => {
     expect(limparTexto(texto)).toBe(texto)
+  })
+})
+
+describe('CA-2395 e D-1343: "Meus alimentos" só com id de alimento próprio', () => {
+  it('um id da Base MetaNutri mandado como alimento próprio sai; o de 900.000 em diante fica', () => {
+    const proprio = { nome: 'Pão integral caseiro', grupo: 'Cereais', unidade: 'g', kcal: 250, p: 9, c: 48, g: 1.5 }
+    const pedido = limpo({ ...PEDIDO_BASE, meusAlimentos: [{ id: 8, ...proprio }, { id: 899_999, ...proprio }, { id: 900_000, ...proprio }, { id: 900_012, ...proprio }] })
+    expect(pedido.meusAlimentos.map((a) => a.id)).toEqual([900_000, 900_012])
+    expect(PRIMEIRO_ID_DE_MEU_ALIMENTO).toBe(PRIMEIRO_ID_PROPRIO)
+    expect(montarMensagem(pedido)).not.toMatch(/(?<!\d)8 \| Pão integral caseiro/)
   })
 })
 
