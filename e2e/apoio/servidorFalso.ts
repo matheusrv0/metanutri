@@ -29,6 +29,23 @@ export interface Cenario {
   readonly marcar?: 'ok' | 'sem-rede'
   /** O e-mail da sessão, quando o teste precisa de um diferente (um e-mail longo, por exemplo). */
   readonly emailDaSessao?: string
+  /**
+   * Spec lado-do-paciente: a resposta de cada Edge Function pelo nome (`meu-link`, `avisos-resposta`…), a partir do
+   * corpo pedido. Função sem resposta aqui segue como antes.
+   */
+  readonly funcoes?: Readonly<Record<string, (corpo: Linha) => RespostaDaFuncao>>
+}
+
+/** O que uma Edge Function falsa responde: 200 por padrão. */
+export interface RespostaDaFuncao {
+  readonly status?: number
+  readonly corpo: unknown
+}
+
+/** Um pedido que chegou ao servidor falso: o nome da função (do banco ou do servidor) e o corpo. */
+export interface PedidoAoServidor {
+  readonly nome: string
+  readonly corpo: Linha
 }
 
 const base64url = (texto: string): string => Buffer.from(texto).toString('base64url')
@@ -87,6 +104,10 @@ export interface ServidorFalso {
   readonly gravacoesDaCopia: unknown[]
   /** O corpo de cada gravação na tabela `marcas` (o "Salvar" de "Sua marca", spec marca-no-link), na ordem. */
   readonly gravacoesDaMarca: Linha[]
+  /** Spec lado-do-paciente: cada função do banco chamada (`registrar_acesso`, `marcar_missoes`…), na ordem. */
+  readonly chamadasDoBanco: PedidoAoServidor[]
+  /** Spec lado-do-paciente: cada Edge Function chamada (`meu-link`, `avisos-resposta`…), na ordem. */
+  readonly pedidosDeFuncao: PedidoAoServidor[]
   /** Enquanto verdadeiro, todo pedido ao Supabase cai como sem internet. */
   semRede: boolean
 }
@@ -113,12 +134,21 @@ const corpoDoPedido = (valor: unknown): Record<string, unknown> => {
   return typeof linha === 'object' && linha !== null ? (linha as Record<string, unknown>) : {}
 }
 
+/** O corpo em JSON do pedido; sem corpo, ou com um que não é JSON, vazio. */
+const corpoEmJson = (pedido: { postDataJSON(): unknown }): Record<string, unknown> => {
+  try {
+    return corpoDoPedido(pedido.postDataJSON())
+  } catch {
+    return {}
+  }
+}
+
 /**
  * Liga o servidor falso no navegador da página, antes do `goto`. Spec separacao-site-app (DP-SA-17): responde no
  * contexto, não só na página, para valer também na aba que o "Continuar" do site abre.
  */
 export async function ligarServidorFalso(pagina: Page, cenario: Cenario = {}): Promise<ServidorFalso> {
-  const servidor: ServidorFalso = { logouts: [], gravacoesDaCopia: [], gravacoesDaMarca: [], semRede: false }
+  const servidor: ServidorFalso = { logouts: [], gravacoesDaCopia: [], gravacoesDaMarca: [], chamadasDoBanco: [], pedidosDeFuncao: [], semRede: false }
   const contexto = pagina.context()
   const nuvem = nuvens.get(contexto) ?? { copia: null }
   nuvens.set(contexto, nuvem)
@@ -158,6 +188,19 @@ export async function ligarServidorFalso(pagina: Page, cenario: Cenario = {}): P
       return route.fulfill({ status: 204, headers: { 'access-control-allow-origin': '*' } })
     }
     if (caminho.startsWith('/auth/v1/')) return json(route, {})
+
+    // Spec lado-do-paciente: as Edge Functions que o teste responde, e o registro de cada pedido.
+    if (caminho.startsWith('/functions/v1/')) {
+      const nome = caminho.slice('/functions/v1/'.length)
+      const corpo = corpoEmJson(pedido)
+      servidor.pedidosDeFuncao.push({ nome, corpo })
+      const responderFuncao = cenario.funcoes?.[nome]
+      if (responderFuncao) {
+        const resposta = responderFuncao(corpo)
+        return json(route, resposta.corpo, resposta.status ?? 200)
+      }
+    }
+    if (caminho.startsWith('/rest/v1/rpc/')) servidor.chamadasDoBanco.push({ nome: caminho.slice('/rest/v1/rpc/'.length), corpo: corpoEmJson(pedido) })
 
     if (caminho === '/rest/v1/rpc/missoes_por_token') {
       if (cenario.link === 'sem-rede') return route.abort('internetdisconnected')
