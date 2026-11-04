@@ -60,6 +60,7 @@ opção do item aparece embaixo dele no plano, na folha, no link e no Word.
 | T22 | Fruta inteira primeiro (B5) | `src/domain/grupoDeSubstituicao.ts` (`ehSucoOuPolpaDeFruta` e a forma da fruta), `src/domain/buscaDeSubstitutos.ts` (a ordem); testes: `grupoDeSubstituicao.test.ts`, `trocaEquivalente.test.ts` | CA-2144 | T21 |
 | T23 | Café e chá como item (recomendação 2) | `src/domain/buscaDeSubstitutos.ts`; testes: `buscaDeSubstitutos.test.ts`, `painelSubstitutos.test.tsx` | CA-2145 | T22 |
 | T24 | Validação da rodada 2 | `npm run lint`, `npm run typecheck`, `npx vitest run --maxWorkers=4`; e2e `busca-substitutos` e `planejador` (`--workers=2`, na configuração normal, com a trava `trava-e2e` da rodada: vários testes têm a porta escrita dentro); `npm run build` e `npm run test:csp` (com as travas); as sondas r2 e s1 a s8; prints da lista que abre sozinha (leite 150 ml, banana 100 g, arroz 150 g) em 1440 e 390 px | todos | T23 |
+| T25 | O toque de 44 px na lista "Outro nutriente" (achado na T24) | `src/ui/plano/BuscaDeSubstitutos.tsx` (a lista transparente cobre também a borda da caixa); teste: `e2e/busca-substitutos.spec.ts` (CA-2126 já confere a lista desde a T15) | CA-2126 | T24 |
 
 ## Verificação de cada tarefa
 
