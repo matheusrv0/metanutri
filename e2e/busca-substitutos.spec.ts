@@ -96,6 +96,23 @@ test.describe('tela larga (1440 px): o painel ao lado das refeições', () => {
     await expect(cuscuz).toContainText('0,2 g de proteína a menos')
     await expect(painel.getByText('Mandioca, cozida')).toHaveCount(0)
   })
+
+  test('CA-2138 (D-1126): no teclado, a seta na lista "Outro nutriente" não acrescenta; o Enter acrescenta', async ({ page }) => {
+    await planoComArroz(page, 1440)
+    await page.getByRole('button', { name: `Buscar substitutos para ${ARROZ}` }).click()
+    const painel = page.getByRole('complementary', { name: `Substitutos de ${ARROZ}` })
+    const lista = painel.getByRole('combobox', { name: 'Outro nutriente' })
+    const selecionados = painel.getByRole('list', { name: 'Nutrientes selecionados' }).getByRole('listitem')
+    await lista.focus()
+    // Energia, Fibra alimentar, Cálcio: três setas com a lista fechada (no Chromium do Windows, cada uma muda o valor).
+    for (let i = 0; i < 3; i += 1) await page.keyboard.press('ArrowDown')
+    await expect(selecionados).toHaveText(['Carboidratos'])
+    await lista.selectOption('calcio_mg')
+    await lista.press('Enter')
+    await expect(selecionados).toHaveText(['Carboidratos', 'Cálcio'])
+    await expect(lista).toHaveValue('')
+    await expect(lista).toBeFocused()
+  })
 })
 
 test.describe('celular e tablet: a gaveta (D-1116, D-800, D-802)', () => {
@@ -115,6 +132,8 @@ test.describe('celular e tablet: a gaveta (D-1116, D-800, D-802)', () => {
       for (const alvo of [
         gaveta.getByRole('button', { name: /^Carboidratos/ }),
         gaveta.getByRole('button', { name: 'Buscar alimentos' }),
+        gaveta.getByRole('combobox', { name: 'Outro nutriente' }),
+        gaveta.getByRole('button', { name: 'Adicionar' }),
         gaveta.getByRole('button', { name: 'Substituir por Polenta, pré-cozida' }),
         gaveta.getByRole('button', { name: 'Adicionar como opção: Polenta, pré-cozida' }),
         // A chave "Só do mesmo grupo": a linha inteira é o alvo, com 44 px também no tablet com dedo.

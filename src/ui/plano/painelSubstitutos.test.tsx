@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import arquivo from '@/data/base-ampliada.json'
@@ -173,6 +173,7 @@ describe('a busca (D-1103 a D-1111)', () => {
     await usuario.click(screen.getByRole('button', { name: `Buscar substitutos para ${ARROZ}` }))
     const painel = gaveta()
     await usuario.selectOptions(painel.getByRole('combobox', { name: 'Outro nutriente' }), 'calcio_mg')
+    await usuario.click(painel.getByRole('button', { name: 'Adicionar' }))
     const selecionados = within(painel.getByRole('list', { name: 'Nutrientes selecionados' }))
     expect(selecionados.getByText('Cálcio')).toBeInTheDocument()
     expect(painel.getByText('Os nutrientes mudaram. Busque de novo para atualizar a lista.')).toBeInTheDocument()
@@ -185,6 +186,36 @@ describe('a busca (D-1103 a D-1111)', () => {
     expect(painel.getByText(/^Mesma quantidade de proteína que 150 g/)).toBeInTheDocument()
   })
 
+  it('CA-2138 (D-1126): a lista "Outro nutriente" guarda o valor; só "Adicionar" ou o Enter acrescentam', async () => {
+    render(<Anfitriao />)
+    const usuario = userEvent.setup()
+    await almocoComArroz(usuario)
+    await usuario.click(screen.getByRole('button', { name: `Buscar substitutos para ${ARROZ}` }))
+    const painel = gaveta()
+    const lista = painel.getByRole('combobox', { name: 'Outro nutriente' })
+    const adicionar = painel.getByRole('button', { name: 'Adicionar' })
+    const nomes = () => within(painel.getByRole('list', { name: 'Nutrientes selecionados' })).getAllByRole('listitem').map((li) => li.textContent)
+    expect(adicionar).toBeDisabled()
+    // A seta, no Chromium do Windows, muda o valor da lista fechada e dispara "change" a cada tecla.
+    for (const valor of ['energia_kcal', 'fibra_g', 'calcio_mg']) fireEvent.change(lista, { target: { value: valor } })
+    expect(nomes()).toEqual(['Carboidratos'])
+    expect(lista).toHaveValue('calcio_mg')
+    expect(adicionar).toBeEnabled()
+    // O Enter na lista acrescenta o escolhido; a lista volta ao começo, com o foco nela.
+    lista.focus()
+    await usuario.keyboard('{Enter}')
+    expect(nomes()).toEqual(['Carboidratos', 'Cálcio'])
+    expect(lista).toHaveValue('')
+    expect(lista).toHaveFocus()
+    expect(adicionar).toBeDisabled()
+    // O botão faz o mesmo, e o foco volta à lista (o botão desliga, e o foco não cai no corpo da página).
+    await usuario.selectOptions(lista, 'ferro_mg')
+    await usuario.click(adicionar)
+    expect(nomes()).toEqual(['Carboidratos', 'Cálcio', 'Ferro'])
+    expect(lista).toHaveFocus()
+    expect(within(lista).queryByRole('option', { name: 'Ferro' })).not.toBeInTheDocument()
+  })
+
   it('CA-2116: o alimento sem o nutriente na tabela', async () => {
     render(<Anfitriao />)
     const usuario = userEvent.setup()
@@ -192,6 +223,7 @@ describe('a busca (D-1103 a D-1111)', () => {
     await usuario.click(screen.getByRole('button', { name: `Buscar substitutos para ${ARROZ}` }))
     const painel = gaveta()
     await usuario.selectOptions(painel.getByRole('combobox', { name: 'Outro nutriente' }), 'vitamina_c_mg')
+    await usuario.click(painel.getByRole('button', { name: 'Adicionar' }))
     await usuario.click(painel.getByRole('button', { name: /^Carboidratos/ }))
     await usuario.click(painel.getByRole('button', { name: 'Buscar alimentos' }))
     expect(painel.getByText(`${ARROZ} não tem vitamina C na tabela. Escolha outro nutriente.`)).toBeInTheDocument()

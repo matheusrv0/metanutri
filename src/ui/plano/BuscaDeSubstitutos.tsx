@@ -1,5 +1,5 @@
 import { ChevronDown, Search, TriangleAlert, X } from 'lucide-react'
-import { useId, useMemo, useState } from 'react'
+import { useId, useMemo, useRef, useState } from 'react'
 import {
   buscarSubstitutos,
   infoDoNutriente,
@@ -17,6 +17,7 @@ import { chaveDasRestricoes, type RestricoesDoPaciente } from '@/domain/restrico
 import { alimentosParaSugerir, buscarAlimento } from '@/domain/tabelas.ts'
 import type { Alimento, ChaveNutrienteAlimento, ItemPlano } from '@/domain/tipos.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
+import { cn } from '@/lib/utils'
 import { Alert } from '@ds/componentes/display/alert.tsx'
 import { Badge } from '@ds/componentes/display/badge.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
@@ -56,6 +57,8 @@ export function BuscaDeSubstitutos({ item, alimento, restricoes, aoAdicionarOpca
   const [grupoBuscado, setGrupoBuscado] = useState(true)
   const [todos, setTodos] = useState(false)
   const [comparando, setComparando] = useState<Candidato | null>(null)
+  const [outro, setOutro] = useState<ChaveNutrienteAlimento | ''>('')
+  const listaDeOutros = useRef<HTMLSelectElement>(null)
   const idRotulo = useId()
   const idOutro = useId()
 
@@ -80,6 +83,14 @@ export function BuscaDeSubstitutos({ item, alimento, restricoes, aoAdicionarOpca
 
   const mudou = !mesmaSelecao(selecionados, buscados) || mesmoGrupo !== grupoBuscado
   const alternar = (chave: ChaveNutrienteAlimento) => setSelecionados((atual) => (atual.includes(chave) ? atual.filter((k) => k !== chave) : [...atual, chave]))
+  // D-1126: acrescenta o nutriente escolhido em "Outro nutriente"; a lista volta ao começo e fica com o foco, pronta para o
+  // próximo (o botão desliga, e o foco não cai no corpo da página).
+  const adicionarOutro = () => {
+    if (outro === '') return
+    setSelecionados((atual) => (atual.includes(outro) ? atual : [...atual, outro]))
+    setOutro('')
+    listaDeOutros.current?.focus()
+  }
   const buscar = () => {
     if (selecionados.length === 0) return
     setBuscados(selecionados)
@@ -107,32 +118,43 @@ export function BuscaDeSubstitutos({ item, alimento, restricoes, aoAdicionarOpca
           ))}
         </div>
 
-        {/* A lista nativa: no celular abre do jeito do aparelho, e o teclado funciona em todo lugar (como "Adicionar em", no Cobrir). */}
+        {/* A lista nativa: no celular abre do jeito do aparelho. Como "Adicionar em", no Cobrir, ela só guarda o valor, e a
+            ação vem do botão ou do Enter (D-1126): no Chromium do Windows, cada seta na lista fechada muda o valor. */}
         <label htmlFor={idOutro} className="sr-only">
           Outro nutriente
         </label>
-        <div className="relative flex min-h-11 items-center rounded-md border border-input bg-card py-2 pl-3 pr-9 text-base text-muted-foreground has-[:focus-visible]:border-primary has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring sm:min-h-10 sm:text-sm sm:pointer-coarse:min-h-11 sm:pointer-coarse:text-base">
-          <span aria-hidden="true" className="flex min-w-0 items-center gap-2">
-            <Search className="size-4 shrink-0" />
-            <span className="truncate">Outro nutriente: fibra, cálcio, potássio…</span>
-          </span>
-          <ChevronDown aria-hidden="true" className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2" />
-          <select
-            id={idOutro}
-            value=""
-            onChange={(e) => {
-              const chave = OUTROS_NUTRIENTES_DA_BUSCA.find((k) => k === e.target.value)
-              if (chave) setSelecionados((atual) => (atual.includes(chave) ? atual : [...atual, chave]))
-            }}
-            className="absolute inset-0 size-full cursor-pointer appearance-none opacity-0"
-          >
-            <option value="">Outro nutriente</option>
-            {outros.map((k) => (
-              <option key={k} value={k}>
-                {infoDoNutriente(k).nome}
-              </option>
-            ))}
-          </select>
+        <div className="flex items-center gap-2">
+          <div className="relative flex min-h-11 min-w-0 flex-1 items-center rounded-md border border-input bg-card py-2 pl-3 pr-9 text-base text-muted-foreground has-[:focus-visible]:border-primary has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring sm:min-h-10 sm:text-sm sm:pointer-coarse:min-h-11 sm:pointer-coarse:text-base">
+            <span aria-hidden="true" className="flex min-w-0 items-center gap-2">
+              <Search className="size-4 shrink-0" />
+              <span className={cn('truncate', outro !== '' && 'text-foreground')}>
+                {outro === '' ? 'Outro nutriente: fibra, cálcio, potássio…' : infoDoNutriente(outro).nome}
+              </span>
+            </span>
+            <ChevronDown aria-hidden="true" className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2" />
+            <select
+              ref={listaDeOutros}
+              id={idOutro}
+              value={outro}
+              onChange={(e) => setOutro(OUTROS_NUTRIENTES_DA_BUSCA.find((k) => k === e.target.value) ?? '')}
+              onKeyDown={(e) => {
+                if (e.key !== 'Enter') return
+                e.preventDefault()
+                adicionarOutro()
+              }}
+              className="absolute inset-0 size-full cursor-pointer appearance-none opacity-0"
+            >
+              <option value="">Outro nutriente</option>
+              {outros.map((k) => (
+                <option key={k} value={k}>
+                  {infoDoNutriente(k).nome}
+                </option>
+              ))}
+            </select>
+          </div>
+          <Button variant="outline" disabled={outro === ''} onClick={adicionarOutro}>
+            Adicionar
+          </Button>
         </div>
 
         {selecionados.length > 0 ? (
