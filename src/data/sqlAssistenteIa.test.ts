@@ -119,6 +119,26 @@ describe('banco: assistente de IA (016)', () => {
     })
   })
 
+  describe('CA-2391 e D-1338: roda de novo por cima da versão anterior do 016', () => {
+    const ADICIONA_A_COLUNA = 'alter table public.uso_da_ia add column if not exists custo_estimado boolean not null default false;'
+    const TIRA_A_ANTIGA = 'drop function if exists public.concluir_uso_da_ia(bigint, text, text, integer, integer, integer, integer, bigint, integer);'
+
+    it('a tabela da versão anterior, sem custo_estimado, ganha a coluna antes das funções', () => {
+      const posicao = semComentarios.indexOf(ADICIONA_A_COLUNA)
+      expect(posicao).toBeGreaterThan(semComentarios.indexOf('create table if not exists public.uso_da_ia ('))
+      expect(posicao).toBeLessThan(semComentarios.indexOf('create or replace function public.reservar_uso_da_ia('))
+    })
+
+    it('a concluir_uso_da_ia de 9 parâmetros sai antes de a de 10 ser criada; fica uma só', () => {
+      const posicao = semComentarios.indexOf(TIRA_A_ANTIGA)
+      expect(posicao).toBeGreaterThan(-1)
+      expect(posicao).toBeLessThan(semComentarios.indexOf('create or replace function public.concluir_uso_da_ia('))
+      expect(semComentarios.match(/create or replace function public\.concluir_uso_da_ia\(/g)).toHaveLength(1)
+      // A antiga não volta a ganhar permissão.
+      expect(semComentarios).not.toMatch(/(grant|revoke)[^;]*concluir_uso_da_ia\(bigint, text, text, integer, integer, integer, integer, bigint, integer\)/)
+    })
+  })
+
   it('a conferência no fim mostra a tabela fechada e as funções só do servidor', () => {
     expect(sql).toContain("-- select relname, relrowsecurity from pg_class where oid = 'public.uso_da_ia'::regclass;")
     expect(sql).toContain("-- select has_function_privilege('authenticated', 'public.reservar_uso_da_ia(uuid, text, boolean, integer, timestamptz, integer)', 'execute') as logado_reserva;")

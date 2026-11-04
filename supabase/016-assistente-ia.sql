@@ -1,6 +1,6 @@
 -- MetaNutri — assistente de IA (spec assistente-ia, D-1318 e D-1319).
 -- Rode no Supabase: SQL Editor > New query > cole tudo > Run. As consultas de conferência estão no fim.
--- Pode rodar de novo: nenhum dado é apagado.
+-- Pode rodar de novo, inclusive por cima da versão anterior deste arquivo: nenhum dado é apagado.
 -- Rode DEPOIS do 001 ao 015.
 --
 -- Rode ANTES de publicar a função sugerir-plano: ela anota cada sugestão na tabela nova. Publicada antes deste
@@ -39,6 +39,9 @@ create table if not exists public.uso_da_ia (
   criado_em timestamptz not null default now(),
   concluido_em timestamptz
 );
+-- D-1338: quem rodou a versão anterior deste arquivo tem a tabela sem custo_estimado; o "create table if not exists"
+-- acima não muda tabela que já existe, e esta linha põe a coluna nela.
+alter table public.uso_da_ia add column if not exists custo_estimado boolean not null default false;
 create index if not exists uso_da_ia_por_conta on public.uso_da_ia (nutricionista_id, criado_em);
 create index if not exists uso_da_ia_por_data on public.uso_da_ia (criado_em);
 alter table public.uso_da_ia enable row level security;
@@ -99,6 +102,9 @@ $$;
 -- ---------- Concluir um uso (CA-2313 a CA-2318 e CA-2324) ----------
 
 -- Só muda o uso que ainda está reservado: o mesmo uso não é concluído duas vezes. Verdadeiro quando mudou.
+-- D-1338: a versão anterior tinha 9 parâmetros (sem p_custo_estimado). O "create or replace" com outra lista de
+-- parâmetros cria uma segunda função em vez de trocar a antiga, então a antiga sai antes.
+drop function if exists public.concluir_uso_da_ia(bigint, text, text, integer, integer, integer, integer, bigint, integer);
 create or replace function public.concluir_uso_da_ia(
   p_reserva bigint,
   p_status text,
