@@ -2,6 +2,8 @@ import { useState } from 'react'
 import type { Paciente } from '@/domain/pacientes.ts'
 import type { Caso } from '@/domain/tipos.ts'
 import { ContextoDaAjudaAberta } from './ajudaAberta.ts'
+import { CartaoCircunferencias } from './CartaoCircunferencias.tsx'
+import { CartaoDiametros } from './CartaoDiametros.tsx'
 import { CartaoPesoEstatura } from './CartaoPesoEstatura.tsx'
 
 interface VistaAvaliacaoProps {
@@ -25,6 +27,8 @@ export function VistaAvaliacao({ caso, bruto, paciente, aoAlterar }: VistaAvalia
       <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,35rem)]">
         <div className="flex min-w-0 flex-col gap-6">
           <CartaoPesoEstatura caso={caso} bruto={bruto} aoAlterar={aoAlterar} />
+          <CartaoCircunferencias bruto={bruto} aoAlterar={aoAlterar} />
+          <CartaoDiametros bruto={bruto} aoAlterar={aoAlterar} />
         </div>
         <div className="flex min-w-0 flex-col gap-6" />
       </div>
