@@ -218,7 +218,7 @@ describe('CA-2382 e D-1329: a chamada cortada anota o que o fluxo mostrou mais a
   })
 })
 
-describe('CA-2383 e D-1330: o navegador cancela, a chamada para', () => {
+describe('CA-2383 e D-1330: se a plataforma abortar o sinal do pedido, a chamada para', () => {
   it('o sinal do pedido aborta a chamada no meio do fluxo; vira cancelada, com a estimativa', async () => {
     const controle = new AbortController()
     const r = criarModeloAnthropic('k', { prazoMs: 5_000, relogio: relogioDe30s() }, fluxoQue('para'))({ ...CHAMADA, sinal: controle.signal })

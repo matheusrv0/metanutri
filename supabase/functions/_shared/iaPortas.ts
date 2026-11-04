@@ -19,7 +19,7 @@ export interface ChamadaDaIa {
   readonly naoUsar: readonly number[]
   readonly refeicoes: readonly { readonly nome: string; readonly horario: string }[]
   readonly modo: ModoIa
-  /** D-1330: o sinal do pedido do navegador; abortado, a chamada à IA para (cancelamento). */
+  /** D-1330: o sinal do pedido; se a plataforma o abortar, a chamada à IA para (hoje o edge-runtime não aborta). */
   readonly sinal?: AbortSignal
 }
 
@@ -43,7 +43,7 @@ export type RespostaDoModelo =
   /** O fluxo trouxe um evento de erro ou terminou no meio; os tokens já vêm com a estimativa do corte (D-1329). */
   | { readonly tipo: 'erro-fluxo'; readonly erro: string; readonly modelo: string | null; readonly tokens: readonly TokensDoModelo[] }
   /**
-   * D-1329 e D-1330: a chamada cortada pelo prazo, pela rede ou pelo navegador (`cancelada`). A porta de verdade manda os
+   * D-1329 e D-1330: a chamada cortada pelo prazo, pela rede ou pelo sinal do pedido (`cancelada`). A porta de verdade manda os
    * tokens vistos mais a estimativa; sem eles, o núcleo estima pelo tamanho do pedido e pela duração.
    */
   | { readonly tipo: 'demorou' | 'sem-rede' | 'cancelada'; readonly modelo?: string; readonly tokens?: readonly TokensDoModelo[] }

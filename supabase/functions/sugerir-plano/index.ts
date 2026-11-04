@@ -36,7 +36,8 @@ Deno.serve(async (req: Request) => {
       {
         conta: await quemPede(cliente, req.headers.get('Authorization')),
         corpo: lido.json,
-        // D-1330: o navegador foi embora (fechou a gaveta, cancelou, caiu), a chamada à IA para.
+        // D-1330: se a plataforma abortar o sinal do pedido, a chamada à IA para. O edge-runtime de hoje não aborta
+        // (D-1342): cancelar no navegador só para a espera, e o servidor termina ou bate no prazo.
         sinal: req.signal,
       },
       {
@@ -50,6 +51,8 @@ Deno.serve(async (req: Request) => {
         log: console.error,
       },
     )
+    // D-1342: a resposta vai inteira, nunca em fluxo. Em fluxo, o edge-runtime derruba a função quando o navegador sai,
+    // sem deixar concluir o uso (a reserva ficaria sem custo e o teto do dia não a veria).
     return responder(resposta.corpo, resposta.status, origem)
   } catch (erro) {
     // Falha inesperada: o registro leva só a mensagem, e o navegador recebe a resposta com a permissão do endereço que pediu.

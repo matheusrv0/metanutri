@@ -78,7 +78,7 @@ export interface PedidoDaIa {
   readonly conta: ContaQuePede | null
   /** O corpo já lido como JSON; nulo se não era JSON. */
   readonly corpo: unknown
-  /** D-1330: o sinal do pedido (`req.signal`): o navegador foi embora, a chamada à IA para. */
+  /** D-1330: o sinal do pedido (`req.signal`). Se a plataforma o abortar, a chamada à IA para; o edge-runtime de hoje não aborta. */
   readonly sinal?: AbortSignal
 }
 
@@ -216,7 +216,7 @@ export async function sugerirPlano(pedido: PedidoDaIa, dep: DependenciasDaIa): P
     case 'sem-rede':
       await concluir('erro', resposta.modelo ?? dep.modeloId, doCorte(resposta.tokens), true)
       return erro(IA_INDISPONIVEL, 503, 'indisponivel')
-    // CA-2383: o navegador cancelou; ninguém lê a resposta.
+    // D-1330: a plataforma abortou o sinal do pedido (hoje não acontece, D-1342); ninguém lê a resposta.
     case 'cancelada':
       await concluir('erro', resposta.modelo ?? dep.modeloId, doCorte(resposta.tokens), true)
       dep.log('IA: cancelada pelo navegador.')

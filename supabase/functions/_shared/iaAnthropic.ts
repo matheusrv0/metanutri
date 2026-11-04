@@ -4,7 +4,7 @@
 //
 // O pedido vai com `stream: true`: o fluxo mantém a conexão viva enquanto o modelo pensa, e a função lê aos poucos e
 // junta a mensagem no fim (DP-IA-5). Prazo de 110 s, sem nova tentativa. O que foi visto do fluxo serve para estimar o
-// custo quando a chamada é cortada (D-1329), e o sinal do pedido do navegador cancela a chamada (D-1330).
+// custo quando a chamada é cortada (D-1329). O sinal do pedido, se a plataforma o abortar, para a chamada (D-1330).
 import { MAX_TOKENS, tokensDoCorte } from './iaCusto.ts'
 import { CATALOGO_DO_PROMPT, ESQUEMA_RESPOSTA, REGRAS_IA } from './iaPrompt.ts'
 import type { ChamadaDaIa, EsforcoDaIa, ModeloDaIa, ModeloDeIa, RespostaDoModelo, TokensDoModelo } from './iaPortas.ts'
@@ -244,7 +244,7 @@ export function criarModeloAnthropic(chave: string, opcoes: OpcoesDoModelo = { p
   const relogio = opcoes.relogio ?? (() => performance.now())
   return async (chamada) => {
     const prazo = AbortSignal.timeout(opcoes.prazoMs)
-    // D-1330: o cancelamento do navegador e o prazo param a chamada do mesmo jeito.
+    // D-1330: o sinal do pedido abortado e o prazo param a chamada do mesmo jeito.
     const sinal = chamada.sinal ? AbortSignal.any([chamada.sinal, prazo]) : prazo
     let corpo = ''
     let inicioDoFluxo: number | null = null

@@ -336,6 +336,23 @@ describe('CA-2382 e D-1329: a chamada cortada é anotada com a estimativa, nunca
 })
 
 describe('CA-2383, D-1330, CB-1300 e CB-1319: o navegador cancela', () => {
+  it('o edge-runtime não aborta o sinal: a função termina, e a sugestão que a IA respondeu conta no mês com o custo real', async () => {
+    const m = montar()
+    // O navegador foi embora, mas o sinal do pedido continua sem abortar (prova do D-1342).
+    const sinal = new AbortController().signal
+    const r = await sugerirPlano({ conta: CONTA_IA, corpo: PEDIDO_BASE, sinal }, m.dep)
+    expect(r.status).toBe(200)
+    expect(m.banco.usos[0]).toMatchObject({ status: 'ok', conclusao: { custoEstimado: false, custoMicrodolares: custoEmMicrodolares(TOKENS) } })
+    expect(await m.dep.banco.usosNoMes(CONTA_IA.id, new Date('2026-11-01T03:00:00Z'))).toBe(1)
+  })
+
+  it('o edge-runtime não aborta o sinal: o prazo esgota, 504, erro com o custo estimado, sem contar', async () => {
+    const m = montar({ respostas: [{ tipo: 'demorou' }] })
+    expect(await sugerirPlano({ conta: CONTA_IA, corpo: PEDIDO_BASE, sinal: new AbortController().signal }, m.dep)).toEqual({ status: 504, corpo: { erro: IA_DEMOROU, codigo: 'demorou' } })
+    expect(m.banco.usos[0]).toMatchObject({ status: 'erro', conclusao: { custoEstimado: true } })
+    expect(await m.dep.banco.usosNoMes(CONTA_IA.id, new Date('2026-11-01T03:00:00Z'))).toBe(0)
+  })
+
   it('o sinal do pedido chega à chamada da IA', async () => {
     const m = montar()
     const controle = new AbortController()
@@ -343,7 +360,7 @@ describe('CA-2383, D-1330, CB-1300 e CB-1319: o navegador cancela', () => {
     expect(m.modelo.chamadas[0]?.sinal).toBe(controle.signal)
   })
 
-  it('cancelada: 499, o uso fica erro com o custo estimado e não conta no mês', async () => {
+  it('se a plataforma abortar o sinal (hoje não aborta): 499, o uso fica erro com o custo estimado e não conta no mês', async () => {
     const m = montar({ respostas: [{ tipo: 'cancelada' }] })
     expect(await pedir(PEDIDO_BASE, m.dep)).toEqual({ status: 499, corpo: { erro: IA_CANCELADA, codigo: 'cancelada' } })
     expect(m.banco.usos[0]).toMatchObject({ status: 'erro', conclusao: { custoEstimado: true } })

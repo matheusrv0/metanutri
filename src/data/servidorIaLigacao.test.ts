@@ -69,6 +69,11 @@ describe('D-1316: a função é só ligação', () => {
     expect(indice).toContain('sinal: req.signal,')
   })
 
+  it('D-1342: a resposta é uma só, inteira; nada vai em fluxo (no fluxo, o edge-runtime derruba a função sem concluir o uso)', () => {
+    expect(indice).not.toMatch(/ReadableStream|TransformStream|waitUntil/)
+    expect(indice).toContain('return responder(resposta.corpo, resposta.status, origem)')
+  })
+
   it('D-1318: IA_TETO_DIARIO_USD vale quando é número maior que zero; senão, US$ 5', () => {
     expect(tetoDoAmbiente(undefined)).toBe(5)
     expect(tetoDoAmbiente('12.5')).toBe(12.5)
