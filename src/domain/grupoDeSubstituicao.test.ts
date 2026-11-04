@@ -100,6 +100,18 @@ describe('D-1108: "Só do mesmo grupo", com as regras de forma das trocas', () =
     expect(noMesmoGrupo(porId(461))(porId(469))).toBe(true)
   })
 
+  it('CA-2144 (D-1131): fruta inteira só por fruta inteira; no lugar do suco, a fruta inteira entra', () => {
+    const BANANA = 182
+    const LARANJA_PERA = 214
+    const SUCO_DE_LARANJA = 215
+    const POLPA_DE_ACEROLA = 170
+    expect(noMesmoGrupo(porId(BANANA))(porId(SUCO_DE_LARANJA))).toBe(false)
+    expect(noMesmoGrupo(porId(BANANA))(porId(POLPA_DE_ACEROLA))).toBe(false)
+    expect(noMesmoGrupo(porId(BANANA))(porId(LARANJA_PERA))).toBe(true)
+    expect(noMesmoGrupo(porId(SUCO_DE_LARANJA))(porId(LARANJA_PERA))).toBe(true)
+    expect(noMesmoGrupo(porId(SUCO_DE_LARANJA))(porId(POLPA_DE_ACEROLA))).toBe(true)
+  })
+
   it('CA-2139: na busca, clara por proteína e gema por lipídeos sem nenhum queijo; o ovo inteiro com queijo', () => {
     const queijos = (id: number, nutriente: ChaveNutrienteAlimento, gramas = 100) => {
       const r = buscarSubstitutos({ alimentoId: id, gramas }, { nutrientes: [nutriente], mesmoGrupo: true, alimentos: alimentosParaSugerir(), limite: 1000 }, buscarAlimento)

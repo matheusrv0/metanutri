@@ -4,7 +4,7 @@
 import { MICRONUTRIENTES_ADEQUACAO } from './adequacao.ts'
 import { MAXIMO_DE_PEDACOS, MEDIDAS_DE_CONTAR, medidaParaMostrar, medidasDoAlimento } from './busca.ts'
 import { posicaoNoConsumo } from './consumoPof.ts'
-import { ehFrutaInteira, noMesmoGrupo } from './grupoDeSubstituicao.ts'
+import { ehFrutaInteira, ehSucoOuPolpaDeFruta, noMesmoGrupo } from './grupoDeSubstituicao.ts'
 import { unidadeDo } from './liquido.ts'
 import { CAFE_OU_CHA, ehDeUsoComum, ehFrito, ehPoOuDesidratado, ehPratoComposto, ehProcessado, ehSegundaEscolha, ehUltraprocessado } from './prescritivel.ts'
 import { casaRestricao, comoRestricoes, ehNaoGosta, type RestricoesDoPaciente } from './restricoes.ts'
@@ -235,6 +235,9 @@ export function faixaDeProximidade(proximidade: number, melhor: number): number 
   return Math.floor((proximidade - melhor) / FAIXA_DE_PROXIMIDADE + 1e-9)
 }
 
+/** D-1109, item 4, e D-1131: o processado (D-296) e o suco e a polpa de fruta vêm depois do in natura. */
+const naoEhInNatura = (a: Alimento): boolean => ehProcessado(a) || ehSucoOuPolpaDeFruta(a)
+
 /** A posição no consumo do Brasil (POF 2017-2018); quem não está nela vai para o fim. */
 const naPof = (a: Alimento): number => Math.min(posicaoNoConsumo(a.id), 1e6)
 
@@ -248,7 +251,7 @@ const compararCandidatos =
       Number(ehDeUsoComum(y.alimento)) - Number(ehDeUsoComum(x.alimento)) ||
       faixa(x) - faixa(y) ||
       Number(ehPratoComposto(x.alimento)) - Number(ehPratoComposto(y.alimento)) ||
-      Number(ehProcessado(x.alimento)) - Number(ehProcessado(y.alimento)) ||
+      Number(naoEhInNatura(x.alimento)) - Number(naoEhInNatura(y.alimento)) ||
       Number(ehSegundaEscolha(x.alimento)) - Number(ehSegundaEscolha(y.alimento)) ||
       Number(y.medida !== null) - Number(x.medida !== null) ||
       naPof(x.alimento) - naPof(y.alimento) ||

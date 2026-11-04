@@ -79,12 +79,18 @@ function mesmaFormaDoOvo(base: Alimento, a: Alimento): boolean {
 
 /**
  * "Só do mesmo grupo": o mesmo grupo e a mesma forma das trocas da folha. A forma do ovo (acima); verdura cozida só por
- * verdura cozida; no acompanhamento, pronto por pronto e cru por cru (CA-658).
+ * verdura cozida; no acompanhamento, pronto por pronto e cru por cru (CA-658); fruta inteira só por fruta inteira, e no
+ * lugar do suco ou da polpa entra qualquer fruta (D-1131).
  */
 export function noMesmoGrupo(base: Alimento): (a: Alimento) => boolean {
   const grupo = grupoDeSubstituicao(base).id
   const verduraCozida = ehVerduraCozida(base)
   const acompanhamento = grupo === 'amido'
+  const frutaInteira = ehFrutaInteira(base)
   return (a) =>
-    grupoDeSubstituicao(a).id === grupo && mesmaFormaDoOvo(base, a) && (!verduraCozida || !ehCru(a)) && (!acompanhamento || ehCru(a) === ehCru(base))
+    grupoDeSubstituicao(a).id === grupo &&
+    mesmaFormaDoOvo(base, a) &&
+    (!verduraCozida || !ehCru(a)) &&
+    (!acompanhamento || ehCru(a) === ehCru(base)) &&
+    (!frutaInteira || !ehSucoOuPolpaDeFruta(a))
 }

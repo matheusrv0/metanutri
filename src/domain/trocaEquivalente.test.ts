@@ -5,7 +5,7 @@
 import arquivo from '../data/base-ampliada.json'
 import { decodificarBaseAmpliada, type ArquivoBaseAmpliada } from './baseAmpliada.ts'
 import { buscarSubstitutos, ENERGIA_QUASE_ZERO_KCAL, naTrocaEquivalente, nutrienteInicial, textoDaPorcao, type Candidato } from './buscaDeSubstitutos.ts'
-import { ehPoOuDesidratado } from './prescritivel.ts'
+import { ehDeUsoComum, ehPoOuDesidratado } from './prescritivel.ts'
 import { ALIMENTOS, alimentosParaSugerir, buscarAlimento, registrarBaseAmpliada } from './tabelas.ts'
 import type { Alimento, ChaveNutrienteAlimento } from './tipos.ts'
 
@@ -184,6 +184,40 @@ describe('D-1125: a troca equivalente no mesmo grupo', () => {
     }
     const laranjas = vista(porNome('Laranja, pêra, suco'), 200, ['carboidrato_g']).filter((c) => /^Laranja,/.test(c.alimento.descricao))
     expect(laranjas.length).toBeLessThanOrEqual(1)
+  })
+
+  it('CA-2144 (D-1131): no lugar da fruta inteira, nem suco nem polpa; no lugar do suco, a fruta inteira', () => {
+    const sucoOuPolpa = (c: Candidato) => c.alimento.categoria === 'Frutas e derivados' && /(^|[\s,])(suco|polpa)($|[\s,])/i.test(c.alimento.descricao)
+    for (const [nome, gramas] of [
+      ['Banana, prata, crua', 100],
+      ['Mamão, Papaia, cru', 150],
+    ] as const) {
+      expect(vista(porNome(nome), gramas).filter(sucoOuPolpa).map((c) => c.alimento.descricao), nome).toEqual([])
+    }
+    const doSuco = vista(porNome('Laranja, pêra, suco'), 200)
+    expect(doSuco.some((c) => /^Laranja, [^,]+, crua$/.test(c.alimento.descricao))).toBe(true)
+    // O in natura vem antes: o primeiro do suco é fruta inteira.
+    expect(doSuco[0] && sucoOuPolpa(doSuco[0])).toBe(false)
+  })
+
+  it('CA-2144 (D-1131): com o filtro desligado, o suco vem depois do in natura da mesma faixa', () => {
+    const banana = porNome('Banana, prata, crua')
+    const todos = vista(banana, 100, ['carboidrato_g'], false, 1000)
+    const sucoOuPolpa = (c: Candidato) => c.alimento.categoria === 'Frutas e derivados' && /(^|[\s,])(suco|polpa)($|[\s,])/i.test(c.alimento.descricao)
+    const melhor = Math.min(...todos.map((c) => c.proximidade))
+    const faixa = (c: Candidato) => Math.floor((c.proximidade - melhor) / 0.05 + 1e-9)
+    const fora: string[] = []
+    todos.forEach((suco, i) => {
+      if (!sucoOuPolpa(suco)) return
+      for (const depois of todos.slice(i + 1)) {
+        // A ordem da D-1109: o de uso comum antes do pouco usual (item 2) vem antes da faixa (item 3) e do in natura (item 4).
+        const inNatura = depois.alimento.categoria === 'Frutas e derivados' && !sucoOuPolpa(depois)
+        const mesmoUso = ehDeUsoComum(depois.alimento) === ehDeUsoComum(suco.alimento)
+        if (inNatura && mesmoUso && faixa(depois) === faixa(suco)) fora.push(`${suco.alimento.descricao} antes de ${depois.alimento.descricao}`)
+      }
+    })
+    expect(todos.some(sucoOuPolpa)).toBe(true)
+    expect(fora).toEqual([])
   })
 
   it('CA-2136: pó só no lugar de pó; o que volta cozido não é desidratado', () => {
