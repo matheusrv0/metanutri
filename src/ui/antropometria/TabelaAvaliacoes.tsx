@@ -1,3 +1,4 @@
+import { Fragment } from 'react'
 import type { ColunaDoHistorico, HistoricoAntropometrico, VariacaoDaMedida } from '@/domain/historicoAntropometrico.ts'
 import { Card, CardTitle } from '@ds/componentes/display/card.tsx'
 import { cn } from '@ds/lib/cn.ts'
@@ -21,7 +22,7 @@ const SUB_DA_DATA = { primeira: 'primeira', atual: 'atual' } as const
 function CelulaDaVariacao({ variacao }: { readonly variacao: VariacaoDaMedida | null }) {
   if (variacao === null) return null
   return (
-    <td className="border-t border-border py-2 pl-3 text-right align-middle">
+    <td className="border-t border-border py-2 max-sm:pl-2 pl-3 text-right align-middle">
       <b className={cn('block font-semibold', variacao.leitura === 'erro' ? 'font-medium text-muted-foreground' : 'text-heading')}>{variacao.texto}</b>
       {variacao.nota ? (
         <small className={cn('block text-xs leading-snug', variacao.leitura === 'real' ? 'text-successtext' : 'text-muted-foreground')}>{variacao.nota}</small>
@@ -54,19 +55,19 @@ export function TabelaAvaliacoes({ historico }: TabelaAvaliacoesProps) {
                   Medida
                 </th>
                 {colunas.map((c) => (
-                  <th key={c.casoId} scope="col" className={cn('whitespace-nowrap pb-1.5 pl-3 text-right font-normal', classeDaData(c, total))}>
+                  <th key={c.casoId} scope="col" className={cn('whitespace-nowrap pb-1.5 max-sm:pl-2 pl-3 text-right font-normal', classeDaData(c, total))}>
                     <b className="block text-[0.8125rem] font-semibold text-foreground">{c.data}</b>
                     {total > 1 && c.papel ? SUB_DA_DATA[c.papel] : null}
                   </th>
                 ))}
                 {desdeAnterior ? (
-                  <th scope="col" className="pb-1.5 pl-3 text-right font-normal">
+                  <th scope="col" className="pb-1.5 max-sm:pl-2 pl-3 text-right font-normal">
                     <b className="block text-[0.8125rem] font-semibold text-foreground">{desdeAnterior}</b>
                     última consulta
                   </th>
                 ) : null}
                 {desdePrimeira ? (
-                  <th scope="col" className="pb-1.5 pl-3 text-right font-normal">
+                  <th scope="col" className="pb-1.5 max-sm:pl-2 pl-3 text-right font-normal">
                     <b className="block text-[0.8125rem] font-semibold text-foreground">{desdePrimeira}</b>
                     primeira consulta
                   </th>
@@ -82,8 +83,20 @@ export function TabelaAvaliacoes({ historico }: TabelaAvaliacoesProps) {
                 </tr>
                 {g.linhas.map((l) => (
                   <tr key={l.id}>
-                    <th scope="row" className="min-w-28 border-t border-border py-2.5 pr-3 text-left align-middle font-normal">
-                      <b className="block font-semibold text-heading">{l.nome}</b>
+                    <th scope="row" className="border-t border-border py-2.5 pr-3 text-left align-middle font-normal">
+                      {/* "Cintura/estatura" quebra depois da barra no celular, não no meio da palavra (pior caso, 390 px). */}
+                      <b className="block font-semibold text-heading">
+                        {l.nome.split('/').map((parte, i) => (
+                          <Fragment key={parte}>
+                            {i > 0 ? (
+                              <>
+                                /<wbr />
+                              </>
+                            ) : null}
+                            {parte}
+                          </Fragment>
+                        ))}
+                      </b>
                       {l.sub ? <small className="block text-xs leading-snug text-muted-foreground">{l.sub}</small> : null}
                     </th>
                     {l.textos.map((t, i) => {
@@ -93,7 +106,7 @@ export function TabelaAvaliacoes({ historico }: TabelaAvaliacoesProps) {
                         <td
                           key={coluna?.casoId ?? i}
                           className={cn(
-                            'whitespace-nowrap border-t border-border py-2.5 pl-3 text-right align-middle',
+                            'whitespace-nowrap border-t border-border py-2.5 max-sm:pl-2 pl-3 text-right align-middle',
                             atual ? 'font-semibold text-heading' : 'text-foreground',
                             coluna ? classeDaData(coluna, total) : '',
                           )}

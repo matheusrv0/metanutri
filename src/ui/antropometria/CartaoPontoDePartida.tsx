@@ -11,9 +11,10 @@ import { formatarNumero } from '@/export/copiar-tabela.ts'
 import { Card, CardTitle } from '@ds/componentes/display/card.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { BlocoMetaDePerda } from './BlocoMetaDePerda.tsx'
+import { CabecaDoBloco } from './CabecaDoBloco.tsx'
 import { BlocoProteina } from './BlocoProteina.tsx'
 import { Escolha } from './Escolha.tsx'
-import { ROTULO_DA_EVIDENCIA, TRAVESSAO, faixaEmDezenas, opcoesDaGorduraDoCaso, opcoesDoPerfil, proteinaParaOPlano } from './textosDaAvaliacao.ts'
+import { ROTULO_DA_EVIDENCIA, TRAVESSAO, avisosNaTela, faixaEmDezenas, opcoesDaGorduraDoCaso, opcoesDoPerfil, proteinaParaOPlano } from './textosDaAvaliacao.ts'
 
 interface CartaoPontoDePartidaProps {
   /** O plano como vale (com a ficha). */
@@ -25,16 +26,6 @@ interface CartaoPontoDePartidaProps {
 }
 
 const DOENCA_RENAL = 'doenca-renal'
-
-/** O cabeçalho de um bloco: o nome e o selo de evidência. */
-function cabecaDoBloco(nome: string, evidencia: string | null) {
-  return (
-    <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
-      <h3 className="text-sm font-semibold text-muted-foreground">{nome}</h3>
-      {evidencia ? <span className="ml-auto text-xs text-muted-foreground">{evidencia}</span> : null}
-    </div>
-  )
-}
 
 /**
  * "Ponto de partida do plano" (spec antropometria-telas, D-1418 a D-1421 e D-1467 a D-1469): o gasto de repouso, a
@@ -111,7 +102,12 @@ export function CartaoPontoDePartida({ caso, bruto, paciente, aoAlterar }: Carta
         {titulo}
 
         <div className="grid gap-1.5">
-          {cabecaDoBloco('Gasto de repouso', gasto?.calculou ? ROTULO_DA_EVIDENCIA[gasto.evidencia] : null)}
+          <CabecaDoBloco
+            nome="Gasto de repouso"
+            evidencia={gasto?.calculou ? ROTULO_DA_EVIDENCIA[gasto.evidencia] : null}
+            fontes={gasto?.calculou ? [gasto.fonte] : []}
+            avisos={gasto?.calculou ? avisosNaTela('gasto', gasto.avisos).naAjuda : []}
+          />
           <p className="numeros text-2xl font-semibold tracking-tight text-heading">
             {gasto?.calculou ? (
               <>
@@ -130,13 +126,6 @@ export function CartaoPontoDePartida({ caso, bruto, paciente, aoAlterar }: Carta
                   ? `${gasto.nome}, pela massa magra de ${formatarNumero(gasto.massaMagraKg, 1)} kg (% de gordura: ${gasto.origemDoPercentual.metodo}).`
                   : gasto.motivo}
           </p>
-          {gasto?.calculou ? (
-            <ul className="grid gap-0.5 text-xs text-muted-foreground">
-              {gasto.avisos.map((a) => (
-                <li key={a}>{a}</li>
-              ))}
-            </ul>
-          ) : null}
         </div>
 
         <BlocoProteina
@@ -150,7 +139,12 @@ export function CartaoPontoDePartida({ caso, bruto, paciente, aoAlterar }: Carta
         />
 
         <div className="grid gap-1.5 border-t border-border pt-3.5">
-          {cabecaDoBloco('Prioridade clínica', prioridade ? ROTULO_DA_EVIDENCIA[prioridade.evidencia] : null)}
+          <CabecaDoBloco
+            nome="Prioridade clínica"
+            evidencia={prioridade ? ROTULO_DA_EVIDENCIA[prioridade.evidencia] : null}
+            fontes={prioridade ? [...new Map(prioridade.gatilhos.map((g) => [g.fonte.citacao, g.fonte])).values()] : []}
+            avisos={prioridade ? avisosNaTela('prioridade', prioridade.avisos).naAjuda : []}
+          />
           {prioridade ? (
             <>
               <p className="text-2xl font-semibold tracking-tight text-heading">{`Nível ${prioridade.nivel} de 4 · ${prioridade.rotulo}`}</p>
@@ -163,7 +157,7 @@ export function CartaoPontoDePartida({ caso, bruto, paciente, aoAlterar }: Carta
                 ))}
               </ul>
               <ul className="grid gap-0.5 text-xs text-muted-foreground">
-                {prioridade.avisos.map((a) => (
+                {avisosNaTela('prioridade', prioridade.avisos).visiveis.map((a) => (
                   <li key={a}>{a}</li>
                 ))}
               </ul>

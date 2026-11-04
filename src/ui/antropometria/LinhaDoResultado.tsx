@@ -8,8 +8,11 @@ interface LinhaDoResultadoProps {
   readonly linha: ApresentacaoDaLinha
 }
 
-/** As colunas da tabela: no celular, nome e real numa linha, recomendação e situação na outra (D-1440). */
-export const COLUNAS_DO_RESULTADO = 'grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-1 sm:grid-cols-[minmax(0,1fr)_5.5rem_5.75rem_9.5rem]'
+/**
+ * As colunas da tabela: no celular, nome e real numa linha, recomendação e situação na outra (D-1440). A segunda coluna
+ * para em 45%: um selo longo ("Risco substancialmente aumentado") quebra dentro dela em vez de espremer o nome.
+ */
+export const COLUNAS_DO_RESULTADO = 'grid grid-cols-[minmax(0,1fr)_minmax(0,45%)] gap-x-3 gap-y-1 sm:grid-cols-[minmax(0,1fr)_5.5rem_5.75rem_9.5rem]'
 
 /**
  * Uma linha "Indicador | Real | Recomendação | Situação" (spec antropometria-telas, D-1417): o nome com o detalhe curto,

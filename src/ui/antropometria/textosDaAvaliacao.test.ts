@@ -7,6 +7,7 @@ import { FONTES } from '@/domain/fontesAntropometria.ts'
 import type { SugestaoDeProteina } from '@/domain/pontoDePartida.ts'
 import {
   apresentarLinha,
+  avisosNaTela,
   comUnidade,
   faixaEmDezenas,
   faixaEmGKg,
@@ -200,5 +201,37 @@ describe('os textos do ponto de partida (spec antropometria-telas, D-1418 a D-14
     expect(proteinaParaOPlano({ ...base, base: 'peso-atual', gKgDePeso: null })).toEqual({ min: 1.2, max: 1.5 })
     expect(proteinaParaOPlano({ ...base, base: null, gDia: null })).toEqual({ motivo: 'Escolha o peso de referência para levar a proteína ao plano.' })
     expect(proteinaParaOPlano({ ...base, base: 'peso-atual', faixaGKg: { min: 1.2, max: null }, gDia: { min: 84, max: null } })).toHaveProperty('motivo')
+  })
+})
+
+describe('avisosNaTela: o que o protótipo não mostra vai para a ajuda (CB-1453)', () => {
+  it('gasto e proteína: todos os avisos vão para a ajuda', () => {
+    expect(avisosNaTela('gasto', ['Estimativa; a calorimetria indireta é o padrão.', 'Em atletas, todas as equações tendem a subestimar o gasto de repouso.'])).toEqual({
+      visiveis: [],
+      naAjuda: ['Estimativa; a calorimetria indireta é o padrão.', 'Em atletas, todas as equações tendem a subestimar o gasto de repouso.'],
+    })
+    expect(avisosNaTela('proteina', ['IMC de 30 ou mais: escolha o peso de referência (ideal, ajustado ou massa magra).']).visiveis).toEqual([])
+  })
+
+  it('prioridade: ficam os alertas da pessoa e a frase do protótipo; o "Proposta do app" repetido e a nota do idoso vão para a ajuda', () => {
+    const r = avisosNaTela('prioridade', [
+      'Cintura não medida: a prioridade pode estar subestimada.',
+      'Idoso: a faixa de referência do IMC é > 22 e < 27 kg/m² (SISVAN).',
+      'Risco pelas medidas antropométricas; o risco do paciente depende também de doenças e fatores de risco.',
+      'Proposta do app (sem diretriz): a escala de 0 a 4 é uma classificação proposta pelo app; junta cortes publicados, e cada gatilho cita a sua fonte.',
+    ])
+    expect(r.visiveis).toEqual(['Cintura não medida: a prioridade pode estar subestimada.', 'Risco pelas medidas antropométricas; o risco do paciente depende também de doenças e fatores de risco.'])
+    expect(r.naAjuda).toHaveLength(2)
+  })
+
+  it('meta: ficam o piso de 800 kcal e a resposta à gordura alvo; o resto vai para a ajuda', () => {
+    const r = avisosNaTela('meta', [
+      'A perda desacelera: cerca de metade do efeito de um corte calórico permanente aparece em ~1 ano (Hall 2011).',
+      'Proposta do app (sem diretriz): o prazo mínimo e o peso-alvo são contas a partir das fontes.',
+      'O % de gordura alvo não está abaixo do atual: sem peso-alvo.',
+      'Abaixo de 800 kcal/dia, só com supervisão médica (ABESO 2016): a sugestão para em 800.',
+    ])
+    expect(r.visiveis).toEqual(['O % de gordura alvo não está abaixo do atual: sem peso-alvo.', 'Abaixo de 800 kcal/dia, só com supervisão médica (ABESO 2016): a sugestão para em 800.'])
+    expect(r.naAjuda).toHaveLength(2)
   })
 })

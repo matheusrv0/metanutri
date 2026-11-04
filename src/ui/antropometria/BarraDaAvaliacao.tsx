@@ -37,9 +37,10 @@ export function BarraDaAvaliacao({
   return (
     <div className="flex flex-wrap items-end gap-x-4 gap-y-3 print:hidden">
       {resumo !== null ? (
-        <p className="min-w-0 flex-1 text-sm text-muted-foreground">{resumo}</p>
+        <p className="min-w-0 flex-1 text-sm text-muted-foreground max-sm:basis-full">{resumo}</p>
       ) : (
-        <div className="flex min-w-0 flex-1 flex-wrap items-end gap-3">
+        // CB-1452: no celular a lista ocupa a linha toda, sem dividir com o seletor da vista (o texto inteiro à vista).
+        <div className="flex min-w-0 flex-1 flex-wrap items-end gap-3 max-sm:basis-full">
           {avaliacoes && avaliacoes.length > 0 ? (
             <Escolha
               rotulo="Avaliação"

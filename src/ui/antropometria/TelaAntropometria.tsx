@@ -1,3 +1,4 @@
+import { FileText } from 'lucide-react'
 import { useCallback, useMemo, useState, type ReactNode } from 'react'
 import { diaLocal } from '@/domain/acompanhamento.ts'
 import type { AssinaturaDoPlano } from '@/domain/assinaturaDoPlano.ts'
@@ -150,8 +151,17 @@ export function TelaAntropometria({ rota, navegar, moldura, aoNovaAvaliacao, ass
   const idDoBloqueio = `bloqueio-documento-${registro.caso.id}`
   const acoes = (
     <>
-      <Button size="sm" variant="outline" disabled={bloqueio !== null} aria-describedby={bloqueio ? idDoBloqueio : undefined} onClick={() => abrirDocumento(true)}>
-        Gerar documento
+      {/* Pior caso (390 px): no celular, só o ícone, para o nome do paciente não virar "Mari a..." ao lado de dois botões. */}
+      <Button
+        size="sm"
+        variant="outline"
+        className="max-sm:size-11 max-sm:px-0"
+        disabled={bloqueio !== null}
+        aria-describedby={bloqueio ? idDoBloqueio : undefined}
+        onClick={() => abrirDocumento(true)}
+      >
+        <FileText className="sm:hidden" aria-hidden="true" />
+        <span className="max-sm:sr-only">Gerar documento</span>
       </Button>
       {vista === 'historico' && paciente ? (
         <Button size="sm" onClick={() => aoNovaAvaliacao(paciente.id)}>

@@ -2,8 +2,9 @@ import type { BaseDoPeso } from '@/domain/pesoDeReferencia.ts'
 import type { ResultadoDaProteina } from '@/domain/pontoDePartida.ts'
 import type { Objetivo } from '@/domain/tipos.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
+import { CabecaDoBloco } from './CabecaDoBloco.tsx'
 import { Escolha } from './Escolha.tsx'
-import { ROTULO_DA_BASE, ROTULO_DA_EVIDENCIA, TRAVESSAO, faixaEmGKg, faixaEmGramas } from './textosDaAvaliacao.ts'
+import { ROTULO_DA_BASE, ROTULO_DA_EVIDENCIA, TRAVESSAO, avisosNaTela, faixaEmGKg, faixaEmGramas } from './textosDaAvaliacao.ts'
 
 const OBJETIVOS: readonly { readonly valor: Objetivo; readonly rotulo: string }[] = [
   { valor: 'emagrecer', rotulo: 'Emagrecer' },
@@ -47,10 +48,12 @@ export function BlocoProteina({ resultado, semPerfil, objetivo, aoMudarObjetivo,
 
   return (
     <div className="grid gap-1.5 border-t border-border pt-3.5">
-      <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
-        <h3 className="text-sm font-semibold text-muted-foreground">Proteína</h3>
-        {sugestao ? <span className="ml-auto text-xs text-muted-foreground">{ROTULO_DA_EVIDENCIA[sugestao.evidencia]}</span> : null}
-      </div>
+      <CabecaDoBloco
+        nome="Proteína"
+        evidencia={sugestao ? ROTULO_DA_EVIDENCIA[sugestao.evidencia] : null}
+        fontes={sugestao ? [sugestao.fonte] : []}
+        avisos={sugestao ? avisosNaTela('proteina', sugestao.avisos).naAjuda : []}
+      />
       <Escolha rotulo="Objetivo do plano" rotuloOculto compacto className="w-full sm:w-60" vazio="Escolha o objetivo" opcoes={OBJETIVOS} valor={objetivo} aoEscolher={aoMudarObjetivo} />
       {perguntaDaTfge ? (
         <Escolha
@@ -92,13 +95,6 @@ export function BlocoProteina({ resultado, semPerfil, objetivo, aoMudarObjetivo,
       </p>
       {detalhe ? <p className="text-sm text-muted-foreground">{detalhe}</p> : null}
       {comDoencaNaFicha && sugestao ? <p className="text-sm text-muted-foreground">Com doença na ficha: a faixa do PROT-AGE para doença aguda ou crônica.</p> : null}
-      {sugestao && sugestao.avisos.length > 0 ? (
-        <ul className="grid gap-0.5 text-xs text-muted-foreground">
-          {sugestao.avisos.map((a) => (
-            <li key={a}>{a}</li>
-          ))}
-        </ul>
-      ) : null}
     </div>
   )
 }

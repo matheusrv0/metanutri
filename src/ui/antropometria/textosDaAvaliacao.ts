@@ -371,3 +371,24 @@ export function proteinaParaOPlano(sugestao: SugestaoDeProteina): { readonly min
   if (faixa === null || faixa.max === null) return { motivo: 'A faixa não tem teto ("a partir de"): ajuste a meta de proteína em "Metas".' }
   return { min: arredondar2(faixa.min), max: arredondar2(faixa.max) }
 }
+
+export type BlocoDoPontoDePartida = 'gasto' | 'proteina' | 'prioridade' | 'meta'
+
+/** Os alertas que mudam a conduta e ficam à vista, mesmo fora do protótipo: só aparecem quando valem para a pessoa. */
+const FICAM_NA_TELA: Readonly<Record<BlocoDoPontoDePartida, (aviso: string) => boolean>> = {
+  gasto: () => false,
+  proteina: () => false,
+  // O protótipo mostra a frase do risco e o aviso da cintura; os outros alertas da pessoa (GLIM, panturrilha) também.
+  prioridade: (a) => !a.startsWith(PROPOSTA_DO_APP) && !a.startsWith('Idoso: a faixa de referência'),
+  // O piso de 800 kcal e a resposta à gordura alvo digitada (o "alvoErro" do protótipo).
+  meta: (a) => a.startsWith('Abaixo de 800 kcal') || a.startsWith('O % de gordura alvo') || a.startsWith('Sem o % de gordura atual'),
+}
+
+/**
+ * CB-1453: o texto da tela é o do protótipo. Os avisos fixos do motor (o "Proposta do app (sem diretriz)" repetido, as
+ * notas de método, as citações longas) vão para a ajuda ("ⓘ") do bloco, com a fonte inteira; a fonte continua no código.
+ */
+export function avisosNaTela(bloco: BlocoDoPontoDePartida, avisos: readonly string[]): { readonly visiveis: readonly string[]; readonly naAjuda: readonly string[] } {
+  const fica = FICAM_NA_TELA[bloco]
+  return { visiveis: avisos.filter(fica), naAjuda: avisos.filter((a) => !fica(a)) }
+}

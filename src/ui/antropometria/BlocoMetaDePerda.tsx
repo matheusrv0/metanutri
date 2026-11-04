@@ -1,7 +1,8 @@
 import type { ResultadoDaMeta } from '@/domain/metaDePerda.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
+import { CabecaDoBloco } from './CabecaDoBloco.tsx'
 import { CampoMedida } from './CampoMedida.tsx'
-import { ROTULO_DA_EVIDENCIA } from './textosDaAvaliacao.ts'
+import { ROTULO_DA_EVIDENCIA, avisosNaTela } from './textosDaAvaliacao.ts'
 
 interface BlocoMetaDePerdaProps {
   /** A meta do motor; `null` quando não se aplica (objetivo "ganhar" ou "manter", prioridade 0 sem "emagrecer"). */
@@ -24,17 +25,15 @@ const semanas = (v: number) => formatarNumero(Math.ceil(v), 0)
 export function BlocoMetaDePerda({ resultado, gorduraAlvoPct, aoMudarGorduraAlvo, gastoTotalKcal }: BlocoMetaDePerdaProps) {
   if (resultado === null) return null
   const meta = resultado.mostra ? resultado : null
+  const avisos = meta ? avisosNaTela('meta', meta.avisos) : { visiveis: [], naAjuda: [] }
   return (
     <div className="grid gap-1.5 border-t border-border pt-3.5">
-      <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
-        <h3 className="text-sm font-semibold text-muted-foreground">Meta de perda</h3>
-        {meta ? <span className="ml-auto text-xs text-muted-foreground">{ROTULO_DA_EVIDENCIA.forte}</span> : null}
-      </div>
+      <CabecaDoBloco nome="Meta de perda" evidencia={meta ? ROTULO_DA_EVIDENCIA.forte : null} fontes={meta ? [meta.fonte] : []} avisos={avisos.naAjuda} />
       {meta ? (
         <>
           <p className="numeros text-2xl font-semibold tracking-tight text-heading">{`${formatarNumero(meta.fase1.minKg, 1)} a ${kg(meta.fase1.maxKg)} em cerca de 6 meses`}</p>
           <p className="text-sm text-muted-foreground">
-            {`5 a 10% do peso, sem passar de ${kg(meta.tetoKgPorSemana)} por semana${meta.atletaKgPorSemana !== null ? ` (no atleta, ${kg(meta.atletaKgPorSemana)})` : ''}. Déficit de ${meta.deficitKcal.min} a ${meta.deficitKcal.max} kcal/dia · ${meta.fonte.curta}.`}
+            {`5 a 10% do peso, sem passar de ${kg(meta.tetoKgPorSemana)} por semana${meta.atletaKgPorSemana !== null ? ` (no atleta, ${kg(meta.atletaKgPorSemana)})` : ''}. Déficit de ${meta.deficitKcal.min} a ${meta.deficitKcal.max} kcal/dia.`}
           </p>
           {meta.energiaSugeridaKcal && gastoTotalKcal !== null ? (
             <p className="text-sm text-muted-foreground">{`Energia sugerida: ${kcal(meta.energiaSugeridaKcal.min)} a ${kcal(meta.energiaSugeridaKcal.max)} kcal/dia, pelo gasto do plano de ${kcal(gastoTotalKcal)} kcal/dia.`}</p>
@@ -61,7 +60,7 @@ export function BlocoMetaDePerda({ resultado, gorduraAlvoPct, aoMudarGorduraAlvo
             </>
           ) : null}
           <ul className="grid gap-0.5 text-xs text-muted-foreground">
-            {meta.avisos.map((a) => (
+            {avisos.visiveis.map((a) => (
               <li key={a}>{a}</li>
             ))}
           </ul>

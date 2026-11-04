@@ -58,7 +58,8 @@ function Cabecalho({ assinatura }: { readonly assinatura: AssinaturaDaFolha }) {
 }
 
 /** Duas linhas por item abaixo de 640 px; a grade de cinco colunas no computador e no papel (D-1499). */
-const COLUNAS_DOS_RESULTADOS = 'grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-0.5 sm:grid-cols-[minmax(0,1.5fr)_5.5rem_minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1fr)]'
+// No celular, a classificação tem metade da linha: "Risco substancialmente aumentado" quebra entre as palavras.
+const COLUNAS_DOS_RESULTADOS = 'grid grid-cols-[minmax(0,1fr)_minmax(0,50%)] gap-x-3 gap-y-0.5 sm:grid-cols-[minmax(0,1.5fr)_5.5rem_minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1fr)]'
 const COLUNAS_DA_COMPARACAO = 'grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-0.5 sm:grid-cols-[minmax(0,1.4fr)_5rem_5rem_6rem_minmax(0,1fr)]'
 
 /**
@@ -260,13 +261,13 @@ export function FolhaAvaliacao({ documento: d, assinatura, proposta, data }: Fol
                     <span role="rowheader" className="min-w-0">
                       {r.nome}
                     </span>
-                    <span role="cell" className="numeros text-right font-semibold text-heading">
+                    <span role="cell" className="numeros whitespace-nowrap text-right font-semibold text-heading">
                       {a.real}
                     </span>
                     <span role="cell" className="min-w-0 text-xs text-muted-foreground sm:text-sm sm:text-foreground">
                       {a.recomendacao}
                     </span>
-                    <span role="cell" className="flex min-w-0 justify-end sm:justify-start">
+                    <span role="cell" className="flex min-w-0 justify-end [overflow-wrap:normal] sm:justify-start">
                       {a.selo ? <SeloDaSituacao rotulo={a.selo.rotulo} tom={a.selo.tom} /> : <span className="text-muted-foreground">—</span>}
                     </span>
                     <span role="cell" className="col-span-2 min-w-0 text-xs text-muted-foreground sm:col-span-1">
