@@ -108,7 +108,7 @@ alimento próprio), `base-ampliada` (D-716: `sugerivel`), `conta-e-verificacao` 
 - **CA-2391** · Dado o 016 da versão anterior já aplicado, então rodar o 016 atual por cima deixa a coluna `custo_estimado`, uma só `concluir_uso_da_ia` (a de 10 parâmetros) e a conclusão com custo estimado funcionando (D-1338).
 - **CA-2392** · Dado um texto com emoji no limite, surrogate solto, U+FFFE ou U+FFFF, então o pedido limpo e o texto da IA não têm surrogate solto nem não-caractere, e o emoji fica inteiro ou sai inteiro (D-1339).
 - **CA-2393** · Dado "motivo" ou "pontosAConfirmar" com telefone, e-mail, perfil com @ ou endereço web, então a função os devolve com "[removido]" no lugar; e "2ª refeição" e "½ xícara" ficam como estão (D-1340).
-- **CA-2394** · Dado os formatos novos de contato do D-1341, então nenhum chega à mensagem da IA; e "1.800 kcal", "1500 e 1800 kcal", "2ª a 6ª", "100, 150 e 200 g", "perfil lipídico", "B12 1.000 mcg" e "vitamina D 50.000 UI" ficam como estão.
+- **CA-2394** · Dado os formatos novos de contato do D-1341, então nenhum chega à mensagem da IA; e "1.800 kcal", "1500 e 1800 kcal", "100, 150 e 200 g", "perfil lipídico", "B12 1.000 mcg" e "vitamina D 50.000 UI" ficam como estão.
 
 ## 3. Critérios de aceite — domínio no navegador (P1)
 
