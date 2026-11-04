@@ -31,6 +31,7 @@ import { TelaEsqueciSenha } from './ui/publico/conta/TelaEsqueciSenha.tsx'
 import { TelaNovaSenha } from './ui/publico/conta/TelaNovaSenha.tsx'
 import { TelaVoltaPagamento } from './ui/publico/TelaVoltaPagamento.tsx'
 import { TelaRecuperarLink } from './ui/publico/conta/TelaRecuperarLink.tsx'
+import { TelaAvisosDoEmail } from './ui/avisos/TelaAvisosDoEmail.tsx'
 import { Redirecionar } from './ui/Redirecionar.tsx'
 import { AvisoDeInatividade } from './ui/sessao/AvisoDeInatividade.tsx'
 import { CapaEncerrando } from './ui/sessao/CapaEncerrando.tsx'
@@ -173,6 +174,8 @@ function Conteudo({ conta, usuarioId, perfilConta }: ConteudoProps) {
 
   // Spec lado-do-paciente, D-1220: "Recuperar meu link", sem conta.
   if (rota.tela === 'recuperar-link') return <TelaRecuperarLink aoVoltar={() => navegar({ tela: 'entrar' })} />
+  // DP-LP-20: a página do aceite ou do descadastro, aberta pelo botão do e-mail, sem conta.
+  if (rota.tela === 'avisos') return <TelaAvisosDoEmail chave={rota.chave} />
 
   const telaCarregando = (
     <div role="status" className="grid min-h-dvh place-content-center bg-background text-sm text-muted-foreground">
