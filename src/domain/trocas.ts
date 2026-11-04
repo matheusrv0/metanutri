@@ -52,8 +52,11 @@ export const ehTrocaRazoavel = (a: Alimento): boolean => !NAO_EQUIVALE.test(a.de
 type Macro = 'proteina_g' | 'carboidrato_g' | 'lipideos_g'
 const KCAL_POR_GRAMA: Readonly<Record<Macro, number>> = { proteina_g: 4, carboidrato_g: 4, lipideos_g: 9 }
 
-/** Qual macronutriente carrega a energia do alimento; `null` quando a tabela não sabe. */
-function macroDominante(a: Alimento): Macro | null {
+/**
+ * Qual macronutriente carrega a energia do alimento; `null` quando a tabela não sabe. A busca de substitutos usa a mesma
+ * regra no mesmo grupo (spec busca-substitutos, D-1125, regra a).
+ */
+export function macroDominante(a: Alimento): Macro | null {
   const energias = (Object.keys(KCAL_POR_GRAMA) as Macro[]).map((m) => ({ m, kcal: (a.nutrientes[m] ?? 0) * KCAL_POR_GRAMA[m] }))
   const maior = energias.reduce((x, y) => (y.kcal > x.kcal ? y : x))
   return maior.kcal <= 0 ? null : maior.m

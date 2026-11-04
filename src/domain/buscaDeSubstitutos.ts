@@ -6,10 +6,10 @@ import { MAXIMO_DE_PEDACOS, MEDIDAS_DE_CONTAR, medidaParaMostrar, medidasDoAlime
 import { posicaoNoConsumo } from './consumoPof.ts'
 import { noMesmoGrupo } from './grupoDeSubstituicao.ts'
 import { unidadeDo } from './liquido.ts'
-import { CAFE_OU_CHA, ehDeUsoComum, ehFrito, ehPratoComposto, ehProcessado, ehSegundaEscolha, ehUltraprocessado } from './prescritivel.ts'
+import { CAFE_OU_CHA, ehDeUsoComum, ehFrito, ehPoOuDesidratado, ehPratoComposto, ehProcessado, ehSegundaEscolha, ehUltraprocessado } from './prescritivel.ts'
 import { casaRestricao, comoRestricoes, ehNaoGosta, type RestricoesDoPaciente } from './restricoes.ts'
 import { ehPrescritivelParaSugerir } from './sugestaoDoProprio.ts'
-import { ehTrocaRazoavel } from './trocas.ts'
+import { ehTrocaRazoavel, macroDominante } from './trocas.ts'
 import type { Alimento, BuscarAlimento, ChaveNutrienteAlimento, MedidaDoItem } from './tipos.ts'
 import { FIGADO } from './vitaminaA.ts'
 
@@ -256,6 +256,39 @@ const compararCandidatos =
 
 const listaDeNomes = (nomes: readonly string[]): string => nomes.join(' nem ')
 
+/**
+ * D-1125, regra b: o item com até 4 kcal em 100 g tem energia quase zero (a quantidade não significativa de valor
+ * energético da rotulagem, que o rótulo declara como zero: ANVISA, IN 75/2020, Anexo IV). A razão de energia não diz nada
+ * nele: a regra da energia não vale, e o macro dominante basta.
+ */
+export const ENERGIA_QUASE_ZERO_KCAL = 4
+/** D-1125, regra b: a porção do candidato fica entre metade e o dobro da energia do item. */
+const MENOR_RAZAO_DE_ENERGIA = 0.5
+const MAIOR_RAZAO_DE_ENERGIA = 2
+
+/**
+ * D-1125: a troca equivalente no mesmo grupo, a lista de equivalentes (Philippi et al., "Pirâmide alimentar adaptada",
+ * Rev. Nutr. 1999;12(1):65-80): o mesmo macro dominante das trocas da folha (a), a energia na porção entre metade e o
+ * dobro (b) e o pó ou desidratado só no lugar de outro (c). A faixa de metade ao dobro é a tolerância desta busca, que
+ * procura pelo nutriente: a energia só barra o absurdo ("leite em pó 526 g" no lugar de um copo de leite).
+ */
+export function naTrocaEquivalente(base: Alimento, gramas: number): (candidato: Alimento, gramasDoCandidato: number) => boolean {
+  const macro = macroDominante(base)
+  const kcalPorCem = base.nutrientes.energia_kcal
+  const energiaDoItem = kcalPorCem !== null && kcalPorCem > ENERGIA_QUASE_ZERO_KCAL ? (kcalPorCem * gramas) / 100 : null
+  const baseEmPo = ehPoOuDesidratado(base)
+  return (a, gramasDoCandidato) => {
+    if (macroDominante(a) !== macro) return false
+    if (!baseEmPo && ehPoOuDesidratado(a)) return false
+    if (energiaDoItem === null) return true
+    // CB-1111: sem energia na tabela, não dá para dizer que a troca é equivalente.
+    const kcal = a.nutrientes.energia_kcal
+    if (kcal === null) return false
+    const razao = (kcal * gramasDoCandidato) / 100 / energiaDoItem
+    return razao >= MENOR_RAZAO_DE_ENERGIA - 1e-9 && razao <= MAIOR_RAZAO_DE_ENERGIA + 1e-9
+  }
+}
+
 /** D-1120: o mel e o chocolate que a conduta da parceira libera no Cobrir (D-290) não são substitutos. */
 const ACUCARADOS = 'Produtos açucarados'
 
@@ -282,6 +315,8 @@ export function buscarSubstitutos(
 
   const restricoes = comoRestricoes(opcoes.restricoes)
   const doGrupo = opcoes.mesmoGrupo ? noMesmoGrupo(base) : () => true
+  // D-1125: no mesmo grupo, a troca equivalente, com 1 ou mais nutrientes; desligado o filtro, as três regras não valem.
+  const equivalente = opcoes.mesmoGrupo ? naTrocaEquivalente(base, original.gramas) : () => true
   // D-478 e D-294: ultraprocessado e prato composto só no lugar de quem já é.
   const baseUltraprocessada = ehUltraprocessado(base)
   const baseSimples = !ehPratoComposto(base)
@@ -304,7 +339,7 @@ export function buscarSubstitutos(
     )
     if (ideal.ajuste !== null && ideal.ajuste > MAXIMO_DE_AJUSTE) continue
     const porcao = porcaoDe(a, ideal.gramas)
-    if (!porcao) continue
+    if (!porcao || !equivalente(a, porcao.gramas)) continue
     // D-1107: a restrição tira o candidato; conta para a mensagem só quem serviria (como no Cobrir, revisão N6).
     if (casaRestricao(a, restricoes)) {
       restricaoTirou = true
