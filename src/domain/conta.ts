@@ -143,7 +143,7 @@ export const PLANOS: readonly PlanoAssinatura[] = [
   },
 ]
 
-export type IdRecurso = 'adequacao' | 'adesao' | 'documentos' | 'marca' | 'alimentos-proprios'
+export type IdRecurso = 'adequacao' | 'adesao' | 'documentos' | 'marca' | 'alimentos-proprios' | 'importar-pacientes'
 
 export interface RecursoDeTodos {
   readonly id: IdRecurso
@@ -161,6 +161,8 @@ export const RECURSOS_EM_TODOS_OS_PLANOS: readonly RecursoDeTodos[] = [
   // Spec marca-no-link (D-959, CA-1979): a logo e a cor em todas as assinaturas, Free e Estudante inclusive.
   { id: 'marca', texto: 'Sua logo e sua cor no link do paciente; a logo também no plano impresso' },
   { id: 'alimentos-proprios', texto: 'Meus alimentos e receitas com cálculo' },
+  // Spec importar-pacientes, D-916: todas as assinaturas importam, Free e Estudante inclusive.
+  { id: 'importar-pacientes', texto: 'Importar pacientes de planilha (CSV ou Excel)' },
 ]
 
 export const ehIdPlano = (valor: unknown): valor is IdPlano => typeof valor === 'string' && PLANOS.some((p) => p.id === valor)

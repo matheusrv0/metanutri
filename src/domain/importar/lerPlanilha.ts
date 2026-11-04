@@ -1,0 +1,129 @@
+// O arquivo escolhido vira a planilha lida (spec importar-pacientes, D-901 a D-903): decide pelo nome se é CSV ou XLSX,
+// recusa o que não é (com a frase de como salvar), recusa acima de 5 MB sem ler, lê em partes dando a vez ao navegador
+// e para no "Cancelar" (CB-911). Tudo na memória da aba (D-914): nada é gravado, registrado ou mandado.
+import { analisarAba, LIMITE_DE_LINHAS, type AnaliseDaAba } from './colunas.ts'
+import { decodificar, detectarSeparador, lerRegistros, registroComTexto, type Registro, type Separador } from './lerTexto.ts'
+import { lerXlsx } from './lerXlsx.ts'
+import { criarPausa } from './pausas.ts'
+import { EntradaGrandeDemais } from './zip.ts'
+import type { Recusa } from './textos.ts'
+
+/** DP-IP-4: 5 MB, como o comprovante de matrícula. */
+export const LIMITE_DE_BYTES = 5 * 1024 * 1024
+
+/**
+ * Quantas linhas com texto juntar de cada aba: as 2.000 de paciente, o cabeçalho e até 10 linhas de título. Passou
+ * disso, passou do limite qualquer que seja o cabeçalho (CA-1910: nada é lido além do necessário para contar).
+ */
+const LINHAS_A_JUNTAR = LIMITE_DE_LINHAS + 11
+
+/** O arquivo, sem depender do `File` do navegador: a tela passa o `File`, o teste passa bytes. */
+export interface ArquivoParaLer {
+  readonly nome: string
+  readonly tamanho: number
+  bytes(): Promise<ArrayBuffer>
+}
+
+export interface AbaDaPlanilha {
+  readonly nome: string
+  readonly analise: AnaliseDaAba
+}
+
+export interface PlanilhaLida {
+  readonly tipo: 'csv' | 'xlsx'
+  /** O separador do CSV, que o arquivo das que ficaram de fora repete; no XLSX, ponto e vírgula (DP-IP-22). */
+  readonly separador: Separador
+  readonly abas: readonly AbaDaPlanilha[]
+  /** A aba que abre escolhida: a primeira com pacientes. */
+  readonly abaInicial: number
+}
+
+export type ResultadoDaLeitura = { readonly tipo: 'lida'; readonly planilha: PlanilhaLida } | { readonly tipo: 'recusada'; readonly recusa: Recusa } | { readonly tipo: 'cancelada' }
+
+export interface OpcoesDaLeitura {
+  readonly sinal?: AbortSignal | undefined
+  readonly darAVez?: (() => Promise<void>) | undefined
+  /** O relógio da fatia de leitura (DP-IP-32), em milissegundos; o teste passa um que anda como quer. */
+  readonly relogio?: (() => number) | undefined
+}
+
+const extensao = (nome: string): string => {
+  const ponto = nome.lastIndexOf('.')
+  return ponto < 0 ? '' : nome.slice(ponto + 1).toLowerCase()
+}
+
+const ehCancelamento = (erro: unknown): boolean => erro instanceof DOMException && erro.name === 'AbortError'
+
+/** O texto não é texto: tem caractere nulo ou muito caractere de controle (um binário renomeado, CB-910). */
+function pareceBinario(texto: string): boolean {
+  const amostra = texto.slice(0, 64 * 1024)
+  if (amostra.includes('\u0000')) return true
+  let controles = 0
+  for (let i = 0; i < amostra.length; i += 1) {
+    const codigo = amostra.charCodeAt(i)
+    if ((codigo >= 1 && codigo <= 8) || (codigo >= 14 && codigo <= 31)) controles += 1
+  }
+  // Um ou outro controle num texto (o Ctrl-Z do fim, CB-922) é limpo na leitura (D-918); binário tem muitos.
+  return controles > Math.max(8, amostra.length / 20)
+}
+
+async function lerCsv(bytes: Uint8Array, tsv: boolean, pausar: () => Promise<void>): Promise<{ separador: Separador; registros: Registro[]; cortada: boolean } | null> {
+  // Um zip (o XLSX chamado de .csv) começa com "PK".
+  if (bytes[0] === 0x50 && bytes[1] === 0x4b && bytes[2] === 0x03 && bytes[3] === 0x04) return null
+  const { texto } = decodificar(bytes)
+  if (pareceBinario(texto)) return null
+  const separador: Separador = tsv ? '\t' : detectarSeparador(texto)
+  const registros: Registro[] = []
+  let cortada = false
+  for (const registro of lerRegistros(texto, separador)) {
+    await pausar()
+    if (!registroComTexto(registro.celulas)) continue
+    if (registros.length === LINHAS_A_JUNTAR) {
+      cortada = true
+      break
+    }
+    registros.push(registro)
+  }
+  return { separador, registros, cortada }
+}
+
+/** Lê o arquivo. Nunca lança: o que dá errado vira recusa; o "Cancelar", `cancelada`. */
+export async function lerPlanilha(arquivo: ArquivoParaLer, { sinal, darAVez, relogio }: OpcoesDaLeitura = {}): Promise<ResultadoDaLeitura> {
+  const tipo = extensao(arquivo.nome)
+  if (tipo === 'xls' || tipo === 'ods' || tipo === 'numbers') return { tipo: 'recusada', recusa: { tipo } }
+  if (!['csv', 'txt', 'tsv', 'xlsx'].includes(tipo)) return { tipo: 'recusada', recusa: { tipo: 'nao-e-planilha', nome: arquivo.nome } }
+  if (arquivo.tamanho > LIMITE_DE_BYTES) return { tipo: 'recusada', recusa: { tipo: 'grande' } }
+
+  try {
+    const bytes = new Uint8Array(await arquivo.bytes())
+    if (sinal?.aborted) return { tipo: 'cancelada' }
+    const pausar = criarPausa({ darAVez, sinal, relogio })
+
+    let planilha: Omit<PlanilhaLida, 'abaInicial'>
+    let abasGrandes = false
+    if (tipo === 'xlsx') {
+      const abas = await lerXlsx(bytes, { limiteDeLinhas: LINHAS_A_JUNTAR, sinal, pausar })
+      // CB-933: a aba que passou do teto fica de fora da lista; se só ela podia ter pacientes, a recusa diz isso.
+      abasGrandes = abas.some((aba) => aba.grandeDemais === true)
+      const lidas = abas.filter((aba) => aba.grandeDemais !== true)
+      planilha = { tipo: 'xlsx', separador: ';', abas: lidas.map((aba) => ({ nome: aba.nome, analise: analisarAba(aba.registros, aba.cortada) })) }
+    } else {
+      const csv = await lerCsv(bytes, tipo === 'tsv', pausar)
+      if (csv === null) return { tipo: 'recusada', recusa: { tipo: 'ilegivel' } }
+      planilha = { tipo: 'csv', separador: csv.separador, abas: [{ nome: arquivo.nome, analise: analisarAba(csv.registros, csv.cortada) }] }
+    }
+    if (sinal?.aborted) return { tipo: 'cancelada' }
+
+    // CB-933: com uma aba pulada, a capa ou o resumo que sobra não passa pela dos pacientes; só a que tem a coluna Nome.
+    const abaInicial = planilha.abas.findIndex((aba) => aba.analise.linhas.length > 0 && (!abasGrandes || aba.analise.destinos.includes('nome')))
+    const escolhida = planilha.abas[abaInicial]
+    if (escolhida === undefined) return { tipo: 'recusada', recusa: { tipo: abasGrandes ? 'aba-grande' : 'vazia' } }
+    if (escolhida.analise.excede) return { tipo: 'recusada', recusa: { tipo: 'linhas' } }
+    return { tipo: 'lida', planilha: { ...planilha, abaInicial } }
+  } catch (erro) {
+    if (ehCancelamento(erro) || sinal?.aborted) return { tipo: 'cancelada' }
+    // Os textos compartilhados (ou outra parte que todas as abas usam) passam do teto: nenhuma aba se lê sem eles.
+    if (erro instanceof EntradaGrandeDemais) return { tipo: 'recusada', recusa: { tipo: 'aba-grande' } }
+    return { tipo: 'recusada', recusa: { tipo: 'ilegivel' } }
+  }
+}

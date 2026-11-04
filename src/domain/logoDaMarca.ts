@@ -6,8 +6,12 @@
 export const LOGO_ENVIO_MAX_BYTES = 2 * 1024 * 1024
 /** D-951: a cópia guardada vai até 150 KB de PNG (153.600 bytes). O banco confere o mesmo teto (DP-ML-2). */
 export const LOGO_MAX_BYTES = 150 * 1024
+/** D-951: o maior lado da cópia guardada. */
+export const LADO_DA_COPIA = 600
 /** D-951: o lado maior da cópia, do primeiro tamanho tentado ao último. */
-export const LADOS_DA_LOGO: readonly number[] = [600, 480, 360, 240]
+export const LADOS_DA_LOGO: readonly number[] = [LADO_DA_COPIA, 480, 360, 240]
+/** CB-967 e DP-ML-32: o maior lado aceito no envio, lido no cabeçalho do arquivo antes de abrir a imagem. */
+export const LADO_MAXIMO_DO_ENVIO = 8000
 
 /** D-963: as frases da logo. */
 export const ERROS_DA_LOGO = {
@@ -30,28 +34,138 @@ const TIPOS: Readonly<Record<string, string>> = {
   'image/svg+xml': 'image/svg+xml',
 }
 
-const EXTENSOES: Readonly<Record<string, string>> = {
-  png: 'image/png',
-  jpg: 'image/jpeg',
-  jpeg: 'image/jpeg',
-  webp: 'image/webp',
-  svg: 'image/svg+xml',
-}
-
-export interface ArquivoDeLogo {
-  readonly nome: string
-  /** O tipo que o navegador diz (`File.type`); vazio quando ele não sabe. */
-  readonly tipo: string
-  readonly bytes: number
-}
-
 export type ConferenciaDoArquivo = { readonly tipo: 'ok'; readonly mime: string } | { readonly tipo: 'erro'; readonly mensagem: string }
 
-/** CA-1953 e DP-ML-4: o tipo vem do navegador; sem ele, da extensão. GIF, HEIC, PDF e o resto não passam. */
-export function conferirArquivoDeLogo(arquivo: ArquivoDeLogo): ConferenciaDoArquivo {
-  const extensao = /\.([a-z0-9]+)$/i.exec(arquivo.nome)?.[1]?.toLowerCase() ?? ''
-  const mime = arquivo.tipo ? TIPOS[arquivo.tipo.toLowerCase()] : EXTENSOES[extensao]
-  if (!mime || arquivo.bytes > LOGO_ENVIO_MAX_BYTES) return { tipo: 'erro', mensagem: ERROS_DA_LOGO.formato }
+/** A largura e a altura de uma imagem, em pixels. */
+export interface Lados {
+  readonly largura: number
+  readonly altura: number
+}
+
+const ASCII = (texto: string): readonly number[] => Array.from(texto, (c) => c.charCodeAt(0))
+const ASSINATURA_PNG = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]
+const ASSINATURA_JPEG = [0xff, 0xd8, 0xff]
+
+/** Os bytes `esperados` estão em `bytes`, a partir de `inicio`. */
+const temEm = (bytes: Uint8Array, inicio: number, esperados: readonly number[]): boolean => esperados.every((b, i) => bytes[inicio + i] === b)
+const byte = (bytes: Uint8Array, i: number): number => bytes[i] ?? 0
+const be16 = (bytes: Uint8Array, i: number): number => (byte(bytes, i) << 8) | byte(bytes, i + 1)
+const be32 = (bytes: Uint8Array, i: number): number => byte(bytes, i) * 2 ** 24 + (byte(bytes, i + 1) << 16) + (byte(bytes, i + 2) << 8) + byte(bytes, i + 3)
+const le16 = (bytes: Uint8Array, i: number): number => byte(bytes, i) | (byte(bytes, i + 1) << 8)
+const le24 = (bytes: Uint8Array, i: number): number => le16(bytes, i) | (byte(bytes, i + 2) << 16)
+
+/** Quanto do começo de um texto é lido para achar o `<svg`: sobra para o `<?xml`, comentários e o `<!DOCTYPE`. */
+const INICIO_DO_SVG = 64 * 1024
+
+/** O fim de `marca` a partir de `desde`, ou -1. */
+function depoisDe(texto: string, marca: string, desde = 0): number {
+  const i = texto.indexOf(marca, desde)
+  return i < 0 ? -1 : i + marca.length
+}
+
+/** Onde termina a declaração do começo do texto: `<?xml …?>`, `<!-- … -->` ou `<!DOCTYPE …>` (com ou sem `[…]`). */
+function fimDaDeclaracao(texto: string): number {
+  if (texto.startsWith('<?')) return depoisDe(texto, '?>')
+  if (texto.startsWith('<!--')) return depoisDe(texto, '-->')
+  const colchete = texto.indexOf('[')
+  const maior = texto.indexOf('>')
+  if (colchete >= 0 && (maior < 0 || colchete < maior)) {
+    const fecha = texto.indexOf(']', colchete)
+    return fecha < 0 ? -1 : depoisDe(texto, '>', fecha)
+  }
+  return maior < 0 ? -1 : maior + 1
+}
+
+/** DP-ML-4: o SVG é texto que, depois do `<?xml`, dos comentários e do `<!DOCTYPE`, começa por `<svg`. */
+function ehTextoDeSvg(bytes: Uint8Array): boolean {
+  // O TextDecoder já tira o BOM do UTF-8 do começo.
+  let texto = new TextDecoder().decode(bytes.subarray(0, INICIO_DO_SVG)).trimStart()
+  while (texto.startsWith('<?') || texto.startsWith('<!')) {
+    const fim = fimDaDeclaracao(texto)
+    if (fim < 0) return false
+    texto = texto.slice(fim).trimStart()
+  }
+  return /^<svg[\s/>]/.test(texto)
+}
+
+/**
+ * CA-1953 e DP-ML-4: o tipo pelo conteúdo, nunca pelo nome nem pelo tipo que o navegador diz. PNG, JPEG e WebP pela
+ * assinatura dos primeiros bytes; SVG pelo texto. GIF (`GIF87a`, `GIF89a`), HEIC, PDF e o resto: nulo.
+ */
+export function tipoPeloConteudo(bytes: Uint8Array): string | null {
+  if (temEm(bytes, 0, ASSINATURA_PNG)) return 'image/png'
+  if (temEm(bytes, 0, ASSINATURA_JPEG)) return 'image/jpeg'
+  if (temEm(bytes, 0, ASCII('RIFF')) && temEm(bytes, 8, ASCII('WEBP'))) return 'image/webp'
+  return ehTextoDeSvg(bytes) ? 'image/svg+xml' : null
+}
+
+/** O PNG diz a largura e a altura no IHDR, o primeiro pedaço, logo depois da assinatura. */
+function ladosDoPng(bytes: Uint8Array): Lados | null {
+  if (bytes.length < 24 || !temEm(bytes, 12, ASCII('IHDR'))) return null
+  return { largura: be32(bytes, 16), altura: be32(bytes, 20) }
+}
+
+/** Os marcadores SOF do JPEG trazem a altura e a largura: C0 a CF, menos C4 (DHT), C8 (JPG) e CC (DAC). */
+const ehSof = (marcador: number): boolean => marcador >= 0xc0 && marcador <= 0xcf && marcador !== 0xc4 && marcador !== 0xc8 && marcador !== 0xcc
+/** Marcadores sem tamanho: o começo (D8), o TEM (01), os RST (D0 a D7) e o byte de enchimento (00). */
+const semTamanho = (marcador: number): boolean => marcador === 0xd8 || marcador === 0x01 || marcador === 0x00 || (marcador >= 0xd0 && marcador <= 0xd7)
+
+/** O JPEG diz os lados no primeiro SOF, antes do começo da imagem (SOS). Anda de segmento em segmento, como o decodificador. */
+function ladosDoJpeg(bytes: Uint8Array): Lados | null {
+  let i = 2
+  while (i < bytes.length) {
+    // Bytes soltos antes do marcador e os FF de enchimento são pulados, como o decodificador faz.
+    while (i < bytes.length && bytes[i] !== 0xff) i++
+    while (i < bytes.length && bytes[i] === 0xff) i++
+    const marcador = bytes[i]
+    if (marcador === undefined) return null
+    i++
+    if (semTamanho(marcador)) continue
+    // O fim (D9) ou o começo da imagem (DA) sem um SOF antes: não dá para saber o tamanho.
+    if (marcador === 0xd9 || marcador === 0xda) return null
+    if (ehSof(marcador)) return i + 7 <= bytes.length ? { altura: be16(bytes, i + 3), largura: be16(bytes, i + 5) } : null
+    const tamanho = be16(bytes, i)
+    if (tamanho < 2) return null
+    i += tamanho
+  }
+  return null
+}
+
+/** O WebP diz os lados no primeiro pedaço: VP8X (o formato estendido), VP8 (com perda) ou VP8L (sem perda). */
+function ladosDoWebp(bytes: Uint8Array): Lados | null {
+  if (temEm(bytes, 12, ASCII('VP8X')) && bytes.length >= 30) return { largura: 1 + le24(bytes, 24), altura: 1 + le24(bytes, 27) }
+  if (temEm(bytes, 12, ASCII('VP8 ')) && temEm(bytes, 23, [0x9d, 0x01, 0x2a]) && bytes.length >= 30) {
+    return { largura: le16(bytes, 26) & 0x3fff, altura: le16(bytes, 28) & 0x3fff }
+  }
+  if (temEm(bytes, 12, ASCII('VP8L')) && bytes[20] === 0x2f && bytes.length >= 25) {
+    const [b1, b2, b3, b4] = [byte(bytes, 21), byte(bytes, 22), byte(bytes, 23), byte(bytes, 24)]
+    return { largura: 1 + (((b2 & 0x3f) << 8) | b1), altura: 1 + (((b4 & 0x0f) << 10) | (b3 << 2) | ((b2 & 0xc0) >> 6)) }
+  }
+  return null
+}
+
+/** DP-ML-32: a largura e a altura lidas no cabeçalho, sem abrir a imagem. Nulo quando o cabeçalho não diz (ou é SVG). */
+export function ladosPeloCabecalho(bytes: Uint8Array, mime: string): Lados | null {
+  if (mime === 'image/png') return ladosDoPng(bytes)
+  if (mime === 'image/jpeg') return ladosDoJpeg(bytes)
+  if (mime === 'image/webp') return ladosDoWebp(bytes)
+  return null
+}
+
+/**
+ * CA-1953, CB-967, DP-ML-4 e DP-ML-32: a conferência do arquivo enviado, pelos bytes dele, antes de abrir a imagem. Até
+ * 2 MB; PNG, JPEG, WebP ou SVG pelo conteúdo; e, menos no SVG (que o navegador desenha direto no tamanho da cópia), até
+ * 8.000 px de lado pelo cabeçalho. Uma imagem maior trava o aparelho ao abrir, mesmo com poucos bytes.
+ */
+export function conferirArquivoDeLogo(bytes: Uint8Array): ConferenciaDoArquivo {
+  const formato = { tipo: 'erro', mensagem: ERROS_DA_LOGO.formato } as const
+  if (bytes.length > LOGO_ENVIO_MAX_BYTES) return formato
+  const mime = tipoPeloConteudo(bytes)
+  if (mime === null) return formato
+  if (mime === 'image/svg+xml') return { tipo: 'ok', mime }
+  const lados = ladosPeloCabecalho(bytes, mime)
+  if (lados === null) return { tipo: 'erro', mensagem: ERROS_DA_LOGO.leitura }
+  if (Math.max(lados.largura, lados.altura) > LADO_MAXIMO_DO_ENVIO) return { tipo: 'erro', mensagem: ERROS_DA_LOGO.pesada }
   return { tipo: 'ok', mime }
 }
 
@@ -94,6 +208,23 @@ export function ehLogoPublicavel(logo: string): boolean {
   if (logo.length > CARACTERES_NO_MAXIMO || !logo.startsWith(PREFIXO_DA_LOGO + ASSINATURA_DO_PNG)) return false
   if (!/^[A-Za-z0-9+/]+={0,2}$/.test(logo.slice(PREFIXO_DA_LOGO.length))) return false
   return bytesDoDataUrl(logo) <= LOGO_MAX_BYTES
+}
+
+/**
+ * CA-1973 e DP-ML-33: o link não abre uma logo publicada maior que a cópia que o app faz (600 px de lado). Lê só os 24
+ * primeiros bytes (32 caracteres de base64): a assinatura e o IHDR. Sem IHDR legível, quem decide é o navegador, e a
+ * imagem que não abre volta à logo do MetaNutri.
+ */
+export function logoCabeNoLink(logo: string): boolean {
+  if (!logo.startsWith(PREFIXO_DA_LOGO)) return false
+  let inicio: Uint8Array
+  try {
+    inicio = Uint8Array.from(atob(logo.slice(PREFIXO_DA_LOGO.length, PREFIXO_DA_LOGO.length + 32)), (c) => c.charCodeAt(0))
+  } catch {
+    return false
+  }
+  const lados = ladosDoPng(inicio)
+  return lados === null || Math.max(lados.largura, lados.altura) <= LADO_DA_COPIA
 }
 
 /**

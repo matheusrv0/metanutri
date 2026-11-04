@@ -8,6 +8,11 @@ import type { MarcaDoLink } from './marca.ts'
 /** A tabela da marca publicada (DP-ML-1). */
 export const TABELA_DE_MARCAS = 'marcas'
 
+/** CB-964 e DP-ML-34: o site saiu antes do SQL da marca (o 015); a internet está boa, a função é que ainda não existe. */
+export const MARCA_INDISPONIVEL = 'Esta função ainda não está disponível. Tente de novo mais tarde.'
+/** A API não conhece a tabela (PGRST205) ou o banco não a tem (42P01). */
+const TABELA_QUE_NAO_EXISTE: readonly string[] = ['PGRST205', '42P01']
+
 /** O pedaço do cliente Supabase que publicar a marca usa. */
 export interface ClienteDaMarca {
   from(tabela: string): { upsert(linha: Record<string, unknown>, opcoes?: { onConflict?: string }): Pedido }
@@ -27,7 +32,8 @@ export async function publicarMarca(cliente: ClienteDaMarca, marca: MarcaDoLink,
       if (usuario === null) return FALHA_DE_REDE
       const linha = { nutricionista_id: usuario, logo: marca.logo, cor: marca.cor, atualizado_em: new Date().toISOString() }
       const { error } = await comSinal(cliente.from(TABELA_DE_MARCAS).upsert(linha, { onConflict: 'nutricionista_id' }), sinal)
-      return error ? traduzido(error) : null
+      if (!error) return null
+      return error.code !== undefined && TABELA_QUE_NAO_EXISTE.includes(error.code) ? MARCA_INDISPONIVEL : traduzido(error)
     },
     (texto) => texto,
   )

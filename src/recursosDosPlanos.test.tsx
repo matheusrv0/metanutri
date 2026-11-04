@@ -7,6 +7,8 @@ import { sugerirParaCobrir } from '@/domain/cobrir.ts'
 import { comparativoDosPlanos, PLANOS, RECURSOS_EM_TODOS_OS_PLANOS, type IdRecurso } from '@/domain/conta.ts'
 import { criarAcompanhamento } from '@/domain/acompanhamento.ts'
 import { criarExemplo } from '@/domain/exemplo.ts'
+import { analisarAba } from '@/domain/importar/colunas.ts'
+import { lerPlanilha } from '@/domain/importar/lerPlanilha.ts'
 import { missoesDoPlano } from '@/domain/missoes.ts'
 import { gravarPerfil, PERFIL_VAZIO } from '@/domain/perfil.ts'
 import { criarAconselhamento } from '@/export/aconselhamento-docx.ts'
@@ -60,6 +62,19 @@ const PROVAS: Readonly<Record<IdRecurso, () => void>> = {
   'alimentos-proprios': () => {
     expect(lerRota('#/produtos')).toEqual({ tela: 'produtos' })
     expect(lerRota('#/receitas')).toEqual({ tela: 'receitas' })
+  },
+  // Spec importar-pacientes, D-916 e CA-1949: a tela abre em qualquer assinatura e reconhece as colunas da planilha.
+  'importar-pacientes': () => {
+    expect(lerRota('#/pacientes/importar')).toEqual({ tela: 'importar-pacientes' })
+    const analise = analisarAba(
+      [
+        { numero: 1, celulas: ['Nome', 'Sexo', 'Data de nascimento'] },
+        { numero: 2, celulas: ['Ana Souza', 'F', '14/03/1991'] },
+      ],
+      false,
+    )
+    expect(analise.destinos).toEqual(['nome', 'sexo', 'nascimento'])
+    expect(lerPlanilha).toBeTypeOf('function')
   },
 }
 

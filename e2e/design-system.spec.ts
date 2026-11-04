@@ -20,6 +20,7 @@ const SECOES = [
   'PlacaLogo · EscolhaDeCor · CampoCor',
   'Dialog · Sheet · DropdownMenu',
   'Tabs · ItemMenu · EtapasDoCaso',
+  'Passos · CaixaDeMarcar · ListaNativa',
   'CartaoDestaque',
   'BarraAdequacao',
   'MedidorMacro',

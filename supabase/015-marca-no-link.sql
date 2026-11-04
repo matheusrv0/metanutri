@@ -9,8 +9,8 @@
 -- A logo e a cor que a nutricionista salva em "Sua marca" ficam numa tabela nova, uma linha por conta. O link do
 -- paciente as lê pela mesma função de sempre, pelo token, sem saber de quem é a conta (CA-1974). Ninguém sem conta toca
 -- na tabela, e nenhuma conta lê a de outra (RLS só do dono). Não existe consulta que liste marcas.
--- Publicado antes deste arquivo, o site continua funcionando: "Salvar" em "Sua marca" falha com a frase de rede e o
--- link continua com a marca do MetaNutri.
+-- Publicado antes deste arquivo, o site continua funcionando: "Salvar" em "Sua marca" diz "Esta função ainda não está
+-- disponível" (CB-964) e o link continua com a marca do MetaNutri.
 --
 -- Tudo numa transação só: a função do paciente é apagada e criada de novo, e quem abre o link nesse meio tempo nunca a
 -- encontra faltando. Se algum passo falhar, nada fica pela metade.

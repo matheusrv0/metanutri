@@ -5,7 +5,7 @@ import { Check, CircleAlert, ImageOff, ImageUp, LoaderCircle, TriangleAlert } fr
 import { useCallback, useEffect, useId, useState } from 'react'
 import { diaLocal } from '@/domain/acompanhamento.ts'
 import { avaliarCor, COR_PADRAO, CORES_PRONTAS, codigoDaCor, ehCorPadrao, formatarContraste } from '@/domain/corDaMarca.ts'
-import { AVISO_LOGO_CLARA, conferirArquivoDeLogo, ehLogoPublicavel, ERROS_DA_LOGO, prepararLogo, tipoDaLogoGuardada, type Desenhista } from '@/domain/logoDaMarca.ts'
+import { AVISO_LOGO_CLARA, conferirArquivoDeLogo, ehLogoPublicavel, ERROS_DA_LOGO, LOGO_ENVIO_MAX_BYTES, prepararLogo, tipoDaLogoGuardada, type Desenhista } from '@/domain/logoDaMarca.ts'
 import type { MarcaDoLink } from '@/domain/marca.ts'
 import { gravarPerfil, lerPerfil, type Perfil } from '@/domain/perfil.ts'
 import { cn } from '@/lib/utils'
@@ -23,7 +23,7 @@ import { PreviaDoLink } from './PreviaDoLink.tsx'
 
 /** D-963: os textos da tela (mínimos, sem tagline). */
 const TEXTOS_DA_MARCA = {
-  ajudaDaLogo: 'PNG, JPG, WebP ou SVG, até 2 MB. Também sai no plano impresso.',
+  ajudaDaLogo: 'PNG, JPG, WebP ou SVG, até 2 MB. Também aparece no plano impresso.',
   valeParaTodos: 'Vale para todos os links já enviados.',
   sairSemSalvar: 'Sair sem salvar a marca?',
 } as const
@@ -67,8 +67,20 @@ export function TelaSuaMarca({ desenhista = desenhistaDoNavegador, publicar }: T
   const idTituloCor = useId()
   const idDaCor = useId()
 
-  // CB-124 e CB-955: outra aba (ou outro aparelho, pela nuvem) gravou o perfil: a base de comparação se refaz.
-  const relerPerfil = useCallback(() => setPerfil(lerPerfil(armazenamento)), [armazenamento])
+  // CB-124 e CB-955: outra aba (ou outro aparelho, pela nuvem) gravou o perfil: a base de comparação se refaz. CB-965 e
+  // DP-ML-35: sem mudança nesta tela, o rascunho acompanha a marca nova, e "Salvar" não se habilita sozinho nem sair
+  // pergunta nada; com mudança, a mudança fica.
+  const relerPerfil = useCallback(() => {
+    const novo = lerPerfil(armazenamento)
+    const semMudancaAqui = logo === perfil.logo && cor === perfil.cor
+    if (semMudancaAqui && (novo.logo !== perfil.logo || novo.cor !== perfil.cor)) {
+      setLogo(novo.logo)
+      setCor(novo.cor)
+      setLogoClara(false)
+      setEnvio((atual) => (atual.tipo === 'salvando' ? atual : { tipo: 'parado' }))
+    }
+    setPerfil(novo)
+  }, [armazenamento, perfil, logo, cor])
   useOutraAbaGravou('metanutri:perfil', relerPerfil)
 
   const corEscolhida = cor ?? COR_PADRAO
@@ -93,14 +105,16 @@ export function TelaSuaMarca({ desenhista = desenhistaDoNavegador, publicar }: T
 
   const escolherArquivo = async (arquivo: File | undefined) => {
     if (!arquivo) return
-    const conferido = conferirArquivoDeLogo({ nome: arquivo.name, tipo: arquivo.type, bytes: arquivo.size })
-    if (conferido.tipo === 'erro') {
-      setErroDaLogo(conferido.mensagem)
-      return
-    }
     setLendoLogo(true)
     setErroDaLogo(null)
     try {
+      // CA-1953 e CB-967: o tipo e os lados da imagem saem dos bytes, não do nome nem do tipo que o navegador diz. Lê até
+      // 1 byte além do teto: o resto não precisa ser lido para recusar.
+      const conferido = conferirArquivoDeLogo(new Uint8Array(await arquivo.slice(0, LOGO_ENVIO_MAX_BYTES + 1).arrayBuffer()))
+      if (conferido.tipo === 'erro') {
+        setErroDaLogo(conferido.mensagem)
+        return
+      }
       const dataUrl = await lerComoDataUrl(arquivo)
       const pronta = await prepararLogo({ dataUrl, mime: conferido.mime }, desenhista)
       if (pronta.tipo === 'erro') {

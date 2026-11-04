@@ -21,8 +21,8 @@ function Celular({ tema, legenda, codigo, children }: { readonly tema: TemaDaPre
   const id = useId()
   return (
     <figure aria-labelledby={id} className="m-0 flex min-w-0 flex-col items-center gap-3">
-      <div className="w-77 max-w-full rounded-[2.5rem] border border-previacelularborda bg-previacelular p-2.5 shadow-raised">
-        <div aria-hidden="true" {...INERTE} className={cn('overflow-hidden rounded-[2rem] bg-background', tema === 'escuro' ? 'dark' : 'tema-claro')}>
+      <div className="w-77 max-w-full rounded-2xl border border-previacelularborda bg-previacelular p-2.5 shadow-raised">
+        <div aria-hidden="true" {...INERTE} className={cn('overflow-hidden rounded-xl bg-background', tema === 'escuro' ? 'dark' : 'tema-claro')}>
           <div className="w-90 select-none [zoom:0.8]">
             <div className="flex h-9 items-center justify-between px-7 text-xs font-bold text-heading">
               <span className="numeros">9:41</span>

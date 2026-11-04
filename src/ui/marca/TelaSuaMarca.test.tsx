@@ -1,6 +1,6 @@
 // Spec marca-no-link: Conta e assinatura › Sua marca (CA-1950 a CA-1964, CA-1978, CA-1980, CB-950, CB-960). O desenho
 // de verdade da logo (o <canvas>) é testado no Playwright; aqui, um desenhista falso devolve um PNG conhecido.
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { criarCasoVazio } from '@/domain/caso.ts'
 import type { Desenhista } from '@/domain/logoDaMarca.ts'
@@ -18,6 +18,8 @@ const JPG_ANTIGO = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQ'
 
 const BYTES_PNG = Uint8Array.from(atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='), (c) => c.charCodeAt(0))
 const arquivoPng = () => new File([BYTES_PNG], 'logo.png', { type: 'image/png' })
+/** Um GIF de 1 × 1 de verdade (o das provas V2 e V2b da revisão de 03/11/2026). */
+const BYTES_GIF = Uint8Array.from(atob('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'), (c) => c.charCodeAt(0))
 
 interface OpcoesDoDesenhista {
   readonly bytes?: number
@@ -137,18 +139,34 @@ describe('Sua marca: a logo (CA-1951 a CA-1956, CB-950)', () => {
   it('CA-1953: GIF, HEIC, PDF ou mais de 2 MB: "Use PNG, JPG, WebP ou SVG, até 2 MB." e nada muda', async () => {
     guardar({ logo: PNG_REDUZIDO, marcaPublicada: true })
     const usuario = userEvent.setup({ applyAccept: false })
-    render(<TelaSuaMarca desenhista={desenhistaFalso().desenhista} publicar={publicadorFalso().publicar} />)
+    const { desenhista, abertos } = desenhistaFalso()
+    render(<TelaSuaMarca desenhista={desenhista} publicar={publicadorFalso().publicar} />)
     for (const arquivo of [
       new File(['GIF89a'], 'logo.gif', { type: 'image/gif' }),
       new File(['x'], 'foto.heic', { type: 'image/heic' }),
       new File(['%PDF'], 'logo.pdf', { type: 'application/pdf' }),
       new File([new Uint8Array(2 * 1024 * 1024 + 1)], 'grande.png', { type: 'image/png' }),
+      // As provas V2 e V2b da revisão: o GIF de verdade salvo como .png, e como .jpg sem tipo. Vale o conteúdo.
+      new File([BYTES_GIF], 'logo.png', { type: 'image/png' }),
+      new File([BYTES_GIF], 'logo.jpg', { type: '' }),
     ]) {
       await usuario.upload(screen.getByLabelText('Trocar logo'), arquivo)
-      expect(await screen.findByRole('alert')).toHaveTextContent('Use PNG, JPG, WebP ou SVG, até 2 MB.')
+      expect(await screen.findByRole('alert'), arquivo.name).toHaveTextContent('Use PNG, JPG, WebP ou SVG, até 2 MB.')
       expect(screen.getByRole('img', { name: 'Sua logo' })).toHaveAttribute('src', PNG_REDUZIDO)
       expect(salvar()).toBeDisabled()
     }
+    expect(abertos).toEqual([])
+  })
+
+  it('CB-967: a imagem de mais de 8.000 px de lado é recusada pelo cabeçalho, sem abrir: "Use uma logo mais simples."', async () => {
+    const { desenhista, abertos } = desenhistaFalso()
+    const usuario = abrir({ desenhista })
+    const cabecalho = Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 13, 0x49, 0x48, 0x44, 0x52, 0, 0, 0x1f, 0x41, 0, 0, 0, 40, 8, 6, 0, 0, 0])
+    await usuario.upload(screen.getByLabelText('Enviar logo'), new File([cabecalho], 'gigante.png', { type: 'image/png' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('Use uma logo mais simples.')
+    expect(screen.queryByRole('img', { name: 'Sua logo' })).not.toBeInTheDocument()
+    expect(abertos).toEqual([])
+    expect(salvar()).toBeDisabled()
   })
 
   it('CA-1954: a imagem que nem em 240 px cabe em 150 KB: "Use uma logo mais simples." e nada muda', async () => {
@@ -354,6 +372,40 @@ describe('Sua marca: sair sem salvar (CA-1964)', () => {
     await usuario.click(screen.getByRole('button', { name: 'Sair' }))
     await waitFor(() => expect(screen.getByText('Tela do painel')).toBeInTheDocument())
     expect(perfilGuardado().cor).toBeNull()
+  })
+
+  /** Outra aba da mesma conta gravou o perfil (o evento `storage` só chega às outras abas). */
+  const outraAbaSalvou = (mudanca: Partial<Perfil>) =>
+    act(() => {
+      guardar(mudanca)
+      window.dispatchEvent(new StorageEvent('storage', { key: 'metanutri:perfil' }))
+    })
+
+  it('CB-965: outra aba salvou outra marca, sem mudança aqui: a tela mostra a nova, "Salvar" fica desabilitado e sair não pergunta', async () => {
+    guardar({ cor: '#1f4e8c', marcaPublicada: true })
+    render(<Anfitriao publicar={publicadorFalso().publicar} />)
+    expect(salvar()).toBeDisabled()
+    outraAbaSalvou({ logo: PNG_REDUZIDO, cor: '#7a2944', marcaPublicada: true })
+    expect(screen.getByRole('radio', { name: 'Vinho, #7A2944' })).toBeChecked()
+    expect(screen.getByRole('img', { name: 'Sua logo' })).toHaveAttribute('src', PNG_REDUZIDO)
+    expect(linkNaPrevia('claro')?.style.getPropertyValue('--marca-claro')).toBe('#7a2944')
+    expect(salvar()).toBeDisabled()
+    expect(screen.queryByText('Vale para todos os links já enviados.')).not.toBeInTheDocument()
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Ir ao painel' }))
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
+    expect(screen.getByText('Tela do painel')).toBeInTheDocument()
+  })
+
+  it('CB-965: com mudança não salva aqui, a mudança fica quando outra aba salva', async () => {
+    guardar({ cor: '#1f4e8c', marcaPublicada: true })
+    render(<Anfitriao publicar={publicadorFalso().publicar} />)
+    const usuario = userEvent.setup()
+    await usuario.click(screen.getByRole('radio', { name: 'Verde-folha, #3F5F2A' }))
+    outraAbaSalvou({ cor: '#7a2944', marcaPublicada: true })
+    expect(screen.getByRole('radio', { name: 'Verde-folha, #3F5F2A' })).toBeChecked()
+    expect(salvar()).toBeEnabled()
+    await usuario.click(screen.getByRole('button', { name: 'Ir ao painel' }))
+    expect(screen.getByRole('alertdialog', { name: 'Sair sem salvar a marca?' })).toBeInTheDocument()
   })
 })
 

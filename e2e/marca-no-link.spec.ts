@@ -53,6 +53,21 @@ async function pngDesenhado(pagina: Page, largura: number, altura: number, tipo:
   return Buffer.from(base64, 'base64')
 }
 
+/** CA-1953: um GIF de 1 × 1 de verdade (o da revisão de 03/11/2026, prova V2). */
+const GIF_1X1 = Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64')
+
+/** CB-967: só o começo de um PNG, com a largura e a altura pedidas no IHDR. O resto do arquivo nunca é lido. */
+function cabecalhoDePng(largura: number, altura: number): Buffer {
+  const ihdr = Buffer.alloc(25)
+  ihdr.writeUInt32BE(13, 0)
+  ihdr.write('IHDR', 4, 'ascii')
+  ihdr.writeUInt32BE(largura, 8)
+  ihdr.writeUInt32BE(altura, 12)
+  ihdr[16] = 8
+  ihdr[17] = 6
+  return Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), ihdr, Buffer.alloc(64)])
+}
+
 /** O link dentro de um celular da prévia. */
 const linkNoCelular = (pagina: Page, tema: 'claro' | 'escuro') =>
   pagina.getByRole('figure', { name: tema === 'claro' ? /Celular claro/ : /Celular escuro/ }).locator('[data-link-do-paciente]')
@@ -127,6 +142,27 @@ test('CA-1953 e CA-1954: GIF é recusado; a imagem que nem em 240 px cabe em 150
   await expect(page.getByRole('alert')).toHaveText('Use PNG, JPG, WebP ou SVG, até 2 MB.')
   await page.getByLabel('Enviar logo').setInputFiles({ name: 'ruido.png', mimeType: 'image/png', buffer: await pngDesenhado(page, 700, 700, 'ruido') })
   await expect(page.getByRole('alert')).toHaveText('Use uma logo mais simples.', { timeout: 15_000 })
+  await expect(page.getByRole('img', { name: 'Sua logo' })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Salvar' })).toBeDisabled()
+})
+
+test('CA-1953: o GIF disfarçado (salvo como .png, ou como .jpg sem tipo) é recusado pelo conteúdo', async ({ page }) => {
+  for (const arquivo of [
+    { name: 'logo.png', mimeType: 'image/png' },
+    { name: 'logo.jpg', mimeType: '' },
+  ]) {
+    await abrirSuaMarca(page)
+    await page.getByLabel('Enviar logo').setInputFiles({ ...arquivo, buffer: GIF_1X1 })
+    await expect(page.getByRole('alert'), arquivo.name).toHaveText('Use PNG, JPG, WebP ou SVG, até 2 MB.')
+    await expect(page.getByRole('img', { name: 'Sua logo' })).toHaveCount(0)
+    await expect(page.getByRole('button', { name: 'Salvar' })).toBeDisabled()
+  }
+})
+
+test('CB-967: a imagem de mais de 8.000 px de lado é recusada pelo cabeçalho, antes de abrir', async ({ page }) => {
+  await abrirSuaMarca(page)
+  await page.getByLabel('Enviar logo').setInputFiles({ name: 'gigante.png', mimeType: 'image/png', buffer: cabecalhoDePng(8001, 40) })
+  await expect(page.getByRole('alert')).toHaveText('Use uma logo mais simples.')
   await expect(page.getByRole('img', { name: 'Sua logo' })).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'Salvar' })).toBeDisabled()
 })

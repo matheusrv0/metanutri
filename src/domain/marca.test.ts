@@ -1,8 +1,8 @@
 // Spec marca-no-link: a marca publicada (D-952) — o que o link lê e o que "Salvar" grava.
 import { FALHA_DE_REDE } from '@/ui/estado/mensagemDoBanco.ts'
 import { LOGO_MAX_BYTES } from './logoDaMarca.ts'
-import { lerMarcaDoLink, marcaDoPerfil, SEM_MARCA, temMarca } from './marca.ts'
-import { publicarMarca, type ClienteDaMarca } from './marcaNaNuvem.ts'
+import { corValeNoLink, lerMarcaDoLink, marcaDoPerfil, SEM_MARCA, temMarca } from './marca.ts'
+import { MARCA_INDISPONIVEL, publicarMarca, type ClienteDaMarca } from './marcaNaNuvem.ts'
 import { PERFIL_VAZIO } from './perfil.ts'
 
 /** Um PNG em data URI com `bytes` bytes (múltiplo de 3). */
@@ -31,6 +31,19 @@ describe('a marca que o link lê (CA-1973, DP-ML-13)', () => {
     for (const logo of ['data:image/png;base64,lixo', 'data:image/svg+xml;base64,PHN2Zy8+', 'https://exemplo.com/a.png', png(LOGO_MAX_BYTES + 3), 42]) {
       expect(lerMarcaDoLink({ marca_logo: logo, marca_cor: '#1f4e8c' }), String(logo).slice(0, 30)).toEqual({ logo: null, cor: '#1f4e8c' })
     }
+  })
+
+  it('CA-1973 e DP-ML-33: a logo publicada maior que a cópia do app (24.000 × 24.000 em poucos bytes) vira "sem logo"', () => {
+    // A assinatura do PNG e o IHDR de 24.000 × 24.000 (0x5DC0): passa na trava do banco, mas o app nunca faz isto.
+    const ihdr = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 13, 0x49, 0x48, 0x44, 0x52, 0, 0, 0x5d, 0xc0, 0, 0, 0x5d, 0xc0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    const gigante = `data:image/png;base64,${btoa(String.fromCharCode(...ihdr))}`
+    expect(lerMarcaDoLink({ marca_logo: gigante, marca_cor: '#1f4e8c' })).toEqual({ logo: null, cor: '#1f4e8c' })
+  })
+
+  it('CB-966: corValeNoLink segue a mesma regra do link', () => {
+    expect(corValeNoLink('#3f5f2a')).toBe(true)
+    expect(corValeNoLink('#8cc63f')).toBe(false)
+    expect(corValeNoLink('#0e3b43')).toBe(false)
   })
 
   it('DP-ML-13: cor fora do formato, recusada pelo contraste ou a padrão vira "sem cor"', () => {
@@ -98,10 +111,21 @@ describe('publicar a marca (CA-1963, CB-955)', () => {
   it('D-98: o erro do banco chega traduzido; a trava da logo diz o que fazer', async () => {
     const trava = clienteFalso({ erro: { code: '23514', message: 'new row for relation "marcas" violates check constraint "marcas_logo_png"' } })
     expect(await publicarMarca(trava.cliente, { logo: LOGO, cor: null })).toBe('Use uma logo mais simples.')
-    const banco = clienteFalso({ erro: { code: 'PGRST205', message: "Could not find the table 'public.marcas'" } })
-    expect(await publicarMarca(banco.cliente, SEM_MARCA)).toBe(FALHA_DE_REDE)
+    const fora = clienteFalso({ erro: { code: '08006', message: 'connection failure' } })
+    expect(await publicarMarca(fora.cliente, SEM_MARCA)).toBe(FALHA_DE_REDE)
     const rede = clienteFalso({ erro: 'rede' })
     expect(await publicarMarca(rede.cliente, SEM_MARCA)).toBe(FALHA_DE_REDE)
+  })
+
+  it('CB-964: o site antes do SQL da marca (a tabela não existe) diz que a função ainda não está disponível, não a internet', async () => {
+    for (const erro of [
+      { code: 'PGRST205', message: "Could not find the table 'public.marcas' in the schema cache" },
+      { code: '42P01', message: 'relation "public.marcas" does not exist' },
+    ]) {
+      const banco = clienteFalso({ erro })
+      expect(await publicarMarca(banco.cliente, { logo: LOGO, cor: '#3f5f2a' }), erro.code).toBe('Esta função ainda não está disponível. Tente de novo mais tarde.')
+    }
+    expect(MARCA_INDISPONIVEL).not.toBe(FALHA_DE_REDE)
   })
 
   it('logo que não é publicável nem sai do aparelho', async () => {
