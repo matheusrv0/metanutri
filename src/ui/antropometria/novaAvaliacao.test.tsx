@@ -10,6 +10,7 @@ import { ProvedorTema } from '../tema/ProvedorTema.tsx'
 
 vi.mock('../enderecos.ts', async (original) => ({ ...(await original<typeof import('../enderecos.ts')>()), sairParaOSite: () => undefined }))
 
+// A tela vem num pedaço separado do JavaScript (DP-AT-10): com a suíte inteira rodando, o primeiro import passa de 1 s.
 const renderizar = () =>
   render(
     <ProvedorTema>
@@ -34,7 +35,7 @@ describe('Nova avaliação (spec antropometria-telas, CA-2402 e CA-2403)', () =>
     const { ficha, casos } = fichaDaRenata()
     window.location.hash = `#/paciente/${ficha.id}/antropometria`
     renderizar()
-    await userEvent.setup().click(await screen.findByRole('button', { name: 'Nova avaliação' }))
+    await userEvent.setup().click(await screen.findByRole('button', { name: 'Nova avaliação' }, { timeout: 5000 }))
 
     const [criado] = criarRepositorio(localStorage).listar()
     expect(casos.listar()).toHaveLength(1)
@@ -65,7 +66,7 @@ describe('Nova avaliação (spec antropometria-telas, CA-2402 e CA-2403)', () =>
     })
     window.location.hash = `#/antropometria/${antiga.caso.id}/historico`
     renderizar()
-    const acoes = await screen.findByRole('button', { name: 'Nova avaliação' })
+    const acoes = await screen.findByRole('button', { name: 'Nova avaliação' }, { timeout: 5000 })
     await userEvent.setup().click(acoes)
 
     const repo = criarRepositorio(localStorage)
