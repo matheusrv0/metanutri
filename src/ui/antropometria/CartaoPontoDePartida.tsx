@@ -82,15 +82,18 @@ export function CartaoPontoDePartida({ caso, bruto, paciente, aoAlterar }: Carta
   }
 
   const gasto = perfil ? gastoDeRepouso(caso, perfil, gordura) : null
-  const proteina = perfil
-    ? proteinaPorObjetivo(caso, {
-        perfil,
-        doencaAgudaOuCronica: comDoencaNaFicha,
-        doencaRenalGrave: renal && avaliacao.doencaRenalGrave === true,
-        ...(avaliacao.baseDaProteina ? { base: avaliacao.baseDaProteina } : {}),
-        gordura,
-      })
-    : null
+  // Na lactante, o motor diz o motivo antes de olhar o perfil (CB-1449): o bloco não pede um perfil que não muda nada.
+  const lactante = caso.condicao.tipo === 'lactante'
+  const proteina =
+    perfil || lactante
+      ? proteinaPorObjetivo(caso, {
+          perfil: perfil ?? 'sedentario',
+          doencaAgudaOuCronica: comDoencaNaFicha,
+          doencaRenalGrave: renal && avaliacao.doencaRenalGrave === true,
+          ...(avaliacao.baseDaProteina ? { base: avaliacao.baseDaProteina } : {}),
+          gordura,
+        })
+      : null
   const prioridade = prioridadeDoCaso(caso)
   const get = medidaValida(calcularEnergia(caso, { fator: caso.energia.fator, formula: caso.energia.formula, getManual: caso.energia.getManual }).get)
   const meta = metaDePerda(caso, { gorduraAlvoPct: avaliacao.gorduraAlvoPct, atleta: perfil === 'atleta', gastoTotalKcal: get, gordura })
@@ -137,8 +140,7 @@ export function CartaoPontoDePartida({ caso, bruto, paciente, aoAlterar }: Carta
 
         <BlocoProteina
           resultado={proteina}
-          semPerfil={!perfil}
-          lactante={caso.condicao.tipo === 'lactante'}
+          semPerfil={!perfil && !lactante}
           objetivo={bruto.objetivo}
           aoMudarObjetivo={(objetivo) => aoAlterar({ objetivo })}
           comDoencaNaFicha={comDoencaNaFicha}

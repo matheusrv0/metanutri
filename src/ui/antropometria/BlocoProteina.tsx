@@ -14,11 +14,10 @@ const OBJETIVOS: readonly { readonly valor: Objetivo; readonly rotulo: string }[
 const DE: Readonly<Record<BaseDoPeso, string>> = { 'peso-atual': 'peso', 'peso-ideal': 'peso ideal', 'peso-ajustado': 'peso ajustado', 'massa-magra': 'massa magra' }
 
 interface BlocoProteinaProps {
-  /** A sugestão do motor; `null` fora do adulto, na gestação e na lactação. */
+  /** A sugestão do motor; `null` fora do adulto e na gestação; na lactação, o motivo do motor (CB-1449). */
   readonly resultado: ResultadoDaProteina | null
   /** Sem perfil escolhido, o bloco pede o perfil (D-1467). */
   readonly semPerfil: boolean
-  readonly lactante: boolean
   readonly objetivo: Objetivo | null
   readonly aoMudarObjetivo: (objetivo: Objetivo) => void
   /** O idoso de 65 anos ou mais com doença marcada na ficha (D-1420, DP-AT-5). */
@@ -32,11 +31,10 @@ interface BlocoProteinaProps {
  * O bloco "Proteína" do ponto de partida (spec antropometria-telas, D-1418 e D-1420): o objetivo do plano, a faixa em
  * g/dia na base de cálculo, a faixa em g/kg e a fonte; com IMC de 30 ou mais, a escolha do peso de referência.
  */
-export function BlocoProteina({ resultado, semPerfil, lactante, objetivo, aoMudarObjetivo, comDoencaNaFicha, perguntaDaTfge, aoMudarBase }: BlocoProteinaProps) {
+export function BlocoProteina({ resultado, semPerfil, objetivo, aoMudarObjetivo, comDoencaNaFicha, perguntaDaTfge, aoMudarBase }: BlocoProteinaProps) {
   const sugestao = resultado?.calculou ? resultado : null
   let detalhe: string
   if (semPerfil) detalhe = 'Escolha o perfil de atividade.'
-  else if (lactante) detalhe = 'A pesquisa não conferiu uma faixa de proteína para a lactação.'
   else if (!resultado) detalhe = ''
   else if (!resultado.calculou) detalhe = resultado.motivo
   else {

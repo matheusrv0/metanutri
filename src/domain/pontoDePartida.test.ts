@@ -102,9 +102,14 @@ describe('proteína pelo objetivo (spec antropometria-completa, CA-2062 a CA-206
     expect(r.gDia?.min).toBeCloseTo(2.3 * 68, 10)
   })
 
-  it('CA-2062: menor de 18 anos, gestante e lactante → não vem', () => {
+  it('CA-2062: menor de 18 anos e gestante → não vem', () => {
     expect(proteinaPorObjetivo(caso({ idadeAnos: 17, objetivo: 'ganhar' }), { perfil: 'ativo' })).toBeNull()
-    expect(proteinaPorObjetivo(caso({ sexo: 'F', idadeAnos: 30, condicao: { tipo: 'lactante', mesesPosParto: 3 } }), { perfil: 'ativo' })).toBeNull()
+    expect(proteinaPorObjetivo(caso({ sexo: 'F', idadeAnos: 30, condicao: { tipo: 'gestante', semanasGestacao: 20, pesoPreGestacionalKg: 60 } }), { perfil: 'ativo' })).toBeNull()
+  })
+
+  it('CB-1449: lactante adulta → sem faixa, com o motivo do motor (como a meta de perda)', () => {
+    const r = proteinaPorObjetivo(caso({ sexo: 'F', idadeAnos: 30, objetivo: 'manter', condicao: { tipo: 'lactante', mesesPosParto: 3 } }), { perfil: 'ativo' })
+    expect(r).toEqual({ calculou: false, motivo: 'Nenhuma fonte conferida trata da proteína na lactação.', falta: [] })
   })
 
   it('CA-2063: "emagrecer" com IMC ≥ 30 → 1,2–1,5 g/kg, as três bases sem g/dia até a escolha', () => {

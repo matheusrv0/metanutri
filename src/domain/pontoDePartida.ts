@@ -199,9 +199,13 @@ function regraDaProteina(caso: Caso, entrada: EntradaDaProteina, imc: number | n
 
 const vezes = (faixa: FaixaDeProteina, kg: number): FaixaDeProteina => ({ min: faixa.min * kg, max: faixa.max === null ? null : faixa.max * kg })
 
-/** Proteína pelo objetivo do plano, com a base de cálculo sempre ao lado (R4.3a–f; D-1032). */
+/**
+ * Proteína pelo objetivo do plano, com a base de cálculo sempre ao lado (R4.3a–f; D-1032). Na lactante adulta, sem
+ * faixa e com o motivo, como a meta de perda (CB-1449): a pesquisa não conferiu fonte para a lactação.
+ */
 export function proteinaPorObjetivo(caso: Caso, entrada: EntradaDaProteina): ResultadoDaProteina | null {
-  if (!adultoForaDaGestacao(caso) || caso.condicao.tipo === 'lactante') return null
+  if (!adultoForaDaGestacao(caso)) return null
+  if (caso.condicao.tipo === 'lactante') return { calculou: false, motivo: 'Nenhuma fonte conferida trata da proteína na lactação.', falta: [] }
   if (entrada.doencaRenalGrave) {
     return { calculou: false, motivo: 'TFGe abaixo de 30 sem diálise: faixa alta de proteína não sugerida. Pode ser preciso limitar a proteína (PROT-AGE 2013).', falta: [] }
   }
