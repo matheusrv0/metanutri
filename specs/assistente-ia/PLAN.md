@@ -154,11 +154,11 @@ do consentimento na ficha).
 A revisão da rodada 2 reprovou por dois achados médios (cancelamento de ponta a ponta e CPU da limpeza) e quatro
 baixos. Decisões D-1337 a D-1341 (e a do cancelamento, depois da prova no edge-runtime local), testes CA-2390 em diante:
 
-- [ ] **T18 — CPU da limpeza (D-1337, CA-2390).** `iaContrato.ts`: `textoCurto` corta em 2× o limite antes de limpar;
+- [x] **T18 — CPU da limpeza (D-1337, CA-2390).** `iaContrato.ts`: `textoCurto` corta em 2× o limite antes de limpar;
   `EMAIL` e `DOMINIO` ancorados no início da palavra; as listas param no máximo. Teste de tempo com 60 KB num campo.
-- [ ] **T19 — O 016 de novo (D-1338, CA-2391).** `add column if not exists custo_estimado` e `drop function if exists`
+- [x] **T19 — O 016 de novo (D-1338, CA-2391).** `add column if not exists custo_estimado` e `drop function if exists`
   da `concluir_uso_da_ia` de 9 parâmetros; o teste de texto cobre os dois; prova no banco de rascunho local.
-- [ ] **T20 — Cancelar de verdade, ou a spec do que acontece.** Tentativa de até 30 min: resposta em fluxo
+- [x] **T20 — Cancelar de verdade, ou a spec do que acontece.** Feito: o fluxo não serve (D-1342: o edge-runtime derruba a função sem chamar o `cancel()` e sem deixar concluir o uso); o D-1330, o CA-2383, o CB-1300, o CB-1319, o CA-2366 e o CA-2373 dizem o comportamento real, e os testes também. Tentativa de até 30 min: resposta em fluxo
   (`ReadableStream`) com batimento curto e o `cancel()` do fluxo abortando a chamada à IA, provada com a
   `sonda-cancelar-r2.mjs` no edge-runtime local. Sem prova, o D-1330, o CA-2383 e o CB-1319 passam a dizer o
   comportamento real. Arquivos: `sugerir-plano/index.ts`, `_shared/ia.ts`, a SPEC e os testes da ligação e do núcleo.
