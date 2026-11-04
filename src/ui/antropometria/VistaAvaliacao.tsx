@@ -6,6 +6,7 @@ import { CartaoCircunferencias } from './CartaoCircunferencias.tsx'
 import { CartaoDiametros } from './CartaoDiametros.tsx'
 import { CartaoDobras } from './CartaoDobras.tsx'
 import { CartaoPesoEstatura } from './CartaoPesoEstatura.tsx'
+import { CartaoPontoDePartida } from './CartaoPontoDePartida.tsx'
 import { CartaoResultado } from './CartaoResultado.tsx'
 
 interface VistaAvaliacaoProps {
@@ -23,7 +24,6 @@ interface VistaAvaliacaoProps {
  */
 export function VistaAvaliacao({ caso, bruto, paciente, aoAlterar }: VistaAvaliacaoProps) {
   const [aberta, abrir] = useState<string | null>(null)
-  void paciente
   return (
     <ContextoDaAjudaAberta.Provider value={{ aberta, abrir }}>
       <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,35rem)]">
@@ -35,6 +35,7 @@ export function VistaAvaliacao({ caso, bruto, paciente, aoAlterar }: VistaAvalia
         </div>
         <div className="flex min-w-0 flex-col gap-6">
           <CartaoResultado caso={caso} />
+          <CartaoPontoDePartida caso={caso} bruto={bruto} paciente={paciente} aoAlterar={aoAlterar} />
         </div>
       </div>
     </ContextoDaAjudaAberta.Provider>

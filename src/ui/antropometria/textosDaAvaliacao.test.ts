@@ -3,7 +3,25 @@ import { criarCasoVazio } from '@/domain/caso.ts'
 import type { LinhaDoResultado } from '@/domain/linhaDoResultado.ts'
 import { resultadoAntropometrico } from '@/domain/resultadoAntropometrico.ts'
 import type { Caso } from '@/domain/tipos.ts'
-import { apresentarLinha, comUnidade, faixaEmKg, fraseDoImcAlvo, gruposDoResultado, opcoesDaOrigem, textoDaFalta, textoDoErro, textoDosLados, tomDoNivel } from './textosDaAvaliacao.ts'
+import { FONTES } from '@/domain/fontesAntropometria.ts'
+import type { SugestaoDeProteina } from '@/domain/pontoDePartida.ts'
+import {
+  apresentarLinha,
+  comUnidade,
+  faixaEmDezenas,
+  faixaEmGKg,
+  faixaEmGramas,
+  faixaEmKg,
+  fraseDoImcAlvo,
+  gruposDoResultado,
+  opcoesDaOrigem,
+  opcoesDoPerfil,
+  proteinaParaOPlano,
+  textoDaFalta,
+  textoDoErro,
+  textoDosLados,
+  tomDoNivel,
+} from './textosDaAvaliacao.ts'
 
 describe('os textos de peso e estatura (spec antropometria-telas, D-1407 a D-1409)', () => {
   it('comUnidade: as casas do motor, a unidade e "—" sem valor (nunca 0)', () => {
@@ -147,5 +165,40 @@ describe('a linha do resultado na tela (spec antropometria-telas, CA-2430 a CA-2
     expect(imc.nome).toBe('IMC para a idade')
     expect(imc.real).toMatch(/^escore-z [+−]\d,\d{2}$/)
     expect(imc.subtitulo).toBe('IMC 26,58 kg/m²')
+  })
+})
+
+describe('os textos do ponto de partida (spec antropometria-telas, D-1418 a D-1421 e D-1468)', () => {
+  it('D-1418: a faixa do gasto em dezenas, a proteína em g/dia e em g/kg', () => {
+    expect(faixaEmDezenas(1513.5, 1818.5)).toBe('1.510 – 1.820')
+    expect(faixaEmGramas({ min: 112, max: 154 })).toBe('112 – 154')
+    expect(faixaEmGramas({ min: 84.4, max: null })).toBe('a partir de 84')
+    expect(faixaEmGKg({ min: 1.6, max: 2.2 }, 'peso')).toBe('1,6 a 2,2 g/kg de peso')
+    expect(faixaEmGKg({ min: 1.2, max: null }, 'peso')).toBe('a partir de 1,2 g/kg de peso')
+  })
+
+  it('CB-1411: o perfil pelo sexo; sem sexo, nenhum rótulo assume sexo', () => {
+    expect(opcoesDoPerfil('F').map((o) => o.rotulo)).toEqual(['Sedentária', 'Ativa', 'Atleta'])
+    expect(opcoesDoPerfil('M').map((o) => o.rotulo)).toEqual(['Sedentário', 'Ativo', 'Atleta'])
+    expect(opcoesDoPerfil(null).map((o) => o.rotulo)).toEqual(['Sem atividade regular', 'Com atividade regular', 'Atleta'])
+  })
+
+  it('D-1421 e D-1468: o que vai para o plano, em g/kg de peso atual com 2 casas, ou o motivo', () => {
+    const base: SugestaoDeProteina = {
+      calculou: true,
+      faixaGKg: { min: 1.2, max: 1.5 },
+      base: 'peso-ajustado',
+      bases: [],
+      gDia: { min: 91.9, max: 114.9 },
+      gKgDePeso: { min: 1.02566, max: 1.28208 },
+      fonte: FONTES.proteinaObesoProposta,
+      evidencia: 'proposta-do-app',
+      origemDoPercentual: null,
+      avisos: [],
+    }
+    expect(proteinaParaOPlano(base)).toEqual({ min: 1.03, max: 1.28 })
+    expect(proteinaParaOPlano({ ...base, base: 'peso-atual', gKgDePeso: null })).toEqual({ min: 1.2, max: 1.5 })
+    expect(proteinaParaOPlano({ ...base, base: null, gDia: null })).toEqual({ motivo: 'Escolha o peso de referência para levar a proteína ao plano.' })
+    expect(proteinaParaOPlano({ ...base, base: 'peso-atual', faixaGKg: { min: 1.2, max: null }, gDia: { min: 84, max: null } })).toHaveProperty('motivo')
   })
 })

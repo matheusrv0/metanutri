@@ -2,10 +2,11 @@
 // Nenhum número é calculado aqui; só formatado nas casas que o motor manda.
 import { comSinalDeMenos } from '@/domain/antropometria.ts'
 import type { ErroDaEstimativa, LadoUsado } from '@/domain/estimativas.ts'
-import type { Fonte } from '@/domain/fontesAntropometria.ts'
+import { PROPOSTA_DO_APP, type Fonte } from '@/domain/fontesAntropometria.ts'
 import type { OpcoesDaGordura } from '@/domain/indicadoresDeGordura.ts'
 import { medidaValida, type CampoQueFalta, type Detalhe, type IdDaLinha, type LinhaDoResultado, type NivelDaSituacao } from '@/domain/linhaDoResultado.ts'
-import type { PesoIdeal } from '@/domain/pesoDeReferencia.ts'
+import type { BaseDoPeso, PesoIdeal } from '@/domain/pesoDeReferencia.ts'
+import type { Evidencia, FaixaDeProteina, PerfilDeAtividade, SugestaoDeProteina } from '@/domain/pontoDePartida.ts'
 import { conversaoDoProtocolo, protocoloPorId, type DobraCutanea, type Dobras, type IdProtocolo, type Protocolo, type VarianteDoProtocolo } from '@/domain/protocolosDeDobras.ts'
 import type { Caso, OrigemDasMedidas, PontoDaCintura, Sexo } from '@/domain/tipos.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
@@ -322,4 +323,51 @@ const ORDEM: readonly IdDoGrupo[] = ['peso-e-composicao', 'gordura-central', 'br
 /** As linhas do motor nos 4 grupos da tela, na ordem do motor; grupo sem linha não vem (D-1416). */
 export function gruposDoResultado(linhas: readonly LinhaDoResultado[]): { readonly id: IdDoGrupo; readonly nome: string; readonly linhas: readonly LinhaDoResultado[] }[] {
   return ORDEM.map((id) => ({ id, nome: NOME_DO_GRUPO[id], linhas: linhas.filter((l) => GRUPO[l.id] === id) })).filter((g) => g.linhas.length > 0)
+}
+
+// --- Ponto de partida (D-1418 a D-1421, D-1467 e D-1468) -----------------------------------------------------------
+
+/** O perfil de atividade pelo sexo da ficha; sem sexo, nenhum rótulo assume sexo (CB-1411). */
+export function opcoesDoPerfil(sexo: Sexo | null): { readonly valor: PerfilDeAtividade; readonly rotulo: string }[] {
+  if (sexo === 'F') return [{ valor: 'sedentario', rotulo: 'Sedentária' }, { valor: 'ativo', rotulo: 'Ativa' }, { valor: 'atleta', rotulo: 'Atleta' }]
+  if (sexo === 'M') return [{ valor: 'sedentario', rotulo: 'Sedentário' }, { valor: 'ativo', rotulo: 'Ativo' }, { valor: 'atleta', rotulo: 'Atleta' }]
+  return [{ valor: 'sedentario', rotulo: 'Sem atividade regular' }, { valor: 'ativo', rotulo: 'Com atividade regular' }, { valor: 'atleta', rotulo: 'Atleta' }]
+}
+
+/** D-1419: os selos de evidência do motor. */
+export const ROTULO_DA_EVIDENCIA: Readonly<Record<Evidencia, string>> = {
+  forte: 'Evidência forte',
+  limitada: 'Evidência limitada',
+  'proposta-do-app': PROPOSTA_DO_APP,
+}
+
+/** D-1418: a faixa do gasto com os extremos arredondados para dezenas: "1.510 – 1.820". */
+export const faixaEmDezenas = (min: number, max: number): string => `${formatarNumero(Math.round(min / 10) * 10, 0)} – ${formatarNumero(Math.round(max / 10) * 10, 0)}`
+
+/** "112 – 154" g/dia; sem teto, "a partir de 84". */
+export const faixaEmGramas = (f: FaixaDeProteina): string =>
+  f.max === null ? `a partir de ${formatarNumero(f.min, 0)}` : `${formatarNumero(f.min, 0)} – ${formatarNumero(f.max, 0)}`
+
+/** "1,6 a 2,2 g/kg de peso"; sem teto, "a partir de 1,2 g/kg de peso". */
+export const faixaEmGKg = (f: FaixaDeProteina, de: string): string =>
+  f.max === null ? `a partir de ${formatarNumero(f.min, 1)} g/kg de ${de}` : `${formatarNumero(f.min, 1)} a ${formatarNumero(f.max, 1)} g/kg de ${de}`
+
+export const ROTULO_DA_BASE: Readonly<Record<BaseDoPeso, string>> = {
+  'peso-atual': 'Peso atual',
+  'peso-ideal': 'Peso ideal',
+  'peso-ajustado': 'Peso ajustado',
+  'massa-magra': 'Massa magra',
+}
+
+const arredondar2 = (v: number) => Math.round(v * 100) / 100
+
+/**
+ * D-1421 e D-1468: o que "Levar para o plano" grava, em g/kg de peso atual com 2 casas; sem faixa fechada em g/dia, o
+ * motivo de o botão ficar desligado.
+ */
+export function proteinaParaOPlano(sugestao: SugestaoDeProteina): { readonly min: number; readonly max: number } | { readonly motivo: string } {
+  if (sugestao.gDia === null) return { motivo: 'Escolha o peso de referência para levar a proteína ao plano.' }
+  const faixa = sugestao.base === 'peso-atual' ? sugestao.faixaGKg : sugestao.gKgDePeso
+  if (faixa === null || faixa.max === null) return { motivo: 'A faixa não tem teto ("a partir de"): ajuste a meta de proteína em "Metas".' }
+  return { min: arredondar2(faixa.min), max: arredondar2(faixa.max) }
 }
