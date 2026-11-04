@@ -150,6 +150,8 @@ test('CA-527: em 360 px, o cartão do link mostra o endereço inteiro na linha, 
 
   const cartao = page.getByRole('region', { name: 'Link do paciente' })
   await cartao.getByRole('button', { name: 'Gerar link do paciente' }).click()
+  // Spec lado-do-paciente, CA-2224: o plano sem paciente pergunta para quem é o link.
+  await cartao.getByRole('button', { name: 'Criar a ficha e seguir' }).click()
   await cartao.getByRole('button', { name: /Já tenho a autorização/ }).click()
   const endereco = await cartao.getByLabel('Endereço do link').boundingBox()
   const linha = await cartao.boundingBox()

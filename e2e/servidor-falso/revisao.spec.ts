@@ -211,19 +211,25 @@ test.describe('Link do paciente', () => {
   test('CA-748 e CA-749: "Meu plano" com o nome e a quantidade da folha impressa, a partir da cópia de hoje', async ({ page }) => {
     await ligarServidorFalso(page, { link: linkFalso({ dieta: DIETA_GUARDADA }) })
     await page.goto('/#/missoes/token-do-teste')
-    await page.getByRole('tab', { name: 'Meu plano' }).click()
+    // Spec lado-do-paciente (D-1202): a dieta fica na parte Plano da barra de baixo.
+    await page.getByRole('navigation', { name: 'Partes do plano' }).getByRole('link', { name: 'Plano' }).click()
     const linha = (refeicao: string, nome: string) => page.getByRole('region', { name: refeicao }).getByRole('listitem').filter({ hasText: nome })
+    // D-1206 e CA-2209 (spec lado-do-paciente): o nome à esquerda, as gramas à direita e a medida embaixo do nome.
     // D-434 (spec alimentos-e-gramaturas, correção A): a medida a mais de 5% dos gramas sai com o peso e "cerca de".
-    await expect(linha('06:00 Desjejum', 'Pão francês')).toHaveText('70 g (cerca de 1 unidade e meia)Pão francês')
-    await expect(linha('06:00 Desjejum', 'Margarina com sal')).toHaveText('1 ponta de facaMargarina com sal')
-    await expect(linha('06:00 Desjejum', 'Queijo minas frescal')).toHaveText('30 gQueijo minas frescal')
-    await expect(linha('09:00 Lanche da manhã', 'Banana prata')).toHaveText('130 g (cerca de 1 unidade e meia)Banana prata')
-    await expect(linha('12:00 Almoço', 'Macarrão (peso cru)')).toHaveText('90 gMacarrão (peso cru)')
+    await expect(linha('06:00 Desjejum', 'Pão francês')).toHaveText('Pão francês70 gcerca de 1 unidade e meia')
+    await expect(linha('06:00 Desjejum', 'Margarina com sal')).toHaveText('Margarina com sal1 ponta de faca')
+    await expect(linha('06:00 Desjejum', 'Queijo minas frescal')).toHaveText('Queijo minas frescal30 g')
+    await expect(linha('09:00 Lanche da manhã', 'Banana prata')).toHaveText('Banana prata130 gcerca de 1 unidade e meia')
+    // CA-2208: o almoço tem três opções, e o cartão mostra só a escolhida.
+    const almoco = page.getByRole('region', { name: '12:00 Almoço' })
+    await almoco.getByRole('tab', { name: 'Opção 2' }).click()
+    await expect(linha('12:00 Almoço', 'Macarrão (peso cru)')).toHaveText('Macarrão (peso cru)90 g')
     // D-483a (3ª revisão): filé de peixe só em filé ou porção; 100 g não fecham em filé (120 g).
-    await expect(linha('12:00 Almoço', 'Filé de merluza assado')).toHaveText('100 gFilé de merluza assado')
-    await expect(linha('19:00 Jantar', 'Ovo cozido')).toHaveText('2 unidadesOvo cozido')
+    await almoco.getByRole('tab', { name: 'Opção 3' }).click()
+    await expect(linha('12:00 Almoço', 'Filé de merluza assado')).toHaveText('Filé de merluza assado100 g')
+    await expect(linha('19:00 Jantar', 'Ovo cozido')).toHaveText('Ovo cozido2 unidades')
     // D-423: eram "3 fatias e meia"; D-484 (correção C): nem "1 unidade pequena e meia".
-    await expect(linha('21:00 Ceia', 'Maçã Fuji com casca')).toHaveText('130 g (cerca de 1 unidade)Maçã Fuji com casca')
+    await expect(linha('21:00 Ceia', 'Maçã Fuji com casca')).toHaveText('Maçã Fuji com casca130 gcerca de 1 unidade')
     await expect(page.getByText(/Pão, trigo|lipídeos|cozido\/10minutos/)).toHaveCount(0)
     await semRolagemLateral(page)
   })
@@ -234,7 +240,7 @@ test.describe('Link do paciente', () => {
     await ligarServidorFalso(page, cenario)
     await page.goto('/#/missoes/token-do-teste')
     await expect(page.getByRole('heading', { level: 1, name: 'Não foi possível abrir suas missões' })).toBeVisible()
-    await expect(page.getByText('Este link não existe mais')).toHaveCount(0)
+    await expect(page.getByText('Este link não abre mais')).toHaveCount(0)
     cenario.link = linkFalso()
     await page.getByRole('button', { name: 'Tentar de novo' }).click()
     await expect(page.getByRole('heading', { level: 1, name: 'Suas missões de hoje, Ana' })).toBeVisible()

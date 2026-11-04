@@ -145,11 +145,13 @@ test('CA-486: logo do perfil, impressão, Word e link do paciente sem nenhuma vi
   // O link do paciente.
   const cartao = page.getByRole('region', { name: 'Link do paciente' })
   await cartao.getByRole('button', { name: 'Gerar link do paciente' }).click()
+  // Spec lado-do-paciente, CA-2224: o plano sem paciente pergunta para quem é o link.
+  await cartao.getByRole('button', { name: 'Criar a ficha e seguir' }).click()
   await cartao.getByRole('button', { name: /Já tenho a autorização/ }).click()
   const endereco = await cartao.getByLabel('Endereço do link').inputValue()
   await page.goto(endereco)
   await expect(page.getByRole('heading', { name: /Suas missões de hoje, Ana/ })).toBeVisible()
-  await page.getByRole('button').first().click()
+  await page.locator('button[aria-pressed]').first().click()
 
   await page.waitForLoadState('networkidle')
   expect(violacoes).toEqual([])

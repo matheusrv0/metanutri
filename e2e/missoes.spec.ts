@@ -35,19 +35,25 @@ test('do plano ao paciente marcando a missão', async ({ page }) => {
   const cartao = page.getByRole('region', { name: 'Link do paciente' })
   await expect(cartao).toContainText('Este plano gera')
   await cartao.getByRole('button', { name: 'Gerar link do paciente' }).click()
+  // Spec lado-do-paciente, CA-2224: o plano sem paciente pergunta para quem é o link, e o link é da ficha criada.
+  await expect(cartao.getByText('Para quem é este link?')).toBeVisible()
+  await expect(cartao.getByLabel('Nome do paciente')).toHaveValue('Ana, 30 anos')
+  await cartao.getByRole('button', { name: 'Criar a ficha e seguir' }).click()
   await cartao.getByRole('button', { name: /Já tenho a autorização/ }).click()
 
   const endereco = await cartao.getByLabel('Endereço do link').inputValue()
   // CA-1416 (spec separacao-site-app): o link é do endereço do app (aqui, o deste servidor; no ar, app.metanutri.com.br).
-  expect(endereco).toMatch(/^http:\/\/localhost:4173\/#\/missoes\/[a-z0-9]+$/)
+  // Spec lado-do-paciente, D-1213: o endereço fixo é `/p/<token>`.
+  expect(endereco).toMatch(/^http:\/\/localhost:4173\/p\/[a-z0-9]+$/)
   await expect(cartao.getByText('Ainda não começou')).toBeVisible()
 
-  // O paciente abre o link: sem menu, sem conta
+  // O paciente abre o link: sem menu e sem conta; a única navegação é a barra das partes do plano (D-1202)
   await page.goto(endereco)
   await expect(page.getByRole('heading', { name: /Suas missões de hoje, Ana/ })).toBeVisible()
-  await expect(page.getByRole('navigation')).toHaveCount(0)
+  await expect(page.getByRole('navigation')).toHaveCount(1)
+  await expect(page.getByRole('navigation', { name: 'Partes do plano' })).toBeVisible()
 
-  const missoes = page.getByRole('button')
+  const missoes = page.locator('button[aria-pressed]')
   await expect(missoes.first()).toHaveAttribute('aria-pressed', 'false')
   await missoes.first().click()
   await expect(missoes.first()).toHaveAttribute('aria-pressed', 'true')
@@ -55,7 +61,7 @@ test('do plano ao paciente marcando a missão', async ({ page }) => {
 
   // O que foi marcado sobrevive a recarregar a página
   await page.reload()
-  await expect(page.getByRole('button').first()).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.locator('button[aria-pressed]').first()).toHaveAttribute('aria-pressed', 'true')
 
   // E o nutricionista vê o estado na tela de adesão
   await page.goto('/#/adesao')
@@ -78,6 +84,7 @@ test('a dieta no celular do paciente (spec dieta-no-link)', async ({ page }) => 
   const cartao = page.getByRole('region', { name: 'Link do paciente' })
   await expect(cartao.getByRole('checkbox', { name: 'Mostrar o plano alimentar no link' })).toBeChecked()
   await cartao.getByRole('button', { name: 'Gerar link do paciente' }).click()
+  await cartao.getByRole('button', { name: 'Criar a ficha e seguir' }).click()
   await expect(cartao.getByText('O link também mostra o plano alimentar a qualquer pessoa que tenha o endereço.')).toBeVisible()
   await cartao.getByRole('button', { name: /Já tenho a autorização/ }).click()
   const endereco = await cartao.getByLabel('Endereço do link').inputValue()
@@ -85,27 +92,28 @@ test('a dieta no celular do paciente (spec dieta-no-link)', async ({ page }) => 
   // O paciente abre no celular: 360 px de largura
   await page.setViewportSize({ width: 360, height: 780 })
   await page.goto(endereco)
-  const seletor = page.getByRole('tablist', { name: 'O que ver' })
-  await expect(seletor.getByRole('tab', { name: 'Missões' })).toHaveAttribute('aria-selected', 'true')
+  // Spec lado-do-paciente, D-1202 e CA-2200: a barra de baixo com Hoje, Plano e Semana, aberta em Hoje.
+  const seletor = page.getByRole('navigation', { name: 'Partes do plano' })
+  await expect(seletor.getByRole('link', { name: 'Hoje' })).toHaveAttribute('aria-current', 'page')
   await expect(page.getByRole('heading', { name: /Suas missões de hoje, Ana/ })).toBeVisible()
 
   // CA-531: o almoço em medida caseira
-  await seletor.getByRole('tab', { name: 'Meu plano' }).click()
+  await seletor.getByRole('link', { name: 'Plano' }).click()
   await expect(page.getByRole('heading', { level: 1, name: 'Seu plano alimentar, Ana' })).toBeVisible()
   const almoco = page.getByRole('region', { name: '12:00 Almoço' })
   await expect(almoco).toContainText('6 colheres de sopa')
   await expect(almoco).toContainText('Arroz branco cozido')
   await expect(page.getByText(/kcal/)).toHaveCount(0)
 
-  // CA-535: cabe em 360 px, mesmo com o link do Drive nas orientações; letra de 16 px nos alimentos, toque de 44 px nas abas,
-  // e o trilho das abas tem fio, para aparecer sobre a mesa cinza (D-154)
+  // CA-535: cabe em 360 px, mesmo com o link do Drive nas orientações; letra de 16 px nos alimentos, toque de 44 px nas
+  // partes da barra, e a barra tem fio, para aparecer sobre a mesa cinza (D-154)
   await expect(page.getByRole('region', { name: 'Orientações' })).toContainText(LINK_DO_DRIVE)
   const larguras = await page.evaluate(() => ({ conteudo: document.documentElement.scrollWidth, tela: window.innerWidth }))
   expect(larguras.conteudo).toBeLessThanOrEqual(larguras.tela)
   const letra = await almoco.getByText('Arroz branco cozido').evaluate((el) => Number.parseFloat(getComputedStyle(el).fontSize))
   expect(letra).toBeGreaterThanOrEqual(16)
-  for (const nome of ['Missões', 'Meu plano']) {
-    const caixa = await seletor.getByRole('tab', { name: nome }).boundingBox()
+  for (const nome of ['Hoje', 'Plano', 'Semana']) {
+    const caixa = await seletor.getByRole('link', { name: nome }).boundingBox()
     expect(caixa?.height ?? 0).toBeGreaterThanOrEqual(44)
   }
   const fio = await seletor.evaluate((el) => Number.parseFloat(getComputedStyle(el).borderTopWidth))
