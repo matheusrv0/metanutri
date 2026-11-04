@@ -277,21 +277,22 @@ export function ProvedorAcompanhamentos({ children, repositorio, usuarioId = nul
    * Roda depois de cada leitura da nuvem (o banco já migrou o que existia quando o 017 rodou; isto pega os links que um
    * app antigo criou depois) e, sem nuvem, ao abrir. Grava pelo `salvar` de sempre.
    */
-  const migrar = useCallback(() => {
-    for (const mudado of migrarParaLinkFixo(repo.listar(), planosRef.current)) void salvar(mudado)
+  const migrar = useCallback(async (): Promise<void> => {
+    await Promise.all(migrarParaLinkFixo(repo.listar(), planosRef.current).map((mudado) => salvar(mudado)))
   }, [repo, salvar])
 
   const lerDaNuvemEMigrar = useCallback(async (): Promise<void> => {
     await lerDaNuvem()
-    if (ativo.current) migrar()
+    if (ativo.current) await migrar()
   }, [lerDaNuvem, migrar])
 
   useEffect(() => {
-    if (!cliente) migrar()
+    if (!cliente) void migrar()
   }, [cliente, migrar])
 
-  // Spec separacao-site-app, DP-SA-8: a saída por tempo espera esta leitura, que reenvia os links pendentes (CB-108).
-  useRegistrarEnvio(lerDaNuvem)
+  // Spec separacao-site-app, DP-SA-8: a saída por tempo espera esta leitura, que reenvia os links pendentes (CB-108), e
+  // a migração para o link fixo que vem depois dela (D-1217): a mesma que a tela chama.
+  useRegistrarEnvio(lerDaNuvemEMigrar)
 
   /**
    * A tela do paciente: com servidor, o link abre no aparelho dele. Sem, tudo continua
