@@ -92,7 +92,7 @@ export function MenuLateral({ rota, casoAtual, navegar, aoNovoCaso, aoEscolher, 
           <ItemMenu
             icone={<UserRound aria-hidden="true" />}
             rotulo="Pacientes"
-            ativo={rota.tela === 'pacientes' || rota.tela === 'paciente' || rota.tela === 'antropometria' || rota.tela === 'antropometria-do-paciente'}
+            ativo={rota.tela === 'pacientes' || rota.tela === 'paciente' || rota.tela === 'antropometria' || rota.tela === 'antropometria-do-paciente' || rota.tela === 'importar-pacientes'}
             aoClicar={() => ir({ tela: 'pacientes' })}
           />
           <ItemMenu icone={<ListChecks aria-hidden="true" />} rotulo="Adesão" ativo={rota.tela === 'adesao'} aoClicar={() => ir({ tela: 'adesao' })} />
@@ -128,7 +128,7 @@ export function MenuLateral({ rota, casoAtual, navegar, aoNovoCaso, aoEscolher, 
         </Secao>
 
         <Secao titulo="Sistema">
-          <ItemMenu icone={<UserCircle aria-hidden="true" />} rotulo="Conta e assinatura" ativo={rota.tela === 'conta'} aoClicar={() => ir({ tela: 'conta' })} />
+          <ItemMenu icone={<UserCircle aria-hidden="true" />} rotulo="Conta e assinatura" ativo={rota.tela === 'conta' || rota.tela === 'marca'} aoClicar={() => ir({ tela: 'conta' })} />
           <ItemMenu icone={<Settings aria-hidden="true" />} rotulo="Configurações" ativo={rota.tela === 'config'} aoClicar={() => ir({ tela: 'config' })} />
           <ItemMenu icone={<CircleHelp aria-hidden="true" />} rotulo="Ajuda" ativo={rota.tela === 'ajuda'} aoClicar={() => ir({ tela: 'ajuda' })} />
         </Secao>

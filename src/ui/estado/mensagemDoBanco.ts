@@ -11,6 +11,11 @@ export const LINK_GRANDE_DEMAIS = 'Este link ficou grande demais. Remova algumas
 /** CB-152 (spec dieta-no-link): a cópia da dieta passou de 256 KB. Quase sempre são orientações ou receitas enormes. */
 export const DIETA_GRANDE_DEMAIS = 'O plano alimentar é grande demais para o link. Encurte as orientações ou as receitas, ou desligue “Mostrar o plano alimentar no link”.'
 
+/** Spec marca-no-link (D-963): a logo que o banco recusou. O app já reduz antes; a trava só pega quem contornou o app. */
+export const LOGO_PESADA_DEMAIS = 'Use uma logo mais simples.'
+/** Spec marca-no-link (D-963): a cor fora do formato. */
+export const COR_FORA_DO_FORMATO = 'Use o formato #RRGGBB.'
+
 /** D-107: as travas de tamanho do banco (supabase/011-seguranca-lote-2.sql e 012-dieta-no-link.sql), pelo nome, com a frase de cada uma. */
 export const TRAVAS_DE_TAMANHO: Readonly<Record<string, string>> = {
   copias_dados_tamanho: COPIA_GRANDE_DEMAIS,
@@ -20,6 +25,9 @@ export const TRAVAS_DE_TAMANHO: Readonly<Record<string, string>> = {
   acompanhamentos_caso_id_tamanho: LINK_GRANDE_DEMAIS,
   acompanhamentos_paciente_id_tamanho: LINK_GRANDE_DEMAIS,
   acompanhamentos_dieta_tamanho: DIETA_GRANDE_DEMAIS,
+  // Spec marca-no-link (DP-ML-2): as travas da marca publicada (supabase/015-marca-no-link.sql), com as frases do D-963.
+  marcas_logo_png: LOGO_PESADA_DEMAIS,
+  marcas_cor_formato: COR_FORA_DO_FORMATO,
 }
 
 /** O código do Postgres para a trava (check) que recusou a linha. */

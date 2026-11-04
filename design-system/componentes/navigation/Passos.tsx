@@ -15,11 +15,13 @@ interface PassosProps<T extends string> {
   readonly atual: T | null
   /** Os passos a que já dá para ir, além dos anteriores ao atual (voltar e avançar de novo sem refazer). */
   readonly alcancados?: readonly T[] | undefined
+  /** Alcançados, mas que agora não abrem (falta o que o passo pede): aparecem desligados. */
+  readonly bloqueados?: readonly T[] | undefined
   readonly aoEscolher: (valor: T) => void
   readonly className?: string | undefined
 }
 
-export function Passos<T extends string>({ rotulo, passos, atual, alcancados = [], aoEscolher, className }: PassosProps<T>) {
+export function Passos<T extends string>({ rotulo, passos, atual, alcancados = [], bloqueados = [], aoEscolher, className }: PassosProps<T>) {
   const posicaoAtual = atual === null ? passos.length : passos.findIndex((p) => p.valor === atual)
   return (
     <nav aria-label={rotulo} className={cn('rounded-lg border border-border bg-card p-1.5 shadow-card', className)}>
@@ -28,6 +30,7 @@ export function Passos<T extends string>({ rotulo, passos, atual, alcancados = [
           const ehAtual = posicao === posicaoAtual
           const feito = posicao < posicaoAtual
           const alcancavel = !ehAtual && (feito || alcancados.includes(passo.valor))
+          const bloqueado = alcancavel && bloqueados.includes(passo.valor)
           const conteudo = (
             <>
               <span
@@ -50,8 +53,13 @@ export function Passos<T extends string>({ rotulo, passos, atual, alcancados = [
               {alcancavel ? (
                 <button
                   type="button"
+                  disabled={bloqueado}
                   onClick={() => aoEscolher(passo.valor)}
-                  className={cn(caixa, 'transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:-outline-offset-2 active:scale-[0.98]')}
+                  className={cn(
+                    caixa,
+                    'transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:-outline-offset-2 active:scale-[0.98]',
+                    'disabled:pointer-events-none disabled:opacity-50',
+                  )}
                 >
                   {conteudo}
                 </button>

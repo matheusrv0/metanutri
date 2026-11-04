@@ -186,6 +186,13 @@
   --color-statelow: var(--state-low);
   --color-statehigh: var(--state-high);
   --color-stateinfo: var(--state-info);
+  /* A ação e a placa da logo no link do paciente, e o aparelho da prévia (spec marca-no-link). */
+  --color-linkacao: var(--link-acao);
+  --color-linkacaotexto: var(--link-acao-texto);
+  --color-linkplaca: var(--link-placa);
+  --color-linkplacafio: var(--link-placa-fio);
+  --color-previacelular: var(--previa-celular);
+  --color-previacelularborda: var(--previa-celular-borda);
 
   /* A landing (spec landing-escura, D-531; spec landing-v3, D-609): os semânticos só existem dentro de .landing (tokens.css). */
   --color-landing-chao: var(--landing-chao);
@@ -495,6 +502,15 @@
     --text-subtle: #555;
     --border-subtle: #bbb;
     --border-default: #666;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* O link do paciente com a cor da nutricionista (spec marca-no-link, CB-958 e DP-ML-37): a aba escolhida e a barra do
+     dia levam a cor ao papel mesmo sem "Gráficos de fundo". Sem isto, o navegador tira o fundo, e o nome da aba, que é
+     branco, sai cinza-claro no papel. */
+  .marca-da-nutricionista [role='tab'][data-state='active'],
+  .marca-da-nutricionista [role='progressbar'] > div {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }

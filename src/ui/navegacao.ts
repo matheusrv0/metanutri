@@ -42,10 +42,14 @@ export type Rota =
   // Spec separacao-site-app, D-512: a aba que o "Continuar" do site abriu, com o código daquela mudança. Pede sessão.
   | { readonly tela: 'mudanca'; readonly codigo: string }
   | { readonly tela: 'conta' }
+  // Spec marca-no-link (D-950): Conta e assinatura › Sua marca, em `#/conta/marca`.
+  | { readonly tela: 'marca' }
   | { readonly tela: 'painel' }
   | { readonly tela: 'casos' }
   | { readonly tela: 'planejador'; readonly casoId: string; readonly aba: AbaPlanejador }
   | { readonly tela: 'pacientes' }
+  // Spec importar-pacientes, D-900: importar pacientes de uma planilha.
+  | { readonly tela: 'importar-pacientes' }
   | { readonly tela: 'adesao' }
   // `campo`: a ficha abre com o cursor nele (o WhatsApp sem telefone leva até lá; spec whatsapp-e-retorno, CA-517).
   // 'suplementos': a ficha abre no cartão "Suplementação prescrita" (o Cobrir do ferro da gestante leva até lá, D-476).
@@ -89,7 +93,7 @@ export function lerRota(hash: string): Rota {
   if (tela === 'fontes') return { tela: 'fontes' }
   if (tela === 'assinar') return ehPlanoPago(id) ? { tela: 'assinar', plano: id, ciclo: ehCiclo(aba) ? aba : 'mensal' } : { tela: 'precos' }
   if (tela === 'pagamento') return { tela: 'pagamento' }
-  if (tela === 'conta') return { tela: 'conta' }
+  if (tela === 'conta') return id === 'marca' ? { tela: 'marca' } : { tela: 'conta' }
   if (tela === 'alimentos') return { tela: 'alimentos' }
   if (tela === 'produtos') return { tela: 'produtos' }
   if (tela === 'receitas') return { tela: 'receitas' }
@@ -97,7 +101,7 @@ export function lerRota(hash: string): Rota {
   if (tela === 'ajuda') return { tela: 'ajuda' }
   if (tela === 'design-system') return { tela: 'designsystem' }
   if (tela === 'casos') return { tela: 'casos' }
-  if (tela === 'pacientes') return { tela: 'pacientes' }
+  if (tela === 'pacientes') return id === 'importar' ? { tela: 'importar-pacientes' } : { tela: 'pacientes' }
   if (tela === 'adesao') return { tela: 'adesao' }
   if (tela === 'paciente' && id && aba === 'antropometria') return { tela: 'antropometria-do-paciente', pacienteId: id }
   if (tela === 'antropometria' && id) return { tela: 'antropometria', casoId: id, vista: aba === 'historico' ? 'historico' : 'avaliacao' }
@@ -146,12 +150,16 @@ export function escreverRota(rota: Rota): string {
       return `#/mudanca/${encodeURIComponent(rota.codigo)}`
     case 'conta':
       return '#/conta'
+    case 'marca':
+      return '#/conta/marca'
     case 'painel':
       return '#/painel'
     case 'casos':
       return '#/casos'
     case 'pacientes':
       return '#/pacientes'
+    case 'importar-pacientes':
+      return '#/pacientes/importar'
     case 'adesao':
       return '#/adesao'
     case 'paciente':

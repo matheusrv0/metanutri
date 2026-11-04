@@ -8,8 +8,9 @@
 import { FALHA_DE_REDE, mensagemDoBanco } from '@/ui/estado/mensagemDoBanco.ts'
 import type { Acompanhamento, MarcacaoDia } from './acompanhamento.ts'
 import { lerDieta } from './dietaDoLink.ts'
+import { lerMarcaDoLink, separarMarca } from './marca.ts'
 import type { Missao } from './missoes.ts'
-import { fonteLocal, LinkSemConexao, MarcacaoRecusada, type FonteAcompanhamentos, type RepositorioAcompanhamentos } from './repositorioAcompanhamentos.ts'
+import { fonteLocal, LinkSemConexao, MarcacaoRecusada, type AcompanhamentoDoLink, type FonteAcompanhamentos, type RepositorioAcompanhamentos } from './repositorioAcompanhamentos.ts'
 
 interface ErroDoBanco {
   readonly message: string
@@ -22,10 +23,10 @@ interface Resposta<T> {
 }
 
 /** D-98: a tela recebe a frase traduzida, nunca o texto técnico do banco. */
-const traduzido = (erro: ErroDoBanco): string => mensagemDoBanco(erro) ?? FALHA_DE_REDE
+export const traduzido = (erro: ErroDoBanco): string => mensagemDoBanco(erro) ?? FALHA_DE_REDE
 
 /** Um pedido ao banco. O do cliente de verdade aceita um sinal para desistir dele (CA-439). */
-type Pedido = PromiseLike<Resposta<unknown>> & { abortSignal?(sinal: AbortSignal): PromiseLike<Resposta<unknown>> }
+export type Pedido = PromiseLike<Resposta<unknown>> & { abortSignal?(sinal: AbortSignal): PromiseLike<Resposta<unknown>> }
 
 /** O pedaço do cliente Supabase que este arquivo usa — o resto não interessa aqui. */
 export interface ClienteMissoes {
@@ -125,7 +126,9 @@ export function fonteSupabase(cliente: ClienteMissoes, opcoes: OpcoesFonteSupaba
       }
       // A função devolve uma tabela: vem lista, mesmo com uma linha só.
       const linha = Array.isArray(data) ? data[0] : data
-      return daLinha(linha)
+      const acompanhamento = daLinha(linha)
+      // Spec marca-no-link (CA-1974): a marca vem na mesma linha; a função de antes não a traz, e o link abre sem ela.
+      return acompanhamento ? { ...acompanhamento, marca: lerMarcaDoLink(linha) } : null
     },
 
     /**
@@ -140,6 +143,9 @@ export function fonteSupabase(cliente: ClienteMissoes, opcoes: OpcoesFonteSupaba
     },
   }
 }
+
+/** O link sem a marca que veio com ele (DP-ML-14). */
+const semMarca = (link: AcompanhamentoDoLink): Acompanhamento => separarMarca(link).acompanhamento
 
 /**
  * A fonte do link do paciente (spec revisao-geral-publica, D-232): a nuvem, com a cópia do aparelho por trás. Sem
@@ -158,7 +164,7 @@ export function fonteDoPaciente(cliente: ClienteMissoes | null, repositorio: Rep
     aoSalvar()
     return salvo
   }
-  if (!cliente) return { naNuvem: false, porToken: local.porToken, salvar: salvarAqui }
+  if (!cliente) return { naNuvem: false, porToken: local.porToken, salvar: (link) => salvarAqui(semMarca(link)) }
 
   /** A fonte da nuvem de um pedido só, com a marca de que ele falhou e a frase traduzida da falha. */
   const daNuvem = () => {
@@ -184,7 +190,9 @@ export function fonteDoPaciente(cliente: ClienteMissoes | null, repositorio: Rep
       if (pedido.falhou) throw new LinkSemConexao()
       return null
     },
-    async salvar(acompanhamento) {
+    async salvar(comMarca) {
+      // DP-ML-14: a marca é da conta, não do link; a cópia do aparelho nunca a guarda.
+      const acompanhamento = semMarca(comMarca)
       const { pedido, fonte } = daNuvem()
       await fonte.salvar(acompanhamento).catch(() => (pedido.falhou = true))
       if (pedido.falhou) throw pedido.motivo !== null && pedido.motivo !== FALHA_DE_REDE ? new MarcacaoRecusada(pedido.motivo) : new LinkSemConexao()
@@ -208,7 +216,7 @@ async function usuarioDaSessao(cliente: { readonly auth: ClienteMissoes['auth'] 
  * dados-por-conta, CA-474). A sessão que trocou de conta no meio de uma leitura é nula, e nada é
  * pedido: o link de uma conta nunca vai para a outra. Sem conta esperada, vale a da sessão.
  */
-async function usuarioEsperado(cliente: { readonly auth: ClienteMissoes['auth'] }, esperado: string | null | undefined): Promise<string | null> {
+export async function usuarioEsperado(cliente: { readonly auth: ClienteMissoes['auth'] }, esperado: string | null | undefined): Promise<string | null> {
   const usuario = await usuarioDaSessao(cliente)
   if (usuario === null) return null
   return esperado === undefined || esperado === null || esperado === usuario ? usuario : null
@@ -251,7 +259,7 @@ export const PRAZO_DA_NUVEM_MS = 15_000
  * Corre a ida à nuvem contra o relógio. Exceção e demora viram a falha de rede de sempre,
  * e na demora o pedido é cancelado, para não chegar ao banco depois que a tela desistiu.
  */
-async function comPrazo<T>(ida: (sinal: AbortSignal) => Promise<T>, falhou: (mensagem: string) => T): Promise<T> {
+export async function comPrazo<T>(ida: (sinal: AbortSignal) => Promise<T>, falhou: (mensagem: string) => T): Promise<T> {
   const controle = new AbortController()
   let relogio: ReturnType<typeof setTimeout> | undefined
   const esgotou = new Promise<T>((resolver) => {
@@ -268,7 +276,7 @@ async function comPrazo<T>(ida: (sinal: AbortSignal) => Promise<T>, falhou: (men
 }
 
 /** Liga o sinal de desistir ao pedido, quando o cliente sabe desistir. */
-const comSinal = (pedido: Pedido, sinal: AbortSignal): PromiseLike<Resposta<unknown>> => (pedido.abortSignal ? pedido.abortSignal(sinal) : pedido)
+export const comSinal = (pedido: Pedido, sinal: AbortSignal): PromiseLike<Resposta<unknown>> => (pedido.abortSignal ? pedido.abortSignal(sinal) : pedido)
 
 const mensagem = (texto: string): string => texto
 

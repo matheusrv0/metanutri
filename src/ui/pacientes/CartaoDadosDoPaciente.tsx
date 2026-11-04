@@ -1,8 +1,9 @@
+import { diaDaImportacao } from '@/domain/importar/importacao.ts'
 import { idadeNaData, type Paciente } from '@/domain/pacientes.ts'
 import { menorDe18, podeGestarOuLactar, rotuloDaOcupacao, type PerfilDaFicha } from '@/domain/regrasDaFicha.ts'
 import type { Sexo } from '@/domain/tipos.ts'
 import { normalizarTelefone } from '@/domain/whatsapp.ts'
-import { Card, CardHeader, CardTitle } from '@ds/componentes/display/card.tsx'
+import { Card, CardDescription, CardHeader, CardTitle } from '@ds/componentes/display/card.tsx'
 import { CampoNumero } from '@ds/componentes/forms/CampoNumero.tsx'
 import { CampoTexto } from '@ds/componentes/forms/CampoTexto.tsx'
 import { GrupoOpcoes } from '@ds/componentes/forms/GrupoOpcoes.tsx'
@@ -37,6 +38,8 @@ export function CartaoDadosDoPaciente({ paciente, perfil, hoje, aoAlterar, focar
     <Card>
       <CardHeader>
         <CardTitle>Dados do paciente</CardTitle>
+        {/* Spec importar-pacientes, D-912 e DP-IP-27: de onde a ficha veio. */}
+        {paciente.importacao ? <CardDescription className="text-xs">{`Importado em ${diaDaImportacao(paciente.importacao.em)}`}</CardDescription> : null}
       </CardHeader>
       <div className="grid grid-cols-[minmax(0,1fr)] gap-4 sm:grid-cols-2">
         <CampoTexto rotulo="Nome" valor={paciente.nome} aoMudar={(nome) => aoAlterar({ nome })} placeholder="Maria Silva…" />

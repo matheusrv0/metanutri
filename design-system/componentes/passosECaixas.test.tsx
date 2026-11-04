@@ -31,6 +31,15 @@ describe('Passos', () => {
     expect(aoEscolher).toHaveBeenCalledWith('previa')
   })
 
+  it('o passo bloqueado aparece desligado e não leva a lugar nenhum', async () => {
+    const aoEscolher = vi.fn()
+    render(<Passos rotulo="Passos" passos={PASSOS} atual="colunas" alcancados={['previa']} bloqueados={['previa']} aoEscolher={aoEscolher} />)
+    const previa = screen.getByRole('button', { name: 'Passo 3: Prévia' })
+    expect(previa).toBeDisabled()
+    await userEvent.click(previa)
+    expect(aoEscolher).not.toHaveBeenCalled()
+  })
+
   it('sem passo atual, todos estão feitos', () => {
     render(<Passos rotulo="Passos" passos={PASSOS} atual={null} aoEscolher={vi.fn()} />)
     expect(screen.getAllByRole('button').map((b) => b.textContent)).toEqual(['Passo 1, feito: Arquivo', 'Passo 2, feito: Colunas', 'Passo 3, feito: Prévia'])

@@ -272,9 +272,10 @@ describe('TelaInicio (spec landing-escura e spec landing-v3)', () => {
         'Documentos prontos',
       ])
       expect(secao).toHaveTextContent('20 vitaminas e minerais e a fibra, comparados com a referência para a idade, o sexo e a fase da vida.')
-      expect(secao).toHaveTextContent('PDF com lista de compras, Word no modelo do estágio e pedido de exames, com o seu logotipo e o seu CRN.')
+      expect(secao).toHaveTextContent('PDF com lista de compras, Word no modelo do estágio e pedido de exames, com a sua logo e o seu CRN.')
       expect(secao).toHaveTextContent('O que a base ainda não tem entra por 100 g, pela porção do rótulo ou pelo código de barras.')
-      expect(secao.textContent).not.toMatch(/sua logo/)
+      // CA-1982 (spec marca-no-link): o termo é "logo"; "logotipo" não aparece.
+      expect(secao.textContent).not.toMatch(/logotipo/i)
     })
 
     it('CA-1672 e D-540: sem a publicação 2, o cadastro de alimentos fala só do rótulo e do código de barras', () => {
