@@ -1,18 +1,25 @@
 // Os textos da vista Avaliação (spec antropometria-telas, D-1407 a D-1421): o que a tela escreve a partir do motor.
 // Nenhum número é calculado aqui; só formatado nas casas que o motor manda.
+import { comSinalDeMenos } from '@/domain/antropometria.ts'
 import type { ErroDaEstimativa, LadoUsado } from '@/domain/estimativas.ts'
-import { medidaValida, type CampoQueFalta } from '@/domain/linhaDoResultado.ts'
+import type { Fonte } from '@/domain/fontesAntropometria.ts'
+import type { OpcoesDaGordura } from '@/domain/indicadoresDeGordura.ts'
+import { medidaValida, type CampoQueFalta, type Detalhe, type IdDaLinha, type LinhaDoResultado, type NivelDaSituacao } from '@/domain/linhaDoResultado.ts'
 import type { PesoIdeal } from '@/domain/pesoDeReferencia.ts'
 import { conversaoDoProtocolo, protocoloPorId, type DobraCutanea, type Dobras, type IdProtocolo, type Protocolo, type VarianteDoProtocolo } from '@/domain/protocolosDeDobras.ts'
-import type { OrigemDasMedidas, Sexo } from '@/domain/tipos.ts'
+import type { Caso, OrigemDasMedidas, PontoDaCintura, Sexo } from '@/domain/tipos.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
 
 export const TRAVESSAO = '—'
 
-/** O número com as casas do motor e a unidade: "26,58 kg/m²", "29,5%", "10,6". Sem valor, "—" (nunca 0). */
+/** As entradas do protocolo que a avaliação guarda: a maturação e o grupo do Slaughter (D-1012 e D-1414). */
+export const opcoesDaGorduraDoCaso = (caso: Caso): OpcoesDaGordura => ({ maturacao: caso.avaliacao.maturacao, grupo: caso.avaliacao.grupoDoEstudo })
+
+/** O número com as casas do motor e a unidade: "26,58 kg/m²", "29,5%", "10,6", "escore-z +1,23". Sem valor, "—" (nunca 0). */
 export function comUnidade(valor: number | null, casas: number, unidade: string): string {
   if (valor === null) return TRAVESSAO
   const numero = formatarNumero(valor, casas)
+  if (unidade === 'escore-z') return `escore-z ${valor > 0 ? '+' : ''}${comSinalDeMenos(numero)}`
   if (unidade === '') return numero
   return unidade === '%' ? `${numero}%` : `${numero} ${unidade}`
 }
@@ -149,4 +156,170 @@ export function dobrasNaTela(id: IdProtocolo, sexo: Sexo | null, dobras: Dobras,
 export function fraseDasDobras(exigidas: number, faltam: number): string {
   if (faltam === 0) return `As ${exigidas} dobras marcadas entram no protocolo. As outras ficam guardadas.`
   return `${faltam === 1 ? 'Falta 1' : `Faltam ${faltam}`} das ${exigidas} dobras marcadas para calcular a gordura.`
+}
+
+// --- Resultado (D-1416, D-1417 e DP-AT-8) --------------------------------------------------------------------------
+
+/** O tom do selo, pelos tokens de estado: ok (verde), baixo (âmbar), alto (vermelho) e neutro (D-1417, DP-AT-17). */
+export type TomDoSelo = 'ok' | 'baixo' | 'alto' | 'neutro'
+
+const TOM: Readonly<Record<NivelDaSituacao, TomDoSelo>> = { adequado: 'ok', atencao: 'baixo', alterado: 'alto', grave: 'alto', informativo: 'neutro' }
+
+export const tomDoNivel = (nivel: NivelDaSituacao): TomDoSelo => TOM[nivel]
+
+/** DP-AT-8: os nomes curtos do protótipo na tela; as linhas que ele não tem (e o IMC da criança e da gestante) usam o do motor. */
+const NOME_NA_TELA: Readonly<Partial<Record<IdDaLinha, string>>> = {
+  gordura: 'Gordura corporal',
+  'massa-gorda': 'Massa gorda',
+  'massa-magra': 'Massa magra',
+  'soma-de-dobras': 'Soma de dobras',
+  cintura: 'Cintura',
+  rcq: 'Cintura/quadril',
+  rce: 'Cintura/estatura',
+  pescoco: 'Pescoço',
+  cb: 'Braço (CB)',
+  dct: 'Dobra tricipital',
+  cmb: 'Músculo (CMB)',
+  agb: 'Área de gordura (AGB)',
+  'adequacao-cb': 'Adequação da CB',
+  'adequacao-dct': 'Adequação da DCT',
+  'adequacao-cmb': 'Adequação da CMB',
+  panturrilha: 'Panturrilha',
+  compleicao: 'Compleição',
+}
+
+const nomeNaTela = (linha: LinhaDoResultado): string => {
+  if (linha.id === 'amb') return linha.nome.includes('corrigida') ? 'Área muscular (AMBc)' : 'Área muscular (AMB)'
+  return NOME_NA_TELA[linha.id] ?? linha.nome
+}
+
+export const ROTULO_DO_PONTO: Readonly<Record<PontoDaCintura, string>> = {
+  'ponto-medio': 'Ponto médio (OMS)',
+  'crista-iliaca': 'Crista ilíaca (NIH)',
+  'menor-perimetro': 'Menor perímetro',
+}
+
+/** O que a tela sabe além da linha: o método da gordura e o ponto da cintura (D-1417). */
+export interface ContextoDaLinha {
+  /** "Jackson & Pollock, 7 dobras · Siri" ou "Bioimpedância (InBody)". */
+  readonly metodoDaGordura?: string | null
+  readonly pontoDaCintura?: PontoDaCintura | null
+}
+
+const texto = (detalhes: readonly Detalhe[], rotulo: string): string | null => {
+  const d = detalhes.find((x) => x.rotulo === rotulo)
+  return d?.tipo === 'texto' ? d.texto : null
+}
+
+/** O detalhe curto embaixo do nome: o método, o percentil, o lado, o ponto (D-1417). */
+function subtitulo(linha: LinhaDoResultado, contexto: ContextoDaLinha): string | null {
+  const lado = texto(linha.detalhes, 'Lado')
+  const doLado = lado ? `lado ${lado}` : null
+  switch (linha.id) {
+    case 'imc': {
+      // A criança: o IMC embaixo do escore-z (CA-2435).
+      const imc = linha.unidade === 'escore-z' ? linha.detalhes.find((d) => d.tipo === 'numero' && d.rotulo === 'IMC') : undefined
+      return imc?.tipo === 'numero' ? `IMC ${comUnidade(imc.valor, imc.casas, imc.unidade)}` : null
+    }
+    case 'gordura':
+    case 'massa-gorda':
+    case 'massa-magra':
+      return linha.valor === null ? null : (contexto.metodoDaGordura ?? null)
+    case 'soma-de-dobras':
+      return texto(linha.detalhes, 'Protocolo')
+    case 'cintura':
+      return contexto.pontoDaCintura ? ROTULO_DO_PONTO[contexto.pontoDaCintura] : 'Ponto não registrado'
+    case 'cb':
+    case 'dct':
+    case 'cmb':
+    case 'amb':
+    case 'agb':
+      return [texto(linha.detalhes, 'Percentil'), doLado].filter((t) => t !== null && t !== '').join(' · ') || null
+    case 'compleicao':
+      return 'Estatura ÷ punho'
+    default:
+      return doLado
+  }
+}
+
+/** Os valores de apoio (densidade, P50 de referência, IMC da criança), para o painel da fonte. */
+const apoio = (detalhes: readonly Detalhe[]): string[] =>
+  detalhes.map((d) => (d.tipo === 'numero' ? `${d.rotulo}: ${comUnidade(d.valor, d.casas, d.unidade)}` : `${d.rotulo}: ${d.texto}`))
+
+export interface ApresentacaoDaLinha {
+  readonly id: IdDaLinha
+  readonly nome: string
+  readonly subtitulo: string | null
+  readonly real: string
+  readonly recomendacao: string
+  readonly selo: { readonly rotulo: string; readonly tom: TomDoSelo } | null
+  /** No lugar do selo, quando não há situação: o que falta, o motivo da recusa ou "—". */
+  readonly nota: string | null
+  readonly fonte: Fonte | null
+  readonly avisos: readonly string[]
+  readonly apoio: readonly string[]
+}
+
+/** A linha do motor como a tabela a desenha (D-1417). */
+export function apresentarLinha(linha: LinhaDoResultado, contexto: ContextoDaLinha = {}): ApresentacaoDaLinha {
+  const selo = linha.situacao ? { rotulo: linha.situacao.rotulo, tom: tomDoNivel(linha.situacao.nivel) } : null
+  let nota: string | null = null
+  if (!selo) {
+    if (linha.falta.length > 0) {
+      // CB-1405: sem as dobras completas, a gordura lembra a bioimpedância.
+      const ou = linha.valor === null ? linha.avisos.find((a) => a.startsWith('Ou informe')) : undefined
+      nota = ou ? `${textoDaFalta(linha.falta)}. ${ou}` : textoDaFalta(linha.falta)
+    } else if (linha.valor === null && linha.avisos[0]) nota = linha.avisos[0]
+    else nota = TRAVESSAO
+  }
+  return {
+    id: linha.id,
+    nome: nomeNaTela(linha),
+    subtitulo: subtitulo(linha, contexto),
+    real: comUnidade(linha.valor, linha.casas, linha.unidade),
+    recomendacao: linha.recomendacao?.texto ?? TRAVESSAO,
+    selo,
+    nota,
+    fonte: linha.fonte,
+    avisos: linha.avisos,
+    apoio: apoio(linha.detalhes),
+  }
+}
+
+export type IdDoGrupo = 'peso-e-composicao' | 'gordura-central' | 'braco' | 'outras'
+
+const GRUPO: Readonly<Record<IdDaLinha, IdDoGrupo>> = {
+  imc: 'peso-e-composicao',
+  gordura: 'peso-e-composicao',
+  'massa-gorda': 'peso-e-composicao',
+  'massa-magra': 'peso-e-composicao',
+  'soma-de-dobras': 'peso-e-composicao',
+  cintura: 'gordura-central',
+  rcq: 'gordura-central',
+  rce: 'gordura-central',
+  pescoco: 'gordura-central',
+  cb: 'braco',
+  dct: 'braco',
+  cmb: 'braco',
+  amb: 'braco',
+  agb: 'braco',
+  'adequacao-cb': 'braco',
+  'adequacao-dct': 'braco',
+  'adequacao-cmb': 'braco',
+  panturrilha: 'outras',
+  compleicao: 'outras',
+}
+
+const NOME_DO_GRUPO: Readonly<Record<IdDoGrupo, string>> = {
+  'peso-e-composicao': 'Peso e composição',
+  'gordura-central': 'Gordura central',
+  braco: 'Braço · Frisancho',
+  outras: 'Outras',
+}
+
+const ORDEM: readonly IdDoGrupo[] = ['peso-e-composicao', 'gordura-central', 'braco', 'outras']
+
+/** As linhas do motor nos 4 grupos da tela, na ordem do motor; grupo sem linha não vem (D-1416). */
+export function gruposDoResultado(linhas: readonly LinhaDoResultado[]): { readonly id: IdDoGrupo; readonly nome: string; readonly linhas: readonly LinhaDoResultado[] }[] {
+  return ORDEM.map((id) => ({ id, nome: NOME_DO_GRUPO[id], linhas: linhas.filter((l) => GRUPO[l.id] === id) })).filter((g) => g.linhas.length > 0)
 }

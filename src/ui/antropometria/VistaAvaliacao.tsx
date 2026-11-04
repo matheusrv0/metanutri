@@ -6,6 +6,7 @@ import { CartaoCircunferencias } from './CartaoCircunferencias.tsx'
 import { CartaoDiametros } from './CartaoDiametros.tsx'
 import { CartaoDobras } from './CartaoDobras.tsx'
 import { CartaoPesoEstatura } from './CartaoPesoEstatura.tsx'
+import { CartaoResultado } from './CartaoResultado.tsx'
 
 interface VistaAvaliacaoProps {
   /** O plano como vale, com o que vem da ficha (sexo, idade e gestação na data da avaliação). */
@@ -32,7 +33,9 @@ export function VistaAvaliacao({ caso, bruto, paciente, aoAlterar }: VistaAvalia
           <CartaoDiametros bruto={bruto} aoAlterar={aoAlterar} />
           <CartaoDobras caso={caso} bruto={bruto} aoAlterar={aoAlterar} />
         </div>
-        <div className="flex min-w-0 flex-col gap-6" />
+        <div className="flex min-w-0 flex-col gap-6">
+          <CartaoResultado caso={caso} />
+        </div>
       </div>
     </ContextoDaAjudaAberta.Provider>
   )
