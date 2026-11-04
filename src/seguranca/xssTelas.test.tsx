@@ -129,7 +129,7 @@ describe('CA-487: código malicioso aparece como texto e nada executa (telas)', 
     conferirSemInjecao()
   })
 
-  it('CA-487 (spec dieta-no-link): "Meu plano" no link do paciente: refeição, medida, alimento, orientações e receitas aparecem como texto', async () => {
+  it('CA-487 (spec dieta-no-link) e D-1202: o Plano no link do paciente: refeição, medida, alimento, orientações e receitas aparecem como texto', async () => {
     const acompanhamento = criarAcompanhamento({
       casoId: 'c1',
       pacienteId: 'p1',
@@ -144,7 +144,8 @@ describe('CA-487: código malicioso aparece como texto e nada executa (telas)', 
     })
     const fonte: FonteAcompanhamentos = { naNuvem: true, porToken: () => Promise.resolve(acompanhamento), salvar: (a) => Promise.resolve(a) }
     render(<TelaMissoesPaciente token={acompanhamento.token} fonte={fonte} hoje="2026-10-14" />)
-    await userEvent.setup().click(await screen.findByRole('tab', { name: 'Meu plano' }))
+    // Spec lado-do-paciente (D-1202): a dieta fica na parte Plano da barra de baixo.
+    await userEvent.setup().click(await screen.findByRole('link', { name: 'Plano' }))
     for (const parte of ['refeicao', 'medida', 'alimento', 'orientacoes', 'receitas']) cargaComoTexto(parte)
     conferirSemInjecao()
   })
