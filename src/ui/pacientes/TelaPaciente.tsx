@@ -21,6 +21,7 @@ import { CartaoProximaConsulta } from './CartaoProximaConsulta.tsx'
 import { CartaoSuplementos } from './CartaoSuplementos.tsx'
 import type { CampoDaFicha } from '../navegacao.ts'
 import { EvolucaoPeso, type PontoEvolucao } from './EvolucaoPeso.tsx'
+import { AbasDaFicha } from '../antropometria/AbasDaFicha.tsx'
 
 interface TelaPacienteProps {
   readonly pacienteId: string
@@ -35,6 +36,8 @@ interface TelaPacienteProps {
   readonly focar?: CampoDaFicha | undefined
   /** Injetável no teste; decide se a próxima consulta já passou, a idade de hoje e as semanas de gestação. */
   readonly agora?: Date | undefined
+  /** A aba "Antropometria" (spec antropometria-telas, D-1402); sem ela, a ficha abre sem as abas. */
+  readonly aoAbrirAntropometria?: (() => void) | undefined
 }
 
 /**
@@ -50,6 +53,7 @@ export function TelaPaciente({
   aoVoltar,
   focar,
   agora = new Date(),
+  aoAbrirAntropometria,
 }: TelaPacienteProps) {
   const { repositorio, atualizar } = usePacientes()
   const { casos, repositorio: repoCasos, atualizar: atualizarCasos } = useCasos()
@@ -106,7 +110,7 @@ export function TelaPaciente({
 
   const perfil = perfilDaFicha(paciente, hoje, planos.length > 0)
 
-  return (
+  const ficha = (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
       <div className="flex flex-col gap-6">
         <CartaoDadosDoPaciente paciente={paciente} perfil={perfil} hoje={hoje} aoAlterar={alterar} focarTelefone={focar === 'telefone'} />
@@ -207,6 +211,14 @@ export function TelaPaciente({
           <EvolucaoPeso pontos={evolucao} />
         </Card>
       </div>
+    </div>
+  )
+
+  if (!aoAbrirAntropometria) return ficha
+  return (
+    <div className="flex flex-col gap-6">
+      <AbasDaFicha atual="ficha" aoIrPara={(aba) => (aba === 'antropometria' ? aoAbrirAntropometria() : undefined)} />
+      {ficha}
     </div>
   )
 }

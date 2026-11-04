@@ -4,6 +4,9 @@ import { paginaDoSite } from './enderecos.ts'
 
 export type AbaPlanejador = 'caso' | 'plano' | 'adequacao'
 
+/** As duas vistas da avaliação antropométrica (spec antropometria-telas, D-1404). */
+export type VistaDaAntropometria = 'avaliacao' | 'historico'
+
 /** Onde a ficha do paciente abre: no Telefone (CA-517) ou na Suplementação prescrita (D-476). */
 export type CampoDaFicha = 'telefone' | 'suplementos'
 
@@ -47,6 +50,9 @@ export type Rota =
   // `campo`: a ficha abre com o cursor nele (o WhatsApp sem telefone leva até lá; spec whatsapp-e-retorno, CA-517).
   // 'suplementos': a ficha abre no cartão "Suplementação prescrita" (o Cobrir do ferro da gestante leva até lá, D-476).
   | { readonly tela: 'paciente'; readonly pacienteId: string; readonly campo?: CampoDaFicha }
+  // Spec antropometria-telas, D-1401: a avaliação de um plano e a aba "Antropometria" da ficha (a avaliação mais recente).
+  | { readonly tela: 'antropometria'; readonly casoId: string; readonly vista: VistaDaAntropometria }
+  | { readonly tela: 'antropometria-do-paciente'; readonly pacienteId: string }
   | { readonly tela: 'alimentos' }
   | { readonly tela: 'produtos' }
   // Spec receitas-com-calculo, D-272: a biblioteca de receitas da conta.
@@ -93,6 +99,8 @@ export function lerRota(hash: string): Rota {
   if (tela === 'casos') return { tela: 'casos' }
   if (tela === 'pacientes') return { tela: 'pacientes' }
   if (tela === 'adesao') return { tela: 'adesao' }
+  if (tela === 'paciente' && id && aba === 'antropometria') return { tela: 'antropometria-do-paciente', pacienteId: id }
+  if (tela === 'antropometria' && id) return { tela: 'antropometria', casoId: id, vista: aba === 'historico' ? 'historico' : 'avaliacao' }
   if (tela === 'paciente' && id) return aba === 'telefone' || aba === 'suplementos' ? { tela: 'paciente', pacienteId: id, campo: aba } : { tela: 'paciente', pacienteId: id }
   if (tela === 'aprovacoes') return { tela: 'aprovacoes' }
   if (tela === 'negocio') return { tela: 'negocio' }
@@ -148,6 +156,10 @@ export function escreverRota(rota: Rota): string {
       return '#/adesao'
     case 'paciente':
       return `#/paciente/${encodeURIComponent(rota.pacienteId)}${rota.campo ? `/${rota.campo}` : ''}`
+    case 'antropometria':
+      return `#/antropometria/${encodeURIComponent(rota.casoId)}${rota.vista === 'historico' ? '/historico' : ''}`
+    case 'antropometria-do-paciente':
+      return `#/paciente/${encodeURIComponent(rota.pacienteId)}/antropometria`
     case 'alimentos':
       return '#/alimentos'
     case 'produtos':
