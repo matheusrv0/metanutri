@@ -18,6 +18,7 @@ import { IconeMarca } from '@ds/componentes/display/IconeMarca.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { Card, CardDescription, CardHeader, CardTitle } from '@ds/componentes/display/card.tsx'
 import type { ValorConta } from '../estado/usarConta.ts'
+import { CartaoSuaMarca } from '../marca/CartaoSuaMarca.tsx'
 import { AvisoCrn } from '../painel/AvisoCrn.tsx'
 import { CartaoSituacao } from './CartaoSituacao.tsx'
 import { DialogoCancelarAssinatura } from './DialogoCancelarAssinatura.tsx'
@@ -52,6 +53,8 @@ interface TelaContaProps {
   readonly aoSaiu: () => void
   /** D-254 (spec exclusao-de-conta): conta de administrador não se exclui pelo site. */
   readonly ehAdmin?: boolean
+  /** Spec marca-no-link (D-950): abre Conta e assinatura › Sua marca. Sem ele, o cartão "Sua marca" não aparece. */
+  readonly aoAbrirMarca?: () => void
 }
 
 /** Estado da conta: quem está conectado, qual plano, o cartão que paga e o que fazer sem conta (spec checkout-proprio, US-B2). */
@@ -71,6 +74,7 @@ export function TelaConta({
   aoEnviarComprovante,
   aoSaiu,
   ehAdmin = false,
+  aoAbrirMarca,
 }: TelaContaProps) {
   // D-131: só "Sair"; a pergunta (CA-479) só quando há mudança que não chegou à nuvem.
   const saida = useSaida(conta, aoSaiu)
@@ -253,6 +257,9 @@ export function TelaConta({
           <p className="text-xs text-muted-foreground">O pagamento é com cartão de crédito, aqui no site.</p>
         ) : null}
       </Card>
+
+      {/* Spec marca-no-link (D-950, DP-ML-24): a logo e a cor do link do paciente, logo depois da assinatura. */}
+      {aoAbrirMarca ? <CartaoSuaMarca aoAbrir={aoAbrirMarca} /> : null}
 
       {/* D-250 e D-254 (spec exclusao-de-conta): o último bloco, só com a conta aberta. */}
       {conta.sessao ? (

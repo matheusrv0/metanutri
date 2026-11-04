@@ -7,8 +7,9 @@ interface FuncionalidadesProps {
 }
 
 /**
- * "Funcionalidades" (spec landing-v3, D-663): nove itens, só texto, com os textos do protótipo v9. O logotipo segue o
- * glossário, e o cadastro de alimentos diz o que a publicação de Meus alimentos permite.
+ * "Funcionalidades" (spec landing-v3, D-663): nove itens, só texto, com os textos do protótipo v9. A logo segue o
+ * glossário ("logo", CA-1982 da spec marca-no-link), e o cadastro de alimentos diz o que a publicação de Meus alimentos
+ * permite.
  */
 export function Funcionalidades({ formularioNovo }: FuncionalidadesProps) {
   const itens: readonly { readonly titulo: string; readonly texto: string }[] = [
@@ -40,7 +41,7 @@ export function Funcionalidades({ formularioNovo }: FuncionalidadesProps) {
     { titulo: 'Cadastro de alimentos', texto: textoDosAlimentosProprios(formularioNovo).funcionalidade },
     {
       titulo: 'Documentos prontos',
-      texto: 'PDF com lista de compras, Word no modelo do estágio e pedido de exames, com o seu logotipo e o seu CRN.',
+      texto: 'PDF com lista de compras, Word no modelo do estágio e pedido de exames, com a sua logo e o seu CRN.',
     },
   ]
 

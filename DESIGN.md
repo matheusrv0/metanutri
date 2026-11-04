@@ -119,6 +119,25 @@ desde a v9, a primeira tela é a foto do topo com o véu e o título por cima.
   (`-surgir`), o feixe gira (`-girar`), a linha de "Como funciona" acende ao entrar (`data-revela`); tudo com
   `motion-safe:` ou dentro de `prefers-reduced-motion: no-preference`.
 
+## A marca da nutricionista no link do paciente (desde 29/10/2026)
+
+Spec `specs/marca-no-link/SPEC.md` (protótipo `MarcaNoLink.dc.html`, aprovado). A nutricionista põe a logo e uma cor
+dela no link que o paciente abre; o resto do link é o do MetaNutri.
+
+- **A logo entra pela `PlacaLogo`**, e só por ela: uma placa branca de cantos de 12 px nos dois temas (`--link-placa`;
+  no claro, o fio `--link-placa-fio` por dentro), com a logo em até 40 × 200 px, sem esticar. Sem logo, o topo é a
+  `Logo` do MetaNutri; com logo, a `Logo` do MetaNutri desce pequena para o rodapé, em todos os planos.
+- **A cor dela entra só na ação do link**: a barra do dia e a aba escolhida, pelos tokens `--link-acao` e
+  `--link-acao-texto`. Sem cor, eles valem a ação do sistema (teal com marfim no claro, marfim com teal no escuro), e o
+  link é o de sempre. Com cor, a raiz do link leva `.marca-da-nutricionista`, com `--marca-claro` (a cor, com 4,5:1 ou
+  mais com o texto branco) e `--marca-escuro` (a mesma cor clareada até 7:1 contra o carvão `#101a1d`, com texto
+  carvão por cima) no estilo. As duas são calculadas em `src/domain/corDaMarca.ts`; o tema escolhe pelo `.dark`, e o
+  papel sai com a do claro. É a única cor de fora do sistema no app, e é dado da conta, não token.
+- **O estado continua estado.** Missão feita e "Dia completo" seguem no verde de `--state-ok`; a cor dela nunca vira
+  texto corrido nem fundo de página.
+- **"Sua marca"** (Conta e assinatura) desenha o link de verdade, num celular claro e num escuro (`--previa-celular`,
+  `--previa-celular-borda`), com as cores prontas na `EscolhaDeCor` e a outra cor no `CampoCor`.
+
 ## Colors
 
 Estratégia: **neutros com a marca na ação e o estado no dado.** Os neutros carregam a
@@ -214,7 +233,7 @@ texto corpo 12,7:1, texto secundário 6,6 a 7,8:1, link 7,3:1, foco 8,6:1.
   com letra branca): é a ação principal da área pública ("Começar grátis") e os rótulos de
   destaque. Nenhum dos dois entra em painel de dado, onde se confundiriam com o âmbar de
   "abaixo da meta". Registrado em 28/09/2026, a pedido do usuário: "mais ênfase no laranja".
-- **A marca entra pela `Logo`**, e só por ela. O kit proíbe recolorir, esticar, sombrear
+- **A marca entra pela `Logo`**, e só por ela. (A logo da nutricionista, no link do paciente, entra pela `PlacaLogo`.) O kit proíbe recolorir, esticar, sombrear
   ou usar o símbolo claro em fundo escuro; o componente é o único caminho justamente
   para isso não acontecer.
 - **Sem dado é hachura.** `--pattern-nodata` existe para que "não analisado" nunca seja

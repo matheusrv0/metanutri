@@ -85,6 +85,8 @@ export interface ServidorFalso {
   readonly logouts: string[]
   /** O corpo de cada gravação na tabela `copias` (a cópia de trabalho que subiu), na ordem. */
   readonly gravacoesDaCopia: unknown[]
+  /** O corpo de cada gravação na tabela `marcas` (o "Salvar" de "Sua marca", spec marca-no-link), na ordem. */
+  readonly gravacoesDaMarca: Linha[]
   /** Enquanto verdadeiro, todo pedido ao Supabase cai como sem internet. */
   semRede: boolean
 }
@@ -116,7 +118,7 @@ const corpoDoPedido = (valor: unknown): Record<string, unknown> => {
  * contexto, não só na página, para valer também na aba que o "Continuar" do site abre.
  */
 export async function ligarServidorFalso(pagina: Page, cenario: Cenario = {}): Promise<ServidorFalso> {
-  const servidor: ServidorFalso = { logouts: [], gravacoesDaCopia: [], semRede: false }
+  const servidor: ServidorFalso = { logouts: [], gravacoesDaCopia: [], gravacoesDaMarca: [], semRede: false }
   const contexto = pagina.context()
   const nuvem = nuvens.get(contexto) ?? { copia: null }
   nuvens.set(contexto, nuvem)
@@ -185,6 +187,11 @@ export async function ligarServidorFalso(pagina: Page, cenario: Cenario = {}): P
       if (copia === null || copia.atualizado_em !== versao) return json(route, [])
       nuvem.copia = nova
       return json(route, [{ atualizado_em: nova.atualizado_em }])
+    }
+    // Spec marca-no-link: a marca publicada (upsert, como o app grava).
+    if (caminho === '/rest/v1/marcas' && pedido.method() === 'POST') {
+      servidor.gravacoesDaMarca.push(corpoDoPedido(pedido.postDataJSON()))
+      return json(route, [], 201)
     }
     if (pedido.method() !== 'GET') return json(route, [], 201)
     if (caminho === '/rest/v1/perfis') return json(route, cenario.perfil ? [cenario.perfil] : [])

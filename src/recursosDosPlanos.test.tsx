@@ -5,6 +5,7 @@ import { render, screen } from '@testing-library/react'
 import { MICRONUTRIENTES_ADEQUACAO } from '@/domain/adequacao.ts'
 import { sugerirParaCobrir } from '@/domain/cobrir.ts'
 import { comparativoDosPlanos, PLANOS, RECURSOS_EM_TODOS_OS_PLANOS, type IdRecurso } from '@/domain/conta.ts'
+import { criarAcompanhamento } from '@/domain/acompanhamento.ts'
 import { criarExemplo } from '@/domain/exemplo.ts'
 import { analisarAba } from '@/domain/importar/colunas.ts'
 import { lerPlanilha } from '@/domain/importar/lerPlanilha.ts'
@@ -15,6 +16,7 @@ import { criarMemorial } from '@/export/memorial-docx.ts'
 import { dadosEstruturados } from '@/seo/cabecalho.ts'
 import { armazenamentoLocal } from '@/ui/estado/armazenamentoLocal.ts'
 import { FolhaDieta } from '@/ui/exportar/FolhaDieta.tsx'
+import { LinkDoPaciente } from '@/ui/missoes/LinkDoPaciente.tsx'
 import { lerRota } from '@/ui/navegacao.ts'
 
 let n = 0
@@ -40,13 +42,22 @@ const PROVAS: Readonly<Record<IdRecurso, () => void>> = {
     expect(criarAconselhamento).toBeTypeOf('function')
     expect(criarMemorial).toBeTypeOf('function')
   },
-  logotipo: () => {
-    // Configurações grava o logotipo no perfil de qualquer conta; o plano impresso o usa, sem olhar a assinatura.
-    const logotipo = 'data:image/png;base64,iVBORw0KGgo='
-    gravarPerfil(armazenamentoLocal(), { ...PERFIL_VAZIO, logo: logotipo })
+  marca: () => {
+    // Spec marca-no-link (D-959, CA-1979): "Sua marca" grava a logo e a cor no perfil de qualquer conta; o link do paciente
+    // as mostra (a logo e a cor na ação) e o plano impresso usa a logo, sem olhar a assinatura.
+    expect(texto('marca')).toBe('Sua logo e sua cor no link do paciente; a logo também no plano impresso')
+    expect(lerRota('#/conta/marca')).toEqual({ tela: 'marca' })
+    const logotipo = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='
+    gravarPerfil(armazenamentoLocal(), { ...PERFIL_VAZIO, logo: logotipo, cor: '#3f5f2a' })
     const { caso, plano } = exemplo()
-    const { container } = render(<FolhaDieta caso={caso} plano={plano} />)
-    expect(container.querySelector(`img[src="${logotipo}"]`)).not.toBeNull()
+    const folha = render(<FolhaDieta caso={caso} plano={plano} />)
+    expect(folha.container.querySelector(`img[src="${logotipo}"]`)).not.toBeNull()
+    folha.unmount()
+    const link = render(
+      <LinkDoPaciente acompanhamento={criarAcompanhamento({ casoId: 'c', pacienteId: null, nome: 'Ana', missoes: missoesDoPlano(plano) })} marca={{ logo: logotipo, cor: '#3f5f2a' }} hoje="2026-10-29" naoSalvou={null} aoAlternar={() => undefined} />,
+    )
+    expect(link.container.querySelector(`img[src="${logotipo}"]`)).not.toBeNull()
+    expect(link.container.querySelector('.marca-da-nutricionista')).not.toBeNull()
   },
   'alimentos-proprios': () => {
     expect(lerRota('#/produtos')).toEqual({ tela: 'produtos' })

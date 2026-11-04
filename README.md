@@ -91,8 +91,8 @@ completo a qualquer momento; o contrário não, para não apagar medida já regi
 - **Exportar** — dieta para imprimir (vira PDF pelo próprio navegador), aconselhamento
   em Word no modelo do estágio, memorial de cálculo em Word e a tabela de adequação
   copiada para colar no Word.
-- **Configurações** — seu nome e registro na linha de responsabilidade, marca na folha
-  do paciente e backup em arquivo.
+- **Configurações** — seu nome e registro na linha de responsabilidade e backup em
+  arquivo. A logo e a cor do link do paciente ficam em Conta e assinatura › Sua marca.
 - **Dados na nuvem** — com conta, planos, pacientes, produtos, modelos e configurações ficam
   na nuvem, salvos na sua conta, e vão para lá sozinhos poucos segundos depois de cada mudança
   ("Salvo" / "Salvando…" no alto da tela). Dois aparelhos ao mesmo tempo se juntam item por
@@ -147,7 +147,7 @@ logo abaixo; depois siga a lista seguinte.
    `005-estudante.sql`, `006-verificacao.sql`, `007-painel-do-dono.sql`, `008-cartao-da-assinatura.sql`,
    `009-cobranca-em-producao.sql`, `010-seguranca-lote-1.sql`, `011-seguranca-lote-2.sql`, `012-dieta-no-link.sql` e
    `013-exclusao-de-conta.sql`. O `014-seguranca-lote-5.sql` roda depois de o administrador ativar o app autenticador no site (passo 4 da lista
-   seguinte).
+   seguinte). O `015-marca-no-link.sql` roda depois do 014.
 4. Publique as funções, trocando `<ref>` pelo código do projeto (o pedaço antes de `.supabase.co`
    na *Project URL*), e guarde o endereço do app no segredo `SITE_URL`:
    ```bash
@@ -228,6 +228,12 @@ Para funcionar de verdade, nesta ordem:
    (`npx supabase functions deploy limpar-comprovantes --no-verify-jwt --project-ref qmpljfjbdcrdbqutuvmg`). Perdeu
    o celular do app: rode as duas linhas do topo do 014 (a que apaga o app e a que tira a conta de todo aparelho),
    troque a senha em "Esqueci a senha" e ative o app de novo em Aprovações. Também pode rodar de novo.
+   Depois rode `supabase/015-marca-no-link.sql` (spec marca-no-link): cria a marca publicada (a logo e a cor de
+   "Sua marca", uma linha por conta, só a dona lê e grava) e faz a função do link do paciente devolver a marca junto
+   com as missões, sem dizer de quem é. Rode **antes** de publicar o site desta versão. Publicado antes, o site
+   continua funcionando, mas "Salvar" em Sua marca diz "Esta função ainda não está disponível. Tente de novo mais
+   tarde." e o link continua com a marca do MetaNutri. Também pode rodar de novo; se rodar o 004 ou o 012 de novo,
+   rode o 015 logo depois.
 5. **Mercado Pago.** Crie a aplicação e guarde o token como `MERCADOPAGO_ACCESS_TOKEN` e o segredo do webhook
    como `MERCADOPAGO_WEBHOOK_SECRET` (`npx supabase secrets set ... --project-ref qmpljfjbdcrdbqutuvmg`). Com o
    `008`, o `009` e o `011` rodados, e com o `MERCADOPAGO_WEBHOOK_SECRET` já guardado em *Edge Functions > Secrets* (a
