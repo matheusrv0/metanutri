@@ -109,8 +109,8 @@ LEIA-ME (DP-AT-9). Na tela, um componente por arquivo, em `src/ui/antropometria/
 | T5 | Duplicação | `src/domain/duplicar.ts`, `duplicar.test.ts` | CA-2466, CA-2467 | T4 |
 | T6 | Etapa 1 com protocolo novo | `src/ui/caso/CamposComposicao.tsx`, `PainelAntropometria.tsx`, `TelaCaso.tsx` (+ `etapa1Antropometria.test.tsx`) | CA-2406, CA-2468 | T4 |
 | T7 | Endereços e moldura | `src/ui/navegacao.ts`, `AreaDeTrabalho.tsx`, `layout/MenuLateral.tsx`, `pacientes/TelaPaciente.tsx`, `antropometria/TelaAntropometria.tsx`, `AbasDaFicha.tsx`, `BarraDaAvaliacao.tsx`, `avaliacoesDoPaciente.ts` (domínio) (+ testes) | CA-2400 a CA-2405, CA-2407 a CA-2409, CA-2469 | T4, T5 |
-| T8 | Imagens e ajuda | `public/imagens/antropometria/*.webp`, `THIRD_PARTY_NOTICES.md`, `src/ui/antropometria/ajudas.ts`, `AjudaDaMedida.tsx` (+ testes) | CA-2427 a CA-2429 | T7 |
-| T9 | Peso e estatura, estimativas e peso ideal | `CartaoPesoEstatura.tsx`, `PainelEstimar.tsx`, `PainelPesoIdeal.tsx`, `CampoMedida.tsx`, `textosDaAvaliacao.ts` (+ testes) | CA-2410 a CA-2415 | T8 |
+| T8 | Imagens e ajuda | `public/imagens/antropometria/*.webp`, `THIRD_PARTY_NOTICES.md`, `src/ui/antropometria/ajudas.ts`, `ajudaAberta.ts`, `AjudaDaMedida.tsx` (+ testes) | CA-2427 a CA-2429 | T7 |
+| T9 | Peso e estatura, estimativas e peso ideal | `CartaoPesoEstatura.tsx`, `PainelEstimar.tsx`, `PainelPesoIdeal.tsx`, `CampoMedida.tsx`, `textosDaAvaliacao.ts`, `VistaAvaliacao.tsx` (+ testes) | CA-2410 a CA-2415 | T8 |
 | T10 | Circunferências e diâmetros | `CartaoCircunferencias.tsx`, `LinhaDeMedida.tsx`, `CartaoDiametros.tsx` (+ testes) | CA-2416 a CA-2419 | T8 |
 | T11 | Dobras | `CartaoDobras.tsx`, `textosDaAvaliacao.ts` (+ testes) | CA-2420 a CA-2426 | T8 |
 | T12 | Resultado | `CartaoResultado.tsx`, `LinhaDoResultado.tsx`, `SeloDaSituacao.tsx`, `textosDaAvaliacao.ts` (+ testes) | CA-2430 a CA-2435, CB-1402 a CB-1406, CB-1411 | T7 |
@@ -172,6 +172,9 @@ protótipo, o caminho, a proporção, o texto alternativo e o crédito; `AjudaDa
 painel `role="dialog"`, Esc, foco de volta, no celular preso embaixo).
 
 ### T9 a T13 · A vista Avaliação
+
+`VistaAvaliacao.tsx` (da T7) recebe cada cartão na tarefa dele e guarda a ajuda aberta (`ajudaAberta.ts`, D-1461). As
+decisões de tela tomadas na implementação estão na SPEC, D-1461 a D-1469.
 
 Cada cartão com o seu teste de componente (Testing Library), pelos CA da tabela. `textosDaAvaliacao.ts` (puro, testado):
 `textoDoReal`, `textoDaFalta`, `detalheCurto`, `grupoDaLinha`, `tomDoNivel`, `linhaDoProtocolo`, `foraDaPopulacao`,

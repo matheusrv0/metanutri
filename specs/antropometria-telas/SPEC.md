@@ -153,6 +153,22 @@ Esta spec só descreve o que a F3 terá de cumprir (D-1460); nada dela é implem
 |---|---|---|
 | D-1460 | **"Enviar por e-mail"** (quando a infraestrutura do Resend entrar): um link com prazo de 7 dias para o documento, nunca o PDF anexado; o registro do envio na ficha; e-mail da ficha do paciente. Texto do protótipo: "Para <e-mail>. Vai um link para o documento, que vence em 7 dias. O PDF não segue anexado." e "Enviado para <e-mail> às hh:mm. O envio fica registrado na ficha." | Protótipo; pesquisa 7.3 ("link com expiração", LGPD arts. 37 e 46) |
 
+### Da implementação da vista Avaliação (04/11/2026)
+
+Decididas no "apenas faça", pelo protótipo e pelo motor, ao montar T8 a T13.
+
+| # | Decisão | Motivo |
+|---|---|---|
+| D-1461 | **Uma ajuda aberta por vez** na vista inteira, também as do cabeçalho ("Como usar a fita", "Como pinçar a dobra"). Tocar fora da ajuda também fecha, sem mexer no foco de quem foi tocado | D-1415; o painel fica por cima dos campos, e quem vai digitar no campo de baixo não deve precisar achar o "Fechar" |
+| D-1462 | **Campos do "Estimar altura e peso atual"**: só os que as equações da pessoa pedem, no lado da equação recomendada. Idoso (60 anos ou mais): altura do joelho, semienvergadura, braço relaxado e panturrilha do lado direito (Chumlea) e abdômen. Adulto: semienvergadura, braço relaxado e panturrilha do lado esquerdo (Rabito) e abdômen. Os campos gravam nos mesmos campos do plano que as circunferências usam. A estimativa mostrada é a primeira da ordem do motor que tem valor; sem nenhuma, a recomendada diz o que falta | D-1030 revista (lado de cada estudo) e D-1408 (os campos são os do plano). O protótipo pedia a altura do joelho também no adulto porque usava Chumlea 1994, que o motor deixou de fora |
+| D-1463 | **IMC-alvo apagado volta ao padrão** da compleição (ou do idoso), com a frase "Padrão da compleição ..." | D-1409: o IMC-alvo gravado `null` é o padrão |
+| D-1464 | **Ajuda da dobra peitoral pelo sexo** da ficha: homem, "na metade da distância"; mulher, "a um terço, mais perto da axila"; sem sexo, as duas numa frase | Pesquisa 1.4 (o app escolhe pelo sexo); CB-1411 (nenhum rótulo assume sexo) |
+| D-1465 | **Ajuda do bíceps pelo protocolo**: a de Durnin & Womersley com esse protocolo; a do ACSM nos outros | Protótipo; pesquisa 1.4 |
+| D-1466 | **A linha do protocolo** usa a fonte curta do motor, a população do motor sem a fonte entre parênteses e a faixa de idade da amostra ("mulheres dos EUA, de 18 a 55 anos"), e a conversão que o motor vai usar para aquela idade ("conversão de Siri", "conversão de Lohman"; sem idade, "conversão de Lohman até 19 anos e de Siri depois"). A nota embaixo junta o aviso fixo do protocolo (Faulkner), "Usa também o peso e a estatura." quando a equação pede, e "Os autores pedem cautela acima de 40 anos." quando o motor avisa | D-1412; a tela não inventa número de faixa que o motor não tem (os coeficientes por idade de Durnin & Womersley ficam no "ⓘ" da gordura) |
+| D-1467 | **Perfil de atividade sem escolha**: o gasto de repouso e a proteína dizem "Escolha o perfil de atividade." até a nutricionista escolher; a prioridade e a meta de perda não dependem dele | D-1435: o perfil nasce vazio. Calcular com um perfil que ninguém escolheu mudaria a equação (Cunningham 1980 ou 1991) em silêncio |
+| D-1468 | **"Levar para o plano"** grava o g/kg de peso atual da faixa sugerida (a própria faixa, quando a base é o peso atual) com 2 casas, e a frase "No plano de dd/mm como sugestão. Você ajusta lá." fica enquanto a meta de proteína do plano for essa | D-1421; a frase sai sozinha quando a meta muda em "Metas" |
+| D-1469 | **Energia sugerida da meta de perda** usa o gasto total do plano (`calcularEnergia`, com o fator, a fórmula e o gasto digitado do plano). Sem gasto calculado, a linha não aparece | D-1418 e CA-2443 |
+
 ## 3. Critérios de aceite
 
 ### Lugar e navegação
