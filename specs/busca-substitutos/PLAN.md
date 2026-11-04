@@ -48,6 +48,18 @@ opção do item aparece embaixo dele no plano, na folha, no link e no Word.
 | T10 | A opção da base ampliada e o uso da opção | `src/domain/tipos.ts` (a cópia do nome na opção), `src/domain/opcoesDoItem.ts`, `src/domain/plano.ts`, `src/domain/baseAmpliada.ts` (`planoUsaBaseAmpliada`), `src/domain/folhaDieta.ts`, `src/domain/dietaDoLink.ts`, `src/export/aconselhamento-docx.ts`, `src/domain/usoDaConta.ts` (`planosComAlimento`), `src/ui/plano/OpcoesDoItem.tsx`; testes: `opcaoDaBaseAmpliada.test.ts` (novo), `usoDaConta.test.ts` | CA-2130, CA-2131, CB-1110 | T9 |
 | T11 | Correções da revisão na tela | `src/ui/plano/PainelSubstitutos.tsx` (Esc na gaveta), `CartaoCandidato.tsx` e `JanelaComparar.tsx` (`aria-disabled`, "É o mesmo alimento"), `CalculadoraDeSubstituto.tsx`, `BuscaDeSubstitutos.tsx` (chave de 44 px no toque); testes: `painelSubstitutos.test.tsx`, `e2e/busca-substitutos.spec.ts` | CA-2132, CA-2133, CA-2134 | T10 |
 | T12 | Validação da revisão | `npm run check`, `npm run e2e` (com `busca-substitutos` e `planejador`), `npm run test:csp` e as sondas do revisor (`scratchpad/revisao-substitutos/sondas`) | todos | T11 |
+| T13 | Spec e plano da rodada 2 | `specs/busca-substitutos/SPEC.md`, `PLAN.md` | — | T12 |
+| T14 | A troca equivalente no mesmo grupo (A1) | `src/domain/prescritivel.ts` (`ehPoOuDesidratado`), `src/domain/trocas.ts` (só `export` do `macroDominante`), `src/domain/buscaDeSubstitutos.ts`; teste novo `src/domain/trocaEquivalente.test.ts` | CA-2136, CA-2137, CB-1111 | T13 |
+| T15 | "Outro nutriente" pelo teclado (M1) | `src/ui/plano/BuscaDeSubstitutos.tsx`; testes: `src/ui/plano/painelSubstitutos.test.tsx`, `e2e/busca-substitutos.spec.ts` | CA-2115, CA-2138 | T14 |
+| T16 | O queijo só com o ovo inteiro (M2) | `src/domain/grupoDeSubstituicao.ts` (+ teste) | CA-2112, CA-2139 | T15 |
+| T17 | A folha de verdade no CA-2129 (M3) | `src/domain/trocaRazoavel.test.ts` | CA-2129 | T16 |
+| T18 | O nome livre na troca razoável (B1) | `src/domain/trocas.ts` (a regex `NAO_EQUIVALE`); teste: `src/domain/trocaRazoavel.test.ts` | CA-2140 | T17 |
+| T19 | O foco depois de "Tirar" (B2) | `src/ui/plano/BuscaDeSubstitutos.tsx`, `src/ui/plano/OpcoesDoItem.tsx`, `src/ui/plano/LinhaItem.tsx` (o endereço do "Remover"); teste: `painelSubstitutos.test.tsx` | CA-2141 | T18 |
+| T20 | O botão desligado diz o alimento (B3) | `src/ui/plano/CartaoCandidato.tsx`; testes: `painelSubstitutos.test.tsx` (CA-2120, CA-2132, CA-2134 passam a ler o nome novo) | CA-2142 | T19 |
+| T21 | A variedade do mesmo alimento (B4) | `src/domain/trocas.ts` (só `export` do nome da variedade), `src/domain/buscaDeSubstitutos.ts`; teste: `trocaEquivalente.test.ts` | CA-2143 | T20 |
+| T22 | Fruta inteira primeiro (B5) | `src/domain/grupoDeSubstituicao.ts` (`ehSucoOuPolpaDeFruta` e a forma da fruta), `src/domain/buscaDeSubstitutos.ts` (a ordem); testes: `grupoDeSubstituicao.test.ts`, `trocaEquivalente.test.ts` | CA-2144 | T21 |
+| T23 | Café e chá como item (recomendação 2) | `src/domain/buscaDeSubstitutos.ts`; testes: `buscaDeSubstitutos.test.ts`, `painelSubstitutos.test.tsx` | CA-2145 | T22 |
+| T24 | Validação da rodada 2 | `npm run lint`, `npm run typecheck`, `npx vitest run --maxWorkers=4`; e2e `busca-substitutos` e `planejador` (`--workers=2`, cópia da configuração nas portas 4573/4576/4578); `npm run build`; `npm run test:csp` (com a trava); as sondas r2 e s1 a s8; prints da lista que abre sozinha (leite 150 ml, banana 100 g, arroz 150 g) em 1440 e 390 px | todos | T23 |
 
 ## Verificação de cada tarefa
 
@@ -62,8 +74,16 @@ opção do item aparece embaixo dele no plano, na folha, no link e no Word.
 ## Riscos e decisões para revisar
 
 0. **Revisão independente de 03/11/2026 (T9 a T12).** A D-1121 corrige a troca razoável na origem e **muda as trocas da
-   folha impressa** (a batata-doce volta a ser troca do arroz): ponto para a Mor. A D-1122 põe uma cópia do nome na
-   opção da base ampliada, além de segurar o plano até a base chegar.
+   folha impressa** em 12 alimentos (conferido na rodada 2 com a folha de verdade, 4 trocas pedidas e 2 mostradas):
+   almeirão, nabo e repolho crus passam a oferecer folha de mostarda; atemóia e banana pacova, caqui "chocolate"; e sete
+   pratos prontos (tapioca com manteiga, baião de dois, yakisoba…), macarrão à bolonhesa. Ponto para a Mor. A D-1122 põe
+   uma cópia do nome na opção da base ampliada, além de segurar o plano até a base chegar.
+
+   **Rodada 2 (T13 a T24).** A D-1125 tira da lista que abre sozinha o que não é troca equivalente (macro dominante,
+   energia de metade ao dobro, pó só por pó): a lista de alguns alimentos encurta (o pinhão fica quase sem candidato no
+   mesmo grupo, porque as castanhas são de gordura). A D-1130 corta a segunda variação do mesmo alimento (leite integral →
+   só um outro leite). A D-1132 troca a lista do café e do chá por uma frase. A recomendação 3 (pratos de café da manhã
+   contra almoço) fica para a próxima melhoria.
 
 1. **A coluna do Resumo do dia desce enquanto o painel está aberto (D-1116).** Pôr o painel exatamente no lugar dela
    exigiria mexer em `AreaDeTrabalho.tsx`, que dois ramos em andamento estão mudando. `TelaPlano` ocupa as duas colunas
