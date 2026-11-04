@@ -204,29 +204,55 @@ export const REMOVIDO = '[removido]'
  * crescia com o quadrado do tamanho (60 KB levavam 9 s).
  */
 const EMAIL =
-  /(?<![\p{L}\p{N}._%+-])[\p{L}\p{N}._%+-]+\s*(?:@|\[at\]|\(at\)|\{at\}|(?<![\p{L}\p{N}])arroba(?![\p{L}\p{N}]))\s*[\p{L}\p{N}-]+(?:\s*(?:\.|\[dot\]|\(dot\)|(?<![\p{L}\p{N}])ponto(?![\p{L}\p{N}]))\s*[\p{L}\p{N}-]+)+/giu
+  /(?<![\p{L}\p{N}._%+-])[\p{L}\p{N}._%+-]+\s*(?:@|\[at\]|\(at\)|\{at\}|\(arroba\)|\[arroba\]|(?<![\p{L}\p{N}])(?:arroba|at)(?![\p{L}\p{N}]))\s*[\p{L}\p{N}-]+(?:\s*(?:\.|\[dot\]|\(dot\)|\(ponto\)|\[ponto\]|(?<![\p{L}\p{N}])(?:ponto|dot)(?![\p{L}\p{N}]))\s*[\p{L}\p{N}-]+)+/giu
+/** D-1341: "fulana arroba gmail", sem o final, só com um provedor conhecido ("1 arroba de carne" fica). */
+const EMAIL_DE_PROVEDOR =
+  /(?<![\p{L}\p{N}._%+-])[\p{L}\p{N}._%+-]+\s*(?:\(arroba\)|\[arroba\]|(?<![\p{L}\p{N}])(?:arroba|at)(?![\p{L}\p{N}]))\s*(?:gmail|hotmail|outlook|yahoo|icloud|live|bol|uol|terra)(?![\p{L}\p{N}])/giu
+/** D-1341: "fulana@gmail", com a arroba colada nas duas palavras e sem o final. */
+const EMAIL_SEM_FINAL = /(?<![\p{L}\p{N}._%+-])[\p{L}\p{N}._%+-]+@[\p{L}\p{N}-]+/gu
 /** Perfil com @ ("@fulana.nutri"). */
 const PERFIL = /(?<![\p{L}\p{N}])@[\p{L}\p{N}._]{2,}/gu
-/** Endereço web com http ou www, e domínio com os finais comuns, com ou sem caminho ("instagram.com/x", "wa.me/55…"). */
-const ENDERECO_WEB = /(?:https?:\/\/|www\.)\S+/giu
-/** D-1337: também só no início de uma palavra, e nunca logo depois de "palavra." (cada ponto recomeçava a busca). */
-const DOMINIO =
-  /(?<![\p{L}\p{N}@-]|[\p{L}\p{N}-]\.)[\p{L}\p{N}-]+(?:\.[\p{L}\p{N}-]+)*\.(?:com|br|me|net|org|io|app|link|bio|site|info|co|ly|gl|ee|tv|page|online|store|shop)(?![\p{L}\p{N}])(?:\/\S*)?/giu
 /**
- * Sequência de algarismos com espaço, ponto, parênteses, barra, mais ou traço no meio. Com 8 ou mais algarismos é
- * telefone (com ou sem DDI), CPF, CEP ou data completa, e sai; "1.800 kcal" e "06:30" ficam (D-1331).
+ * D-1341: o perfil depois de "insta", "instagram", "ig" ou "tiktok", quando o nome tem ponto, sublinhado ou algarismo
+ * ("insta fulana.nutri"); "vê receitas no instagram todo dia" fica.
  */
-const SEQUENCIA_DE_ALGARISMOS = /[+(]?\d[\d\s().+/-]*\d/g
+const PERFIL_DEPOIS_DA_REDE = /(?<![\p{L}\p{N}])((?:insta(?:gram)?|ig|tiktok)\s*:?\s*)([\p{L}\p{N}._]{3,})/giu
+/** Endereço web com qualquer esquema (http, https, e o "hxxp" que disfarça, D-1341) ou www. */
+const ENDERECO_WEB = /(?:(?<![\p{L}\p{N}])[a-z]{2,10}:\/\/|www\.)\S+/giu
+/**
+ * Domínio com os finais comuns, com ou sem caminho ("instagram.com/x", "wa.me/55…"). D-1337: também só no início de uma
+ * palavra, e nunca logo depois de "palavra." (cada ponto recomeçava a busca).
+ */
+const DOMINIO =
+  /(?<![\p{L}\p{N}@-]|[\p{L}\p{N}-]\.)[\p{L}\p{N}-]+(?:\.[\p{L}\p{N}-]+)*\.(?:com|br|me|net|org|io|app|link|bio|site|info|co|ly|gl|ee|tv|page|online|store|shop|xyz|dev|blog|club|top|art|tech|live|life)(?![\p{L}\p{N}])(?:\/\S*)?/giu
+/** D-1341: a data por extenso ("12 de março de 1990"); "desde março de 2024" fica. */
+const DATA_POR_EXTENSO =
+  /(?<![\p{N}])\p{Nd}{1,2}\s*o?\s+de\s+(?:janeiro|fevereiro|mar[cç]o|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)\s+(?:de\s+)?\p{Nd}{4}(?![\p{N}])/giu
+/** D-1341: oito ou mais números escritos por extenso, seguidos ("nove oito sete seis cinco quatro três dois"). */
+const NUMERO_ESCRITO =
+  '(?:zero|um|uma|dois|duas|tr[eê]s|quatro|cinco|seis|meia|sete|oito|nove|dez|onze|doze|treze|quatorze|catorze|quinze|dezesseis|dezessete|dezoito|dezenove|vinte|trinta|quarenta|cinquenta|sessenta|setenta|oitenta|noventa)'
+const NUMEROS_POR_EXTENSO = new RegExp(`(?<![\\p{L}])${NUMERO_ESCRITO}(?:[\\s,;.\\-–—]+(?:e\\s+)?${NUMERO_ESCRITO}){7,}(?![\\p{L}])`, 'giu')
+/**
+ * Sequência de algarismos (de qualquer sistema, D-1341) com espaço, ponto, parênteses, barra, mais, traço, travessão,
+ * sublinhado ou ponto do meio no meio, ou vírgula colada no algarismo seguinte. Com 8 ou mais algarismos é telefone (com
+ * ou sem DDI), CPF, CEP ou data completa, e sai; "1.800 kcal", "06:30" e "100, 150 e 200 g" ficam (D-1331).
+ */
+const SEQUENCIA_DE_ALGARISMOS = /[+(]?\p{Nd}(?:[\p{Nd}\s().+/\-–—_·•]|,(?=\p{Nd}))*\p{Nd}/gu
 const MINIMO_DE_ALGARISMOS = 8
 
 /** Tira e-mail (inclusive por extenso), perfil com @, endereço web e sequência longa de algarismos do texto já em NFKC. */
 const tirarContato = (normal: string): string =>
   normal
     .replace(EMAIL, REMOVIDO)
+    .replace(EMAIL_DE_PROVEDOR, REMOVIDO)
+    .replace(EMAIL_SEM_FINAL, REMOVIDO)
     .replace(ENDERECO_WEB, REMOVIDO)
     .replace(DOMINIO, REMOVIDO)
     .replace(PERFIL, REMOVIDO)
-    .replace(SEQUENCIA_DE_ALGARISMOS, (trecho) => (trecho.replace(/\D/g, '').length >= MINIMO_DE_ALGARISMOS ? REMOVIDO : trecho))
+    .replace(PERFIL_DEPOIS_DA_REDE, (trecho, rede: string, nome: string) => (/[._\p{N}]/u.test(nome) ? `${rede}${REMOVIDO}` : trecho))
+    .replace(DATA_POR_EXTENSO, REMOVIDO)
+    .replace(NUMEROS_POR_EXTENSO, REMOVIDO)
+    .replace(SEQUENCIA_DE_ALGARISMOS, (trecho) => (trecho.replace(/\P{Nd}/gu, '').length >= MINIMO_DE_ALGARISMOS ? REMOVIDO : trecho))
 
 /**
  * D-1314 e D-1331, no pedido: o texto em NFKC e sem contato. A NFKC vale no texto inteiro: é ela que transforma os sinais

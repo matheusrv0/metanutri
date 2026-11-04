@@ -113,6 +113,60 @@ describe('D-1314 e CA-2311: a limpeza dos textos livres', () => {
   })
 })
 
+describe('CA-2394 e D-1341: os formatos novos de contato da revisão (rodada 2) não chegam à IA', () => {
+  const mensagemCom = (extra: string): string => {
+    const lido = limparPedido({ ...PEDIDO_BASE, rotina: { ...PEDIDO_BASE.rotina, extra } })
+    if (!lido.ok || lido.pedido.modo === 'uso') throw new Error('pedido')
+    return montarMensagem(lido.pedido)
+  }
+  /** O "Algo mais" já limpo, como foi na mensagem: nele não pode haver 8 algarismos de qualquer sistema. */
+  const algarismosDoAlgoMais = (mensagem: string): string =>
+    ((mensagem.split(/\r?\n/).find((l) => l.startsWith('<rotina>')) ?? '').split('Algo mais: ')[1] ?? '').replace(/\P{Nd}/gu, '')
+
+  it.each([
+    ['tel 11–98765–4321 (travessão curto)', '98765'],
+    ['tel 11—98765—4321 (travessão longo)', '98765'],
+    ['tel 11,98765,4321', '98765'],
+    ['tel 11_98765_4321', '98765'],
+    ['tel 11·98765·4321', '98765'],
+    ['tel onze nove oito sete seis cinco quatro três dois um', 'oito sete seis'],
+    ['zap: nove oito sete seis cinco, quatro três dois um', 'oito sete seis'],
+    ['tel ١١٩٨٧٦٥٤٣٢١ (algarismos arábicos)', '١١٩٨٧٦٥٤٣٢١'],
+    ['tel ११९८७६५४३२१ (devanágari)', '११९८७६५४३२१'],
+    ['email fulana(arroba)gmail(ponto)com', 'gmail'],
+    ['email fulana at gmail dot com', 'gmail dot com'],
+    ['email fulana arroba gmail', 'arroba gmail'],
+    ['email fulana@gmail', 'fulana'],
+    ['insta fulana.nutri', 'fulana.nutri'],
+    ['insta: fulana_nutri', 'fulana_nutri'],
+    ['site fulana.xyz', 'fulana.xyz'],
+    ['site hxxp://fulana.example', 'fulana.example'],
+    ['nasc 12 de março de 1990', 'março de 1990'],
+  ])('"%s"', (escrito, trecho) => {
+    const mensagem = mensagemCom(escrito)
+    expect(mensagem).not.toContain(trecho)
+    expect(algarismosDoAlgoMais(mensagem)).not.toMatch(/\p{Nd}{8}/u)
+    expect(mensagem).toContain(REMOVIDO)
+  })
+
+  it.each([
+    'meta de 1.800 kcal',
+    'entre 1500 e 1800 kcal',
+    'arroz 100, 150 e 200 g',
+    'perfil lipídico alterado',
+    'faz B12 1.000 mcg',
+    'vitamina D 50.000 UI semanal',
+    'vê receitas no instagram todo dia',
+    'instalou o app de dieta',
+    'comprou 1 arroba de carne no mês',
+    'acorda às seis e dorme às onze',
+    'desde março de 2024 sem glúten',
+    'pesa 72,3 kg e mede 1,65 m',
+  ])('o texto comum fica: "%s"', (texto) => {
+    expect(limparTexto(texto)).toBe(texto)
+  })
+})
+
 describe('CA-2390 e D-1337: a limpeza custa pouco em qualquer texto', () => {
   /** Folga larga para a máquina ocupada: sem a correção, cada caso levava segundos. */
   const POUCOS_MS = 50
@@ -135,6 +189,10 @@ describe('CA-2390 e D-1337: a limpeza custa pouco em qualquer texto', () => {
     ['"a@a." repetido', 'a@a.'.repeat(15_000)],
     ['algarismos com espaço', '1 '.repeat(30_000)],
     ['"a arroba " repetido', 'a arroba '.repeat(6_600)],
+    ['"um, " repetido', 'um, '.repeat(15_000)],
+    ['"uma dois um" sem fim', 'uma dois um sete '.repeat(3_500)],
+    ['"insta a_" repetido', 'insta a_'.repeat(7_500)],
+    ['"1–" e "1," repetidos', '1–1,'.repeat(15_000)],
     ['o caractere que a NFKC expande em 18', 'ﷺ'.repeat(20_000)],
   ]
 
