@@ -200,15 +200,18 @@ export const REMOVIDO = '[removido]'
 /**
  * E-mail, também escrito por extenso (D-1331): "fulana@gmail.com", "fulana @ gmail.com", "fulana[at]gmail.com",
  * "fulana arroba gmail ponto com". A parte depois da arroba precisa de um ponto (ou "ponto"): "1 arroba de carne" fica.
+ * D-1337: só começa no início de uma palavra; sem a âncora, cada letra de um texto longo recomeçava a busca e o tempo
+ * crescia com o quadrado do tamanho (60 KB levavam 9 s).
  */
 const EMAIL =
-  /[\p{L}\p{N}._%+-]+\s*(?:@|\[at\]|\(at\)|\{at\}|(?<![\p{L}\p{N}])arroba(?![\p{L}\p{N}]))\s*[\p{L}\p{N}-]+(?:\s*(?:\.|\[dot\]|\(dot\)|(?<![\p{L}\p{N}])ponto(?![\p{L}\p{N}]))\s*[\p{L}\p{N}-]+)+/giu
+  /(?<![\p{L}\p{N}._%+-])[\p{L}\p{N}._%+-]+\s*(?:@|\[at\]|\(at\)|\{at\}|(?<![\p{L}\p{N}])arroba(?![\p{L}\p{N}]))\s*[\p{L}\p{N}-]+(?:\s*(?:\.|\[dot\]|\(dot\)|(?<![\p{L}\p{N}])ponto(?![\p{L}\p{N}]))\s*[\p{L}\p{N}-]+)+/giu
 /** Perfil com @ ("@fulana.nutri"). */
 const PERFIL = /(?<![\p{L}\p{N}])@[\p{L}\p{N}._]{2,}/gu
 /** Endereço web com http ou www, e domínio com os finais comuns, com ou sem caminho ("instagram.com/x", "wa.me/55…"). */
 const ENDERECO_WEB = /(?:https?:\/\/|www\.)\S+/giu
+/** D-1337: também só no início de uma palavra, e nunca logo depois de "palavra." (cada ponto recomeçava a busca). */
 const DOMINIO =
-  /(?<![\p{L}\p{N}@])[\p{L}\p{N}-]+(?:\.[\p{L}\p{N}-]+)*\.(?:com|br|me|net|org|io|app|link|bio|site|info|co|ly|gl|ee|tv|page|online|store|shop)(?![\p{L}\p{N}])(?:\/\S*)?/giu
+  /(?<![\p{L}\p{N}@-]|[\p{L}\p{N}-]\.)[\p{L}\p{N}-]+(?:\.[\p{L}\p{N}-]+)*\.(?:com|br|me|net|org|io|app|link|bio|site|info|co|ly|gl|ee|tv|page|online|store|shop)(?![\p{L}\p{N}])(?:\/\S*)?/giu
 /**
  * Sequência de algarismos com espaço, ponto, parênteses, barra, mais ou traço no meio. Com 8 ou mais algarismos é
  * telefone (com ou sem DDI), CPF, CEP ou data completa, e sai; "1.800 kcal" e "06:30" ficam (D-1331).
@@ -227,10 +230,36 @@ export function limparTexto(texto: string): string {
     .replace(SEQUENCIA_DE_ALGARISMOS, (trecho) => (trecho.replace(/\D/g, '').length >= MINIMO_DE_ALGARISMOS ? REMOVIDO : trecho))
 }
 
+/** O índice (em unidades UTF-16) logo depois dos primeiros `n` caracteres de `texto`: o par de surrogates conta um. */
+function fimDosCaracteres(texto: string, n: number): number {
+  let i = 0
+  for (let k = 0; k < n && i < texto.length; k++) {
+    const alto = texto.charCodeAt(i)
+    const baixo = i + 1 < texto.length ? texto.charCodeAt(i + 1) : 0
+    i += alto >= 0xd800 && alto <= 0xdbff && baixo >= 0xdc00 && baixo <= 0xdfff ? 2 : 1
+  }
+  return i
+}
+
+/**
+ * D-1337: antes de limpar, o texto fica em 2 vezes o limite, voltando ao último espaço para não deixar meia palavra (o
+ * pedaço de um e-mail que a limpeza já não reconheceria). Assim a limpeza nunca trabalha mais que o dobro do campo.
+ */
+function cortePrevio(texto: string, limite: number): string {
+  const fim = fimDosCaracteres(texto, limite * 2)
+  if (fim >= texto.length) return texto
+  const corte = texto.slice(0, fim)
+  if (/\s/u.test(texto.charAt(fim))) return corte
+  const espaco = corte.search(/\s\S*$/u)
+  return espaco > 0 ? corte.slice(0, espaco) : corte
+}
+
 /** O texto limpo, sem controle, com os espaços normalizados e cortado no limite. Não texto vira vazio. */
 export function textoCurto(valor: unknown, limite: number): string {
   if (typeof valor !== 'string') return ''
-  const limpo = limparTexto(valor.replace(/[\p{Cc}\p{Cf}]+/gu, ' ').replace(/\s+/g, ' ').trim())
+  const junto = cortePrevio(valor, limite).replace(/[\p{Cc}\p{Cf}]+/gu, ' ').replace(/\s+/g, ' ').trim()
+  if (junto === '') return ''
+  const limpo = limparTexto(junto)
   return limpo.length <= limite ? limpo : limpo.slice(0, limite).trimEnd()
 }
 
@@ -268,11 +297,23 @@ const ehObjeto = (v: unknown): v is Readonly<Record<string, unknown>> => typeof 
 const numeroNaFaixa = (v: unknown, min: number, max: number): number | null => (typeof v === 'number' && Number.isFinite(v) && v >= min && v <= max ? v : null)
 const inteiroNaFaixa = (v: unknown, min: number, max: number): number | null => (Number.isInteger(v) ? numeroNaFaixa(v, min, max) : null)
 const lista = (v: unknown): readonly unknown[] => (Array.isArray(v) ? v : [])
+
+/** D-1337: lê a lista só até juntar `quantos` itens válidos; o resto nem passa pela limpeza. */
+function primeirosValidos<T>(v: unknown, quantos: number, ler: (item: unknown) => T | null): readonly T[] {
+  const saida: T[] = []
+  for (const item of lista(v)) {
+    if (saida.length >= quantos) break
+    const lido = ler(item)
+    if (lido !== null) saida.push(lido)
+  }
+  return saida
+}
+
 const textos = (v: unknown, cadaUm: number, quantos: number): readonly string[] =>
-  lista(v)
-    .map((t) => textoCurto(t, cadaUm))
-    .filter((t) => t !== '')
-    .slice(0, quantos)
+  primeirosValidos(v, quantos, (t) => {
+    const curto = textoCurto(t, cadaUm)
+    return curto === '' ? null : curto
+  })
 const HORARIO = /^([01]\d|2[0-3]):[0-5]\d$/
 
 /** Ids de alimento: a TACO e a base ampliada (1 a 199.999) e os próprios (900.000 em diante). */
@@ -374,14 +415,14 @@ function refeicoes(v: unknown): readonly RefeicaoIa[] | null {
 }
 
 function meuAlimento(v: unknown): MeuAlimentoIa | null {
-  if (!ehObjeto(v)) return null
-  const id = ehIdDeAlimento(v['id']) ? v['id'] : null
+  if (!ehObjeto(v) || !ehIdDeAlimento(v['id'])) return null
+  const id = v['id']
   const nome = textoCurto(v['nome'], LIMITES_DO_PEDIDO.nomeDoAlimento)
   const kcal = numeroNaFaixa(v['kcal'], 0, 900)
   const p = numeroNaFaixa(v['p'], 0, 100)
   const c = numeroNaFaixa(v['c'], 0, 100)
   const g = numeroNaFaixa(v['g'], 0, 100)
-  if (id === null || nome === '' || kcal === null || p === null || c === null || g === null) return null
+  if (nome === '' || kcal === null || p === null || c === null || g === null) return null
   return { id, nome, grupo: textoCurto(v['grupo'], LIMITES_DO_PEDIDO.grupo), unidade: v['unidade'] === 'ml' ? 'ml' : 'g', kcal, p, c, g }
 }
 
@@ -398,23 +439,19 @@ function itemDoPlano(v: unknown, refeicoesNoPedido: number): ItemDoPlanoIa | nul
 
 function lacunas(v: unknown): LacunasIa | null {
   if (!ehObjeto(v)) return null
-  const abaixo = lista(v['abaixo'])
-    .flatMap((a) => {
-      if (!ehObjeto(a)) return []
-      const nutriente = textoCurto(a['nutriente'], LIMITES_DO_PEDIDO.foco)
-      const pct = numeroNaFaixa(a['pct'], 0, 1000)
-      if (nutriente === '' || pct === null) return []
-      const candidatos = lista(a['candidatos'])
-        .flatMap((cand) => {
-          if (!ehObjeto(cand) || !ehIdDeAlimento(cand['alimentoId'])) return []
-          const gramas = numeroNaFaixa(cand['gramas'], 1, 1000)
-          const coberturaPct = numeroNaFaixa(cand['coberturaPct'], 0, 100)
-          return gramas === null || coberturaPct === null ? [] : [{ alimentoId: cand['alimentoId'], gramas, coberturaPct }]
-        })
-        .slice(0, LIMITES_DO_PEDIDO.candidatos)
-      return [{ nutriente, pct, candidatos }]
+  const abaixo = primeirosValidos(v['abaixo'], LIMITES_DO_PEDIDO.lacunasAbaixo, (a) => {
+    if (!ehObjeto(a)) return null
+    const pct = numeroNaFaixa(a['pct'], 0, 1000)
+    const nutriente = pct === null ? '' : textoCurto(a['nutriente'], LIMITES_DO_PEDIDO.foco)
+    if (nutriente === '' || pct === null) return null
+    const candidatos = primeirosValidos(a['candidatos'], LIMITES_DO_PEDIDO.candidatos, (cand) => {
+      if (!ehObjeto(cand) || !ehIdDeAlimento(cand['alimentoId'])) return null
+      const gramas = numeroNaFaixa(cand['gramas'], 1, 1000)
+      const coberturaPct = numeroNaFaixa(cand['coberturaPct'], 0, 100)
+      return gramas === null || coberturaPct === null ? null : { alimentoId: cand['alimentoId'], gramas, coberturaPct }
     })
-    .slice(0, LIMITES_DO_PEDIDO.lacunasAbaixo)
+    return { nutriente, pct, candidatos }
+  })
   return {
     energiaPct: numeroNaFaixa(v['energiaPct'], 0, 1000),
     macros: textos(v['macros'], LIMITES_DO_PEDIDO.aviso, LIMITES_DO_PEDIDO.macros),
@@ -443,17 +480,11 @@ export function limparPedido(corpo: unknown): PedidoLido {
   const r = refeicoes(corpo['refeicoes'])
   if (p === null || m === null || r === null) return INVALIDO
   const naoUsar = [...new Set(lista(corpo['naoUsar']).filter(ehIdDeAlimento))].sort((a, b) => a - b).slice(0, LIMITES_DO_PEDIDO.naoUsar)
-  const meus = lista(corpo['meusAlimentos'])
-    .map(meuAlimento)
-    .filter((a): a is MeuAlimentoIa => a !== null)
-    .slice(0, LIMITES_DO_PEDIDO.meusAlimentos)
+  const meus = primeirosValidos(corpo['meusAlimentos'], LIMITES_DO_PEDIDO.meusAlimentos, meuAlimento)
   let plano: readonly ItemDoPlanoIa[] | null = null
   let faltas: LacunasIa | null = null
   if (modo === 'ajustar') {
-    plano = lista(corpo['plano'])
-      .map((i) => itemDoPlano(i, r.length))
-      .filter((i): i is ItemDoPlanoIa => i !== null)
-      .slice(0, LIMITES_DO_PEDIDO.itensDoPlano)
+    plano = primeirosValidos(corpo['plano'], LIMITES_DO_PEDIDO.itensDoPlano, (i) => itemDoPlano(i, r.length))
     if (plano.length === 0) return INVALIDO
     faltas = lacunas(corpo['lacunas'])
   }

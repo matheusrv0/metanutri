@@ -113,6 +113,63 @@ describe('D-1314 e CA-2311: a limpeza dos textos livres', () => {
   })
 })
 
+describe('CA-2390 e D-1337: a limpeza custa pouco em qualquer texto', () => {
+  /** Folga larga para a máquina ocupada: sem a correção, cada caso levava segundos. */
+  const POUCOS_MS = 50
+  const medir = (fazer: () => unknown): number => {
+    const inicio = performance.now()
+    fazer()
+    return performance.now() - inicio
+  }
+  const SESSENTA_KB: readonly (readonly [string, string])[] = [
+    ['letras', 'a'.repeat(60_000)],
+    ['"a." repetido', 'a.'.repeat(30_000)],
+    ['"a-." repetido', 'a-.'.repeat(20_000)],
+    ['"a@" repetido', 'a@'.repeat(30_000)],
+    ['"a@a." repetido', 'a@a.'.repeat(15_000)],
+    ['algarismos com espaço', '1 '.repeat(30_000)],
+    ['"a arroba " repetido', 'a arroba '.repeat(6_600)],
+    ['o caractere que a NFKC expande em 18', 'ﷺ'.repeat(20_000)],
+  ]
+
+  it.each(SESSENTA_KB)('60 KB de %s num campo: poucos milissegundos e o campo no limite', (_, texto) => {
+    let lido: ReturnType<typeof limparPedido> | null = null
+    const ms = medir(() => {
+      lido = limparPedido({ ...PEDIDO_BASE, rotina: { ...PEDIDO_BASE.rotina, extra: texto } })
+    })
+    expect(ms).toBeLessThan(POUCOS_MS)
+    const pedido = limpo({ ...PEDIDO_BASE, rotina: { ...PEDIDO_BASE.rotina, extra: texto } })
+    expect([...pedido.rotina.extra].length).toBeLessThanOrEqual(300)
+    expect(lido).not.toBeNull()
+  })
+
+  it.each(SESSENTA_KB)('limparTexto em 60 KB de %s também cresce em linha reta (e-mail e domínio ancorados)', (_, texto) => {
+    expect(medir(() => limparTexto(texto))).toBeLessThan(POUCOS_MS * 4)
+  })
+
+  it('uma lista com milhares de itens para de ser lida no máximo', () => {
+    const muitos = Array.from({ length: 12_000 }, (_, i) => `x${i}`)
+    let pedido: PedidoDeSugestao | null = null
+    const ms = medir(() => {
+      pedido = limpo({ ...PEDIDO_BASE, restricoes: { avisos: muitos, textos: muitos, naoGosta: muitos, cuidados: muitos } })
+    })
+    expect(ms).toBeLessThan(POUCOS_MS)
+    expect(pedido).not.toBeNull()
+    const lido = limpo({ ...PEDIDO_BASE, restricoes: { avisos: muitos, textos: muitos, naoGosta: muitos, cuidados: muitos } })
+    expect(lido.restricoes.avisos).toHaveLength(20)
+    expect(lido.restricoes.naoGosta).toHaveLength(30)
+    expect(lido.restricoes.naoGosta[0]).toBe('x0')
+  })
+
+  it('o corte antes de limpar não deixa meia palavra no fim', () => {
+    // Limite 20, corte prévio em 40: o 40º caractere cai no meio do e-mail. Sem voltar ao espaço, "fulan" chegaria à IA,
+    // porque o endereço web antes dele encolhe para "[removido]".
+    expect(textoCurto(`https://x.com/${'a'.repeat(20)} fulana@gmail.com`, 20)).toBe(REMOVIDO)
+    // Sem espaço nenhum, o corte é seco.
+    expect(textoCurto('x'.repeat(30), 10)).toBe('x'.repeat(10))
+  })
+})
+
 describe('limparPedido', () => {
   it('CA-2311: reescreve só o que é conhecido; o resto some', () => {
     const corpo = {
