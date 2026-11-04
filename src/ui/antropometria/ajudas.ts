@@ -57,7 +57,7 @@ export const IMAGENS = {
   cotovelo: imagem('diametro-cotovelo-posicao-cdc-1988', '385 / 800', 'Posição do braço para o diâmetro do cotovelo', cdc(1988, 'Mostra só a posição do braço.')),
   triceps: imagem('dobra-triceps-foto-cdc-2007', '524 / 600', 'Adipômetro na dobra do tríceps', cdc(2007)),
   subescapular: imagem('dobra-subescapular-foto-cdc-2005', '653 / 583', 'Adipômetro na dobra subescapular', cdc(2005)),
-  suprailiaca: imagem('dobra-suprailiaca-local-cdc-1988', '576 / 800', 'Local da dobra supra-ilíaca na linha axilar média', cdc(1988), { marca: { x: '32%', y: '70.5%' } }),
+  suprailiaca: imagem('dobra-suprailiaca-local-cdc-1988', '576 / 800', 'Local da dobra suprailíaca na linha axilar média', cdc(1988), { marca: { x: '32%', y: '70.5%' } }),
   coxaPonto: imagem('coxa-ponto-medio-cdc-2005', '500 / 800', 'Ponto médio da coxa entre a prega inguinal e a patela', cdc(2005, 'Mostra o ponto; não mostra o adipômetro.')),
   panturrilhaDobra: imagem('circ-panturrilha-cdc-2005', '488 / 800', 'Altura da maior circunferência da panturrilha', cdc(2005, 'Mostra a altura; não mostra a dobra.')),
   pincamento: imagem('dobra-tecnica-pincamento-diagrama-cdc-2005', '800 / 493', 'Corte da dobra: pele e gordura pinçadas, separadas do músculo', cdc(2005, 'Pele e gordura (skin, fat) pinçadas acima do músculo (muscle).'), { altura: 'media' }),
@@ -124,13 +124,18 @@ export const AJUDAS = {
   subescapular: { titulo: 'Subescapular', texto: 'Oblíqua, a 45° descendo para fora, logo abaixo do ângulo inferior da escápula.', imagem: IMAGENS.subescapular },
   peitoralDobraMulher: { titulo: 'Peitoral', texto: 'Diagonal, a um terço da distância entre a linha axilar anterior e o mamilo, mais perto da axila.' },
   peitoralDobraHomem: { titulo: 'Peitoral', texto: 'Diagonal, na metade da distância entre a linha axilar anterior e o mamilo.' },
+  /** D-1464: sem o sexo na ficha, as duas linhas da pesquisa (1.4) numa frase. */
+  peitoralDobraSemSexo: {
+    titulo: 'Peitoral',
+    texto: 'Diagonal, entre a linha axilar anterior e o mamilo: na metade da distância no homem; a um terço, mais perto da axila, na mulher.',
+  },
   axilarMedia: { titulo: 'Axilar média', texto: 'Vertical, na linha axilar média, na altura do apêndice xifoide.' },
   suprailiacaAnt: {
     titulo: 'Suprailíaca · linha axilar anterior',
     texto: 'Oblíqua, logo acima da crista ilíaca, na linha axilar anterior, acompanhando o ângulo natural do osso. É a de Jackson & Pollock.',
   },
   suprailiacaMed: {
-    titulo: 'Supra-ilíaca · linha axilar média',
+    titulo: 'Suprailíaca · linha axilar média',
     texto: 'Oblíqua, logo acima da crista ilíaca, na linha axilar média. É a de Durnin & Womersley; o círculo marca o local.',
     imagem: IMAGENS.suprailiaca,
   },

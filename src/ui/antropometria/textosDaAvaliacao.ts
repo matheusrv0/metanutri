@@ -1,8 +1,9 @@
 // Os textos da vista Avaliação (spec antropometria-telas, D-1407 a D-1421): o que a tela escreve a partir do motor.
 // Nenhum número é calculado aqui; só formatado nas casas que o motor manda.
 import type { ErroDaEstimativa, LadoUsado } from '@/domain/estimativas.ts'
-import type { CampoQueFalta } from '@/domain/linhaDoResultado.ts'
+import { medidaValida, type CampoQueFalta } from '@/domain/linhaDoResultado.ts'
 import type { PesoIdeal } from '@/domain/pesoDeReferencia.ts'
+import { conversaoDoProtocolo, protocoloPorId, type DobraCutanea, type Dobras, type IdProtocolo, type Protocolo, type VarianteDoProtocolo } from '@/domain/protocolosDeDobras.ts'
 import type { OrigemDasMedidas, Sexo } from '@/domain/tipos.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
 
@@ -66,3 +67,86 @@ export function fraseDoImcAlvo(origem: PesoIdeal['origemDoImcAlvo'], compleicao:
 
 /** "53,5 a 72,2 kg". */
 export const faixaEmKg = (min: number, max: number): string => `${formatarNumero(min, 1)} a ${formatarNumero(max, 1)} kg`
+
+// --- Dobras (D-1412, D-1413 e D-1466) -----------------------------------------------------------------------------
+
+/** "mulheres dos EUA (Jackson, Pollock e Ward, 1980)" sem a fonte entre parênteses, mais a faixa de idade da amostra. */
+function populacao(v: VarianteDoProtocolo): string {
+  const semFonte = v.populacao.replace(/\s*\([^)]*\)\s*$/, '')
+  return v.idade ? `${semFonte}, de ${v.idade.min} a ${v.idade.max} anos` : semFonte
+}
+
+/** A conversão que o motor vai usar para a idade (D-1009 e D-1466). */
+function textoDaConversao(protocolo: Protocolo, v: VarianteDoProtocolo, idadeAnos: number | null): string {
+  if (v.saida === 'gordura') return 'dá a gordura direto'
+  const conversao = conversaoDoProtocolo(protocolo, {})
+  if (conversao === 'siri') return 'conversão de Siri'
+  if (conversao === 'brozek') return 'conversão de Brozek'
+  if (idadeAnos === null) return 'conversão de Lohman até 19 anos e de Siri depois'
+  if (idadeAnos >= 20) return 'conversão de Siri'
+  return idadeAnos >= 7 ? 'conversão de Lohman' : 'conversão de Lohman, que começa aos 7 anos'
+}
+
+export interface SobreOProtocolo {
+  /** "Jackson, Pollock e Ward, 1980 · mulheres dos EUA, de 18 a 55 anos · conversão de Siri". */
+  readonly linha: string
+  /** O aviso fixo do protocolo e as notas da equação; vazio = sem nota. */
+  readonly nota: string
+  /** "Fora da população de origem: homens dos EUA, de 18 a 61 anos."; dentro dela (ou sem idade), `null`. */
+  readonly fora: string | null
+}
+
+/** O quadro do protocolo escolhido (D-1412 e D-1466); sem sexo ou com um id desconhecido, `null`. */
+export function sobreOProtocolo(id: IdProtocolo, sexo: Sexo | null, idadeAnos: number | null): SobreOProtocolo | null {
+  const protocolo = protocoloPorId(id)
+  if (!protocolo || sexo === null) return null
+  const v = protocolo.porSexo[sexo]
+  const notas = [
+    protocolo.aviso,
+    v.entradas.includes('peso') && v.entradas.includes('estatura') ? 'Usa também o peso e a estatura.' : null,
+    (id === 'jackson-pollock-3' || id === 'jackson-pollock-7') && sexo === 'F' && idadeAnos !== null && idadeAnos > 40 ? 'Os autores pedem cautela acima de 40 anos.' : null,
+  ].filter((n) => n !== null)
+  const fora = v.idade !== null && idadeAnos !== null && (idadeAnos < v.idade.min || idadeAnos > v.idade.max) ? `Fora da população de origem: ${populacao(v)}.` : null
+  return { linha: `${v.fonte.curta} · ${populacao(v)} · ${textoDaConversao(protocolo, v, idadeAnos)}`, nota: notas.join(' '), fora }
+}
+
+export interface DobraNaTela {
+  readonly chave: DobraCutanea
+  readonly nome: string
+  /** Exigida pelo protocolo: o ponto e "(usada no protocolo)"; as outras ficam apagadas (D-1412). */
+  readonly marcada: boolean
+}
+
+/** As 10 dobras do protótipo, na ordem dele; a supraespinal e a suprailíaca de antes só com valor (D-1412). */
+const ORDEM_DAS_DOBRAS: readonly { readonly chave: DobraCutanea; readonly nome: string; readonly soComValor?: true }[] = [
+  { chave: 'tricipital', nome: 'Tríceps' },
+  { chave: 'bicipital', nome: 'Bíceps' },
+  { chave: 'subescapular', nome: 'Subescapular' },
+  { chave: 'peitoral', nome: 'Peitoral' },
+  { chave: 'axilarMedia', nome: 'Axilar média' },
+  { chave: 'suprailiacaAnt', nome: 'Suprailíaca · axilar anterior' },
+  { chave: 'suprailiacaMed', nome: 'Suprailíaca · axilar média' },
+  { chave: 'suprailiaca', nome: 'Suprailíaca · linha não informada', soComValor: true },
+  { chave: 'abdominal', nome: 'Abdominal' },
+  { chave: 'coxa', nome: 'Coxa' },
+  { chave: 'panturrilhaMedial', nome: 'Panturrilha medial' },
+  { chave: 'supraespinal', nome: 'Supraespinal', soComValor: true },
+]
+
+/**
+ * As dobras da tela e as marcadas (D-1412 e D-1413). A suprailíaca marcada é a da linha do protocolo; nos que não
+ * registram a linha (Guedes, Faulkner), a de linha não informada quando ela tem valor, senão a da axilar média.
+ * `mostrar` diz se a dobra que só aparece com valor continua à vista (a que a pessoa apagou nesta sessão).
+ */
+export function dobrasNaTela(id: IdProtocolo, sexo: Sexo | null, dobras: Dobras, mostrar: (chave: DobraCutanea) => boolean = () => false): DobraNaTela[] {
+  const protocolo = protocoloPorId(id)
+  const exigidas = protocolo && sexo !== null ? protocolo.porSexo[sexo].dobras : []
+  const marcadas = new Set<DobraCutanea>(exigidas.map((d) => (d === 'suprailiaca' && medidaValida(dobras.suprailiaca) === null ? 'suprailiacaMed' : d)))
+  return ORDEM_DAS_DOBRAS.filter((d) => !d.soComValor || medidaValida(dobras[d.chave]) !== null || mostrar(d.chave)).map((d) => ({ chave: d.chave, nome: d.nome, marcada: marcadas.has(d.chave) }))
+}
+
+/** "As 7 dobras marcadas entram no protocolo. As outras ficam guardadas." ou "Faltam 2 das 7 dobras marcadas ..." (D-1412). */
+export function fraseDasDobras(exigidas: number, faltam: number): string {
+  if (faltam === 0) return `As ${exigidas} dobras marcadas entram no protocolo. As outras ficam guardadas.`
+  return `${faltam === 1 ? 'Falta 1' : `Faltam ${faltam}`} das ${exigidas} dobras marcadas para calcular a gordura.`
+}

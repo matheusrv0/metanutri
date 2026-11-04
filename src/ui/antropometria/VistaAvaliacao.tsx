@@ -4,6 +4,7 @@ import type { Caso } from '@/domain/tipos.ts'
 import { ContextoDaAjudaAberta } from './ajudaAberta.ts'
 import { CartaoCircunferencias } from './CartaoCircunferencias.tsx'
 import { CartaoDiametros } from './CartaoDiametros.tsx'
+import { CartaoDobras } from './CartaoDobras.tsx'
 import { CartaoPesoEstatura } from './CartaoPesoEstatura.tsx'
 
 interface VistaAvaliacaoProps {
@@ -29,6 +30,7 @@ export function VistaAvaliacao({ caso, bruto, paciente, aoAlterar }: VistaAvalia
           <CartaoPesoEstatura caso={caso} bruto={bruto} aoAlterar={aoAlterar} />
           <CartaoCircunferencias bruto={bruto} aoAlterar={aoAlterar} />
           <CartaoDiametros bruto={bruto} aoAlterar={aoAlterar} />
+          <CartaoDobras caso={caso} bruto={bruto} aoAlterar={aoAlterar} />
         </div>
         <div className="flex min-w-0 flex-col gap-6" />
       </div>
