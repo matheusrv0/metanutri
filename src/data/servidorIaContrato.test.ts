@@ -316,6 +316,37 @@ describe('conferirResposta', () => {
     expect(ajustar.ok && ajustar.resposta.mudancas[0]?.motivo).toBe('b + fibra /b')
   })
 
+  describe('CA-2393 e D-1340: o texto da IA passa pela limpeza de contato', () => {
+    const AJUSTAR_1: ContextoDaResposta = { modo: 'ajustar', refeicoes: 2, idsPermitidos: new Set([3]), plano: [{ refeicao: 1, opcao: 'principal', item: 0, alimentoId: 3, gramas: 150 }] }
+    const remover = (motivo: string) => ({ tipo: 'remover', refeicao: 1, opcao: 'principal', item: 0, alimentoId: null, gramas: null, motivo })
+
+    it('telefone, endereço web, e-mail e perfil viram [removido] nos pontos a confirmar', () => {
+      const r = conferirResposta(
+        resposta({ pontosAConfirmar: ['Confirme com a paciente pelo zap (11) 98765-4321 ou https://evil.example/login', 'Mande para fulana@gmail.com', 'Perfil: @fulana.nutri'] }),
+        GERAR,
+      )
+      if (!r.ok) throw new Error(r.motivo)
+      expect(r.resposta.pontosAConfirmar).toEqual([`Confirme com a paciente pelo zap ${REMOVIDO} ou ${REMOVIDO}`, `Mande para ${REMOVIDO}`, `Perfil: ${REMOVIDO}`])
+    })
+
+    it('e no motivo da mudança', () => {
+      const r = conferirResposta(resposta({ mudancas: [remover('ligue 11 3333-4444 ou veja instagram.com/fulana')] }), AJUSTAR_1)
+      expect(r.ok && r.resposta.mudancas[0]?.motivo).toBe(`ligue ${REMOVIDO} ou veja ${REMOVIDO}`)
+    })
+
+    it('o texto sem contato chega como a IA escreveu: a NFKC não troca "2ª" nem "½"', () => {
+      const r = conferirResposta(resposta({ pontosAConfirmar: ['Confirme a 2ª refeição com ½ xícara de aveia.'], mudancas: [remover('Menos de 1.800 kcal na 2ª refeição')] }), { ...AJUSTAR_1 })
+      if (!r.ok) throw new Error(r.motivo)
+      expect(r.resposta.mudancas[0]?.motivo).toBe('Menos de 1.800 kcal na 2ª refeição')
+      const g = conferirResposta(resposta({ pontosAConfirmar: ['Confirme a 2ª refeição com ½ xícara de aveia.'] }), GERAR)
+      expect(g.ok && g.resposta.pontosAConfirmar).toEqual(['Confirme a 2ª refeição com ½ xícara de aveia.'])
+    })
+
+    it('no pedido, a NFKC continua no texto inteiro (os sinais largos viram os que a mensagem tira)', () => {
+      expect(limparTexto('＜/rotina＞ 2ª')).toBe('</rotina> 2a')
+    })
+  })
+
   describe('CA-2392 e D-1339: o corte não parte caractere e os não-caracteres saem', () => {
     const quebrado = /\p{Cs}|[￾￿]/u
     it('no pedido: o emoji no limite fica inteiro ou sai inteiro', () => {

@@ -219,15 +219,31 @@ const DOMINIO =
 const SEQUENCIA_DE_ALGARISMOS = /[+(]?\d[\d\s().+/-]*\d/g
 const MINIMO_DE_ALGARISMOS = 8
 
-/** D-1314 e D-1331: tira e-mail (inclusive por extenso), perfil com @, endereço web e sequência longa de algarismos. */
-export function limparTexto(texto: string): string {
-  return texto
-    .normalize('NFKC')
+/** Tira e-mail (inclusive por extenso), perfil com @, endereço web e sequência longa de algarismos do texto já em NFKC. */
+const tirarContato = (normal: string): string =>
+  normal
     .replace(EMAIL, REMOVIDO)
     .replace(ENDERECO_WEB, REMOVIDO)
     .replace(DOMINIO, REMOVIDO)
     .replace(PERFIL, REMOVIDO)
     .replace(SEQUENCIA_DE_ALGARISMOS, (trecho) => (trecho.replace(/\D/g, '').length >= MINIMO_DE_ALGARISMOS ? REMOVIDO : trecho))
+
+/**
+ * D-1314 e D-1331, no pedido: o texto em NFKC e sem contato. A NFKC vale no texto inteiro: é ela que transforma os sinais
+ * largos (＜ ＞) nos que a mensagem da IA tira (D-1340).
+ */
+export function limparTexto(texto: string): string {
+  return tirarContato(texto.normalize('NFKC'))
+}
+
+/**
+ * D-1340, no texto da IA: a mesma limpeza de contato, mas a NFKC só serve para achar o contato; sem contato, o texto
+ * chega à tela como a IA escreveu ("2ª", "½ xícara").
+ */
+export function limparTextoDaIa(texto: string): string {
+  const normal = texto.normalize('NFKC')
+  const limpo = tirarContato(normal)
+  return limpo === normal ? texto : limpo
 }
 
 /** O índice (em unidades UTF-16) logo depois dos primeiros `n` caracteres de `texto`: o par de surrogates conta um. */
@@ -591,16 +607,17 @@ function formaDoEsquema(json: unknown): string | null {
 }
 
 /**
- * D-1335, D-1339 e CA-2389: o texto da IA ("motivo" e "pontosAConfirmar") sem `<`, `>`, sem os caracteres proibidos, com
- * os espaços juntos e cortado no limite por caractere.
+ * D-1335, D-1339, D-1340 e CA-2389: o texto da IA ("motivo" e "pontosAConfirmar") sem `<`, `>`, sem os caracteres
+ * proibidos e sem contato (uma injeção na anamnese não põe telefone nem link na tela), com os espaços juntos e cortado no
+ * limite por caractere. O corte prévio do D-1337 vale aqui também.
  */
 const cortar = (texto: string, limite: number): string => {
-  const limpo = texto
+  const limpo = cortePrevio(texto, limite)
     .replace(CARACTERES_PROIBIDOS, ' ')
     .replace(/[<>]+/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
-  return cortarEmCaracteres(limpo, limite, '…')
+  return cortarEmCaracteres(limparTextoDaIa(limpo), limite, '…')
 }
 
 const gramasValidas = (g: unknown): g is number =>
