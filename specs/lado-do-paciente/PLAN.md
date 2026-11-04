@@ -497,8 +497,14 @@ conflito).
 - `npx vitest run --maxWorkers=4`: 7.400 testes em 408 arquivos; 7.399 verdes e 1 que estourou o tempo de 20 s com a
   máquina cheia (`src/domain/trocas.test.ts`, CA-921, de fora desta frente e sem mudança neste ramo), verde rodando
   sozinho (46 de 46).
-- e2e dos arquivos mexidos, na configuração normal, com a `trava-e2e` e `--workers=2`: verdes (os 9 de
-  `lado-do-paciente.spec.ts`, os 147 dos arquivos do link e da marca).
+- e2e completo, na configuração normal (portas 4173, 4176 e 4178), com a `trava-e2e` e `--workers=2`: **501 de 501**
+  (20,6 min).
+- `npm run test:csp` (com a `trava-csp`): 3 de 3.
+- `npm run test:seguranca` (com a `trava-ataques`): **340 de 340** em 11 arquivos, com os 29 do núcleo dos avisos (T18).
+  Numa rodada anterior, às 10:01, com a máquina cheia (o build e o fim do Vitest ao mesmo tempo), 3 testes do
+  `enviar-link` e o preparo do `webhook-resend` responderam 503 ("Não foi possível enviar agora"); o arquivo sozinho
+  (29 de 29) e a suíte inteira de novo (340 de 340) passaram sem mudança nenhuma. Fica anotado como intermitente com a
+  máquina carregada: o envio ao Resend tem prazo (`PRAZO_DO_RESEND_MS`), e a falha cai no "fora".
 
 **Achados da validação, corrigidos:**
 - **Os e2e de sempre esperavam a tela de antes.** O agente anterior viu 37 falhas numa cópia do e2e com outras portas
