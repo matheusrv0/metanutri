@@ -1,9 +1,10 @@
 // Spec busca-substitutos, D-1108 e seção 3: o grupo de substituição de cada alimento ("Só do mesmo grupo").
 import arquivo from '../data/base-ampliada.json'
 import { decodificarBaseAmpliada, type ArquivoBaseAmpliada } from './baseAmpliada.ts'
+import { buscarSubstitutos } from './buscaDeSubstitutos.ts'
 import { grupoDeSubstituicao, noMesmoGrupo } from './grupoDeSubstituicao.ts'
-import { buscarAlimento, registrarBaseAmpliada } from './tabelas.ts'
-import type { Alimento } from './tipos.ts'
+import { alimentosParaSugerir, buscarAlimento, registrarBaseAmpliada } from './tabelas.ts'
+import type { Alimento, ChaveNutrienteAlimento } from './tipos.ts'
 
 const BASE = decodificarBaseAmpliada(arquivo as unknown as ArquivoBaseAmpliada)
 
@@ -81,6 +82,33 @@ describe('D-1108: "Só do mesmo grupo", com as regras de forma das trocas', () =
     // O queijo troca com o ovo inteiro, nunca com a gema.
     expect(noMesmoGrupo(porId(461))(porId(488))).toBe(true)
     expect(noMesmoGrupo(porId(461))(porId(487))).toBe(false)
+  })
+
+  it('CA-2112 e CA-2139 (revisão rodada 2, M2): o queijo só troca com o ovo inteiro, nos dois sentidos', () => {
+    const queijos = [461, 469]
+    for (const queijo of queijos) {
+      // No lugar do queijo: o ovo inteiro, nem a clara nem a gema.
+      expect(noMesmoGrupo(porId(queijo))(porId(488))).toBe(true)
+      expect(noMesmoGrupo(porId(queijo))(porId(486))).toBe(false)
+      expect(noMesmoGrupo(porId(queijo))(porId(487))).toBe(false)
+      // No lugar do ovo: o queijo só no do inteiro.
+      expect(noMesmoGrupo(porId(488))(porId(queijo))).toBe(true)
+      expect(noMesmoGrupo(porId(486))(porId(queijo))).toBe(false)
+      expect(noMesmoGrupo(porId(487))(porId(queijo))).toBe(false)
+    }
+    // Queijo por queijo continua.
+    expect(noMesmoGrupo(porId(461))(porId(469))).toBe(true)
+  })
+
+  it('CA-2139: na busca, clara por proteína e gema por lipídeos sem nenhum queijo; o ovo inteiro com queijo', () => {
+    const queijos = (id: number, nutriente: ChaveNutrienteAlimento, gramas = 100) => {
+      const r = buscarSubstitutos({ alimentoId: id, gramas }, { nutrientes: [nutriente], mesmoGrupo: true, alimentos: alimentosParaSugerir(), limite: 1000 }, buscarAlimento)
+      if (r.tipo !== 'lista') throw new Error(r.motivo)
+      return r.candidatos.filter((c) => /^Queijo,/.test(c.alimento.descricao.trim())).map((c) => c.alimento.descricao)
+    }
+    expect(queijos(486, 'proteina_g')).toEqual([])
+    expect(queijos(487, 'lipideos_g')).toEqual([])
+    expect(queijos(488, 'lipideos_g', 50).length).toBeGreaterThan(0)
   })
 
   it('CA-2112: verdura cozida só por verdura cozida', () => {

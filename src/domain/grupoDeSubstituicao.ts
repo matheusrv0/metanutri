@@ -57,13 +57,13 @@ export function grupoDeSubstituicao(a: Alimento): GrupoDeSubstituicao {
 
 /**
  * A forma do ovo, entre ovos: ovo inteiro só por ovo inteiro, gema só por gema, clara só por clara (duas gemas não são um ovo,
- * D-194). O queijo, que divide o grupo com o ovo, troca com o ovo inteiro.
+ * D-194). O queijo, que divide o grupo com o ovo, troca só com o ovo inteiro, nos dois sentidos (D-1108, revisão rodada
+ * 2, M2): a clara cozida por proteína pedia 135 g de requeijão.
  */
 function mesmaFormaDoOvo(base: Alimento, a: Alimento): boolean {
-  const daBase = formaDoOvo(base)
-  const doCandidato = formaDoOvo(a)
-  if (doCandidato === null) return true
-  return doCandidato === (daBase ?? 'inteiro')
+  const daBase = formaDoOvo(base) ?? 'inteiro'
+  const doCandidato = formaDoOvo(a) ?? 'inteiro'
+  return doCandidato === daBase
 }
 
 /**
