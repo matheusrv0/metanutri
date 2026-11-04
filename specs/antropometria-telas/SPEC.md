@@ -506,6 +506,24 @@ Tomadas sob o "apenas faça", pelos princípios da Mor e do dono, onde a spec e 
 - **CB-1446** · **App no tema escuro:** a prévia e o PDF saem no papel claro (`.papel`).
 - **CB-1447** · **Ficha sem nascimento:** a linha "Nascimento" não sai; a idade do plano, quando houver, sai como "Idade".
 
+### Correções de 04/11 (CB-1448 a CB-1453)
+
+Pedidas pelo dono depois da vista Avaliação (T8 a T13).
+
+- **CB-1448** · **"Duplicar" e "Nova avaliação" entre 21h e 0h (Brasília):** a cópia leva o dia do relógio de quem usa,
+  nunca o do UTC (que já é amanhã nesse horário). Vale também para a CA-2403.
+- **CB-1449** · **Lactante adulta:** a proteína diz o motivo do motor ("Nenhuma fonte conferida trata da proteína na
+  lactação."), como a meta de perda (CA-2445); a tela não tem texto próprio para isso.
+- **CB-1450** · **IMC-alvo digitado e proteína com IMC de 30 ou mais:** na base "Peso ideal", a proteína usa o IMC-alvo
+  que a nutricionista digitou em "Estimar peso ideal"; apagado, o padrão (D-1409, D-1463). Os dois mostram o mesmo peso
+  ideal.
+- **CB-1451** · **Datas para gente:** nenhuma tela da antropometria escreve AAAA-MM-DD; a data é dd/mm/aaaa (ou dd/mm
+  onde o protótipo encurta). A barra lateral mostra o nome do plano como foi gravado; o app não põe data no nome.
+- **CB-1452** · **A lista "Avaliação de dd/mm/aaaa" de 360 a 412 px:** o texto inteiro à vista, sem reticências.
+- **CB-1453** · **Texto da tela = texto do protótipo.** O que o protótipo aprovado não mostra (citação longa, selo de
+  evidência repetido, aviso de método) não fica solto na tela: sai ou vai para a ajuda ("ⓘ") do item. A fonte científica
+  continua no código e nesta spec, e a ajuda a mostra inteira.
+
 ## 5. O que fica para a Mor e para o dono
 
 Listado também no PLAN, seção "Para a Mor".

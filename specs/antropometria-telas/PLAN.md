@@ -117,10 +117,14 @@ LEIA-ME (DP-AT-9). Na tela, um componente por arquivo, em `src/ui/antropometria/
 | T13 | Ponto de partida | `CartaoPontoDePartida.tsx`, `BlocoProteina.tsx`, `BlocoMetaDePerda.tsx`, `textosDaAvaliacao.ts` (+ testes) | CA-2436 a CA-2445 | T3, T12 |
 | T14 | `GraficoLinha` no design system | `design-system/componentes/display/GraficoLinha.tsx`, `index.ts`, `vitrine/TelaDesignSystem.tsx`, `componentes/LEIA-ME.md`, `DESIGN.md` (contagem) (+ teste) | (D-1426, D-1487) | T2 |
 | T15 | Histórico: o domínio | `src/domain/historicoAntropometrico.ts` (+ teste) | CA-2449 a CA-2455 (lógica), D-1480 a D-1488, CB-1440 a CB-1443 | T4 |
-| T16 | Histórico: a tela | `VistaHistorico.tsx` (a da T7), `CartaoEvolucao.tsx`, `CartaoMudancaMinima.tsx`, `TabelaAvaliacoes.tsx`, `textosDoHistorico.ts` (+ testes) | CA-2449 a CA-2456, CB-1412 | T14, T15 |
+| T16 | Histórico: a tela | `VistaHistorico.tsx` (a da T7), `CartaoEvolucao.tsx`, `CartaoMudancaMinima.tsx`, `TabelaAvaliacoes.tsx`, `BarraDaAvaliacao.tsx` e `TelaAntropometria.tsx` (no Histórico, o resumo no lugar da lista, como o protótipo) (+ testes) | CA-2449 a CA-2456, CB-1412 | T14, T15 |
 | T17 | Documento: o domínio | `src/domain/documentoDaAvaliacao.ts` (+ teste) | CA-2458 a CA-2461 e CA-2463 (lógica), D-1490 a D-1498, CB-1444, CB-1447 | T4, T15 |
-| T18 | Documento: a prévia e o papel | `DialogoDocumentoAvaliacao.tsx`, `FolhaAvaliacao.tsx`, `textosDoDocumento.ts`, `TelaAntropometria.tsx` (o botão e a janela), `AreaDeTrabalho.tsx` (passa quem assina e o bloqueio) (+ testes) | CA-2457 a CA-2463, D-1489, D-1499, CB-1445, CB-1446 | T17 |
-| T19 | Celular e pior caso | os componentes da tela (correções), `break-ui` | CA-2470 a CA-2472, CB-1407 a CB-1409, CB-1417 | T9 a T18 |
+| T18 | Documento: a prévia e o papel | `DialogoDocumentoAvaliacao.tsx`, `FolhaAvaliacao.tsx`, `TelaAntropometria.tsx` (o botão e a janela), `AreaDeTrabalho.tsx` (passa quem assina e o bloqueio) (+ testes) | CA-2457 a CA-2463, D-1489, D-1499, CB-1445, CB-1446 | T17 |
+| C1 | Data local no "Duplicar" e na "Nova avaliação" | `src/domain/persistencia.ts` (+ teste em `persistencia.test.ts`) | CB-1448, CA-2403 | — |
+| C2 | Motivo da proteína na lactação | `src/domain/pontoDePartida.ts`, `BlocoProteina.tsx`, `CartaoPontoDePartida.tsx` (+ testes) | CB-1449, CA-2445 | — |
+| C3 | IMC-alvo digitado na proteína | `src/domain/pontoDePartida.ts` (+ teste por fórmula) | CB-1450 | — |
+| C4 | Datas para gente em dd/mm/aaaa | conferência das telas; os dados dos prints | CB-1451 | — |
+| T19 | Celular, pior caso e texto do protótipo | os componentes da tela (correções), `BarraDaAvaliacao.tsx` (a lista a 390 px), `CartaoPontoDePartida.tsx`, `BlocoProteina.tsx`, `BlocoMetaDePerda.tsx` e os outros cartões com texto fora do protótipo, `break-ui` | CA-2470 a CA-2472, CB-1407 a CB-1409, CB-1417, CB-1452, CB-1453 | T9 a T18, C1 a C4 |
 | T20 | Ponta a ponta da F1 | `e2e/antropometria.spec.ts` (1440 e 390 px) | CA-2400, CA-2410, CA-2421, CA-2430, CA-2449, CA-2457, CA-2470, CA-2471 | T19 |
 | T21 | Fotos: o domínio | `src/domain/fotosDaAvaliacao.ts` (+ teste) | CA-2481 a CA-2484 (lógica) | T4 |
 | T22 | SQL 018 e ataques | `supabase/018-fotos-avaliacao.sql`, `src/data/sqlFotosAvaliacao.test.ts`, `testes/seguranca/fotos.test.ts`, `preparo.ts`, `tabelas.test.ts` | CA-2488 | T21 |
@@ -185,17 +189,30 @@ Cada cartão com o seu teste de componente (Testing Library), pelos CA da tabela
 `historicoAntropometrico(avaliacoes)`: linhas (valor por data), variações com a leitura (MMD do motor), séries dos
 gráficos (sem `null`), leitura em frase, marcas de "mesmo protocolo/ponto". A tela desenha.
 
-Feitas no ramo `antropometria-historico`, em paralelo com a T8 a T13 (ramo `antropometria-telas`). Por isso os textos
-da tela ficam em `textosDoHistorico.ts` e `textosDoDocumento.ts`, e não em `textosDaAvaliacao.ts` (da T9 a T13), e o
-documento monta a tabela "Indicador | Valor | Referência | Classificação" direto do motor (`resultadoAntropometrico`),
-sem o `CartaoResultado` da T12. Conflito previsto no merge: `TelaAntropometria.tsx` (o botão "Gerar documento" e a
-janela) e `AreaDeTrabalho.tsx` (duas props), linhas acrescentadas em pontos diferentes.
+Feitas no ramo `antropometria-historico`, que agora parte da ponta da T13 (`antropometria-telas`, rebase de 04/11).
+Os textos do Histórico vêm prontos do domínio (`historicoAntropometrico`); a tela só desenha, sem arquivo de textos
+próprio. No Histórico, a barra mostra o resumo ("4 avaliações · de ... a ...") no lugar da lista, como o protótipo.
+
+O documento usa as peças reais da T12: `apresentarLinha` (o valor nas casas do motor, a recomendação, o selo ou o que
+falta) e `SeloDaSituacao` na tabela "Resultados". A `LinhaDoResultado` da tela não vai ao papel: ela leva o "ⓘ", que é
+botão. Os nomes da tabela são os do protótipo do documento (DP-AT-8, D-1491).
 
 ### T17 e T18 · Documento
 
 `documentoDaAvaliacao(entrada)`: os blocos com o que tem dado, as referências sem repetir, o tipo da avaliação, a
 comparação, o rascunho do diagnóstico. A prévia dentro de `.area-impressao` com `.folha-documento papel`; "Salvar em
 PDF" chama `window.print()`.
+
+### C1 a C4 · Correções do dono (04/11)
+
+- **C1** · `repositorio.duplicar` data a cópia com `diaLocal` (o relógio de quem usa), como `criarPlano`; teste às 21h30
+  de Brasília (00h30 UTC do dia seguinte).
+- **C2** · `proteinaPorObjetivo` devolve, na lactante adulta, `{ calculou: false, motivo }` com o motivo do motor, como
+  `metaDePerda`; a tela mostra o motivo do motor e perde o texto próprio.
+- **C3** · `proteinaPorObjetivo` repassa `caso.avaliacao.imcAlvo` a `pesoDeReferencia`; teste pela fórmula (IMC-alvo ×
+  estatura² × g/kg).
+- **C4** · Nenhuma tela escreve AAAA-MM-DD; o nome do plano na barra lateral é o gravado, e os prints usam o nome que o
+  app dá.
 
 ### T19 e T20 · Celular, pior caso e ponta a ponta
 
