@@ -129,3 +129,51 @@ partir da exportação oficial (https://static.openfoodfacts.org/data/en.openfoo
 Facts (https://world.openfoodfacts.org) sob a Open Database License (ODbL) v1.0; conteúdos individuais sob a Database
 Contents License (DbCL) v1.0. Os arquivos publicados são um banco derivado, oferecido sob a mesma ODbL, com o aviso
 `LICENCA.txt` ao lado; ficam separados da TACO e do USDA.
+
+## Imagens da ajuda da antropometria (CDC/NCHS, domínio público; Navazob, CC BY 4.0)
+
+As 15 imagens de `public/imagens/antropometria/`, mostradas no "?" de cada medida da avaliação antropométrica (spec
+antropometria-telas, D-1415). Foram só reduzidas (até 800 px no lado maior) e convertidas para WebP; nenhum conteúdo
+foi alterado, recortado ou traduzido. O crédito de cada uma aparece também embaixo da imagem, na própria ajuda.
+
+**CDC/NCHS.** Obras do governo federal dos EUA, em domínio público (17 U.S.C. §105). A política de reuso do CDC
+(https://www.cdc.gov/other/agencymaterials.html) pede a fonte, que o material também está disponível de graça no site
+da agência e que o uso não sugira endosso. Crédito mostrado no app: "Fonte: CDC/NCHS – NHANES Anthropometry
+Procedures Manual (ano). Domínio público; disponível gratuitamente em cdc.gov. O uso não implica endosso do CDC."
+Manuais:
+
+- 1988: NHANES III Anthropometric Procedures Manual, https://wwwn.cdc.gov/nchs/data/nhanes3/manuals/anthro.pdf
+- 2005: NHANES Body Measurements (Anthropometry) Manual, 2005–2006,
+  https://wwwn.cdc.gov/nchs/data/nhanes/public/2005/manuals/BM.pdf
+- 2007: NHANES Anthropometry Procedures Manual, 2007–2008,
+  https://wwwn.cdc.gov/nchs/data/nhanes/public/2007/manuals/manual_an.pdf
+- 2021: NHANES 2021 Anthropometry Procedures Manual,
+  https://wwwn.cdc.gov/nchs/data/nhanes/public/2021/manuals/2021-Anthropometry-Procedures-Manual-508.pdf
+
+| Arquivo | Medida | Origem (página do PDF) | Licença |
+|---|---|---|---|
+| `altura-estadiometro-posicao-cdc-2021.webp` | Estatura | Manual de 2021, p. 35, Exhibit 3-4 "Standing height position" | Domínio público (CDC/NCHS) |
+| `altura-joelho-cdc-1988.webp` | Altura do joelho | Manual de 1988, p. 26, Exhibit 3-4 "SP position for knee height" | Domínio público (CDC/NCHS) |
+| `circ-braco-relaxado-cdc-2021.webp` | Braço relaxado | Manual de 2021, p. 46, Exhibit 3-17 "Adult arm circumference" | Domínio público (CDC/NCHS) |
+| `circ-cintura-crista-iliaca-foto-cdc-2021.webp` | Cintura na crista ilíaca (NIH) | Manual de 2021, p. 48, Exhibit 3-20 "Measuring tape position for waist circumference" | Domínio público (CDC/NCHS) |
+| `circ-quadril-foto-cdc-2021.webp` | Quadril | Manual de 2021, p. 49, Exhibit 3-21 "Measuring tape position for hip (buttocks) circumference" | Domínio público (CDC/NCHS) |
+| `circ-panturrilha-cdc-2005.webp` | Panturrilha (fita e altura da dobra) | Manual de 2005, p. 28, Exhibit 3-3 "Measuring tape position for maximal calf circumference" | Domínio público (CDC/NCHS) |
+| `circ-coxa-medial-cdc-2005.webp` | Coxa média | Manual de 2005, p. 34, Exhibit 3-6 "Measuring tape position for thigh circumference" | Domínio público (CDC/NCHS) |
+| `coxa-ponto-medio-cdc-2005.webp` | Dobra da coxa (o ponto) | Manual de 2005, p. 27, Exhibit 3-2 "SP position for upper leg length location and upper leg midpoint" | Domínio público (CDC/NCHS) |
+| `diametro-cotovelo-posicao-cdc-1988.webp` | Diâmetro do cotovelo (a posição) | Manual de 1988, p. 38, Exhibit 3-11 "SP position for elbow breadth" | Domínio público (CDC/NCHS) |
+| `dobra-subescapular-foto-cdc-2005.webp` | Dobra subescapular | Manual de 2005, p. 41, Exhibit 3-13 "Correct placement of caliper jaws (subscapular skinfold)" | Domínio público (CDC/NCHS) |
+| `dobra-suprailiaca-local-cdc-1988.webp` | Dobra supra-ilíaca, linha axilar média | Manual de 1988, p. 37, Exhibit 3-10 "Location of suprailiac skinfold" | Domínio público (CDC/NCHS) |
+| `dobra-tecnica-pincamento-diagrama-cdc-2005.webp` | Como pinçar a dobra | Manual de 2005, p. 36, Exhibit 3-7 "Diagram of a skinfold measurement" | Domínio público (CDC/NCHS) |
+| `dobra-triceps-foto-cdc-2007.webp` | Dobra do tríceps | Manual de 2007, p. 50, Exhibit 3-13 "Triceps skinfold measurement" | Domínio público (CDC/NCHS) |
+
+**Navazob, Wikimedia Commons.** Licença Creative Commons Atribuição 4.0 Internacional (CC BY 4.0),
+https://creativecommons.org/licenses/by/4.0/deed.pt-br. Crédito mostrado no app: "Foto: Navazob / Wikimedia Commons,
+CC BY 4.0." com o link da licença. Alteração: reduzida e convertida para WebP.
+
+| Arquivo | Medida | Origem | Licença |
+|---|---|---|---|
+| `peso-balanca-navazob.webp` | Peso | "Balanza para pesar de pie", Navazob (obra própria), https://commons.wikimedia.org/wiki/File:Balanza_para_pesar_de_pie.jpg | CC BY 4.0 |
+| `fita-antropometrica-navazob.webp` | A fita das circunferências | "Cintas métricas", Navazob (obra própria), https://commons.wikimedia.org/wiki/File:Cintas_m%C3%A9tricas.jpg | CC BY 4.0 |
+
+Para refazer os arquivos (spec antropometria-telas, DP-AT-19): Pillow, `Image.thumbnail((800, 800))` e
+`save(..., 'WEBP', quality=82, method=6)`, a partir dos originais listados acima.
