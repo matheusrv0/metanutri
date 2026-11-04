@@ -1,7 +1,10 @@
-import { useCallback, useMemo, type ReactNode } from 'react'
+import { useCallback, useMemo, useState, type ReactNode } from 'react'
 import { diaLocal } from '@/domain/acompanhamento.ts'
+import type { AssinaturaDoPlano } from '@/domain/assinaturaDoPlano.ts'
 import { avaliacoesDoPaciente, type AvaliacaoNaLista } from '@/domain/avaliacoesDoPaciente.ts'
+import { propostaNaDieta } from '@/domain/documentoDoPaciente.ts'
 import { casoComFicha } from '@/domain/fichaNoPlano.ts'
+import { assinaturaDaFolha } from '@/domain/folhaDieta.ts'
 import { avaliacoesParaHistorico, historicoAntropometrico } from '@/domain/historicoAntropometrico.ts'
 import type { Paciente } from '@/domain/pacientes.ts'
 import type { CasoSalvo } from '@/domain/persistencia.ts'
@@ -15,6 +18,7 @@ import type { PassoTrilha } from '../layout/Cabecalho.tsx'
 import type { Rota, VistaDaAntropometria } from '../navegacao.ts'
 import { AbasDaFicha } from './AbasDaFicha.tsx'
 import { BarraDaAvaliacao } from './BarraDaAvaliacao.tsx'
+import { DialogoDocumentoAvaliacao } from './DialogoDocumentoAvaliacao.tsx'
 import { VistaAvaliacao } from './VistaAvaliacao.tsx'
 import { VistaHistorico } from './VistaHistorico.tsx'
 
@@ -36,6 +40,10 @@ interface TelaAntropometriaProps {
   readonly moldura: MolduraDaTela
   /** D-1405: começa a avaliação nova do paciente (o retorno da mais recente, ou um plano completo novo). */
   readonly aoNovaAvaliacao: (pacienteId: string) => void
+  /** Quem assina o documento (D-1431, D-1495); `null` sem ninguém. */
+  readonly assinatura?: AssinaturaDoPlano | null | undefined
+  /** A exportação bloqueada pelo CRN (CA-290): "Gerar documento" fica desligado com este motivo (CA-2462). */
+  readonly bloqueio?: string | null | undefined
   /** Injetável no teste: a idade da ficha na data da avaliação e o "hoje". */
   readonly agora?: Date | undefined
 }
@@ -67,7 +75,8 @@ function useAvaliacoes(pacienteId: string | null): readonly AvaliacaoNaLista[] {
  * A tela "Avaliação antropométrica" (spec antropometria-telas, D-1400 a D-1405): a avaliação é o plano completo do
  * paciente, lido e gravado pelo mesmo caminho da etapa 1 (salva a cada mudança). Vista Avaliação ou Histórico.
  */
-export function TelaAntropometria({ rota, navegar, moldura, aoNovaAvaliacao, agora = new Date() }: TelaAntropometriaProps) {
+export function TelaAntropometria({ rota, navegar, moldura, aoNovaAvaliacao, assinatura = null, bloqueio = null, agora = new Date() }: TelaAntropometriaProps) {
+  const [documentoAberto, abrirDocumento] = useState(false)
   const { pacientes } = usePacientes()
   const pacienteDaRota = rota.tela === 'antropometria-do-paciente' ? rota.pacienteId : null
   const daRota = useAvaliacoes(pacienteDaRota)
@@ -137,13 +146,21 @@ export function TelaAntropometria({ rota, navegar, moldura, aoNovaAvaliacao, ago
   const historico = vista === 'historico' && paciente ? historicoAntropometrico(avaliacoesParaHistorico(avaliacoes, paciente, hoje)) : null
   const irParaVista = (nova: VistaDaAntropometria) => navegar({ tela: 'antropometria', casoId: registro.caso.id, vista: nova })
 
-  // O histórico começa a próxima avaliação; a vista Avaliação gera o documento (D-1405, D-1429).
-  const acoes =
-    vista === 'historico' && paciente ? (
-      <Button size="sm" onClick={() => aoNovaAvaliacao(paciente.id)}>
-        Nova avaliação
+  // "Gerar documento" nas duas vistas; o Histórico começa a próxima avaliação (D-1405, D-1429, D-1489).
+  const idDoBloqueio = `bloqueio-documento-${registro.caso.id}`
+  const acoes = (
+    <>
+      <Button size="sm" variant="outline" disabled={bloqueio !== null} aria-describedby={bloqueio ? idDoBloqueio : undefined} onClick={() => abrirDocumento(true)}>
+        Gerar documento
       </Button>
-    ) : null
+      {vista === 'historico' && paciente ? (
+        <Button size="sm" onClick={() => aoNovaAvaliacao(paciente.id)}>
+          Nova avaliação
+        </Button>
+      ) : null}
+    </>
+  )
+  const dataDaAvaliacao = registro.caso.dataConsulta ?? registro.atualizadoEm.slice(0, 10)
 
   return moldura(
     { titulo, trilha, acoes },
@@ -153,7 +170,7 @@ export function TelaAntropometria({ rota, navegar, moldura, aoNovaAvaliacao, ago
       <BarraDaAvaliacao
         avaliacoes={paciente ? avaliacoes : null}
         casoId={registro.caso.id}
-        data={registro.caso.dataConsulta ?? registro.atualizadoEm.slice(0, 10)}
+        data={dataDaAvaliacao}
         aoEscolherAvaliacao={(id) => navegar({ tela: 'antropometria', casoId: id, vista })}
         resumo={historico?.resumo ?? null}
         modalidade={registro.caso.avaliacao.modalidade}
@@ -161,6 +178,25 @@ export function TelaAntropometria({ rota, navegar, moldura, aoNovaAvaliacao, ago
         vista={vista}
         aoMudarVista={paciente ? irParaVista : null}
       />
+      {bloqueio ? (
+        <p id={idDoBloqueio} className="text-xs text-warningtext print:hidden">
+          {bloqueio}
+        </p>
+      ) : null}
+      {documentoAberto ? (
+        <DialogoDocumentoAvaliacao
+          entrada={{
+            atual: { casoId: registro.caso.id, data: dataDaAvaliacao, caso },
+            avaliacoes: paciente ? avaliacoesParaHistorico(avaliacoes, paciente, hoje) : [],
+            paciente,
+            hoje,
+          }}
+          assinatura={assinaturaDaFolha(assinatura, registro.caso)}
+          proposta={propostaNaDieta(assinatura, registro.caso)}
+          aoAlterar={alterarAvaliacao}
+          aoFechar={() => abrirDocumento(false)}
+        />
+      ) : null}
       {historico ? (
         <VistaHistorico historico={historico} />
       ) : (

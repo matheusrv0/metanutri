@@ -271,7 +271,7 @@ export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pe
           </p>,
         )}
       >
-        <TelaAntropometria rota={rota} navegar={navegar} moldura={moldura} aoNovaAvaliacao={novaAvaliacao} />
+        <TelaAntropometria rota={rota} navegar={navegar} moldura={moldura} aoNovaAvaliacao={novaAvaliacao} assinatura={quemAssina} bloqueio={bloqueio} />
       </Suspense>
     )
   }
