@@ -2,6 +2,7 @@ import { useCallback, useMemo, type ReactNode } from 'react'
 import { diaLocal } from '@/domain/acompanhamento.ts'
 import { avaliacoesDoPaciente, type AvaliacaoNaLista } from '@/domain/avaliacoesDoPaciente.ts'
 import { casoComFicha } from '@/domain/fichaNoPlano.ts'
+import { avaliacoesParaHistorico, historicoAntropometrico } from '@/domain/historicoAntropometrico.ts'
 import type { Paciente } from '@/domain/pacientes.ts'
 import type { CasoSalvo } from '@/domain/persistencia.ts'
 import type { Caso, DadosDaAvaliacao } from '@/domain/tipos.ts'
@@ -132,6 +133,8 @@ export function TelaAntropometria({ rota, navegar, moldura, aoNovaAvaliacao, ago
   const titulo = paciente ? paciente.nome.trim() || 'Paciente sem nome' : registro.caso.nome.trim() || 'Plano sem nome'
   const trilha = paciente ? [irParaPacientes] : [{ rotulo: 'Planos', aoClicar: () => navegar({ tela: 'casos' }) }]
   const linha = linhaDaPessoa(caso, paciente)
+  // D-1425: o Histórico só se monta na vista dele; o resumo vai para a barra, no lugar da lista (como o protótipo).
+  const historico = vista === 'historico' && paciente ? historicoAntropometrico(avaliacoesParaHistorico(avaliacoes, paciente, hoje)) : null
   const irParaVista = (nova: VistaDaAntropometria) => navegar({ tela: 'antropometria', casoId: registro.caso.id, vista: nova })
 
   // O histórico começa a próxima avaliação; a vista Avaliação gera o documento (D-1405, D-1429).
@@ -152,13 +155,14 @@ export function TelaAntropometria({ rota, navegar, moldura, aoNovaAvaliacao, ago
         casoId={registro.caso.id}
         data={registro.caso.dataConsulta ?? registro.atualizadoEm.slice(0, 10)}
         aoEscolherAvaliacao={(id) => navegar({ tela: 'antropometria', casoId: id, vista })}
+        resumo={historico?.resumo ?? null}
         modalidade={registro.caso.avaliacao.modalidade}
         aoMudarModalidade={(modalidade) => alterarAvaliacao({ modalidade })}
         vista={vista}
         aoMudarVista={paciente ? irParaVista : null}
       />
-      {vista === 'historico' && paciente ? (
-        <VistaHistorico avaliacoes={avaliacoes} paciente={paciente} hoje={hoje} />
+      {historico ? (
+        <VistaHistorico historico={historico} />
       ) : (
         <VistaAvaliacao caso={caso} bruto={registro.caso} paciente={paciente} aoAlterar={alterarCaso} />
       )}

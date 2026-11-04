@@ -11,6 +11,8 @@ interface BarraDaAvaliacaoProps {
   /** A data da avaliação aberta, AAAA-MM-DD. */
   readonly data: string
   readonly aoEscolherAvaliacao: (casoId: string) => void
+  /** No Histórico, o resumo ("4 avaliações · de ... a ...") no lugar da lista e da modalidade, como o protótipo. */
+  readonly resumo?: string | null | undefined
   readonly modalidade: ModalidadeDaAvaliacao | null
   readonly aoMudarModalidade: (modalidade: ModalidadeDaAvaliacao) => void
   readonly vista: VistaDaAntropometria
@@ -21,36 +23,53 @@ interface BarraDaAvaliacaoProps {
 const rotuloDaData = (data: string) => `Avaliação de ${dataCompleta(data) || 'data não informada'}`
 
 /** A barra da tela: qual avaliação, a modalidade e "Avaliação | Histórico" (spec antropometria-telas, D-1404). */
-export function BarraDaAvaliacao({ avaliacoes, casoId, data, aoEscolherAvaliacao, modalidade, aoMudarModalidade, vista, aoMudarVista }: BarraDaAvaliacaoProps) {
+export function BarraDaAvaliacao({
+  avaliacoes,
+  casoId,
+  data,
+  aoEscolherAvaliacao,
+  resumo = null,
+  modalidade,
+  aoMudarModalidade,
+  vista,
+  aoMudarVista,
+}: BarraDaAvaliacaoProps) {
   return (
     <div className="flex flex-wrap items-end gap-x-4 gap-y-3 print:hidden">
-      <div className="flex min-w-0 flex-1 flex-wrap items-end gap-3">
-        {avaliacoes && avaliacoes.length > 0 ? (
+      {resumo !== null ? (
+        <p className="min-w-0 flex-1 text-sm text-muted-foreground">{resumo}</p>
+      ) : (
+        <div className="flex min-w-0 flex-1 flex-wrap items-end gap-3">
+          {avaliacoes && avaliacoes.length > 0 ? (
+            <Escolha
+              rotulo="Avaliação"
+              rotuloOculto
+              className="w-full sm:w-64"
+              opcoes={avaliacoes.map((a) => ({
+                valor: a.casoId,
+                rotulo: rotuloDaData(a.data),
+              }))}
+              valor={casoId}
+              aoEscolher={aoEscolherAvaliacao}
+            />
+          ) : (
+            <p className="text-sm font-semibold text-heading">{rotuloDaData(data)}</p>
+          )}
           <Escolha
-            rotulo="Avaliação"
+            rotulo="Modalidade"
             rotuloOculto
-            className="w-full sm:w-64"
-            opcoes={avaliacoes.map((a) => ({ valor: a.casoId, rotulo: rotuloDaData(a.data) }))}
-            valor={casoId}
-            aoEscolher={aoEscolherAvaliacao}
+            compacto
+            className="w-full sm:w-44"
+            vazio="Modalidade"
+            opcoes={[
+              { valor: 'presencial', rotulo: 'Presencial' },
+              { valor: 'telenutricao', rotulo: 'Telenutrição' },
+            ]}
+            valor={modalidade}
+            aoEscolher={aoMudarModalidade}
           />
-        ) : (
-          <p className="text-sm font-semibold text-heading">{rotuloDaData(data)}</p>
-        )}
-        <Escolha
-          rotulo="Modalidade"
-          rotuloOculto
-          compacto
-          className="w-full sm:w-44"
-          vazio="Modalidade"
-          opcoes={[
-            { valor: 'presencial', rotulo: 'Presencial' },
-            { valor: 'telenutricao', rotulo: 'Telenutrição' },
-          ]}
-          valor={modalidade}
-          aoEscolher={aoMudarModalidade}
-        />
-      </div>
+        </div>
+      )}
       {aoMudarVista ? (
         <SeletorSegmentado
           rotulo="Vista"
