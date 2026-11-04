@@ -245,6 +245,19 @@ Resend, o registro na ficha e o painel "Enviar a avaliação por e-mail" do prot
 - **Faixas plausíveis** de cada medida (pesquisa 1.7 B): sem fonte; a tela não avisa valor fora delas.
 - **Gasto de repouso no plano** (DP-AT-4): levar Cunningham para a energia do plano?
 
+## Andamento (04/11/2026, ramo `antropometria-historico`)
+
+T14 a T20 e C1 a C4 feitas, um commit cada (C2 e C3 separados). O pior caso (`break-ui`) rodou na tela real por um
+script de Playwright fora do repositório (os dados entram pelo armazenamento do navegador, como os de verdade): nome
+enorme, avaliação vazia, 350 kg e dobra de 90 mm, duas avaliações no mesmo dia, criança de 6 anos, idoso de 85,
+gestante e diagnóstico longo, em 360, 390 e 1440 px. Os achados viraram CB-1454 e CB-1455. Falta a F2 (T21 a T25) e a
+T26.
+
 ## Matriz CA × teste
 
-Preenchida na validação (T26).
+Preenchida na validação (T26). Da F1 já feita: CA-2449 a CA-2456 e CB-1412 em `src/ui/antropometria/historico.test.tsx`;
+CA-2457 a CA-2463, D-1489, D-1495, CB-1444 e CB-1451 em `documento.test.tsx`; a lógica do documento (CA-2459 a CA-2461,
+D-1491 a D-1498, CB-1444, CB-1447) em `src/domain/documentoDaAvaliacao.test.ts`; CB-1448 em
+`src/domain/persistencia.test.ts`; CB-1449 e CB-1450 em `src/domain/pontoDePartida.test.ts` (CA-2445 na tela); CB-1453 em
+`pontoDePartida.test.tsx` e `textosDaAvaliacao.test.ts`; CA-2400, CA-2410, CA-2421, CA-2430, CA-2449, CA-2457,
+CA-2470, CA-2471 e CB-1452 em `e2e/antropometria.spec.ts`.

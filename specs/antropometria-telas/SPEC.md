@@ -524,6 +524,31 @@ Pedidas pelo dono depois da vista Avaliação (T8 a T13).
   evidência repetido, aviso de método) não fica solto na tela: sai ou vai para a ajuda ("ⓘ") do item. A fonte científica
   continua no código e nesta spec, e a ajuda a mostra inteira.
 
+### Da implementação do Histórico, do documento e do celular (T16 a T19, 04/11/2026)
+
+A faixa D-1480 a D-1499 acabou nas decisões acima; o que a implementação decidiu fica aqui como caso de borda.
+
+- **CB-1454** · **Nome enorme no celular, com as ações no cabeçalho:** abaixo de 640 px, "Gerar documento" vira só o ícone
+  (o nome do botão continua "Gerar documento" para o leitor de tela), e o nome do paciente fica com a largura que sobra,
+  em até 2 linhas (D-801). Achado do pior caso (`break-ui`): com os dois botões, o nome virava "Mari a...".
+- **CB-1455** · **Selo longo no celular:** na tabela do resultado (tela) a segunda coluna para em 45% da linha, e no
+  documento em 50%; "Risco substancialmente aumentado" quebra entre as palavras dentro dela, sem espremer o nome do
+  indicador. Na tabela do Histórico, abaixo de 640 px, o nome quebra depois da "/" ("Cintura/ estatura") e o recuo das
+  colunas diminui: a tabela cabe em 360 px. As datas da tabela seguem a D-1440 como o protótipo: no computador (1024 px
+  ou mais), todas; no tablet, a primeira e a atual; no celular, só a atual, com as duas colunas "Desde".
+- **CB-1456** · **Lactante sem perfil escolhido:** o bloco da proteína já diz o motivo do motor (CB-1449), sem pedir o
+  perfil de atividade, que na lactação não muda nada.
+- **CB-1457** · **Barra do Histórico:** no Histórico, a barra mostra só o resumo ("4 avaliações · de ... a ...") e o
+  seletor da vista, sem a lista de datas e sem a modalidade, como o protótipo; a modalidade se escolhe na vista
+  Avaliação.
+- **CB-1458** · **O que fica à vista no "Ponto de partida" (CB-1453):** cada bloco mostra o valor e uma frase, como o
+  protótipo; o "ⓘ" do bloco ("Fonte: Gasto de repouso") abre a citação completa e os avisos fixos do motor (a nota da
+  calorimetria, o erro emprestado da equação, o "Proposta do app (sem diretriz): ..." de cada conta, a desaceleração da
+  perda, a nota do IMC do idoso). Ficam à vista só os alertas que valem para a pessoa e mudam a conduta: na prioridade,
+  a cintura não medida (ou no menor perímetro), o IMC baixo pelo GLIM, a panturrilha baixa do idoso e a frase do risco
+  que o protótipo mostra; na meta, o piso de 800 kcal/dia e a resposta à gordura alvo digitada. O selo "Proposta do app
+  (sem diretriz)" aparece uma vez, no cabeçalho da prioridade.
+
 ## 5. O que fica para a Mor e para o dono
 
 Listado também no PLAN, seção "Para a Mor".
