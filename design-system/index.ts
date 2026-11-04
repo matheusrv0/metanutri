@@ -7,7 +7,7 @@
  * precisa aparecer AQUI, senão ele não existe para a biblioteca.
  *
  * Os 31 componentes do sistema, na taxonomia do design system:
- *   forms       Button · Input · CampoNumero · Label · Textarea · Select · Switch · GrupoOpcoes · CampoEscolha
+ *   forms       Button · Input · CampoNumero · Label · Textarea · Select · Switch · GrupoOpcoes
  *   display     Card · Badge · Alert · Progress · Separator · Table · Tooltip · Icon · CartaoNumero · LinhaLista · AnelProgresso · GraficoBarras · IconeMarca · PontosDaMarca
  *   overlay     Dialog · Sheet · DropdownMenu
  *   navigation  Tabs · ItemMenu · EtapasDoCaso · SeletorSegmentado
@@ -29,7 +29,6 @@ export { Textarea } from './componentes/forms/textarea.tsx'
 export { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './componentes/forms/select.tsx'
 export { Switch } from './componentes/forms/switch.tsx'
 export { GrupoOpcoes } from './componentes/forms/GrupoOpcoes.tsx'
-export { CampoEscolha, type OpcaoDaEscolha } from './componentes/forms/CampoEscolha.tsx'
 
 // display
 export { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle, cardVariants, type CardProps } from './componentes/display/card.tsx'

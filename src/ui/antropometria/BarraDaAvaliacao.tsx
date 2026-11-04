@@ -1,6 +1,6 @@
 import { dataCompleta } from '@/domain/formatarData.ts'
 import type { ModalidadeDaAvaliacao } from '@/domain/tipos.ts'
-import { CampoEscolha } from '@ds/componentes/forms/CampoEscolha.tsx'
+import { Escolha } from './Escolha.tsx'
 import { SeletorSegmentado } from '@ds/componentes/navigation/SeletorSegmentado.tsx'
 import type { VistaDaAntropometria } from '../navegacao.ts'
 
@@ -26,7 +26,7 @@ export function BarraDaAvaliacao({ avaliacoes, casoId, data, aoEscolherAvaliacao
     <div className="flex flex-wrap items-end gap-x-4 gap-y-3 print:hidden">
       <div className="flex min-w-0 flex-1 flex-wrap items-end gap-3">
         {avaliacoes && avaliacoes.length > 0 ? (
-          <CampoEscolha
+          <Escolha
             rotulo="Avaliação"
             rotuloOculto
             className="w-full sm:w-64"
@@ -37,7 +37,7 @@ export function BarraDaAvaliacao({ avaliacoes, casoId, data, aoEscolherAvaliacao
         ) : (
           <p className="text-sm font-semibold text-heading">{rotuloDaData(data)}</p>
         )}
-        <CampoEscolha
+        <Escolha
           rotulo="Modalidade"
           rotuloOculto
           compacto

@@ -20,7 +20,6 @@ import { Separator } from '@ds/componentes/display/separator.tsx'
 import { Table, TableBody, TableCell, TableFootnotes, TableHead, TableHeader, TableRow } from '@ds/componentes/display/table.tsx'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@ds/componentes/display/tooltip.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
-import { CampoEscolha } from '@ds/componentes/forms/CampoEscolha.tsx'
 import { CampoNumero } from '@ds/componentes/forms/CampoNumero.tsx'
 import { CampoTexto } from '@ds/componentes/forms/CampoTexto.tsx'
 import { GrupoOpcoes } from '@ds/componentes/forms/GrupoOpcoes.tsx'
@@ -87,7 +86,6 @@ export function TelaDesignSystem() {
   const [numero, setNumero] = useState<number | null>(150)
   const [opcao, setOpcao] = useState<'feminino' | 'masculino'>('feminino')
   const [ligado, setLigado] = useState(true)
-  const [origem, setOrigem] = useState<'aferidas' | 'informadas' | 'estimadas' | null>(null)
   const [aba, setAba] = useState<'caso' | 'plano' | 'adequacao'>('plano')
   const [menu, setMenu] = useState('painel')
 
@@ -217,30 +215,6 @@ export function TelaDesignSystem() {
                 </div>
               </div>
             </div>
-          </div>
-          <Separator />
-          <div className="grid gap-4 sm:grid-cols-2">
-            <CampoEscolha
-              rotulo="CampoEscolha — lista nativa, com o vazio"
-              vazio="Origem não informada"
-              opcoes={[
-                { valor: 'aferidas', rotulo: 'Aferidos na consulta' },
-                { valor: 'informadas', rotulo: 'Informados pela paciente' },
-                { valor: 'estimadas', rotulo: 'Estimados' },
-              ]}
-              valor={origem}
-              aoEscolher={setOrigem}
-            />
-            <CampoEscolha
-              rotulo="CampoEscolha — compacto, com opção desativada"
-              compacto
-              opcoes={[
-                { valor: 'jp7', rotulo: 'Jackson & Pollock, 7 dobras' },
-                { valor: 'slaughter', rotulo: 'Slaughter (8 a 18 anos)', desativada: true },
-              ]}
-              valor="jp7"
-              aoEscolher={() => undefined}
-            />
           </div>
           <Separator />
           <GrupoOpcoes
