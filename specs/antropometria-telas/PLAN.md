@@ -112,7 +112,7 @@ LEIA-ME (DP-AT-9). Na tela, um componente por arquivo, em `src/ui/antropometria/
 | T8 | Imagens e ajuda | `public/imagens/antropometria/*.webp`, `THIRD_PARTY_NOTICES.md`, `src/ui/antropometria/ajudas.ts`, `ajudaAberta.ts`, `AjudaDaMedida.tsx` (+ testes) | CA-2427 a CA-2429 | T7 |
 | T9 | Peso e estatura, estimativas e peso ideal | `CartaoPesoEstatura.tsx`, `PainelEstimar.tsx`, `PainelPesoIdeal.tsx`, `CampoMedida.tsx`, `textosDaAvaliacao.ts`, `VistaAvaliacao.tsx` (+ testes) | CA-2410 a CA-2415 | T8 |
 | T10 | Circunferências e diâmetros | `CartaoCircunferencias.tsx`, `LinhaDeMedida.tsx`, `CartaoDiametros.tsx` (+ testes) | CA-2416 a CA-2419 | T8 |
-| T11 | Dobras | `CartaoDobras.tsx`, `textosDaAvaliacao.ts` (+ testes) | CA-2420 a CA-2426 | T8 |
+| T11 | Dobras | `CartaoDobras.tsx`, `textosDaAvaliacao.ts`, `ajudas.ts` (a peitoral sem sexo, D-1464; "suprailíaca" sem hífen) (+ testes) | CA-2420 a CA-2426 | T8 |
 | T12 | Resultado | `CartaoResultado.tsx`, `LinhaDoResultado.tsx`, `SeloDaSituacao.tsx`, `textosDaAvaliacao.ts` (+ testes) | CA-2430 a CA-2435, CB-1402 a CB-1406, CB-1411 | T7 |
 | T13 | Ponto de partida | `CartaoPontoDePartida.tsx`, `BlocoProteina.tsx`, `BlocoMetaDePerda.tsx`, `textosDaAvaliacao.ts` (+ testes) | CA-2436 a CA-2445 | T3, T12 |
 | T14 | `GraficoLinha` no design system | `design-system/componentes/display/GraficoLinha.tsx`, `index.ts`, `vitrine/TelaDesignSystem.tsx`, `componentes/LEIA-ME.md` (+ teste) | (D-1426) | T2 |
