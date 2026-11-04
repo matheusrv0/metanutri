@@ -89,6 +89,13 @@ describe('repositório de casos', () => {
     expect(repo.listar().map((c) => c.nome)).toEqual(['A', 'B'])
   })
 
+  it('CB-1448: às 21h30 de Brasília (00h30 UTC do dia seguinte), a cópia leva o dia de quem usa, não o do UTC', () => {
+    const noite = new Date(2026, 10, 3, 21, 30).toISOString()
+    const repo = criarRepositorio(new MemoriaFalsa(), { agora: () => noite, gerarId: ids() })
+    const a = repo.criar('Maria')
+    expect(repo.duplicar(a.caso.id).caso.dataConsulta).toBe('2026-11-03')
+  })
+
   it('CA-50: duplica com novo id e "(cópia)" no nome, sem alterar o original', () => {
     const repo = criarRepositorio(new MemoriaFalsa(), { agora: relogio(), gerarId: ids() })
     const a = repo.criar('Maria')

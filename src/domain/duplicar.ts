@@ -1,4 +1,5 @@
 // Duplicar plano: o retorno do paciente começa do plano anterior, não do zero.
+import { diaLocal } from './acompanhamento.ts'
 import { IDADE_ADULTO } from './antropometria.ts'
 import { clonarPlano } from './modelos.ts'
 import { idadeNaData } from './pacientes.ts'
@@ -198,7 +199,8 @@ export function duplicarCaso(
   gerarId: () => string,
   opcoes: OpcoesDuplicar = {},
 ): { readonly caso: Caso; readonly plano: Plano } {
-  const hojeDeVerdade = new Date().toISOString().slice(0, 10)
+  // CB-1448: o dia de quem usa, não o do UTC.
+  const hojeDeVerdade = diaLocal()
   const hoje = opcoes.hoje === undefined ? hojeDeVerdade : opcoes.hoje
   const original = registro.caso
   const adulto = adultoNaData(original, opcoes.nascimento ?? null, hoje ?? hojeDeVerdade)
