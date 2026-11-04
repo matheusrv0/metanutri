@@ -139,7 +139,8 @@ export function LinhaItem({
           <ArrowRightLeft aria-hidden="true" />
         </Button>
       ) : null}
-      <Button variant="ghost" size="iconsm" onClick={aoRemover} aria-label={`Remover ${descricao}`}>
+      {/* D-1128: o endereço do foco quando a última opção sai de um item sem o "⇄" (o alimento excluído). */}
+      <Button variant="ghost" size="iconsm" onClick={aoRemover} aria-label={`Remover ${descricao}`} data-remover-de={item.id}>
         <X aria-hidden="true" />
       </Button>
     </div>

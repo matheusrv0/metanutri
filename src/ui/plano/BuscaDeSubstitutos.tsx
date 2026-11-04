@@ -1,5 +1,6 @@
 import { ChevronDown, Search, TriangleAlert, X } from 'lucide-react'
 import { useId, useMemo, useRef, useState } from 'react'
+import { flushSync } from 'react-dom'
 import {
   buscarSubstitutos,
   infoDoNutriente,
@@ -59,6 +60,7 @@ export function BuscaDeSubstitutos({ item, alimento, restricoes, aoAdicionarOpca
   const [comparando, setComparando] = useState<Candidato | null>(null)
   const [outro, setOutro] = useState<ChaveNutrienteAlimento | ''>('')
   const listaDeOutros = useRef<HTMLSelectElement>(null)
+  const listaDeSelecionados = useRef<HTMLUListElement>(null)
   const idRotulo = useId()
   const idOutro = useId()
 
@@ -90,6 +92,18 @@ export function BuscaDeSubstitutos({ item, alimento, restricoes, aoAdicionarOpca
     setSelecionados((atual) => (atual.includes(outro) ? atual : [...atual, outro]))
     setOutro('')
     listaDeOutros.current?.focus()
+  }
+  // D-1128: o "Tirar" clicado sai da tela; o foco vai ao "Tirar" que ficou no lugar dele (ou ao anterior) e, sem nenhum,
+  // à lista "Outro nutriente". O flushSync põe a lista nova na tela antes de mover o foco.
+  const tirar = (chave: ChaveNutrienteAlimento) => {
+    const indice = selecionados.indexOf(chave)
+    const restantes = selecionados.filter((k) => k !== chave)
+    flushSync(() => setSelecionados(restantes))
+    if (restantes.length === 0) {
+      listaDeOutros.current?.focus()
+      return
+    }
+    listaDeSelecionados.current?.querySelectorAll('button')[Math.min(indice, restantes.length - 1)]?.focus()
   }
   const buscar = () => {
     if (selecionados.length === 0) return
@@ -160,12 +174,12 @@ export function BuscaDeSubstitutos({ item, alimento, restricoes, aoAdicionarOpca
         {selecionados.length > 0 ? (
           <div className="flex flex-col gap-2">
             <span className="text-sm font-semibold text-foreground">Nutrientes selecionados</span>
-            <ul aria-label="Nutrientes selecionados" className="flex flex-wrap gap-2">
+            <ul ref={listaDeSelecionados} aria-label="Nutrientes selecionados" className="flex flex-wrap gap-2">
               {selecionados.map((k) => (
                 <li key={k}>
                   <Badge variant="muted" className="gap-0.5 py-0 pl-3 pr-0 text-sm font-medium text-foreground">
                     {infoDoNutriente(k).nome}
-                    <Button variant="ghost" size="iconsm" className="sm:size-7" aria-label={`Tirar ${infoDoNutriente(k).nome}`} onClick={() => alternar(k)}>
+                    <Button variant="ghost" size="iconsm" className="sm:size-7" aria-label={`Tirar ${infoDoNutriente(k).nome}`} onClick={() => tirar(k)}>
                       <X aria-hidden="true" />
                     </Button>
                   </Badge>

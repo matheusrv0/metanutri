@@ -467,6 +467,41 @@ describe('correções da revisão independente (03/11/2026)', () => {
     expect(within(screen.getByRole('list', { name: `Opções de ${ARROZ}` })).getAllByRole('listitem')).toHaveLength(1)
   })
 
+  it('CA-2141 (D-1128): "Tirar {nutriente}" leva o foco ao "Tirar" que ficou; sem nenhum, à lista "Outro nutriente"', async () => {
+    telaLarga(true)
+    render(<Anfitriao />)
+    const usuario = userEvent.setup()
+    await almocoComArroz(usuario)
+    await usuario.click(screen.getByRole('button', { name: `Buscar substitutos para ${ARROZ}` }))
+    const lado = within(screen.getByRole('complementary', { name: `Substitutos de ${ARROZ}` }))
+    await usuario.click(lado.getByRole('button', { name: /^Proteínas/ }))
+    await usuario.click(lado.getByRole('button', { name: /^Lipídeos/ }))
+    // O do meio: o foco vai ao que ficou no lugar dele.
+    await usuario.click(lado.getByRole('button', { name: 'Tirar Proteínas' }))
+    expect(lado.getByRole('button', { name: 'Tirar Lipídeos' })).toHaveFocus()
+    // O último: o foco vai ao anterior.
+    await usuario.click(lado.getByRole('button', { name: 'Tirar Lipídeos' }))
+    expect(lado.getByRole('button', { name: 'Tirar Carboidratos' })).toHaveFocus()
+    await usuario.click(lado.getByRole('button', { name: 'Tirar Carboidratos' }))
+    expect(lado.getByRole('combobox', { name: 'Outro nutriente' })).toHaveFocus()
+  })
+
+  it('CA-2141 (D-1128): "Tirar" a opção leva o foco à opção que ficou; sem nenhuma, ao "⇄" do item', async () => {
+    telaLarga(true)
+    render(<Anfitriao />)
+    const usuario = userEvent.setup()
+    await almocoComArroz(usuario)
+    await usuario.click(screen.getByRole('button', { name: `Buscar substitutos para ${ARROZ}` }))
+    const lado = within(screen.getByRole('complementary', { name: `Substitutos de ${ARROZ}` }))
+    await usuario.click(lado.getByRole('button', { name: 'Adicionar como opção: Batata, inglesa, cozida' }))
+    await usuario.click(lado.getByRole('button', { name: 'Adicionar como opção: Polenta, pré-cozida' }))
+    await usuario.click(screen.getByRole('button', { name: 'Tirar a opção Batata, inglesa, cozida' }))
+    expect(screen.getByRole('button', { name: 'Tirar a opção Polenta, pré-cozida' })).toHaveFocus()
+    await usuario.click(screen.getByRole('button', { name: 'Tirar a opção Polenta, pré-cozida' }))
+    expect(screen.queryByRole('list', { name: `Opções de ${ARROZ}` })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: `Buscar substitutos para ${ARROZ}` })).toHaveFocus()
+  })
+
   it('CA-2134: o próprio alimento na calculadora: "É o mesmo alimento" e "Substituir" desligado, também no Comparar', async () => {
     telaLarga(true)
     render(<Anfitriao />)
