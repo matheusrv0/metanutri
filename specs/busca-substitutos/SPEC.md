@@ -250,8 +250,8 @@ Cada critério tem um teste que cita o ID.
   de iogurte natural, abacate no lugar de 100 g de banana prata, castanha no lugar do pinhão nem requeijão no lugar da
   clara.
 - **CA-2137** (D-1125) · Dado um item com até 4 kcal em 100 g ou sem energia na tabela, então a regra da energia não vale e
-  o macro dominante basta; dado o leite em pó como item, então o outro leite em pó pode aparecer; e, com o filtro
-  desligado, as três regras não valem.
+  o macro dominante basta; dado um item desidratado (ameixa seca), então outro desidratado (uva-passa, damasco seco) pode
+  aparecer; e, com o filtro desligado, as três regras não valem.
 - **CA-2138** (D-1126) · Dado o foco na lista "Outro nutriente", quando aperto a seta três vezes, então nenhum nutriente
   entra em "Nutrientes selecionados"; quando escolho "Cálcio" e aperto Enter, ou clico em "Adicionar", então ele entra, e
   a lista volta a "Outro nutriente" com o foco nela; sem nada escolhido, "Adicionar" fica desligado.
