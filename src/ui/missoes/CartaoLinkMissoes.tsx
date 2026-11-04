@@ -269,6 +269,11 @@ export function CartaoLinkMissoes({
               O acompanhamento registra dado de saúde, que a LGPD trata como sensível. Cabe a você, nutricionista, obter a
               autorização do paciente; o MetaNutri apenas armazena os dados.
             </p>
+            {/* D-1244 (spec lado-do-paciente): a autorização fala também do e-mail do paciente. */}
+            <p className="mt-2 text-sm text-foreground">
+              Com o e-mail do paciente na ficha, o MetaNutri manda o link por e-mail quando você pedir e oferece os avisos, que só chegam se ele
+              aceitar.
+            </p>
             {/* CA-542: o link passa a levar o plano alimentar, e quem autoriza precisa saber. */}
             {dietaVai ? <p className="mt-2 text-sm text-foreground">O link também mostra o plano alimentar a qualquer pessoa que tenha o endereço.</p> : null}
             <div className="mt-4 flex flex-wrap gap-2">

@@ -224,4 +224,16 @@ describe('documentos legais', () => {
       'Nas telas de conta, o Cloudflare Turnstile recebe dados técnicos do navegador, como o endereço IP, para separar pessoas de robôs.',
     )
   })
+
+  it('CA-2286 (spec lado-do-paciente): a política diz para que serve o e-mail do paciente, que o link registra o dia do acesso e que o Resend manda os e-mails', () => {
+    render(<TelaPrivacidade />)
+    const texto = document.body.textContent ?? ''
+    expect(texto).toContain('O e-mail do paciente, quando o nutricionista o registra na ficha ou o próprio paciente o informa no link')
+    expect(texto).toContain('os avisos que o paciente aceitou')
+    expect(texto).toContain('O dia em que o paciente abriu o link (só a data, sem a hora)')
+    expect(texto).toContain('os e-mails ao paciente e ao nutricionista')
+    expect(texto).toContain('nunca para propaganda do MetaNutri e nunca em lista de contatos')
+    expect(texto).toContain('são enviados pelo Resend')
+    expect(texto).toContain('como deixar de receber, num toque e sem login')
+  })
 })

@@ -40,6 +40,13 @@ export function TelaPrivacidade() {
           O plano alimentar do paciente (refeições, quantidades, substitutos, orientações e receitas), quando o nutricionista ativa “Mostrar o plano
           alimentar no link”: para o paciente consultar o plano.
         </li>
+        <li>
+          O e-mail do paciente, quando o nutricionista o registra na ficha ou o próprio paciente o informa no link: para mandar o link do plano,
+          os avisos que o paciente aceitou e os e-mails que o nutricionista envia pelo MetaNutri. Guardamos também o aceite (o aviso, a data e a hora
+          e a versão do texto), enquanto o link existir, e o histórico dos e-mails enviados (tipo, assunto, situação e data), por 6 meses. Quem sai
+          de um aviso, ou cujo e-mail volta, fica numa lista de bloqueio que guarda só um resumo cifrado do endereço, para nunca mais receber o aviso.
+        </li>
+        <li>O dia em que o paciente abriu o link (só a data, sem a hora): para o nutricionista saber se o paciente está abrindo o plano.</li>
       </ul>
       <p>
         Os dados de saúde são dados pessoais sensíveis. Eles são tratados para a tutela da saúde por profissional de saúde e com o consentimento do
@@ -63,7 +70,11 @@ export function TelaPrivacidade() {
           os 4 últimos números e a data da próxima cobrança, para mostrar em Conta e assinatura. Para usar a mesma letra do site, os campos do cartão
           carregam a fonte do Google Fonts.
         </li>
-        <li>Os e-mails de confirmação e de troca de senha são enviados pelo Resend, com o endereço do MetaNutri.</li>
+        <li>
+          Os e-mails de confirmação e de troca de senha, e os e-mails ao paciente e ao nutricionista (o link do plano, os avisos aceitos e o
+          resumo da adesão), são enviados pelo Resend, sem imagem e sem rastreio de abertura ou de clique. O e-mail do paciente é usado só para
+          isso: nunca para propaganda do MetaNutri e nunca em lista de contatos.
+        </li>
         <li>Nas telas de conta, o Cloudflare Turnstile recebe dados técnicos do navegador, como o endereço IP, para separar pessoas de robôs.</li>
         <li>
           O app do MetaNutri fica em app.metanutri.com.br e é entregue pela Cloudflare; o site público, em metanutri.com.br, é entregue pelo GitHub.
@@ -100,6 +111,7 @@ export function TelaPrivacidade() {
       <p>
         Quem usa o MetaNutri e cada paciente podem pedir confirmação, acesso, correção, anonimização, portabilidade e eliminação dos dados, e revogar o
         consentimento (LGPD, art. 18). O paciente pode pedir ao nutricionista ou diretamente pelo e-mail {CONTATO_EMAIL ?? ''}. Respondemos em até 15 dias.
+        Cada e-mail de aviso tem, no rodapé, como deixar de receber, num toque e sem login.
       </p>
 
       <h2>Segurança</h2>

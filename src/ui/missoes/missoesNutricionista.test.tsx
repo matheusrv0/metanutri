@@ -70,6 +70,18 @@ describe('Cartão do link de missões', () => {
     expect(document.querySelector('code')).toBeNull()
   })
 
+  it('D-1244 e CA-2286 (spec lado-do-paciente): o pedido de autorização fala do e-mail do paciente e dos avisos aceitos', async () => {
+    render(
+      <Anfitriao repositorio={criarRepositorioAcompanhamentos(memoria())}>
+        <CartaoLinkMissoes casoId="c1" pacienteId={null} nome="Ana" missoes={MISSOES} hoje={HOJE} />
+      </Anfitriao>,
+    )
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Gerar link do paciente' }))
+    expect(
+      screen.getByText('Com o e-mail do paciente na ficha, o MetaNutri manda o link por e-mail quando você pedir e oferece os avisos, que só chegam se ele aceitar.'),
+    ).toBeInTheDocument()
+  })
+
   it('com plano montado e sem link, diz quantas missões saem dali', () => {
     render(
       <Anfitriao repositorio={criarRepositorioAcompanhamentos(memoria())}>
