@@ -91,6 +91,7 @@ export function CartaoPontoDePartida({ caso, bruto, paciente, aoAlterar }: Carta
           doencaAgudaOuCronica: comDoencaNaFicha,
           doencaRenalGrave: renal && avaliacao.doencaRenalGrave === true,
           ...(avaliacao.baseDaProteina ? { base: avaliacao.baseDaProteina } : {}),
+          imcAlvo: avaliacao.imcAlvo,
           gordura,
         })
       : null

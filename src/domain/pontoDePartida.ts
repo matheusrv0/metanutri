@@ -134,6 +134,8 @@ export interface EntradaDaProteina {
   readonly doencaRenalGrave?: boolean
   /** A base escolhida pela nutricionista quando o IMC é 30 ou mais. */
   readonly base?: BaseDoPeso
+  /** O IMC-alvo digitado em "Estimar peso ideal" (D-1409); `null` ou ausente usa o padrão (CB-1450, D-1463). */
+  readonly imcAlvo?: number | null
   readonly gordura?: OpcoesDaGordura
 }
 
@@ -234,7 +236,8 @@ export function proteinaPorObjetivo(caso: Caso, entrada: EntradaDaProteina): Res
     }
   }
 
-  const referencia = pesoDeReferencia(caso, { gordura: entrada.gordura ?? {} })
+  // CB-1450: o peso ideal da base é o do IMC-alvo que a nutricionista digitou, o mesmo do "Estimar peso ideal".
+  const referencia = pesoDeReferencia(caso, { imcAlvo: entrada.imcAlvo ?? null, gordura: entrada.gordura ?? {} })
   const bases = referencia?.opcoes ?? [{ base: 'peso-atual' as const, pesoKg: peso, motivo: null }]
   const escolhida = referencia?.sugerido ?? entrada.base ?? null
   const kg = escolhida === null ? null : (bases.find((o) => o.base === escolhida)?.pesoKg ?? null)

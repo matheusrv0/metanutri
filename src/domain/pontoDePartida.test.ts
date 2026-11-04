@@ -112,6 +112,20 @@ describe('proteína pelo objetivo (spec antropometria-completa, CA-2062 a CA-206
     expect(r).toEqual({ calculou: false, motivo: 'Nenhuma fonte conferida trata da proteína na lactação.', falta: [] })
   })
 
+  it('CB-1450: IMC ≥ 30 na base "Peso ideal": a proteína usa o IMC-alvo digitado (IMC-alvo × estatura² × g/kg)', () => {
+    const obeso = caso({ pesoKg: 100, estaturaCm: 170, objetivo: 'emagrecer' })
+    const digitado = proteinaPorObjetivo(obeso, { perfil: 'sedentario', base: 'peso-ideal', imcAlvo: 23 })
+    if (!digitado?.calculou) throw new Error('sem sugestão')
+    const ideal = 23 * 1.7 ** 2
+    expect(digitado.bases.find((b) => b.base === 'peso-ideal')?.pesoKg).toBeCloseTo(ideal, 10)
+    expect(digitado.gDia?.min).toBeCloseTo(1.2 * ideal, 10)
+    expect(digitado.gDia?.max).toBeCloseTo(1.5 * ideal, 10)
+    // Apagado (null), volta ao padrão da compleição média: IMC 21,75 (D-1409, D-1463).
+    const padrao = proteinaPorObjetivo(obeso, { perfil: 'sedentario', base: 'peso-ideal', imcAlvo: null })
+    if (!padrao?.calculou) throw new Error('sem sugestão')
+    expect(padrao.gDia?.min).toBeCloseTo(1.2 * 21.75 * 1.7 ** 2, 10)
+  })
+
   it('CA-2063: "emagrecer" com IMC ≥ 30 → 1,2–1,5 g/kg, as três bases sem g/dia até a escolha', () => {
     const obeso = caso({ pesoKg: 100, estaturaCm: 170, objetivo: 'emagrecer' })
     const r = proteinaPorObjetivo(obeso, { perfil: 'sedentario' })
