@@ -133,7 +133,8 @@ test.describe('celular e tablet: a gaveta (D-1116, D-800, D-802)', () => {
         gaveta.getByRole('button', { name: /^Carboidratos/ }),
         gaveta.getByRole('button', { name: 'Buscar alimentos' }),
         gaveta.getByRole('combobox', { name: 'Outro nutriente' }),
-        gaveta.getByRole('button', { name: 'Adicionar' }),
+        // Exato: sem ele, "Adicionar" casa também com os "Adicionar como opção: {alimento}" da lista.
+        gaveta.getByRole('button', { name: 'Adicionar', exact: true }),
         gaveta.getByRole('button', { name: 'Substituir por Polenta, pré-cozida' }),
         gaveta.getByRole('button', { name: 'Adicionar como opção: Polenta, pré-cozida' }),
         // A chave "Só do mesmo grupo": a linha inteira é o alvo, com 44 px também no tablet com dedo.

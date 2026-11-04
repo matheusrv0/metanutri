@@ -133,7 +133,9 @@ export function BuscaDeSubstitutos({ item, alimento, restricoes, aoAdicionarOpca
         </div>
 
         {/* A lista nativa: no celular abre do jeito do aparelho. Como "Adicionar em", no Cobrir, ela só guarda o valor, e a
-            ação vem do botão ou do Enter (D-1126): no Chromium do Windows, cada seta na lista fechada muda o valor. */}
+            ação vem do botão ou do Enter (D-1126): no Chromium do Windows, cada seta na lista fechada muda o valor. A lista,
+            transparente, cobre a caixa inteira, borda incluída (-inset-px): com inset-0 ela ficava com 42 px de toque, não
+            44 (CA-2126). */}
         <label htmlFor={idOutro} className="sr-only">
           Outro nutriente
         </label>
@@ -156,7 +158,7 @@ export function BuscaDeSubstitutos({ item, alimento, restricoes, aoAdicionarOpca
                 e.preventDefault()
                 adicionarOutro()
               }}
-              className="absolute inset-0 size-full cursor-pointer appearance-none opacity-0"
+              className="absolute -inset-px h-[calc(100%+2px)] w-[calc(100%+2px)] cursor-pointer appearance-none opacity-0"
             >
               <option value="">Outro nutriente</option>
               {outros.map((k) => (
