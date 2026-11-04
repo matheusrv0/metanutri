@@ -1,4 +1,4 @@
-import { act, render, screen, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { criarAcompanhamento, marcarMissao, type Acompanhamento } from '@/domain/acompanhamento.ts'
 import type { DietaDoLink } from '@/domain/dietaDoLink.ts'
@@ -589,5 +589,92 @@ describe('Link do paciente sem internet (spec revisao-geral-publica, D-232)', ()
     render(<TelaMissoesPaciente token="abc" fonte={fonte} hoje={HOJE} />)
     await screen.findByRole('heading', { name: 'Suas missões de hoje, Ana' })
     expect(screen.getByRole('main')).toContainElement(screen.getByRole('heading', { level: 1 }))
+  })
+})
+
+describe('Duas abas do link (spec lado-do-paciente, CB-1221)', () => {
+  /** A outra aba (ou o outro aparelho) marcou: a nuvem mudou sem esta aba saber. */
+  function nuvemQueMuda(inicial: Acompanhamento) {
+    let nuvem = inicial
+    let salvarPendente: (() => void) | null = null
+    let segurarSalvar = false
+    const fonte: FonteAcompanhamentos = {
+      naNuvem: true,
+      porToken: () => Promise.resolve(nuvem),
+      salvar: (a) => {
+        if (!segurarSalvar) {
+          nuvem = a
+          return Promise.resolve(a)
+        }
+        return new Promise((resolver) => {
+          salvarPendente = () => {
+            nuvem = a
+            resolver(a)
+          }
+        })
+      },
+    }
+    return {
+      fonte,
+      marcarNaOutraAba: (missaoId: string) => {
+        nuvem = marcarMissao(nuvem, HOJE, missaoId, true)
+      },
+      segurar: () => {
+        segurarSalvar = true
+      },
+      soltar: () => salvarPendente?.(),
+    }
+  }
+
+  const voltarParaAAba = () =>
+    act(async () => {
+      fireEvent(document, new Event('visibilitychange'))
+      await new Promise((fim) => setTimeout(fim, 0))
+    })
+
+  it('CB-1221: ao voltar para esta aba, o link relê a nuvem e mostra o que a outra aba marcou', async () => {
+    const nuvem = nuvemQueMuda(acompanhamento())
+    render(<TelaMissoesPaciente token="abc" fonte={nuvem.fonte} hoje={HOJE} cliente={null} />)
+    const agua = await screen.findByRole('button', { name: /litros de água/ })
+    expect(agua).toHaveAttribute('aria-pressed', 'false')
+
+    nuvem.marcarNaOutraAba('agua')
+    await voltarParaAAba()
+
+    expect(screen.getByRole('button', { name: /litros de água/ })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: /Café da manhã/ })).toHaveAttribute('aria-pressed', 'false')
+  })
+
+  it('CB-1221: com uma marcação ainda a caminho da nuvem, voltar para a aba não desfaz o que acabou de ser marcado', async () => {
+    const nuvem = nuvemQueMuda(acompanhamento())
+    const usuario = userEvent.setup()
+    render(<TelaMissoesPaciente token="abc" fonte={nuvem.fonte} hoje={HOJE} cliente={null} />)
+    const cafe = await screen.findByRole('button', { name: /Café da manhã/ })
+    nuvem.segurar()
+    await usuario.click(cafe)
+    await voltarParaAAba()
+    expect(cafe).toHaveAttribute('aria-pressed', 'true')
+
+    await act(async () => {
+      nuvem.soltar()
+      await new Promise((fim) => setTimeout(fim, 0))
+    })
+    expect(cafe).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  it('CB-1221: sem servidor, o link é só deste aparelho e voltar para a aba não relê', async () => {
+    let lidas = 0
+    const fonte: FonteAcompanhamentos = {
+      naNuvem: false,
+      porToken: () => {
+        lidas++
+        return Promise.resolve(acompanhamento())
+      },
+      salvar: (a) => Promise.resolve(a),
+    }
+    render(<TelaMissoesPaciente token="abc" fonte={fonte} hoje={HOJE} cliente={null} />)
+    await screen.findByRole('heading', { name: 'Suas missões de hoje, Ana' })
+    await voltarParaAAba()
+    expect(lidas).toBe(1)
   })
 })

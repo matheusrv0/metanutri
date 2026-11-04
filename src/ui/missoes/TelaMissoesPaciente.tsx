@@ -6,7 +6,7 @@
 // o link é fixo por paciente, o aparelho lembra dele e o ícone "Meu plano" o instala.
 // O desenho do link aberto mora em `LinkDoPaciente`; aqui ficam a busca, a marcação e os avisos.
 import { CircleAlert, Link2Off, WifiOff } from 'lucide-react'
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { diaLocal, marcarMissao, missoesDoDia, type Acompanhamento } from '@/domain/acompanhamento.ts'
 import { separarDadosDoLink, SEM_DADOS_DO_LINK, temAvisoOferecido, textoDosAvisosLigados, type DadosDoLink } from '@/domain/dadosDoLink.ts'
 import { registrarAcesso, type ClienteDosEmails } from '@/domain/emailsDoLink.ts'
@@ -121,6 +121,10 @@ export function TelaMissoesPaciente({ token, fonte, hoje = diaLocal(), agora, cl
   const [folha, setFolha] = useState<Folha>(null)
   // A cópia do aparelho, que "Esquecer neste aparelho" apaga (CA-2228); sem o provedor (o teste da tela), não há cópia.
   const copiaDoAparelho = useAcompanhamentosOpcional()?.repositorio ?? null
+  // CB-1221 (DP-LP-31): as marcações desta aba ainda a caminho da nuvem, e quantos toques houve (a releitura que volta
+  // depois de um toque novo é descartada).
+  const aCaminho = useRef(0)
+  const toques = useRef(0)
 
   useEffect(() => {
     let vivo = true
@@ -139,6 +143,31 @@ export function TelaMissoesPaciente({ token, fonte, hoje = diaLocal(), agora, cl
       vivo = false
     }
   }, [token, fonte, tentativa])
+
+  // CB-1221 (DP-LP-31): duas abas do link gravam a lista inteira uma por cima da outra; ao voltar para esta, ela relê a
+  // nuvem e fica com o que está lá, sem a tela de "Abrindo". Com uma marcação daqui a caminho, não relê.
+  useEffect(() => {
+    if (!fonte.naNuvem) return
+    let vivo = true
+    const aoVoltar = () => {
+      if (globalThis.document.visibilityState !== 'visible' || aCaminho.current > 0) return
+      const toqueDaLeitura = toques.current
+      fonte.porToken(token).then(
+        (achado) => {
+          if (!vivo || achado === null || toques.current !== toqueDaLeitura || aCaminho.current > 0) return
+          const separado = separarMarca(achado)
+          const comDados = separarDadosDoLink(separado.acompanhamento)
+          setCarga((atual) => (atual?.token === token && atual.acompanhamento ? { ...atual, acompanhamento: comDados.link, marca: separado.marca, dados: comDados.dados } : atual))
+        },
+        () => undefined,
+      )
+    }
+    globalThis.document.addEventListener('visibilitychange', aoVoltar)
+    return () => {
+      vivo = false
+      globalThis.document.removeEventListener('visibilitychange', aoVoltar)
+    }
+  }, [token, fonte])
 
   // D-1213: o "Meu plano" na página (o manifesto, o ícone e o nome), enquanto o link está aberto.
   useMeuPlanoNaPagina(tokenAberto)
@@ -188,24 +217,31 @@ export function TelaMissoesPaciente({ token, fonte, hoje = diaLocal(), agora, cl
     setCarga({ ...carga, acompanhamento: novo })
     // CA-2232: a primeira marcação neste aparelho faz o cartão Instalar aparecer.
     if (feita) instalar.registrarMarcacao()
-    fonte.salvar(novo).then(
-      () => setNaoSalvou(null),
-      (erro: unknown) => {
-        const frase = fraseDaFalha(erro)
-        const desfazer = () => {
-          setCarga((atual) => (atual?.acompanhamento ? { ...atual, acompanhamento: marcarMissao(atual.acompanhamento, hoje, missaoId, !feita) } : atual))
-          setNaoSalvou(frase)
-        }
-        fonte.porToken(novo.token).then((relido) => {
-          if (relido === null) return desfazer()
-          // DP-ML-14: o que se marca continua sem a marca e sem os dados do link; os da tela ficam os que já estavam.
-          const daNuvem = separarDadosDoLink(separarMarca(relido).acompanhamento).link
-          setCarga((atual) => (atual?.token === token && atual.acompanhamento ? { ...atual, acompanhamento: daNuvem } : atual))
-          const ficou = missoesDoDia(daNuvem, hoje).some((m) => m.id === missaoId && m.feita === feita)
-          setNaoSalvou(ficou ? null : frase)
-        }, desfazer)
-      },
-    )
+    toques.current++
+    aCaminho.current++
+    fonte
+      .salvar(novo)
+      .then(
+        () => setNaoSalvou(null),
+        (erro: unknown) => {
+          const frase = fraseDaFalha(erro)
+          const desfazer = () => {
+            setCarga((atual) => (atual?.acompanhamento ? { ...atual, acompanhamento: marcarMissao(atual.acompanhamento, hoje, missaoId, !feita) } : atual))
+            setNaoSalvou(frase)
+          }
+          fonte.porToken(novo.token).then((relido) => {
+            if (relido === null) return desfazer()
+            // DP-ML-14: o que se marca continua sem a marca e sem os dados do link; os da tela ficam os que já estavam.
+            const daNuvem = separarDadosDoLink(separarMarca(relido).acompanhamento).link
+            setCarga((atual) => (atual?.token === token && atual.acompanhamento ? { ...atual, acompanhamento: daNuvem } : atual))
+            const ficou = missoesDoDia(daNuvem, hoje).some((m) => m.id === missaoId && m.feita === feita)
+            setNaoSalvou(ficou ? null : frase)
+          }, desfazer)
+        },
+      )
+      .finally(() => {
+        aCaminho.current = Math.max(0, aCaminho.current - 1)
+      })
   }
 
   if (carregando) {
