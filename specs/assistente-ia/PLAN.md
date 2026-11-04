@@ -148,3 +148,20 @@ ID (CA-2382 a CA-2389, CB-1319), em commits novos:
 
 **P2 (D-1336):** a função passa a conferir a autorização gravada na ficha antes de chamar a IA (tarefa nova da P2, junto
 do consentimento na ficha).
+
+## 7. Rodada de correção 2 (revisão de segurança, 04/11/2026)
+
+A revisão da rodada 2 reprovou por dois achados médios (cancelamento de ponta a ponta e CPU da limpeza) e quatro
+baixos. Decisões D-1337 a D-1341 (e a do cancelamento, depois da prova no edge-runtime local), testes CA-2390 em diante:
+
+- [ ] **T18 — CPU da limpeza (D-1337, CA-2390).** `iaContrato.ts`: `textoCurto` corta em 2× o limite antes de limpar;
+  `EMAIL` e `DOMINIO` ancorados no início da palavra; as listas param no máximo. Teste de tempo com 60 KB num campo.
+- [ ] **T19 — O 016 de novo (D-1338, CA-2391).** `add column if not exists custo_estimado` e `drop function if exists`
+  da `concluir_uso_da_ia` de 9 parâmetros; o teste de texto cobre os dois; prova no banco de rascunho local.
+- [ ] **T20 — Cancelar de verdade, ou a spec do que acontece.** Tentativa de até 30 min: resposta em fluxo
+  (`ReadableStream`) com batimento curto e o `cancel()` do fluxo abortando a chamada à IA, provada com a
+  `sonda-cancelar-r2.mjs` no edge-runtime local. Sem prova, o D-1330, o CA-2383 e o CB-1319 passam a dizer o
+  comportamento real. Arquivos: `sugerir-plano/index.ts`, `_shared/ia.ts`, a SPEC e os testes da ligação e do núcleo.
+- [ ] **T21 — Corte por caractere e não-caracteres (D-1339, CA-2392).** `textoCurto` e `cortar` em `iaContrato.ts`.
+- [ ] **T22 — Texto da IA limpo de contato (D-1340, CA-2393).** `cortar` passa pela limpeza; a NFKC só onde há contato.
+- [ ] **T23 — Formatos novos de contato (D-1341, CA-2394).** `iaContrato.ts`; os 22 formatos da revisão viram teste.
