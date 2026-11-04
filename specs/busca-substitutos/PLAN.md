@@ -59,7 +59,7 @@ opção do item aparece embaixo dele no plano, na folha, no link e no Word.
 | T21 | A variedade do mesmo alimento (B4) | `src/domain/trocas.ts` (só `export` do nome da variedade), `src/domain/buscaDeSubstitutos.ts`; teste: `trocaEquivalente.test.ts` | CA-2143 | T20 |
 | T22 | Fruta inteira primeiro (B5) | `src/domain/grupoDeSubstituicao.ts` (`ehSucoOuPolpaDeFruta` e a forma da fruta), `src/domain/buscaDeSubstitutos.ts` (a ordem); testes: `grupoDeSubstituicao.test.ts`, `trocaEquivalente.test.ts` | CA-2144 | T21 |
 | T23 | Café e chá como item (recomendação 2) | `src/domain/buscaDeSubstitutos.ts`; testes: `buscaDeSubstitutos.test.ts`, `painelSubstitutos.test.tsx` | CA-2145 | T22 |
-| T24 | Validação da rodada 2 | `npm run lint`, `npm run typecheck`, `npx vitest run --maxWorkers=4`; e2e `busca-substitutos` e `planejador` (`--workers=2`, cópia da configuração nas portas 4573/4576/4578); `npm run build`; `npm run test:csp` (com a trava); as sondas r2 e s1 a s8; prints da lista que abre sozinha (leite 150 ml, banana 100 g, arroz 150 g) em 1440 e 390 px | todos | T23 |
+| T24 | Validação da rodada 2 | `npm run lint`, `npm run typecheck`, `npx vitest run --maxWorkers=4`; e2e `busca-substitutos` e `planejador` (`--workers=2`, na configuração normal, com a trava `trava-e2e` da rodada: vários testes têm a porta escrita dentro); `npm run build` e `npm run test:csp` (com as travas); as sondas r2 e s1 a s8; prints da lista que abre sozinha (leite 150 ml, banana 100 g, arroz 150 g) em 1440 e 390 px | todos | T23 |
 
 ## Verificação de cada tarefa
 
