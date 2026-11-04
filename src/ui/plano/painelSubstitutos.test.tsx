@@ -526,6 +526,24 @@ describe('correções da revisão independente (03/11/2026)', () => {
     expect(lado.getAllByText('Já tem 2 opções').length).toBe(cartoes.length - 2)
   })
 
+  it('CA-2145 (D-1132): o café como item manda para "Adicionar manualmente", que resolve', async () => {
+    render(<Anfitriao />)
+    const usuario = userEvent.setup()
+    await usuario.type(entradaDoAlmoco(), '100 cafe infusao{Enter}')
+    const botao = screen.getByRole('button', { name: /^Buscar substitutos para Café, infusão/ })
+    const nome = (botao.getAttribute('aria-label') ?? '').replace('Buscar substitutos para ', '')
+    await usuario.click(botao)
+    const painel = within(screen.getByRole('dialog', { name: `Substitutos de ${nome}` }))
+    expect(painel.getByText('Café e chá não têm substituto por nutriente. Escolha em “Adicionar manualmente”.')).toBeInTheDocument()
+    expect(painel.queryByRole('list', { name: 'Candidatos' })).not.toBeInTheDocument()
+    await usuario.click(painel.getByRole('radio', { name: 'Adicionar manualmente' }))
+    await usuario.type(painel.getByRole('combobox', { name: 'Escolher alimento substituto' }), 'cha mate{Enter}')
+    // A porção equivalente do chá e as ações do resultado.
+    expect(painel.getAllByText(/\d+ (g|ml)$/).length).toBeGreaterThan(0)
+    expect(painel.getByRole('button', { name: 'Adicionar como opção' })).toBeInTheDocument()
+    expect(painel.getByRole('button', { name: 'Substituir' })).toBeEnabled()
+  })
+
   it('CA-2134: o próprio alimento na calculadora: "É o mesmo alimento" e "Substituir" desligado, também no Comparar', async () => {
     telaLarga(true)
     render(<Anfitriao />)

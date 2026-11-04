@@ -317,6 +317,9 @@ function semOutraVariedade(base: Alimento, ordenados: readonly Ordenavel[]): rea
   return ordenados.filter((o) => !daMesma(o) || o === fica)
 }
 
+/** CA-2145: a frase do painel quando o item é café ou chá. */
+const CAFE_OU_CHA_SEM_BUSCA = 'Café e chá não têm substituto por nutriente. Escolha em “Adicionar manualmente”.'
+
 /** D-1120: o mel e o chocolate que a conduta da parceira libera no Cobrir (D-290) não são substitutos. */
 const ACUCARADOS = 'Produtos açucarados'
 
@@ -331,6 +334,9 @@ export function buscarSubstitutos(
 ): ResultadoDaBusca {
   const base = buscar(original.alimentoId)
   if (!base) return { tipo: 'sem-alvo', motivo: 'Este alimento não está mais na base.' }
+  // D-1132: café e chá não são fonte de nutriente (D-193); como item, só sobrava troca sem sentido (água de coco 28 ml no
+  // lugar de 100 ml de café). A calculadora, no modo manual, aceita qualquer alimento.
+  if (CAFE_OU_CHA.test(base.descricao.trim())) return { tipo: 'sem-alvo', motivo: CAFE_OU_CHA_SEM_BUSCA }
   const nutrientes = [...new Set(opcoes.nutrientes)]
   if (nutrientes.length === 0) return { tipo: 'sem-alvo', motivo: 'Selecione um ou mais nutrientes.' }
   if (!(original.gramas > 0)) return { tipo: 'sem-alvo', motivo: `Informe os gramas de ${base.descricao.trim()} para buscar substitutos.` }

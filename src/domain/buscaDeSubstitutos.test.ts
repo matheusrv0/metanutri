@@ -377,6 +377,24 @@ describe('D-1111: sem alvo', () => {
     expect(buscar(ARROZ, 0, [CHO])).toEqual({ tipo: 'sem-alvo', motivo: 'Informe os gramas de Arroz, tipo 1, cozido para buscar substitutos.' })
   })
 
+  it('CA-2145 (D-1132): café e chá como item não montam lista, com o filtro ligado ou não', () => {
+    const CAFE = 471
+    const CHA_MATE = 476
+    registrarBaseAmpliada(BASE_AMPLIADA)
+    try {
+      for (const id of [CAFE, CHA_MATE]) {
+        for (const mesmoGrupo of [true, false]) {
+          expect(buscar(id, 100, [nutrienteInicial(buscarAlimento(id) as Alimento)], { mesmoGrupo })).toEqual({
+            tipo: 'sem-alvo',
+            motivo: 'Café e chá não têm substituto por nutriente. Escolha em “Adicionar manualmente”.',
+          })
+        }
+      }
+    } finally {
+      registrarBaseAmpliada([])
+    }
+  })
+
   it('sem nutriente escolhido e com alimento que não existe', () => {
     expect(buscar(ARROZ, 150, [])).toEqual({ tipo: 'sem-alvo', motivo: 'Selecione um ou mais nutrientes.' })
     expect(buscar(999_999, 150, [CHO])).toEqual({ tipo: 'sem-alvo', motivo: 'Este alimento não está mais na base.' })
