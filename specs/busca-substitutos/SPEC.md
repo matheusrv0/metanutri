@@ -92,7 +92,8 @@ fora.
 **Para a Mor (rodada 2):** na busca de substitutos, com "Só do mesmo grupo" ligado, a troca agora é equivalente: o mesmo
 macro dominante, a energia entre metade e o dobro e o pó só no lugar de pó (D-1125). Somem o leite em pó desnatado no
 lugar do leite e do iogurte, o abacate no lugar da banana, a castanha no lugar do pinhão, o queijo no lugar da clara e
-da gema (D-1108), o arroz tipo 2 no lugar do tipo 1 (D-1130) e o suco no lugar da fruta inteira (D-1131).
+da gema (D-1108), o arroz tipo 2 no lugar do tipo 1 (D-1130) e o suco no lugar da fruta inteira (D-1131). Quando o
+item é café ou chá, a busca não monta lista e manda para "Adicionar manualmente", onde a nutricionista escolhe a troca (D-1132).
 
 ## 3. Grupos de substituição (D-1108)
 
