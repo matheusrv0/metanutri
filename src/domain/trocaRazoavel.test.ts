@@ -2,9 +2,10 @@
 // da folha corrigida na origem. A palavra "doce", "chocolate", "bolo" e "mostarda" não corta mais o que não é doce.
 import arquivo from '../data/base-ampliada.json'
 import { decodificarBaseAmpliada, type ArquivoBaseAmpliada } from './baseAmpliada.ts'
+import { buscarSubstitutos } from './buscaDeSubstitutos.ts'
 import { TROCAS_NA_FOLHA, TROCAS_PEDIDAS_PELA_FOLHA, trocasDaFolha } from './folhaDieta.ts'
 import { ehPrescritivel } from './prescritivel.ts'
-import { ALIMENTOS, alimentosParaSugerir, buscarAlimento, registrarBaseAmpliada } from './tabelas.ts'
+import { ALIMENTOS, alimentosParaSugerir, buscarAlimento, registrarBaseAmpliada, registrarProdutos } from './tabelas.ts'
 import { ehTrocaRazoavel, papelDe, trocasDoAlimento } from './trocas.ts'
 import type { Alimento } from './tipos.ts'
 
@@ -38,6 +39,57 @@ describe('CA-2129: a troca razoável', () => {
       trocasDoAlimento({ alimentoId: a.id, gramas: 150 }, { porAlimento: 50, alimentos: alimentosParaSugerir() }).some((t) => t.alimentoId === BATATA_DOCE),
     )
     expect(comBatataDoce.length).toBeGreaterThan(0)
+  })
+})
+
+describe('CA-2140 (revisão rodada 2, B1): o nome livre recebe o mesmo tratamento que o nome da TACO', () => {
+  const comNome = (descricao: string, de = BATATA_DOCE): Alimento => ({ ...porId(de), descricao })
+
+  it('sem a vírgula da TACO, com hífen, "à bolonhesa" e "zero açúcar", o alimento é troca razoável', () => {
+    for (const nome of [
+      'Batata doce cozida',
+      'Batata-doce cozida',
+      'Batata Doce Assada',
+      'Iogurte natural integral zero açúcar',
+      'Iogurte natural sem açúcar',
+      'Pão 7 grãos zero açúcar',
+      'Granola sem adição de açúcar',
+      'Macarrão à bolonhesa',
+      'Molho bolonhesa caseiro',
+      'Folha de mostarda refogada',
+      'Mostarda folha crua',
+      'Caqui chocolate',
+      'Tilápia de água doce assada',
+    ]) {
+      expect(ehTrocaRazoavel(comNome(nome)), nome).toBe(true)
+    }
+  })
+
+  it('o doce, o bolo, o açúcar e o chocolate de verdade continuam cortados', () => {
+    for (const nome of ['Doce de leite', 'Bolo de cenoura', 'Bolos caseiros', 'Iogurte com açúcar', 'Açúcar mascavo', 'Chocolate zero açúcar', 'Biscoito zero açúcar', 'Mostarda amarela', 'Doce de batata']) {
+      expect(ehTrocaRazoavel(comNome(nome)), nome).toBe(false)
+    }
+  })
+
+  it('o alimento próprio com a chave ligada aparece na busca', () => {
+    const proprio = (id: number, de: number, descricao: string): Alimento =>
+      ({ ...porId(de), id, descricao, proprio: { tipo: 'rotulo', nomeParaPaciente: descricao, sugerir: true, energiaIncoerente: false } }) as Alimento
+    const IOGURTE = 448
+    const LEITE = 458
+    const ARROZ = 3
+    const casos: [Alimento, number][] = [
+      [proprio(900_401, BATATA_DOCE, 'Batata doce cozida'), ARROZ],
+      [proprio(900_402, IOGURTE, 'Iogurte natural integral zero açúcar'), LEITE],
+    ]
+    registrarProdutos(casos.map(([a]) => a))
+    try {
+      for (const [a, base] of casos) {
+        const r = buscarSubstitutos({ alimentoId: base, gramas: 100 }, { nutrientes: ['energia_kcal'], mesmoGrupo: false, alimentos: alimentosParaSugerir(), limite: 2000 }, buscarAlimento)
+        expect(r.tipo === 'lista' && r.candidatos.some((c) => c.alimento.id === a.id), a.descricao).toBe(true)
+      }
+    } finally {
+      registrarProdutos([])
+    }
   })
 })
 

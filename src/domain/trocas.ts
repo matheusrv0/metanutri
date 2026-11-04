@@ -42,10 +42,12 @@ const kcalPorCem = (a: Alimento): number | null => {
  * Numa folha entregue ao paciente, isso é conselho ruim, então esses saem da lista.
  * O que é prescritível decide a regra comum (prescritivel.ts); esta lista diz só o que não é troca justa.
  * Spec busca-substitutos, D-1121: a palavra não corta o que não é doce: a batata-doce e o peixe de água doce, o caqui
- * "chocolate", o macarrão à bolonhesa e a folha de mostarda.
+ * "chocolate", o macarrão à bolonhesa e a folha de mostarda. D-1127: também no nome livre do alimento próprio e da cópia
+ * do catálogo ("Batata doce", "Caqui chocolate", "Folha de mostarda", "à bolonhesa"), e "zero açúcar", "sem açúcar" e
+ * "sem adição de açúcar" não cortam: o nome diz que não tem.
  */
 const NAO_EQUIVALE =
-  /(^|[\s,])(biscoito|bolo(?!gn)|torta|(?<!caqui, )chocolate|bombom|brigadeiro|(?<!batata, |água )doce|docinho|goiabada|geleia|sorvete|picol(é|e)|pudim|mousse|refrigerante|suco em p(ó|o)|achocolatado|salgadinho|pizza|hamb(ú|u)rguer|nuggets|empanado|salsicha|lingui(ç|c)a|mortadela|salame|presunto|bacon|toucinho|maionese|catchup|ketchup|mostarda(?!, folha)|leite condensado|creme de leite|a(ç|c)(ú|u)car)/i
+  /(^|[\s,])(biscoito|bolos?(?=$|[\s,])|torta|(?<!caqui,? )chocolate|bombom|brigadeiro|(?<!batata(, | )|água )doce|docinho|goiabada|geleia|sorvete|picol(é|e)|pudim|mousse|refrigerante|suco em p(ó|o)|achocolatado|salgadinho|pizza|hamb(ú|u)rguer|nuggets|empanado|salsicha|lingui(ç|c)a|mortadela|salame|presunto|bacon|toucinho|maionese|catchup|ketchup|(?<!folhas? de )mostarda(?!,? folha)|leite condensado|creme de leite|(?<!(zero|sem|sem adi(ç|c)(ã|a)o de) )a(ç|c)(ú|u)car)/i
 
 export const ehTrocaRazoavel = (a: Alimento): boolean => !NAO_EQUIVALE.test(a.descricao)
 
