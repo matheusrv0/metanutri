@@ -316,6 +316,28 @@ describe('conferirResposta', () => {
     expect(ajustar.ok && ajustar.resposta.mudancas[0]?.motivo).toBe('b + fibra /b')
   })
 
+  describe('CA-2392 e D-1339: o corte não parte caractere e os não-caracteres saem', () => {
+    const quebrado = /\p{Cs}|[￾￿]/u
+    it('no pedido: o emoji no limite fica inteiro ou sai inteiro', () => {
+      expect(textoCurto(`${'a'.repeat(198)}😀😀`, 200)).toBe(`${'a'.repeat(198)}😀😀`)
+      const cortado = textoCurto(`${'a'.repeat(199)}😀😀`, 200)
+      expect(cortado).toBe(`${'a'.repeat(199)}😀`)
+      expect(cortado).not.toMatch(quebrado)
+    })
+
+    it('no pedido: surrogate solto, U+FFFE, U+FFFF e os outros não-caracteres saem', () => {
+      expect(textoCurto('a\ud800b c￾d e￿ f\udc00 g﷐h', 50)).toBe('a b c d e f g h')
+    })
+
+    it('no texto da IA: ponto cortado por caractere, sem surrogate solto nem não-caractere', () => {
+      const r = conferirResposta(resposta({ pontosAConfirmar: [`${'a'.repeat(198)}😀😀😀`, 'a\ud800b', 'c￾d￿'] }), GERAR)
+      if (!r.ok) throw new Error(r.motivo)
+      expect(r.resposta.pontosAConfirmar).toEqual([`${'a'.repeat(198)}😀…`, 'a b', 'c d'])
+      for (const p of r.resposta.pontosAConfirmar) expect(p).not.toMatch(quebrado)
+      expect([...(r.resposta.pontosAConfirmar[0] ?? '')]).toHaveLength(200)
+    })
+  })
+
   it('CA-2317: no máximo 10 itens por opção; ponto até 200 e motivo até 90 caracteres', () => {
     const muitos = Array.from({ length: 14 }, () => ({ alimentoId: 3, gramas: 10 }))
     const r = conferirResposta(resposta({ refeicoes: [{ refeicao: 0, principal: muitos, opcao2: [] }], pontosAConfirmar: ['p'.repeat(400)] }), GERAR)

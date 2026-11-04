@@ -254,13 +254,24 @@ function cortePrevio(texto: string, limite: number): string {
   return espaco > 0 ? corte.slice(0, espaco) : corte
 }
 
+/**
+ * D-1335 e D-1339: o que sai de todo texto, na entrada e na saída: os caracteres de controle e de formatação (inclusive os
+ * que invertem o sentido do texto), o surrogate solto e os não-caracteres (U+FFFE, U+FFFF e os outros), que o Word recusa.
+ */
+const CARACTERES_PROIBIDOS = /[\p{Cc}\p{Cf}\p{Cs}\p{Noncharacter_Code_Point}]+/gu
+
+/** D-1339: os primeiros `limite` caracteres, sem partir um emoji; com `sinal`, ele entra no lugar do último. */
+function cortarEmCaracteres(texto: string, limite: number, sinal = ''): string {
+  if (fimDosCaracteres(texto, limite) >= texto.length) return texto
+  return `${texto.slice(0, fimDosCaracteres(texto, sinal === '' ? limite : limite - 1)).trimEnd()}${sinal}`
+}
+
 /** O texto limpo, sem controle, com os espaços normalizados e cortado no limite. Não texto vira vazio. */
 export function textoCurto(valor: unknown, limite: number): string {
   if (typeof valor !== 'string') return ''
-  const junto = cortePrevio(valor, limite).replace(/[\p{Cc}\p{Cf}]+/gu, ' ').replace(/\s+/g, ' ').trim()
+  const junto = cortePrevio(valor, limite).replace(CARACTERES_PROIBIDOS, ' ').replace(/\s+/g, ' ').trim()
   if (junto === '') return ''
-  const limpo = limparTexto(junto)
-  return limpo.length <= limite ? limpo : limpo.slice(0, limite).trimEnd()
+  return cortarEmCaracteres(limparTexto(junto), limite)
 }
 
 // ---------- Limites do pedido (D-1314, CA-2311) ----------
@@ -580,15 +591,16 @@ function formaDoEsquema(json: unknown): string | null {
 }
 
 /**
- * D-1335 e CA-2389: o texto da IA ("motivo" e "pontosAConfirmar") sem `<`, `>` e sem os caracteres de controle e de
- * formatação (inclusive os que invertem o sentido do texto), com os espaços juntos e cortado no limite.
+ * D-1335, D-1339 e CA-2389: o texto da IA ("motivo" e "pontosAConfirmar") sem `<`, `>`, sem os caracteres proibidos, com
+ * os espaços juntos e cortado no limite por caractere.
  */
 const cortar = (texto: string, limite: number): string => {
   const limpo = texto
-    .replace(/[<>\p{Cc}\p{Cf}]+/gu, ' ')
+    .replace(CARACTERES_PROIBIDOS, ' ')
+    .replace(/[<>]+/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
-  return limpo.length <= limite ? limpo : `${limpo.slice(0, limite - 1).trimEnd()}…`
+  return cortarEmCaracteres(limpo, limite, '…')
 }
 
 const gramasValidas = (g: unknown): g is number =>
