@@ -215,6 +215,11 @@ describe('a vista Histórico (T16)', () => {
     expect(screen.getByText('−1,5 kg desde 07/07')).toBeInTheDocument()
   })
 
+  it('CB-1451: nenhuma data AAAA-MM-DD na tela', () => {
+    abrirHistorico()
+    expect(document.body.textContent).not.toMatch(/\d{4}-\d{2}-\d{2}/)
+  })
+
   it('a concordância das avaliações no cabeçalho da tabela', () => {
     abrirHistorico()
     expect(screen.getByText('Mesmo protocolo e mesmo ponto de cintura nas quatro')).toBeInTheDocument()

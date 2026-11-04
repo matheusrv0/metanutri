@@ -153,6 +153,12 @@ describe('o documento da avaliação (T18)', () => {
     expect(folha().getByRole('group', { name: 'Assinaturas' })).toBeInTheDocument()
   })
 
+  it('CB-1451: nenhuma data AAAA-MM-DD na tela nem no documento', async () => {
+    const { usuario } = abrir()
+    await gerar(usuario)
+    expect(document.body.textContent).not.toMatch(/\d{4}-\d{2}-\d{2}/)
+  })
+
   it('D-1489: "Gerar documento" também no Histórico', () => {
     montarComDados({ pacientes: [RENATA], planos: [planoDe('nov', COMPLETO)] }, () => (
       <TelaAntropometria rota={{ tela: 'antropometria', casoId: 'nov', vista: 'historico' }} navegar={() => undefined} moldura={moldura} aoNovaAvaliacao={() => undefined} agora={AGORA} />
