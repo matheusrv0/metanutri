@@ -279,6 +279,13 @@ e o WhatsApp de "Trocar o endereço"); `src/domain/retorno.ts` (o link do pacien
 link fixo e com a tela nova (`src/ui/missoes/*.test.tsx`, `e2e/missoes.spec.ts`, `e2e/marca-no-link.spec.ts`,
 `e2e/dieta*`); `testes/seguranca/funcoes.test.ts` (as funções novas do paciente).
 
+**Acrescentados na validação de 04/11** (a rodada do e2e na configuração normal): os e2e de sempre que geram ou abrem o
+link (`e2e/csp.spec.ts`, `receitas.spec.ts`, `whatsapp-e-retorno.spec.ts`, `revisao-geral-trabalho.spec.ts`,
+`e2e/servidor-falso/marca-no-link.spec.ts`, `revisao.spec.ts` e `telas-publicas.spec.ts`), que seguem o "Para quem é
+este link?", o `/p/<token>` e a barra de baixo; e `src/ui/tema/globals.css`, a regra de impressão da marca (CB-958), que
+pegava a barra do dia de antes dos segmentos. O R-LP-5 deixava os arquivos da marca de fora enquanto o `marca-no-link`
+recebia correções; com ela na `main` (3d3428ae), a regra foi ajustada aqui.
+
 ## 5. Tarefas (uma por commit)
 
 Cada tarefa termina com os testes dela verdes (`npx vitest run <arquivos>`), lint e tipos dos arquivos tocados. A
@@ -337,24 +344,24 @@ Todo teste leva o ID no nome. "Dono" é conferência que só ele faz (seção 9)
 | CA-2200–CA-2212 | `src/ui/missoes/link/*.test.tsx` (Hoje, Plano, Semana, movimento, mensagem) e `src/domain/refeicaoDaHora.test.ts` (CA-2210), `semanaDoPaciente.test.ts` (CA-2211) |
 | CA-2213 | `src/ui/pacientes/cartaoLinkDoPaciente.test.tsx`; `src/data/servidorAvisosEmails.test.ts` (nenhum e-mail leva a mensagem) |
 | CA-2214 | `src/domain/mensagemDoLink.test.ts` (as duas datas), `link/hoje.test.tsx`, `link/semana.test.tsx`; a ficha publica a consulta em `cartaoLinkDoPaciente.test.tsx` |
-| CA-2215, CA-2216 | `link/marcaNaBarra.test.tsx` |
-| CA-2217, CA-2218 | `link/acesso.test.tsx`; `e2e/servidor-falso/lado-do-paciente.spec.ts` (360, 390 e 412 px, letra a 200%) |
+| CA-2215, CA-2216 | `link/marcaNaBarra.test.tsx`; `e2e/servidor-falso/marca-no-link.spec.ts` e `e2e/marca-no-link.spec.ts` (a parte escolhida e a ação na cor dela, no claro e no escuro) |
+| CA-2217, CA-2218 | `link/acesso.test.tsx`, `link/barraDeAbas.test.tsx`; `e2e/servidor-falso/lado-do-paciente.spec.ts` (360, 390 e 412 px, letra a 200%) |
 | CA-2219 | `link/folhaMeuPlano.test.tsx` |
-| CA-2220, CA-2221 | `src/ui/enderecoDoLink.test.ts`; `link/manifesto.test.ts`; `src/seo/pluginAlvo.test.ts`; dono (aparelho de verdade) |
+| CA-2220, CA-2221 | `src/ui/enderecoDoLink.test.ts`; `link/manifesto.test.ts`; `src/seo/pluginAlvo.test.ts`; `e2e/servidor-falso/lado-do-paciente.spec.ts` (CA-2220); dono (aparelho de verdade) |
 | CA-2222, CA-2224 | `src/domain/linkFixo.test.ts`, `src/ui/missoes/linkFixo.test.tsx` |
-| CA-2223 | `src/ui/missoes/trocarEndereco.test.tsx`; `servidorEnviarLink.test.ts` (S4) |
+| CA-2223 | `src/ui/missoes/linkFixo.test.tsx` (o diálogo "Trocar o endereço?"); `servidorEnviarLink.test.ts` (S4); `testes/seguranca/avisos.test.ts` (S4 contra o banco local) |
 | CA-2225 | `linkFixo.test.ts` (app) e `sqlLadoDoPaciente.test.ts` + `testes/seguranca/ladoDoPaciente.test.ts` (SQL) |
 | CA-2226 | `linkFixo.test.tsx`; `testes/seguranca/ladoDoPaciente.test.ts` |
-| CA-2227, CA-2228 | `src/domain/meusPlanos.test.ts`, `src/ui/publico/conta/cartaoMeusPlanos.test.tsx`, `link/esquecer.test.tsx` |
+| CA-2227, CA-2228 | `src/domain/meusPlanos.test.ts`, `src/ui/publico/conta/cartaoMeusPlanos.test.tsx`, `link/esquecer.test.tsx`; `e2e/servidor-falso/lado-do-paciente.spec.ts` |
 | CA-2229–CA-2232 | `src/domain/instalarMeuPlano.test.ts`, `link/instalar.test.tsx` |
-| CA-2233, CA-2234 | `src/ui/publico/conta/telaRecuperarLink.test.tsx`; `servidorMeuLink.test.ts` |
-| CA-2235–CA-2237 | `link/receberPorEmail.test.tsx`; `servidorMeuLink.test.ts`; `src/data/emailDoPaciente.test.ts` |
-| CA-2238 | `src/ui/missoes/linkQueNaoAbre.test.tsx` |
+| CA-2233, CA-2234 | `src/ui/publico/conta/telaRecuperarLink.test.tsx`; `servidorMeuLink.test.ts`; `testes/seguranca/avisos.test.ts`; `e2e/servidor-falso/lado-do-paciente.spec.ts` (CA-2233) |
+| CA-2235–CA-2237 | `link/receberPorEmail.test.tsx`; `servidorMeuLink.test.ts`; `src/data/emailDoPaciente.test.ts`; `testes/seguranca/avisos.test.ts`; `e2e/servidor-falso/lado-do-paciente.spec.ts` (CA-2235, CA-2236) |
+| CA-2238 | `src/ui/missoes/linkQueNaoAbre.test.tsx`; `e2e/servidor-falso/lado-do-paciente.spec.ts` |
 | CA-2239 | `src/ui/missoes/ultimoAcesso.test.tsx`; `testes/seguranca/ladoDoPaciente.test.ts`; `src/ui/missoes/adesaoComAvisos.test.tsx` |
-| CA-2240–CA-2243 | `link/receberPorEmail.test.tsx`; `src/ui/avisos/telaAvisosDoEmail.test.tsx`; `servidorMeuLink.test.ts`, `servidorAvisosResposta.test.ts`, `servidorEnviarLink.test.ts` |
-| CA-2244–CA-2251 | `src/data/servidorAvisosRegras.test.ts`, `servidorAvisosRodada.test.ts` |
+| CA-2240–CA-2243 | `link/receberPorEmail.test.tsx`; `src/ui/avisos/telaAvisosDoEmail.test.tsx`; `servidorMeuLink.test.ts`, `servidorAvisosResposta.test.ts`, `servidorEnviarLink.test.ts`; `testes/seguranca/avisos.test.ts`; `e2e/servidor-falso/lado-do-paciente.spec.ts` (CA-2240, CA-2241) |
+| CA-2244–CA-2251 | `src/data/servidorAvisosRegras.test.ts`, `servidorAvisosRodada.test.ts`; `testes/seguranca/avisos.test.ts` (CA-2244, CA-2247, contra o banco local) |
 | CA-2252–CA-2255 | `servidorAvisosResposta.test.ts`, `servidorAvisosEmails.test.ts`, `telaAvisosDoEmail.test.tsx` |
-| CA-2256 | `link/folhaAvisos.test.tsx`; `testes/seguranca/ladoDoPaciente.test.ts` (`desligar_aviso`) |
+| CA-2256 | `link/receberPorEmail.test.tsx` (o bloco da folha "Avisos por e-mail"); `servidorMeuLink.test.ts`; `src/domain/emailsDoLink.test.ts`; `testes/seguranca/ladoDoPaciente.test.ts` (`desligar_aviso`) |
 | CA-2257 | `servidorMeuLink.test.ts`; `testes/seguranca/ladoDoPaciente.test.ts` (`definir_email_da_ficha`) |
 | CA-2258, CA-2259 | `servidorAvisosEmails.test.ts`, `servidorEnviarLink.test.ts` |
 | CA-2260–CA-2265 | `src/ui/pacientes/avisosNaFicha.test.tsx`, `src/domain/avisosNaFicha.test.ts`; `servidorEnviarLink.test.ts` (CA-2262, CA-2265) |
@@ -362,8 +369,8 @@ Todo teste leva o ID no nome. "Dono" é conferência que só ele faz (seção 9)
 | CA-2267, CA-2268 | `servidorAvisosRodada.test.ts`, `servidorAvisosEmails.test.ts` |
 | CA-2269 | `src/ui/missoes/adesaoComAvisos.test.tsx` |
 | CA-2270 | `sqlLadoDoPaciente.test.ts`, `testes/seguranca/ladoDoPaciente.test.ts` (agendamentos) e `servidorAvisosRodada.test.ts` (401) |
-| CA-2271–CA-2276 | `src/data/servidorAvisosTetos.test.ts`, `servidorAvisosResend.test.ts`, `servidorAvisosRodada.test.ts` |
-| CA-2277, CA-2278 | `src/data/servidorWebhookResend.test.ts` |
+| CA-2271–CA-2276 | `src/data/servidorAvisosTetos.test.ts`, `servidorAvisosResend.test.ts`, `servidorAvisosRodada.test.ts`; `testes/seguranca/avisos.test.ts` (CA-2274 a CA-2276) |
+| CA-2277, CA-2278 | `src/data/servidorWebhookResend.test.ts`; `testes/seguranca/avisos.test.ts` (CA-2277) |
 | CA-2279 | `servidorAvisosEmails.test.ts` (remetente do subdomínio); dono (DKIM no painel do Resend) |
 | CA-2280 | `servidorAvisosEmails.test.ts` (sem `<img>`, sem pixel, com texto puro) |
 | CA-2281 | `src/ui/negocio/cartaoEmailsDoDono.test.tsx`; `testes/seguranca/ladoDoPaciente.test.ts` (`painel_emails` só do admin) |
@@ -442,8 +449,84 @@ A versão dos textos sobe (`VERSAO_TERMOS = '2026-11-03'`), e o aviso de termos 
 
 ## 9. O que o dono faz, na ordem
 
-Os comandos e o SQL vão prontos na seção 10, depois da validação.
+Já feito pelo dono em 04/11/2026 (SPEC, seção 7, passos 3 a 6): o domínio `avisos.metanutri.com.br` no Resend, o DNS no
+Registro.br (com o `send.avisos` em `CNAME` para `send.forge.rmta.net`), o rastreio desligado e o `RESEND_API_KEY` nos
+Secrets das Edge Functions.
+
+1. **SQL 017, antes de publicar.** Supabase › **SQL Editor** › **New query** › cole todo o
+   `supabase/017-lado-do-paciente.sql` › **Run**. Tem que aparecer "Success. No rows returned"; pode rodar de novo sem
+   medo. Depois, as consultas de conferência do fim do arquivo, numa consulta nova. O agendamento usa o endereço do
+   projeto que o 014 guardou no cofre (`metanutri_url_do_projeto`); a conferência mostra as duas linhas do cofre.
+2. **`TURNSTILE_SECRET_KEY`.** Cloudflare › **Turnstile** › o widget do app › **Settings** › copie a **Secret key**.
+   Supabase › **Edge Functions** › **Secrets** › **Add new secret**: nome `TURNSTILE_SECRET_KEY`, valor a chave. Sem
+   ela, "Recuperar meu link" responde a frase de sempre e não manda nada (DP-LP-19).
+3. **As cinco funções.** Na pasta do projeto, com a `main` atualizada:
+   ```
+   npx supabase functions deploy meu-link --no-verify-jwt --project-ref qmpljfjbdcrdbqutuvmg
+   npx supabase functions deploy avisos-resposta --no-verify-jwt --project-ref qmpljfjbdcrdbqutuvmg
+   npx supabase functions deploy enviar-link --project-ref qmpljfjbdcrdbqutuvmg
+   npx supabase functions deploy webhook-resend --no-verify-jwt --project-ref qmpljfjbdcrdbqutuvmg
+   npx supabase functions deploy avisos --no-verify-jwt --project-ref qmpljfjbdcrdbqutuvmg
+   ```
+   `enviar-link` fica com a verificação de sessão (só a nutricionista chama). As outras quatro são chamadas pelo
+   paciente sem conta, pelo Resend ou pelo agendamento do banco, e conferem por conta própria (o token do link, a chave
+   do e-mail, a assinatura do Svix e a chave do cofre).
+4. **O webhook do Resend** (só com a `webhook-resend` publicada). Resend › **Webhooks** › **Add endpoint**:
+   - endereço: `https://qmpljfjbdcrdbqutuvmg.supabase.co/functions/v1/webhook-resend`;
+   - eventos: `email.delivered`, `email.bounced` e `email.complained`.
+
+   Copie o **Signing secret** (`whsec_…`) e guarde em Supabase › Edge Functions › Secrets como `RESEND_WEBHOOK_SECRET`.
+   Sem ele, a função recusa todo evento com 401 (CA-2277), e as devoluções não entram na supressão.
+5. **Aprovar a Política** (seção 8). O texto já está no código (commit `PARA O DONO APROVAR`); a data de
+   `VERSAO_TERMOS` troca para o dia da publicação.
+6. **Publicar o site** depois do 017 (R-LP-1), pelo `publicar.yml` de sempre.
+7. **Conferências que só o dono faz:** o ícone "Meu plano" num iPhone e num Android de verdade (CA-2221); o "Verify"
+   do domínio no Resend, com o DKIM (CA-2279); um S1 de teste aberto no Gmail, no Outlook e no Apple Mail (CA-2288); a
+   Adesão depois da publicação, para aprovar a migração do link fixo (D-1217).
+
+Nada aqui é preciso para o link abrir: publicado antes do 017, o link e a ficha funcionam como hoje (DP-LP-30), e os
+e-mails respondem "Não foi possível enviar agora.".
 
 ## 10. Validação
 
-Preenchida no fim (T40).
+Feita em 04/11/2026, com a `main` de 3d3428ae (a marca no link e o importar pacientes) juntada ao ramo (merge sem
+conflito).
+
+**Rodada final** (04/11, de 09:36 em diante, com a máquina dividida com outras frentes):
+- `npm run lint`: 0 erro (1 aviso antigo, abaixo). `npm run typecheck`: limpo. `npm run build`: limpo.
+- `npx vitest run --maxWorkers=4`: 7.400 testes em 408 arquivos; 7.399 verdes e 1 que estourou o tempo de 20 s com a
+  máquina cheia (`src/domain/trocas.test.ts`, CA-921, de fora desta frente e sem mudança neste ramo), verde rodando
+  sozinho (46 de 46).
+- e2e dos arquivos mexidos, na configuração normal, com a `trava-e2e` e `--workers=2`: verdes (os 9 de
+  `lado-do-paciente.spec.ts`, os 147 dos arquivos do link e da marca).
+
+**Achados da validação, corrigidos:**
+- **Os e2e de sempre esperavam a tela de antes.** O agente anterior viu 37 falhas numa cópia do e2e com outras portas
+  (falha falsa: vários testes têm a porta escrita). Na configuração normal, as falhas eram dos testes que geram ou abrem
+  o link: sem o "Para quem é este link?" (CA-2224), com o `#/missoes/` (D-1213), com as abas "Missões" e "Meu plano"
+  (D-1202) e com a linha da folha impressa no Plano (D-1206). Atualizados (ver a seção 4, "Acrescentados na
+  validação").
+- **CB-958 (marca-no-link):** a regra de impressão da marca pegava a barra do dia por `[role=progressbar] > div`, que
+  deixou de existir com os segmentos (D-1203); no papel, sem "Gráficos de fundo", a barra perdia a cor dela. A regra
+  passa a pegar o pedaço cheio de cada segmento (`globals.css`).
+- **CA-2218:** com a letra a 200% em 360 px, Hoje rolava 22 px para o lado: a origem da missão ("Refeição do plano"),
+  ao lado do "Ver", não quebrava, e a linha da semana não cabia numa linha. A origem quebra como o nome da missão, e a
+  linha da semana desce o texto para baixo dos pontos (`LinhaDaMissao.tsx`, `LinhaDaSemana.tsx`).
+- **A matriz da seção 6** apontava para dois arquivos que não existem (`link/folhaAvisos.test.tsx` e
+  `src/ui/missoes/trocarEndereco.test.tsx`): o CA-2256 está em `link/receberPorEmail.test.tsx`, e o CA-2223 em
+  `linkFixo.test.tsx`. A matriz também ganhou o T18 (`testes/seguranca/avisos.test.ts`) e o T30
+  (`e2e/servidor-falso/lado-do-paciente.spec.ts`). Conferido por busca: os 117 IDs da SPEC (CA-2200 a CA-2288 e
+  CB-1200 a CB-1227) têm, cada um, pelo menos um teste com o ID no nome.
+
+**Divergências que ficam (para o dono saber; nenhuma quebra critério desta SPEC):**
+- **CA-1965 e CA-1966 (marca-no-link)** dizem "a aba escolhida na cor dela com texto branco" (no escuro, `#101A1D`). Com
+  a barra de baixo (D-1202), a parte escolhida leva a cor no nome e num fundo claro da mesma cor; o par "cor com texto
+  branco (ou carvão)" passou para "Marcar como feita", no Plano. É o que o CA-2215 e a seção 5 desta SPEC pedem, mas o
+  texto da `marca-no-link` não foi reescrito.
+- **CA-883 (receitas-com-calculo) e CA-974 (integracao-rodada-1910)** pedem, no link, a porção como na folha impressa
+  ("1 unidade · 120 g", "a mesma linha da folha"). Com o D-1206, o link mostra o nome à esquerda, "120 g" à direita e
+  "1 unidade" embaixo. A seção 5 desta SPEC avisa a mudança no D-150 da `dieta-no-link`, mas não nessas duas.
+- **CA-2221** (o ícone instalado abre o plano), **CA-2279** (DKIM), **CA-2282** e **CA-2283** (a chave presa ao domínio)
+  e **CA-2288** (Gmail, Outlook e Apple Mail) têm a parte do código testada; o resto é conferência do dono (seção 9).
+- O lint tem um aviso antigo (não erro) em `src/ui/missoes/link/linkDeTeste.test-utils.tsx` (React Refresh num arquivo
+  de teste).
