@@ -67,8 +67,8 @@ test.describe('tela larga (1440 px): o painel ao lado das refeições', () => {
     // CA-2120: a polenta como opção.
     await painel.getByRole('button', { name: 'Adicionar como opção: Polenta, pré-cozida' }).click()
     await expect(page.getByRole('list', { name: `Opções de ${ARROZ}` })).toContainText('Polenta, pré-cozida')
-    // CA-2132: desligado, mas focável (aria-disabled), e o foco continua nele.
-    const jaEOpcao = polenta.getByRole('button', { name: 'Já é opção' })
+    // CA-2132: desligado, mas focável (aria-disabled), e o foco continua nele; CA-2142: o nome diz o alimento.
+    const jaEOpcao = polenta.getByRole('button', { name: 'Já é opção: Polenta, pré-cozida', exact: true })
     await expect(jaEOpcao).toHaveAttribute('aria-disabled', 'true')
     await expect(jaEOpcao).toBeFocused()
 

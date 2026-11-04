@@ -314,7 +314,7 @@ describe('Comparar, Substituir e opção (D-1112 a D-1114)', () => {
 
     await usuario.click(lado.getByRole('button', { name: 'Adicionar como opção: Polenta, pré-cozida' }))
     expect(within(screen.getByRole('list', { name: `Opções de ${ARROZ}` })).getAllByRole('listitem')).toHaveLength(2)
-    expect(lado.getAllByRole('button', { name: 'Já tem 2 opções' }).length).toBeGreaterThan(0)
+    expect(lado.getAllByRole('button', { name: /^Já tem 2 opções: / }).length).toBeGreaterThan(0)
 
     await usuario.click(screen.getByRole('button', { name: 'Tirar a opção Batata, inglesa, cozida' }))
     expect(within(screen.getByRole('list', { name: `Opções de ${ARROZ}` })).getAllByRole('listitem')).toHaveLength(1)
@@ -500,6 +500,30 @@ describe('correções da revisão independente (03/11/2026)', () => {
     await usuario.click(screen.getByRole('button', { name: 'Tirar a opção Polenta, pré-cozida' }))
     expect(screen.queryByRole('list', { name: `Opções de ${ARROZ}` })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: `Buscar substitutos para ${ARROZ}` })).toHaveFocus()
+  })
+
+  it('CA-2142 (D-1129): com 2 opções, cada botão desligado diz de qual alimento é; o texto na tela não muda', async () => {
+    telaLarga(true)
+    render(<Anfitriao />)
+    const usuario = userEvent.setup()
+    await almocoComArroz(usuario)
+    await usuario.click(screen.getByRole('button', { name: `Buscar substitutos para ${ARROZ}` }))
+    const lado = within(screen.getByRole('complementary', { name: `Substitutos de ${ARROZ}` }))
+    await usuario.click(lado.getByRole('button', { name: 'Adicionar como opção: Batata, inglesa, cozida' }))
+    await usuario.click(lado.getByRole('button', { name: 'Adicionar como opção: Polenta, pré-cozida' }))
+    const cartoes = within(lado.getByRole('list', { name: 'Candidatos' })).getAllByRole('listitem')
+    const desligados = cartoes.flatMap((li) => within(li).getAllByRole('button').filter((b) => b.getAttribute('aria-disabled') === 'true'))
+    expect(desligados).toHaveLength(cartoes.length)
+    const nomes = desligados.map((b) => b.getAttribute('aria-label') ?? '')
+    expect(new Set(nomes).size).toBe(nomes.length)
+    expect(nomes).toContain('Já é opção: Batata, inglesa, cozida')
+    expect(nomes).toContain('Já é opção: Polenta, pré-cozida')
+    for (const [i, li] of cartoes.entries()) {
+      const nome = li.querySelector('[title]')?.getAttribute('title') ?? ''
+      expect([`Já é opção: ${nome}`, `Já tem 2 opções: ${nome}`]).toContain(nomes[i])
+    }
+    // O texto na tela continua o de antes.
+    expect(lado.getAllByText('Já tem 2 opções').length).toBe(cartoes.length - 2)
   })
 
   it('CA-2134: o próprio alimento na calculadora: "É o mesmo alimento" e "Substituir" desligado, também no Comparar', async () => {

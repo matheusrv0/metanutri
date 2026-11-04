@@ -54,7 +54,8 @@ export function CartaoCandidato({ candidato, vaga, aoComparar, aoAdicionarOpcao,
           className="max-sm:flex-1 aria-disabled:pointer-events-none aria-disabled:opacity-50"
           aria-disabled={vaga !== 'livre' || undefined}
           onClick={() => vaga === 'livre' && aoAdicionarOpcao()}
-          aria-label={vaga === 'livre' ? `Adicionar como opção: ${alimento.descricao}` : undefined}
+          // D-1129 (revisão rodada 2, B3): desligado, o nome continua dizendo de qual alimento é; o texto na tela não muda.
+          aria-label={`${rotuloDaOpcao(vaga)}: ${alimento.descricao}`}
         >
           {rotuloDaOpcao(vaga)}
         </Button>
