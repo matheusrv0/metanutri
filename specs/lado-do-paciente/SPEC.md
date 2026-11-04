@@ -366,32 +366,37 @@ Cada passo na ordem em que é preciso. Os comandos e o SQL vêm no PLAN, prontos
 1. Testar o ícone "Meu plano" num iPhone e num Android de verdade, com o link publicado numa versão de teste.
 2. Aprovar a regra de migração (D-1217) olhando a Adesão depois da publicação.
 
-**Para a entrega 2 (começar já, porque o DNS e o aquecimento levam dias):**
-3. **Resend › Domains › Add domain:** `avisos.metanutri.com.br`, na mesma região do domínio de hoje (São Paulo,
-   `sa-east-1`, pelo registro `rsend` que aponta para o Amazon SES de São Paulo; conferir no painel).
-4. **Cloudflare › DNS:** criar os três registros que o Resend mostrar, **sem a nuvem laranja** (só DNS):
-   - `TXT` `resend._domainkey.avisos` com a chave DKIM;
-   - `MX` `send.avisos` → `feedback-smtp.sa-east-1.amazonses.com`, prioridade 10;
-   - `TXT` `send.avisos` → `v=spf1 include:amazonses.com ~all`.
-   Depois, "Verify" no Resend.
-5. **Resend › o domínio novo › Configuration:** desligar *Open tracking* e *Click tracking*.
-6. **Resend › API Keys:** criar a chave "avisos", com *Sending access* e só o domínio `avisos.metanutri.com.br`.
-   Guardar no Supabase: `npx supabase secrets set RESEND_API_KEY=<chave> --project-ref qmpljfjbdcrdbqutuvmg`.
-7. **Resend › Webhooks:** criar o webhook para a função `webhook-resend`, com os eventos `email.delivered`,
-   `email.bounced` e `email.complained`; guardar o segredo como `RESEND_WEBHOOK_SECRET`.
-8. **SQL Editor do Supabase:** rodar o SQL novo da entrega (tabelas de e-mail, aceite, envio e supressão, e o
-   agendamento), como no 014.
-9. Publicar as funções (`npx supabase functions deploy <nome> --project-ref qmpljfjbdcrdbqutuvmg`), como nas outras.
-10. Aprovar o texto novo da Política de privacidade e da pergunta de autorização.
+**Para a entrega 2.** Os passos 3 a 6 o dono **fez em 04/11/2026**; ficam aqui como registro do que existe:
+3. **Feito.** **Resend › Domains:** o domínio `avisos.metanutri.com.br` foi criado.
+4. **Feito.** **Registro.br › metanutri.com.br › DNS** (o DNS do domínio é o do Registro.br, e não o da Cloudflare):
+   os registros que o Resend mostrou, com o `TXT` `resend._domainkey.avisos` da chave DKIM e o `send.avisos` como
+   **`CNAME` para `send.forge.rmta.net`**. O painel do Resend pediu esse `CNAME` no lugar do `MX` e do `TXT` de SPF do
+   Amazon SES que esta seção previa; vale o que o painel pede. Depois, "Verify" no Resend.
+5. **Feito.** **Resend › o domínio novo › Configuration:** *Open tracking* e *Click tracking* desligados.
+6. **Feito.** **Resend › API Keys:** a chave "avisos", com *Sending access* e só o domínio `avisos.metanutri.com.br`,
+   guardada em **Supabase › Edge Functions › Secrets** como `RESEND_API_KEY`.
+
+Falta, na ordem (os comandos prontos estão no PLAN, seção 9):
+7. **SQL Editor do Supabase:** rodar o `supabase/017-lado-do-paciente.sql` (o link fixo, as tabelas de e-mail, aceite,
+   envio e supressão, e o agendamento), como no 014, **antes** de publicar o site e as funções.
+8. Publicar as cinco funções novas (`meu-link`, `avisos-resposta`, `webhook-resend` e `avisos` com `--no-verify-jwt`;
+   `enviar-link` com a verificação de sessão de sempre).
+9. **Cloudflare › Turnstile:** guardar a chave secreta do widget que o app já usa como `TURNSTILE_SECRET_KEY` nos
+   Secrets das Edge Functions (sem ela, "Recuperar meu link" responde a frase de sempre e não manda nada, DP-LP-19).
+10. **Resend › Webhooks:** criar o webhook para a função `webhook-resend`
+    (`https://qmpljfjbdcrdbqutuvmg.supabase.co/functions/v1/webhook-resend`), com os eventos `email.delivered`,
+    `email.bounced` e `email.complained`; guardar o segredo dele (`whsec_…`) como
+    `RESEND_WEBHOOK_SECRET`. Sem o segredo, a função recusa todo evento (CA-2277).
+11. Aprovar o texto novo da Política de privacidade e da pergunta de autorização (PLAN, seção 8).
 
 **Na entrega 3 e depois:**
-11. **DMARC:** hoje é `p=none` sem endereço de relatório. Quando houver uma caixa de e-mail no domínio, acrescentar
+12. **DMARC:** hoje é `p=none` sem endereço de relatório. Quando houver uma caixa de e-mail no domínio, acrescentar
     `rua=mailto:<caixa>`; depois de 4 semanas sem devolução nem queixa no Painel, trocar para `p=quarantine` (vale
     também para os subdomínios).
-12. **Plano do Resend:** ficar no grátis enquanto o Painel do dono mostrar menos de 1.900 no mês e menos de 3 dias por
+13. **Plano do Resend:** ficar no grátis enquanto o Painel do dono mostrar menos de 1.900 no mês e menos de 3 dias por
     semana com aviso adiado. Passou disso: **Resend Pro (US$ 20 por mês)** e subir os tetos com
     `npx supabase secrets set TETO_DIA=1500 TETO_MES=45000 --project-ref qmpljfjbdcrdbqutuvmg`.
-13. Conferir no painel do Resend qual dos registros SPF de hoje (`send` ou `rsend`) está em uso e apagar o outro
+14. Conferir no painel do Resend qual dos registros SPF de hoje (`send` ou `rsend`) está em uso e apagar o outro
     (pendência da pesquisa).
 
 ## 8. Telas do protótipo
