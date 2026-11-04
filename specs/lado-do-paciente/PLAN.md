@@ -154,6 +154,11 @@ Configurações ganha "E-mails"; a Adesão ganha o último acesso e o envelope; 
 - **DP-LP-30** · **Banco sem o 017** (o site publicado antes do SQL): o link salva sem as colunas novas (o mesmo recurso
   do `comOuSemDieta`, agora para qualquer coluna que o banco não conhece) e abre como hoje; as funções de e-mail
   respondem "Não foi possível enviar agora." e a ficha mostra os cartões de e-mail com "Indisponível no momento.".
+- **DP-LP-31** · **A aba que volta relê o link** (CB-1221, achado na validação de 04/11). A marcação grava a lista
+  inteira (`marcar_missoes`), então duas abas abertas gravam por cima uma da outra. A `TelaMissoesPaciente` relê o link
+  na nuvem quando a aba volta a ficar visível (`visibilitychange`), sem a tela de "Abrindo", e fica com o que a nuvem
+  guardou. Com uma marcação desta aba ainda a caminho, a releitura espera: a resposta que chega depois de um toque novo é
+  descartada, para não desmarcar o que acabou de ser marcado. Sem servidor (`naNuvem` falso), nada muda.
 
 ## 3. O contrato (banco, funções e tipos)
 
@@ -320,6 +325,7 @@ dependência está entre colchetes.
 | T37 | `feat(negocio)`: "E-mails" no Painel do dono | T6 |
 | T38 | `feat(ficha)`: excluir o paciente apaga o link e os e-mails | T6, T31 |
 | T39 | `feat(lgpd)`: Política e pergunta de autorização (PARA O DONO APROVAR) | T1 |
+| T41 | `fix(link)`: a aba que volta relê o link (DP-LP-31, CB-1221) | T22 |
 | T40 | `docs`: a validação e as divergências no PLAN | todas |
 
 ## 6. Matriz CA/CB × teste
@@ -383,7 +389,7 @@ Todo teste leva o ID no nome. "Dono" é conferência que só ele faz (seção 9)
 | CB-1217, CB-1218 | `link/hoje.test.tsx` |
 | CB-1219 | `link/barraDeAbas.test.tsx` (trilho no topo acima de 640 px) |
 | CB-1220 | `instalarMeuPlano.test.ts` |
-| CB-1221 | `missoesNaNuvem.test.tsx` (o de sempre: vale a nuvem) |
+| CB-1221 | `src/ui/missoes/TelaMissoesPaciente.test.tsx` (DP-LP-31: a aba que volta relê; a marcação a caminho não é desfeita) |
 | CB-1222, CB-1223 | `servidorAvisosResposta.test.ts`, `servidorMeuLink.test.ts` |
 | CB-1224 | `linkFixo.test.tsx` |
 | CB-1225 | `servidorEnviarLink.test.ts` |
