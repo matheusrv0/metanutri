@@ -115,11 +115,11 @@ LEIA-ME (DP-AT-9). Na tela, um componente por arquivo, em `src/ui/antropometria/
 | T11 | Dobras | `CartaoDobras.tsx`, `textosDaAvaliacao.ts`, `ajudas.ts` (a peitoral sem sexo, D-1464; "suprailíaca" sem hífen) (+ testes) | CA-2420 a CA-2426 | T8 |
 | T12 | Resultado | `CartaoResultado.tsx`, `LinhaDoResultado.tsx`, `SeloDaSituacao.tsx`, `textosDaAvaliacao.ts` (+ testes) | CA-2430 a CA-2435, CB-1402 a CB-1406, CB-1411 | T7 |
 | T13 | Ponto de partida | `CartaoPontoDePartida.tsx`, `BlocoProteina.tsx`, `BlocoMetaDePerda.tsx`, `textosDaAvaliacao.ts` (+ testes) | CA-2436 a CA-2445 | T3, T12 |
-| T14 | `GraficoLinha` no design system | `design-system/componentes/display/GraficoLinha.tsx`, `index.ts`, `vitrine/TelaDesignSystem.tsx`, `componentes/LEIA-ME.md` (+ teste) | (D-1426) | T2 |
-| T15 | Histórico: o domínio | `src/domain/historicoAntropometrico.ts` (+ teste) | CA-2449 a CA-2455 (lógica) | T4 |
-| T16 | Histórico: a tela | `TelaHistorico.tsx`, `CartaoEvolucao.tsx`, `CartaoMudancaMinima.tsx`, `TabelaAvaliacoes.tsx` (+ testes) | CA-2449 a CA-2456, CB-1412 | T14, T15 |
-| T17 | Documento: o domínio | `src/domain/documentoDaAvaliacao.ts` (+ teste) | CA-2459 a CA-2461 (lógica) | T4, T15 |
-| T18 | Documento: a prévia e o papel | `DialogoDocumentoAvaliacao.tsx`, `FolhaAvaliacao.tsx` (+ testes) | CA-2457 a CA-2463 | T17 |
+| T14 | `GraficoLinha` no design system | `design-system/componentes/display/GraficoLinha.tsx`, `index.ts`, `vitrine/TelaDesignSystem.tsx`, `componentes/LEIA-ME.md`, `DESIGN.md` (contagem) (+ teste) | (D-1426, D-1487) | T2 |
+| T15 | Histórico: o domínio | `src/domain/historicoAntropometrico.ts` (+ teste) | CA-2449 a CA-2455 (lógica), D-1480 a D-1488, CB-1440 a CB-1443 | T4 |
+| T16 | Histórico: a tela | `VistaHistorico.tsx` (a da T7), `CartaoEvolucao.tsx`, `CartaoMudancaMinima.tsx`, `TabelaAvaliacoes.tsx`, `textosDoHistorico.ts` (+ testes) | CA-2449 a CA-2456, CB-1412 | T14, T15 |
+| T17 | Documento: o domínio | `src/domain/documentoDaAvaliacao.ts` (+ teste) | CA-2458 a CA-2461 e CA-2463 (lógica), D-1490 a D-1498, CB-1444, CB-1447 | T4, T15 |
+| T18 | Documento: a prévia e o papel | `DialogoDocumentoAvaliacao.tsx`, `FolhaAvaliacao.tsx`, `textosDoDocumento.ts`, `TelaAntropometria.tsx` (o botão e a janela), `AreaDeTrabalho.tsx` (passa quem assina e o bloqueio) (+ testes) | CA-2457 a CA-2463, D-1489, D-1499, CB-1445, CB-1446 | T17 |
 | T19 | Celular e pior caso | os componentes da tela (correções), `break-ui` | CA-2470 a CA-2472, CB-1407 a CB-1409, CB-1417 | T9 a T18 |
 | T20 | Ponta a ponta da F1 | `e2e/antropometria.spec.ts` (1440 e 390 px) | CA-2400, CA-2410, CA-2421, CA-2430, CA-2449, CA-2457, CA-2470, CA-2471 | T19 |
 | T21 | Fotos: o domínio | `src/domain/fotosDaAvaliacao.ts` (+ teste) | CA-2481 a CA-2484 (lógica) | T4 |
@@ -184,6 +184,12 @@ Cada cartão com o seu teste de componente (Testing Library), pelos CA da tabela
 
 `historicoAntropometrico(avaliacoes)`: linhas (valor por data), variações com a leitura (MMD do motor), séries dos
 gráficos (sem `null`), leitura em frase, marcas de "mesmo protocolo/ponto". A tela desenha.
+
+Feitas no ramo `antropometria-historico`, em paralelo com a T8 a T13 (ramo `antropometria-telas`). Por isso os textos
+da tela ficam em `textosDoHistorico.ts` e `textosDoDocumento.ts`, e não em `textosDaAvaliacao.ts` (da T9 a T13), e o
+documento monta a tabela "Indicador | Valor | Referência | Classificação" direto do motor (`resultadoAntropometrico`),
+sem o `CartaoResultado` da T12. Conflito previsto no merge: `TelaAntropometria.tsx` (o botão "Gerar documento" e a
+janela) e `AreaDeTrabalho.tsx` (duas props), linhas acrescentadas em pontos diferentes.
 
 ### T17 e T18 · Documento
 

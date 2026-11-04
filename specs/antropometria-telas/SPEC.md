@@ -169,6 +169,33 @@ Decididas no "apenas faça", pelo protótipo e pelo motor, ao montar T8 a T13.
 | D-1468 | **"Levar para o plano"** grava o g/kg de peso atual da faixa sugerida (a própria faixa, quando a base é o peso atual) com 2 casas, e a frase "No plano de dd/mm como sugestão. Você ajusta lá." fica enquanto a meta de proteína do plano for essa | D-1421; a frase sai sozinha quando a meta muda em "Metas" |
 | D-1469 | **Energia sugerida da meta de perda** usa o gasto total do plano (`calcularEnergia`, com o fator, a fórmula e o gasto digitado do plano). Sem gasto calculado, a linha não aparece | D-1418 e CA-2443 |
 
+### Histórico e documento: decisões da implementação (T14 a T18, 04/11/2026)
+
+Tomadas sob o "apenas faça", pelos princípios da Mor e do dono, onde a spec e o protótipo não diziam.
+
+| # | Decisão | Motivo |
+|---|---|---|
+| D-1480 | **A nota da gordura e das massas** no Histórico: "veja a soma" quando as duas avaliações são pelas dobras do mesmo protocolo; "bioimpedância" quando as duas são pela bioimpedância; "protocolo diferente" com dois protocolos; "método diferente" com dobras numa e bioimpedância na outra | A D-1428 só dizia o caso das dobras; o % de um método não se compara com o de outro |
+| D-1481 | **Comparação que não vale não mostra número.** Com "protocolo diferente", "método diferente", "ponto diferente" ou "lado diferente", a variação sai "—" com a nota, sem leitura da MMD; faltando uma das duas medidas, sai "—" sem nota | A soma de 7 dobras menos a de 3 dá um número que parece mudança e não é |
+| D-1482 | **Ponto da cintura não registrado** (plano de antes) conta como o ponto médio na comparação, como o motor assume (CB-1400); a marca diz "Mesmo ponto de cintura: ponto médio (OMS), assumido onde não foi registrado". RCQ e RCE seguem a regra da cintura | Sem isso, todo histórico antigo perderia a cintura; o motor já classifica assim, com aviso |
+| D-1483 | **A leitura em frase** nomeia o período pela data curta ("Desde 12/05, a soma das dobras caiu 24,0 mm e a cintura caiu 5,5 cm: mudança real."), um período desde a primeira (com 3 avaliações ou mais) e um desde a penúltima. Leituras diferentes no mesmo período vão entre parênteses. Sem soma nem cintura comparáveis, a frase não sai | O protótipo dizia "Desde maio": duas avaliações no mesmo mês ficariam iguais |
+| D-1484 | **O gráfico da gordura** usa só as avaliações do método da mais recente com %: o mesmo protocolo, ou a bioimpedância. As outras não viram ponto, e embaixo do gráfico: "1 avaliação por outro método fica fora do gráfico." | Uma linha que liga Petroski a Jackson & Pollock desenha uma mudança que é só de equação |
+| D-1485 | **Braço relaxado** do Histórico: o direito; sem ele, o esquerdo (`ladoMedido` do motor). O subtítulo diz o lado da mais recente ("cm · direito"); lados diferentes entre as duas comparadas: "lado diferente" | O motor já escolhe o lado assim no resultado |
+| D-1486 | **Linha da tabela sem valor em nenhuma avaliação não aparece**; grupo sem linha também não. Com 2 avaliações só há uma coluna "Desde <primeira>" (a penúltima é a primeira) | "Menos informação" (Mor); a mesma coluna duas vezes seria ruído |
+| D-1487 | **Gráfico de linha:** o eixo x é proporcional aos dias entre as avaliações (as datas do meio somem abaixo de 640 px, como na tabela); o eixo y escolhe marcas redondas (passo 1, 2 ou 5 × 10ⁿ) com folga em volta dos valores; um ponto só é desenhado sozinho; sem ponto nenhum, o lugar do gráfico diz "Nenhuma avaliação tem <medida>." | Protótipo (x pelo dia, grade de 2 em 2); valores reais não caem em faixa fixa |
+| D-1488 | **Painel da MMD** com a medida que não se calcula: "—" e o motivo ("Protocolos diferentes nas duas avaliações.", "Falta a cintura em 08/09/2026."). As marcas que não concordam levam o ícone de atenção: "Protocolos diferentes: Petroski em 08/09 e Jackson & Pollock, 7 dobras em 03/11. A soma não se compara." A marca de protocolo só aparece quando uma das duas tem dobra; a de cintura, quando uma das duas tem cintura. Sem o ETM da avaliadora, o texto de abertura diz "erro técnico de medida (ETM)" | O protótipo tinha o ETM da avaliadora (fora de escopo, seção 1) |
+| D-1489 | **"Gerar documento"** fica no cabeçalho nas duas vistas (no Histórico, ao lado de "Nova avaliação"), e gera o documento da avaliação aberta. Bloqueado pelo CRN, fica desligado e a frase do bloqueio aparece embaixo da barra | Protótipo (os dois botões no Histórico); CA-2462 |
+| D-1490 | **O documento sem cidade.** O perfil não tem endereço nem cidade: o cabeçalho traz telefone e e-mail de Configurações, e a assinatura traz o nome, a profissão com o CRN e a data por extenso. Sem telefone e e-mail, a linha de contato não sai | O app não guarda endereço; não inventar dado |
+| D-1491 | **Resultados do documento** são as linhas do motor que têm valor, na ordem dele; a soma de dobras fica no bloco das dobras. Os nomes seguem o motor, com os do protótipo onde ele tem ("Cintura/quadril", "Cintura/estatura", "Músculo do braço (CMB)", "Dobra tricipital", "Massa magra") | DP-AT-8; "seção sem dado não sai" vale também linha a linha |
+| D-1492 | **Circunferências no documento:** a tabela "Membros" com direito e esquerdo traz braço relaxado, braço contraído, panturrilha, coxa proximal e coxa média; antebraço e punho, que têm um campo só (D-1003), saem na mesma tabela com o valor ocupando as duas colunas. "Tronco" traz pescoço, ombro, peitoral, cintura (com o ponto), abdômen e quadril. Linha sem valor não sai | D-1003; o protótipo inventava o lado esquerdo |
+| D-1493 | **O "●" das dobras** marca a dobra cujo valor entrou na conta: a suprailíaca da linha do protocolo e, sem ela, a que o motor usou (D-1039); em Guedes e Faulkner, a de linha não informada quando tem valor, senão a média | D-1413; o documento diz o que a conta usou |
+| D-1494 | **A comparação do documento** é com a avaliação anterior à aberta, pela data (não com a penúltima da lista), com as linhas Peso, Cintura, Quadril, Soma das N dobras, Gordura corporal e Massa magra, as notas da D-1428 e a legenda da MMD com o ETM padrão da ISAK nível 1 | O documento é da avaliação aberta (D-1429), que pode ser uma antiga |
+| D-1495 | **Quem assina o documento:** a nutricionista com nome e "Nutricionista · CRN"; a conta de estudante com o estagiário e o preceptor do plano e a frase de proposta (`FRASE_PROPOSTA`), como as folhas de hoje; nutricionista sem nome nem CRN, ou ninguém, a linha "Assinatura" em branco | D-1431 |
+| D-1496 | **"Gerado no MetaNutri"** sai uma vez, no fim da última página, e a linha fina das páginas seguintes é a do `regraDaLinhaFina` ("Paciente · Avaliação de dd/mm/aaaa" e quem assina). O documento não numera as páginas | A paginação é do navegador; a dieta impressa já faz assim |
+| D-1497 | **O rascunho do diagnóstico** ("Usar o resumo das classificações") escreve uma linha por indicador classificado do motor, na ordem dele: "IMC: Sobrepeso (26,58 kg/m²; SISVAN, 2011).", e antes delas o método da gordura com a fonte ("Gordura corporal estimada por Jackson & Pollock, 7 dobras (Jackson, Pollock e Ward, 1980; Siri, 1961)."). Sem adjetivo, sem conclusão. O botão só aparece com o campo vazio | DP-AT-18; CFN 594, art. 4º §1º (o protocolo usado); nunca apagar o que ela escreveu |
+| D-1498 | **Documento de plano sem paciente:** o nome do plano, a idade e o sexo do plano, sem "Avaliação" (primeira ou retorno) e sem comparação | D-1402 |
+| D-1499 | **Na tela, o documento é uma folha fluida** (até a largura do A4); no papel, A4 retrato com as margens do plano impresso. Abaixo de 640 px, as tabelas de resultado e de comparação viram duas linhas por item | D-1439 e D-1440: a prévia não pode rolar de lado |
+
 ## 3. Critérios de aceite
 
 ### Lugar e navegação
@@ -462,6 +489,22 @@ Decididas no "apenas faça", pelo protótipo e pelo motor, ao montar T8 a T13.
   segunda aba recebe "Já há 5 fotos nesta avaliação." e relê a lista.
 - **CB-1417** · **Dados de pior caso** (`break-ui`): todas as medidas vazias, todas preenchidas, nome enorme, criança de 6
   anos, idoso de 85, gestante: nada rola de lado, nada se sobrepõe, nenhum "NaN", "undefined" ou "null" aparece.
+
+### Histórico e documento (CB-1440 a CB-1449)
+
+- **CB-1440** · **Duas avaliações no mesmo dia:** as duas colunas aparecem (a alterada por último à direita); no gráfico, os
+  pontos ficam no mesmo x e cada um tem a sua dica pelo teclado.
+- **CB-1441** · **Valores extremos no gráfico** (350 kg numa avaliação, 45 kg na outra): a escala cobre os dois, o rótulo
+  do último cabe, nenhum "NaN".
+- **CB-1442** · **Sem sexo ou sem idade:** a soma e a gordura dizem "—" onde o motor não calcula; o gráfico da gordura diz
+  que nenhuma avaliação tem o % de gordura; peso, cintura e quadril seguem.
+- **CB-1443** · **Gestante numa das avaliações:** o motor não dá % de gordura nela; a linha mostra "—" e o gráfico não tem
+  ponto nela.
+- **CB-1444** · **Documento com tudo vazio** (plano novo, sem medida): saem o cabeçalho, o paciente, o diagnóstico em
+  linhas para escrever à mão, a assinatura e o aviso; nenhuma tabela vazia, nenhum "—" solto.
+- **CB-1445** · **Nome enorme, diagnóstico longo, conta sem nome:** quebram dentro da folha; a 360 px nada rola de lado.
+- **CB-1446** · **App no tema escuro:** a prévia e o PDF saem no papel claro (`.papel`).
+- **CB-1447** · **Ficha sem nascimento:** a linha "Nascimento" não sai; a idade do plano, quando houver, sai como "Idade".
 
 ## 5. O que fica para a Mor e para o dono
 
