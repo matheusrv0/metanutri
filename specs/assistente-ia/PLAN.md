@@ -165,3 +165,4 @@ baixos. Decisões D-1337 a D-1341 (e a do cancelamento, depois da prova no edge-
 - [x] **T21 — Corte por caractere e não-caracteres (D-1339, CA-2392).** `textoCurto` e `cortar` em `iaContrato.ts`.
 - [x] **T22 — Texto da IA limpo de contato (D-1340, CA-2393).** `cortar` passa pela limpeza; a NFKC só onde há contato.
 - [x] **T23 — Formatos novos de contato (D-1341, CA-2394).** `iaContrato.ts`; os 22 formatos da revisão viram teste.
+- [ ] **T24 — Recomendação leve: id de "Meus alimentos" (D-1343, CA-2395).** `iaContrato.ts`.
