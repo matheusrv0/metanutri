@@ -44,6 +44,26 @@ async function abrirLink(pagina: Page, cenario: { link: Linha | null }, linha: L
 const cores = (alvo: Locator) => alvo.evaluate((el) => ({ fundo: getComputedStyle(el).backgroundColor, texto: getComputedStyle(el).color }))
 const LOGO_DELA = 'Logo de quem montou seu plano'
 
+/** A parte escolhida da barra de baixo (spec lado-do-paciente, D-1202 e CA-2215): o nome dela vai na cor da marca. */
+const parteEscolhida = (pagina: Page) => pagina.getByRole('navigation', { name: 'Partes do plano' }).locator('a[aria-current="page"]')
+/** Os segmentos cheios da barra do dia (D-1203): cada um é o pedaço de dentro do segmento. */
+const segmentosCheios = (pagina: Page) => pagina.locator('[role="progressbar"] > span > span')
+
+/**
+ * O par da ação do link (o fundo e o texto de "Marcar como feita", CA-2215), lido num pedaço de prova dentro do link: a
+ * barra de baixo leva a cor só no nome da parte, e o texto sobre a cor aparece no Plano.
+ */
+const acaoDoLink = (pagina: Page) =>
+  pagina.locator('[data-link-do-paciente]').evaluate((raiz) => {
+    const prova = document.createElement('span')
+    prova.className = 'bg-linkacao text-linkacaotexto'
+    raiz.appendChild(prova)
+    const estilo = getComputedStyle(prova)
+    const par = { fundo: estilo.backgroundColor, texto: estilo.color }
+    prova.remove()
+    return par
+  })
+
 /** O link de exemplo: Juliana, com a dieta (para as abas) e o café já feito hoje. */
 function linhaComMarca(marca: { readonly logo: string | null; readonly cor: string | null }, parcial: Linha = {}): Linha {
   const hoje = new Date()
@@ -70,8 +90,9 @@ test.describe('o link do paciente com a marca', () => {
     const placa = page.getByRole('img', { name: LOGO_DELA })
     await expect(placa).toHaveAttribute('src', logo)
     expect((await cores(placa.locator('xpath=..'))).fundo).toBe('rgb(255, 255, 255)')
-    expect(await cores(page.getByRole('tab', { name: 'Missões', selected: true }))).toEqual({ fundo: 'rgb(63, 95, 42)', texto: 'rgb(255, 255, 255)' })
-    expect((await cores(page.locator('[role="progressbar"] > div'))).fundo).toBe('rgb(63, 95, 42)')
+    expect((await cores(parteEscolhida(page))).texto).toBe('rgb(63, 95, 42)')
+    expect(await acaoDoLink(page)).toEqual({ fundo: 'rgb(63, 95, 42)', texto: 'rgb(255, 255, 255)' })
+    expect((await cores(segmentosCheios(page))).fundo).toBe('rgb(63, 95, 42)')
     // O verde de "feita" é estado, não marca.
     const feita = page.getByRole('button', { name: /Café da manhã/ })
     await expect(feita).toHaveAttribute('aria-pressed', 'true')
@@ -94,31 +115,33 @@ test.describe('o link do paciente com a marca', () => {
     await abrirLink(page, cenario, linhaComMarca({ logo, cor: VERDE_FOLHA }))
     await expect(page.locator('html')).toHaveClass(/dark/)
     // #3F5F2A clareada até 7:1 contra #101A1D: #7AB455.
-    expect(await cores(page.getByRole('tab', { name: 'Missões', selected: true }))).toEqual({ fundo: 'rgb(122, 180, 85)', texto: 'rgb(16, 26, 29)' })
+    expect((await cores(parteEscolhida(page))).texto).toBe('rgb(122, 180, 85)')
+    expect(await acaoDoLink(page)).toEqual({ fundo: 'rgb(122, 180, 85)', texto: 'rgb(16, 26, 29)' })
     expect((await cores(page.getByRole('img', { name: LOGO_DELA }).locator('xpath=..'))).fundo).toBe('rgb(255, 255, 255)')
 
-    // CB-958: ao imprimir, o app sai do escuro (D-240) e a cor volta à do claro. DP-ML-39: a aba tem transição de cor
-    // (150 ms); o `toHaveCSS` espera ela acabar, a leitura única às vezes pegava a cor velha.
+    // CB-958: ao imprimir, o app sai do escuro (D-240) e a cor volta à do claro. DP-ML-39: o `toHaveCSS` espera a
+    // transição acabar, a leitura única às vezes pegava a cor velha.
     await page.evaluate(() => window.dispatchEvent(new Event('beforeprint')))
-    await expect(page.getByRole('tab', { name: 'Missões', selected: true })).toHaveCSS('background-color', 'rgb(63, 95, 42)')
+    await expect(parteEscolhida(page)).toHaveCSS('color', 'rgb(63, 95, 42)')
+    await expect(segmentosCheios(page)).toHaveCSS('background-color', 'rgb(63, 95, 42)')
   })
 
-  test('CB-958: no papel, a aba escolhida e a barra do dia levam a cor dela mesmo sem "Gráficos de fundo"', async ({ page }) => {
+  test('CB-958: no papel, a parte escolhida e a barra do dia levam a cor dela mesmo sem "Gráficos de fundo"', async ({ page }) => {
     const cenario: { link: Linha | null } = { link: null }
     await page.emulateMedia({ colorScheme: 'light' })
     await ligarServidorFalso(page, cenario as Cenario)
     await abrirLink(page, cenario, linhaComMarca({ logo: null, cor: VERDE_FOLHA }))
-    const aba = page.getByRole('tab', { name: 'Missões', selected: true })
-    const barra = page.locator('[role="progressbar"] > div')
+    const barra = segmentosCheios(page)
     const ajuste = (alvo: Locator) => alvo.evaluate((el) => getComputedStyle(el).printColorAdjust)
     // Na tela, nada muda; no papel, o navegador não pode economizar o fundo da cor dela (DP-ML-37).
-    expect(await ajuste(aba)).toBe('economy')
+    expect(await ajuste(barra)).toBe('economy')
     await page.emulateMedia({ media: 'print' })
-    expect(await ajuste(aba)).toBe('exact')
     expect(await ajuste(barra)).toBe('exact')
-    await expect(aba).toHaveCSS('background-color', 'rgb(63, 95, 42)')
-    // A aba que não está escolhida segue a regra do navegador: só o que leva a cor dela vai ao papel assim.
-    expect(await ajuste(page.getByRole('tab', { name: 'Meu plano' }))).toBe('economy')
+    await expect(barra).toHaveCSS('background-color', 'rgb(63, 95, 42)')
+    // Spec lado-do-paciente (D-1202): a parte escolhida leva a cor no nome, que o papel não tira.
+    await expect(parteEscolhida(page)).toHaveCSS('color', 'rgb(63, 95, 42)')
+    // O segmento vazio segue a regra do navegador: só o que leva a cor dela vai ao papel assim.
+    expect(await ajuste(page.locator('[role="progressbar"] > span').last())).toBe('economy')
   })
 
   test('CA-1967 e CA-1968: sem marca, o link de hoje; salva a marca, o mesmo link mostra a marca ao abrir de novo', async ({ page }) => {
@@ -128,13 +151,13 @@ test.describe('o link do paciente com a marca', () => {
     await abrirLink(page, cenario, linhaComMarca({ logo: null, cor: null }))
     await expect(page.getByRole('img', { name: LOGO_DELA })).toHaveCount(0)
     await expect(page.getByRole('img', { name: 'MetaNutri' })).toHaveCount(1)
-    expect((await cores(page.getByRole('tab', { name: 'Missões', selected: true }))).fundo).toBe('rgb(255, 255, 255)')
-    expect((await cores(page.locator('[role="progressbar"] > div'))).fundo).toBe('rgb(14, 59, 67)')
+    await expect(page.locator('.marca-da-nutricionista')).toHaveCount(0)
+    expect((await cores(segmentosCheios(page))).fundo).toBe('rgb(14, 59, 67)')
 
     await abrirLink(page, cenario, linhaComMarca({ logo: null, cor: '#1f4e8c' }))
     await page.reload()
     await expect(page.getByRole('heading', { level: 1, name: /Juliana/ })).toBeVisible()
-    expect((await cores(page.getByRole('tab', { name: 'Missões', selected: true }))).fundo).toBe('rgb(31, 78, 140)')
+    expect((await cores(parteEscolhida(page))).texto).toBe('rgb(31, 78, 140)')
   })
 
   test('CA-1969: só a cor: o MetaNutri no topo, a cor na ação, e o rodapé não repete o MetaNutri', async ({ page }) => {
@@ -142,7 +165,8 @@ test.describe('o link do paciente com a marca', () => {
     await ligarServidorFalso(page, cenario as Cenario)
     await abrirLink(page, cenario, linhaComMarca({ logo: null, cor: '#7a2944' }))
     await expect(page.getByRole('img', { name: 'MetaNutri' })).toHaveCount(1)
-    expect((await cores(page.getByRole('tab', { name: 'Missões', selected: true }))).fundo).toBe('rgb(122, 41, 68)')
+    expect((await cores(parteEscolhida(page))).texto).toBe('rgb(122, 41, 68)')
+    expect((await acaoDoLink(page)).fundo).toBe('rgb(122, 41, 68)')
   })
 
   test('CA-1970: no link de conta de estudante, o aviso de estágio vem antes da logo', async ({ page }) => {

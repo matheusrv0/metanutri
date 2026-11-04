@@ -508,9 +508,10 @@
 
   /* O link do paciente com a cor da nutricionista (spec marca-no-link, CB-958 e DP-ML-37): a aba escolhida e a barra do
      dia levam a cor ao papel mesmo sem "Gráficos de fundo". Sem isto, o navegador tira o fundo, e o nome da aba, que é
-     branco, sai cinza-claro no papel. */
+     branco, sai cinza-claro no papel. Spec lado-do-paciente (D-1203): a barra do dia virou segmentos, e cada segmento
+     cheio é o pedaço de dentro; a parte escolhida da barra de baixo leva a cor no nome, que o papel não tira. */
   .marca-da-nutricionista [role='tab'][data-state='active'],
-  .marca-da-nutricionista [role='progressbar'] > div {
+  .marca-da-nutricionista [role='progressbar'] > span > span {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
