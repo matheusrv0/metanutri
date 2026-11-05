@@ -3,6 +3,7 @@ import { useCallback, useMemo, useState, type ReactNode } from 'react'
 import { diaLocal } from '@/domain/acompanhamento.ts'
 import type { AssinaturaDoPlano } from '@/domain/assinaturaDoPlano.ts'
 import { avaliacoesDoPaciente, type AvaliacaoNaLista } from '@/domain/avaliacoesDoPaciente.ts'
+import { casoNasFaixas } from '@/domain/caso.ts'
 import { propostaNaDieta } from '@/domain/documentoDoPaciente.ts'
 import { casoComFicha } from '@/domain/fichaNoPlano.ts'
 import { assinaturaDaFolha } from '@/domain/folhaDieta.ts'
@@ -139,7 +140,8 @@ export function TelaAntropometria({ rota, navegar, moldura, aoNovaAvaliacao, ass
 
   // D-340 (spec ficha-unica): o plano lê a ficha (sexo, idade e gestação na data da avaliação).
   const comFicha = casoComFicha(registro.caso, paciente, hoje)
-  const caso = comFicha.caso
+  // D-1523: o número fora da faixa da etapa 1 fica no campo com o aviso, mas não entra em conta nem no documento.
+  const caso = casoNasFaixas(comFicha.caso)
   const titulo = paciente ? paciente.nome.trim() || 'Paciente sem nome' : registro.caso.nome.trim() || 'Plano sem nome'
   const trilha = paciente ? [irParaPacientes] : [{ rotulo: 'Planos', aoClicar: () => navegar({ tela: 'casos' }) }]
   const linha = linhaDaPessoa(caso, paciente)

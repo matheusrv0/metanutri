@@ -49,6 +49,66 @@ describe('peso e estatura (spec antropometria-telas, CA-2410)', () => {
   })
 })
 
+describe('as faixas da etapa 1 na tela nova (spec antropometria-telas, D-1522 a D-1525; revisão r1, M2 e B3)', () => {
+  const texto = () => (document.body.textContent ?? '').replace(/\s+/g, ' ')
+
+  it('CB-1483: peso 9999 e estatura 1,65 ficam no campo com a frase da etapa 1 e não viram dado; o IMC diz o que falta', async () => {
+    const { usuario, gravado } = abrirAvaliacao(casoDe({ pacienteId: 'renata', pesoKg: 70, estaturaCm: 165 }), [RENATA])
+    const peso = screen.getByRole('textbox', { name: 'Peso' })
+    await usuario.clear(peso)
+    await usuario.type(peso, '9999')
+    expect(peso).toHaveValue('9999')
+    expect(peso).toHaveAttribute('aria-invalid', 'true')
+    expect(screen.getByText('Peso deve estar entre 5 e 350 kg.')).toBeInTheDocument()
+    expect(gravado().pesoKg).toBeNull()
+    const estatura = screen.getByRole('textbox', { name: 'Estatura' })
+    await usuario.clear(estatura)
+    await usuario.type(estatura, '1,65')
+    expect(estatura).toHaveValue('1,65')
+    expect(screen.getByText('Estatura deve estar entre 45 e 250 cm.')).toBeInTheDocument()
+    expect(gravado().estaturaCm).toBeNull()
+    expect(texto()).not.toMatch(/3\.672|257\.116|Obesidade grau III/)
+    expect(texto()).toContain('Faltam o peso e a estatura')
+    // De volta à faixa, o número vira dado e a frase sai.
+    await usuario.clear(peso)
+    await usuario.type(peso, '70')
+    expect(gravado().pesoKg).toBe(70)
+    expect(screen.queryByText('Peso deve estar entre 5 e 350 kg.')).not.toBeInTheDocument()
+  })
+
+  it('CB-1484: peso 9999 gravado pela etapa 1: o campo mostra o número com a frase; resultado e gasto ficam sem peso', () => {
+    abrirAvaliacao(casoDe({ pacienteId: 'renata', pesoKg: 9999, estaturaCm: 165, avaliacao: { perfil: 'sedentario' } }), [RENATA])
+    const peso = screen.getByRole('textbox', { name: 'Peso' })
+    expect(peso).toHaveValue('9999')
+    expect(peso).toHaveAttribute('aria-invalid', 'true')
+    expect(screen.getByText('Peso deve estar entre 5 e 350 kg.')).toBeInTheDocument()
+    expect(texto()).not.toMatch(/3\.672|Obesidade grau III/)
+    expect(texto()).toContain('Falta o peso')
+  })
+
+  it('CB-1485: "0" e "-5" no peso dão a frase da faixa; numa dobra, "Use um número maior que zero."; nada vira dado', async () => {
+    const { usuario, gravado } = abrirAvaliacao(casoDe({ pacienteId: 'renata', composicao: { protocolo: 'jackson-pollock-3' } }), [RENATA])
+    const peso = screen.getByRole('textbox', { name: 'Peso' })
+    await usuario.type(peso, '0')
+    expect(screen.getByText('Peso deve estar entre 5 e 350 kg.')).toBeInTheDocument()
+    expect(gravado().pesoKg).toBeNull()
+    await usuario.clear(peso)
+    await usuario.type(peso, '-5')
+    expect(peso).toHaveAttribute('aria-invalid', 'true')
+    expect(screen.getByText('Peso deve estar entre 5 e 350 kg.')).toBeInTheDocument()
+    expect(gravado().pesoKg).toBeNull()
+    const triceps = screen.getByRole('textbox', { name: /^Tríceps/ })
+    await usuario.type(triceps, '0')
+    expect(triceps).toHaveAttribute('aria-invalid', 'true')
+    expect(screen.getByText('Use um número maior que zero.')).toBeInTheDocument()
+    expect(gravado().composicao.dobras.tricipital).toBeNull()
+    await usuario.clear(triceps)
+    await usuario.type(triceps, '20,5')
+    expect(gravado().composicao.dobras.tricipital).toBe(20.5)
+    expect(screen.queryByText('Use um número maior que zero.')).not.toBeInTheDocument()
+  })
+})
+
 describe('estimar altura e peso atual (spec antropometria-telas, CA-2411 a CA-2413)', () => {
   const IDOSO = casoDe({
     sexo: 'M',

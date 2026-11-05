@@ -56,6 +56,14 @@ beforeEach(() => {
 })
 
 describe('o documento da avaliação (T18)', () => {
+  it('CB-1484 (D-1523): o peso fora da faixa, gravado pela etapa 1, não sai no documento', async () => {
+    const { usuario } = abrir({ caso: { ...COMPLETO, pesoKg: 9999 } })
+    await gerar(usuario)
+    const papel = document.querySelector('.area-impressao')?.textContent ?? ''
+    expect(papel).not.toMatch(/9\.?999/)
+    expect(papel).toContain('Estatura')
+  })
+
   it('CA-2457: "Gerar documento" abre a prévia com o papel claro, "Salvar em PDF" imprime e "Fechar" fecha', async () => {
     const imprimir = vi.spyOn(window, 'print').mockImplementation(() => undefined)
     const { usuario } = abrir()

@@ -45,8 +45,8 @@ export function CartaoPesoEstatura({ caso, bruto, aoAlterar }: CartaoPesoEstatur
           />
         </div>
         <div className="grid grid-cols-[minmax(0,1fr)] gap-4 sm:grid-cols-2">
-          <CampoMedida rotulo="Peso" unidade="kg" valor={bruto.pesoKg} aoMudar={(pesoKg) => aoAlterar({ pesoKg })} ajuda={AJUDAS.peso} />
-          <CampoMedida rotulo="Estatura" unidade="cm" valor={bruto.estaturaCm} aoMudar={(estaturaCm) => aoAlterar({ estaturaCm })} ajuda={AJUDAS.estatura} />
+          <CampoMedida rotulo="Peso" unidade="kg" valor={bruto.pesoKg} aoMudar={(pesoKg) => aoAlterar({ pesoKg })} ajuda={AJUDAS.peso} faixa="pesoKg" />
+          <CampoMedida rotulo="Estatura" unidade="cm" valor={bruto.estaturaCm} aoMudar={(estaturaCm) => aoAlterar({ estaturaCm })} ajuda={AJUDAS.estatura} faixa="estaturaCm" />
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" size="sm" aria-expanded={painel === 'estimar'} onClick={() => alternar('estimar')}>

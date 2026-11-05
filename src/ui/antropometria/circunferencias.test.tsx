@@ -56,6 +56,21 @@ describe('circunferências (spec antropometria-telas, CA-2416 a CA-2418)', () =>
     expect(c.circunferenciaPanturrilhaCm).toBe(37)
   })
 
+  it('CB-1483 (D-1522): cintura e as duas panturrilhas conferem a faixa da etapa 1; fora dela, a frase e nenhum dado', async () => {
+    const { usuario, gravado } = abrirAvaliacao(casoDe({}))
+    await usuario.type(campo('Cintura, em centímetros'), '300')
+    expect(campo('Cintura, em centímetros')).toHaveAttribute('aria-invalid', 'true')
+    expect(screen.getByText('Circunferência da cintura deve estar entre 30 e 250 cm.')).toBeInTheDocument()
+    await usuario.type(campo('Panturrilha, lado direito, em centímetros'), '5')
+    await usuario.type(campo('Panturrilha, lado esquerdo, em centímetros'), '5')
+    expect(screen.getAllByText('Circunferência da panturrilha deve estar entre 10 e 80 cm.')).toHaveLength(2)
+    expect([gravado().circunferenciaCinturaCm, gravado().circunferenciaPanturrilhaCm, gravado().medidasCorporais.panturrilhaEsquerdaCm]).toEqual([null, null, null])
+    // Sem faixa (as outras medidas esperam a Mor), mas zero não vira dado (D-1525).
+    await usuario.type(campo('Quadril, em centímetros'), '0')
+    expect(screen.getByText('Use um número maior que zero.')).toBeInTheDocument()
+    expect(gravado().medidasCorporais.quadrilCm).toBeNull()
+  })
+
   it('CA-2417: o tronco com 3 de 6 medidas, fechado, diz quantas e o botão vira "Exibir"', async () => {
     const { usuario } = abrirAvaliacao(casoDe({ circunferenciaCinturaCm: 84, medidasCorporais: { pescocoCm: 33.8, quadrilCm: 104 } }))
     const idDoTronco = grupo('Tronco').id

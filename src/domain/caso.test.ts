@@ -1,4 +1,4 @@
-import { MEDIDAS_CORPORAIS_VAZIAS, completarCasoLido, criarCasoVazio, lerNumero, modoDeQuantidade, validarCaso } from './caso.ts'
+import { MEDIDAS_CORPORAIS_VAZIAS, casoNasFaixas, completarCasoLido, criarCasoVazio, erroDaFaixa, lerNumero, modoDeQuantidade, validarCaso } from './caso.ts'
 import type { Caso } from './tipos.ts'
 
 describe('quantidades para o paciente (spec conduta-da-nutricionista, D-297)', () => {
@@ -226,5 +226,42 @@ describe('medidas da antropometria completa (spec antropometria-completa)', () =
   it('CB-1008: o ponto da cintura de uma versão mais nova fica como veio', () => {
     const futuro = { ...criarCasoVazio('f'), medidasCorporais: { ...MEDIDAS_CORPORAIS_VAZIAS, pontoDaCintura: 'umbigo' } } as unknown as Caso
     expect(completarCasoLido(futuro).medidasCorporais.pontoDaCintura).toBe('umbigo')
+  })
+})
+
+describe('as faixas da etapa 1 na avaliação completa (spec antropometria-telas, D-1522 a D-1524; revisão r1, M2)', () => {
+  it('CB-1483: erroDaFaixa dá a frase de validarCaso, e nada dentro da faixa', () => {
+    expect(erroDaFaixa('pesoKg', 9999)).toBe('Peso deve estar entre 5 e 350 kg.')
+    expect(erroDaFaixa('pesoKg', 0)).toBe('Peso deve estar entre 5 e 350 kg.')
+    expect(erroDaFaixa('pesoKg', 350)).toBeNull()
+    // D-1524: a estatura em metros é recusada, nunca convertida.
+    expect(erroDaFaixa('estaturaCm', 1.65)).toBe('Estatura deve estar entre 45 e 250 cm.')
+    expect(erroDaFaixa('circunferenciaCinturaCm', 300)).toBe('Circunferência da cintura deve estar entre 30 e 250 cm.')
+    expect(erroDaFaixa('circunferenciaPanturrilhaCm', 5)).toBe('Circunferência da panturrilha deve estar entre 10 e 80 cm.')
+    const v = criarCasoVazio('f')
+    const erros = validarCaso({ ...v, pesoKg: 9999, estaturaCm: 1.65, circunferenciaCinturaCm: 300, circunferenciaPanturrilhaCm: 5 }).erros
+    expect(erros).toMatchObject({
+      pesoKg: erroDaFaixa('pesoKg', 9999),
+      estaturaCm: erroDaFaixa('estaturaCm', 1.65),
+      circunferenciaCinturaCm: erroDaFaixa('circunferenciaCinturaCm', 300),
+      circunferenciaPanturrilhaCm: erroDaFaixa('circunferenciaPanturrilhaCm', 5),
+    })
+  })
+
+  it('CB-1484: casoNasFaixas deixa vazio o que está fora da faixa (as duas panturrilhas) e mantém o resto', () => {
+    const v = criarCasoVazio('f')
+    const fora: Caso = {
+      ...v,
+      pesoKg: 9999,
+      estaturaCm: 1.65,
+      circunferenciaCinturaCm: 300,
+      circunferenciaPanturrilhaCm: 5,
+      medidasCorporais: { ...v.medidasCorporais, panturrilhaEsquerdaCm: 90, quadrilCm: 104 },
+    }
+    const limpo = casoNasFaixas(fora)
+    expect([limpo.pesoKg, limpo.estaturaCm, limpo.circunferenciaCinturaCm, limpo.circunferenciaPanturrilhaCm, limpo.medidasCorporais.panturrilhaEsquerdaCm]).toEqual([null, null, null, null, null])
+    expect(limpo.medidasCorporais.quadrilCm).toBe(104)
+    const dentro: Caso = { ...v, pesoKg: 70, estaturaCm: 165, circunferenciaCinturaCm: 84, circunferenciaPanturrilhaCm: 36, medidasCorporais: { ...v.medidasCorporais, panturrilhaEsquerdaCm: 35.5 } }
+    expect(casoNasFaixas(dentro)).toEqual(dentro)
   })
 })

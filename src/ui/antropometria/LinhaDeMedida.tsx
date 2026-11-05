@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import type { MedidaComFaixa } from '@/domain/caso.ts'
 import { cn } from '@ds/lib/cn.ts'
 import type { AjudaDaMedida as Ajuda } from './ajudas.ts'
 import { AjudaDaMedida } from './AjudaDaMedida.tsx'
@@ -8,6 +9,8 @@ import { CampoMedida } from './CampoMedida.tsx'
 export interface LadoDaMedida {
   readonly valor: number | null
   readonly aoMudar: (valor: number | null) => void
+  /** A faixa da etapa 1 (cintura e panturrilha, D-1522). */
+  readonly faixa?: MedidaComFaixa | undefined
 }
 
 interface LinhaDeMedidaProps {
@@ -51,9 +54,12 @@ export function LinhaDeMedida({ nome, ajuda, direito, esquerdo, comLados, abaixo
         unidade={unidade}
         valor={direito.valor}
         aoMudar={direito.aoMudar}
+        faixa={direito.faixa}
         lado={esquerdo ? 'Dir.' : undefined}
       />
-      {esquerdo ? <CampoMedida rotuloAcessivel={`${nome}, lado esquerdo, ${emCm}`} unidade={unidade} valor={esquerdo.valor} aoMudar={esquerdo.aoMudar} lado="Esq." /> : null}
+      {esquerdo ? (
+        <CampoMedida rotuloAcessivel={`${nome}, lado esquerdo, ${emCm}`} unidade={unidade} valor={esquerdo.valor} aoMudar={esquerdo.aoMudar} faixa={esquerdo.faixa} lado="Esq." />
+      ) : null}
     </div>
   )
 }

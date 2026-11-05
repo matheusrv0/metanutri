@@ -82,12 +82,12 @@ export function PainelEstimar({ caso, bruto, aoAlterar, aoFechar }: PainelEstima
             {idoso ? (
               <>
                 <CampoMedida rotulo="Braço relaxado direito" unidade="cm" valor={medidas.bracoRelaxadoDireitoCm} aoMudar={mudar('bracoRelaxadoDireitoCm')} ajuda={AJUDAS.braco} />
-                <CampoMedida rotulo="Panturrilha direita" unidade="cm" valor={bruto.circunferenciaPanturrilhaCm} aoMudar={(v) => aoAlterar({ circunferenciaPanturrilhaCm: v })} ajuda={AJUDAS.panturrilha} />
+                <CampoMedida rotulo="Panturrilha direita" unidade="cm" valor={bruto.circunferenciaPanturrilhaCm} aoMudar={(v) => aoAlterar({ circunferenciaPanturrilhaCm: v })} ajuda={AJUDAS.panturrilha} faixa="circunferenciaPanturrilhaCm" />
               </>
             ) : (
               <>
                 <CampoMedida rotulo="Braço relaxado esquerdo" unidade="cm" valor={medidas.bracoRelaxadoEsquerdoCm} aoMudar={mudar('bracoRelaxadoEsquerdoCm')} ajuda={AJUDAS.braco} />
-                <CampoMedida rotulo="Panturrilha esquerda" unidade="cm" valor={medidas.panturrilhaEsquerdaCm} aoMudar={mudar('panturrilhaEsquerdaCm')} ajuda={AJUDAS.panturrilha} />
+                <CampoMedida rotulo="Panturrilha esquerda" unidade="cm" valor={medidas.panturrilhaEsquerdaCm} aoMudar={mudar('panturrilhaEsquerdaCm')} ajuda={AJUDAS.panturrilha} faixa="circunferenciaPanturrilhaCm" />
               </>
             )}
             <CampoMedida rotulo="Abdômen" unidade="cm" valor={medidas.abdomenCm} aoMudar={mudar('abdomenCm')} ajuda={AJUDAS.abdomen} />

@@ -7,6 +7,7 @@
 // da ISAK nível 1 (7,5% nas dobras e 1,5% nas outras medidas) e a soma de dobras por √Σ ETM² (D-1035).
 import { calcularImc } from './antropometria.ts'
 import type { AvaliacaoNaLista } from './avaliacoesDoPaciente.ts'
+import { casoNasFaixas } from './caso.ts'
 import { casoComFicha } from './fichaNoPlano.ts'
 import { dataCompleta, dataCurta } from './formatarData.ts'
 import { ladoMedido } from './indicadoresCorporais.ts'
@@ -25,9 +26,12 @@ export interface AvaliacaoDoHistorico {
   readonly caso: Caso
 }
 
-/** As avaliações da lista (D-1404, da mais nova à mais velha) com a ficha na data de cada uma, da mais velha à mais nova. */
+/**
+ * As avaliações da lista (D-1404, da mais nova à mais velha) com a ficha na data de cada uma, da mais velha à mais nova.
+ * O que está fora da faixa da etapa 1 entra vazio (D-1523): nem o Histórico nem o documento usam o número.
+ */
 export function avaliacoesParaHistorico(lista: readonly AvaliacaoNaLista[], paciente: Paciente | null, hoje: string): AvaliacaoDoHistorico[] {
-  return [...lista].reverse().map((a) => ({ casoId: a.casoId, data: a.data, caso: casoComFicha(a.registro.caso, paciente, hoje).caso }))
+  return [...lista].reverse().map((a) => ({ casoId: a.casoId, data: a.data, caso: casoNasFaixas(casoComFicha(a.registro.caso, paciente, hoje).caso) }))
 }
 
 /** O que o motor pede além do plano: a maturação e o grupo do estudo do Slaughter (D-1012, D-1435). */

@@ -135,6 +135,17 @@ describe('historicoAntropometrico: o que entra (D-1425)', () => {
     expect(JSON.stringify(h)).not.toMatch(/NaN|undefined|Infinity/)
   })
 
+  it('CB-1484 (D-1523): peso fora da faixa, gravado pela etapa 1, não entra no Histórico', () => {
+    const renata: Paciente = { ...criarPacienteVazio('renata', '2026-05-12T10:00:00.000Z'), nome: 'Renata', sexo: 'F', nascimento: '1992-06-01' }
+    const salvos: CasoSalvo[] = PROTOTIPO.slice(2).map((m, i) => {
+      const caso = { ...casoDe(m), pesoKg: i === 1 ? 9999 : m.peso }
+      return { caso, plano: { refeicoes: [] }, versao: 1, atualizadoEm: `${m.data}T12:00:00.000Z` }
+    })
+    const lista = avaliacoesParaHistorico(avaliacoesDoPaciente('renata', salvos), renata, '2026-11-04')
+    expect(lista.map((a) => a.caso.pesoKg)).toEqual([72.6, null])
+    expect(linha(historicoAntropometrico(lista), 'peso').textos).toEqual(['72,6', '—'])
+  })
+
   it('avaliacoesParaHistorico: a ficha entra na data de cada avaliação, da mais velha à mais nova', () => {
     const renata: Paciente = { ...criarPacienteVazio('renata', '2026-05-12T10:00:00.000Z'), nome: 'Renata', sexo: 'F', nascimento: '1992-06-01' }
     const salvos: CasoSalvo[] = PROTOTIPO.slice(2).map((m) => {
