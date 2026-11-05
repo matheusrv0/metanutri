@@ -40,22 +40,10 @@ protótipo aprovado.
 | `src/seguranca/cspIa.test.ts` | T11 | novo: o CA-2354 |
 | `src/data/avaliacaoIa.test.ts` | T12 | novo: os 17 casos; só roda com `AVALIAR_IA=1` e `ANTHROPIC_API_KEY` |
 
-### P2 — telas, ficha e documentos (depois da aprovação do protótipo)
+### P2 — telas, ficha e documentos (protótipo aprovado em 04/11/2026)
 
-| Arquivo | Tarefa | O que muda |
-|---|---|---|
-| `src/domain/pacientes.ts` (+ teste) | T13 | `consentimentoIa: { em, versao } \| null`, lido e gravado, depois dos campos da ficha única |
-| `src/domain/tipos.ts`, `src/domain/caso.ts` | T13 | `Caso.origemIa?: { em, modelo }` |
-| `src/domain/anamnese.ts` (+ teste) | T13 | pergunta `orcamento` com as três escolhas |
-| `src/domain/conta.ts` (+ teste) | T14 | `limiteSugestoesIa` em `PLANOS` (sai de `iaLimites.ts`) e a linha de Planos e preços |
-| `src/ui/estado/usarSugestaoIa.ts` (+ teste) | T15 | chama a função, o modo `uso`, os erros e o cancelamento |
-| `src/ui/ia/BotaoSugerirComIa.tsx`, `GavetaIa.tsx`, `PedidoDaIa.tsx`, `EsperaDaIa.tsx`, `PropostaDaIa.tsx`, `AdequarComIa.tsx`, `MudancasDaIa.tsx`, `RodapeDaIa.tsx` (+ testes) | T16 a T18 | um componente por arquivo |
-| `src/ui/caso/…` (a etapa Refeições) | T18 | os botões na linha das abas, o "Vai para …" e a faixa com "Desfazer" |
-| `src/ui/pacientes/AutorizacaoIa.tsx` (+ teste), `src/export/termoIa.ts` (+ teste) | T19 | a chave na ficha e o termo em Word |
-| `src/domain/documentoDoPaciente.ts`, `src/domain/folhaDieta.ts`, o Word e o link (+ testes) | T20 | a linha de IA (D-1322) |
-| `src/ui/conta/TelaConta.tsx`, `src/ui/publico/…Precos…` (+ testes) | T21 | a linha de uso e a de Planos e preços |
-| `src/ui/publico/TelaPrivacidade.tsx`, `TelaTermos.tsx`, `src/domain/legal.ts` (+ testes) | T22 | os textos legais e a versão |
-| `e2e/apoio/servidorFalso.ts`, `e2e/apoio/respostasIa.ts`, `e2e/ia.spec.ts` | T23 | o cenário `ia` e os fluxos |
+A lista de arquivos, na ordem, e as tarefas estão na seção 9 (T26 a T37). A numeração antiga desta tabela (T13 a T23)
+foi tomada pelas rodadas de correção e saiu daqui.
 
 ## 2. Tarefas da P1
 
@@ -175,3 +163,37 @@ texto da IA. Decisões D-1344 a D-1346, testes CA-2396 a CA-2398:
 - [x] **T25 — Faixas, "IG" e a NFKC antes dos sinais (D-1344 a D-1346, CA-2396 a CA-2398).** `iaContrato.ts`
   (`ehContatoNumerico`, `PERFIL_DEPOIS_DA_REDE`, `SINAIS_DE_MARCACAO` em `limparTexto`, `limparTextoDaIa` e `textoCurto`) e
   `iaPrompt.ts` (`seguro` com os mesmos sinais); as sondas da rodada 3 viram teste em `servidorIaContrato.test.ts`.
+
+## 9. Tarefas da P2 (protótipo aprovado; decisões D-1347 a D-1354)
+
+Uma tarefa por commit, em TDD, na ordem. Os testes citam o CA ou o CB. A IA de verdade nunca é chamada: os testes usam
+o modelo e o banco de mentira, e os e2e e os prints, o servidor falso do navegador.
+
+| Tarefa | Arquivos, na ordem | CA e CB |
+|---|---|---|
+| T26 — A autorização no servidor | `supabase/016-assistente-ia.sql` (`consentimento_ia_do_paciente`), `src/data/sqlAssistenteIa.test.ts`, `testes/seguranca/ia.test.ts`, `_shared/iaContrato.ts` (`pacienteId` lido à parte), `_shared/iaPortas.ts`, `_shared/iaSupabase.ts`, `_shared/ia.ts`, `src/data/servidorIaFalsos.test-utils.ts`, `src/data/servidorIa.test.ts`, `src/data/servidorIaLigacao.test.ts`, `src/domain/iaPedido.ts` (+ teste) | CA-2399, CA-2304 |
+| T27 — Sugestão vazia e o modelo na resposta | `_shared/iaContrato.ts` (`IA_VAZIA`), `_shared/ia.ts`, `src/data/servidorIa.test.ts` | CA-2400, CA-2318, CB-1304 |
+| T28 — Ficha e caso | `src/domain/pacientes.ts` (`consentimentoIa`), `src/domain/tipos.ts` e `src/domain/caso.ts` (`origemIa`), `src/domain/anamnese.ts` (`orcamento`) (+ testes) | CA-2365, CA-2379 |
+| T29 — Os limites em `PLANOS` | `src/domain/conta.ts` (`limiteSugestoesIa`), `src/domain/iaLimites.ts` (lê de `PLANOS`), `src/ui/publico/SecaoPrecos.tsx` (+ testes) | CA-2375 (Planos e preços), CA-2404 |
+| T30 — O pedido e os erros no navegador | `src/domain/iaGaveta.ts` (+ teste): as perguntas de "Falta na ficha", as refeições padrão, as frases de cada erro e o pedido a partir da gaveta; `src/ui/estado/usarSugestaoIa.ts` (+ teste): o modo `uso`, `salvarAgora`, um pedido por vez e o descarte no cancelamento | CA-2361, CA-2362, CA-2364, CA-2374, CA-2403, CB-1300, CB-1301, CB-1315 |
+| T31 — A gaveta e o pedido | `src/ui/ia/GavetaIa.tsx`, `RodapeDaIa.tsx`, `PedidoDaIa.tsx`, `AutorizacaoNaGaveta.tsx`, `EsperaDaIa.tsx`, `ErroDaIa.tsx` (+ testes) | CA-2361 a CA-2366, CA-2374, CA-2381, CA-2401, CB-1313, CB-1320 |
+| T32 — A proposta | `src/ui/ia/PropostaDaIa.tsx` (+ teste) | CA-2367, CA-2368, CA-2369, CB-1304, CB-1306 |
+| T33 — O adequar | `src/ui/ia/AdequarComIa.tsx`, `MudancasDaIa.tsx` (+ testes) | CA-2370 a CA-2373 |
+| T34 — Na etapa Refeições | `src/ui/ia/BotoesDaIa.tsx`, `src/ui/ia/FaixaDaIa.tsx`, `src/ui/ia/AssistenteDaIa.tsx` (o estado da gaveta), `src/ui/plano/TelaPlano.tsx`, `CartaoRefeicao.tsx` e `LinhaItem.tsx` (o "Vai para …"), `src/ui/AreaDeTrabalho.tsx` (+ testes) | CA-2360, CA-2368, CA-2372, CA-2402, CB-1307 |
+| T35 — A autorização na ficha e o termo | `src/ui/pacientes/AutorizacaoIa.tsx`, `src/ui/pacientes/CartaoDadosDoPaciente.tsx`, `src/export/termoIa.ts` (+ testes) | CA-2365, CA-2376 |
+| T36 — O documento e o contador da conta | `src/domain/documentoDoPaciente.ts` (as frases de IA), `src/ui/exportar/FolhaDieta.tsx`, `src/export/aconselhamento-docx.ts`, `src/domain/dietaDoLink.ts` e a tela do link (`apoioDeIa`), `src/ui/conta/TelaConta.tsx` e `src/ui/conta/UsoDaIa.tsx` (+ testes) | CA-2377, CA-2375 |
+| T37 — Os e2e | `e2e/apoio/servidorFalso.ts` (cenário `ia` e a rota `/functions/v1/sugerir-plano`), `e2e/apoio/respostasIa.ts`, `e2e/ia.spec.ts` | CA-2380, CA-2381 e os fluxos de ponta a ponta |
+
+Fora das tarefas, sem commit no repositório: os prints das 3 telas (servidor falso, 1440 e 390 px, claro e escuro) e o
+relatório, com os textos legais da seção 11 da spec PARA O DONO APROVAR (D-1353: `TelaPrivacidade`, `TelaTermos` e
+`legal.ts` não mudam nesta rodada; o CA-2378 fica pendente).
+
+Riscos e decisões para o dono revisar:
+
+- **DP-IA-9.** A autorização é lida da cópia da conta na nuvem. Quem liga a chave e pede logo em seguida depende do
+  `salvarAgora`; sem rede, nada sai (CA-2403).
+- **DP-IA-10.** O "Desfazer" volta o `origemIa` de antes (D-1352); editar o plano depois não tira a marca.
+- **DP-IA-11.** A pergunta `orcamento` entra no roteiro padrão; o roteiro que a conta já editou e salvou não ganha a
+  pergunta sozinho (a resposta da gaveta fica na ficha do mesmo jeito).
+- **DP-IA-12.** No adequar, a mudança barrada mostra o motivo da conferência ("Alergia: amendoim"), sem o "Barrada pela
+  ficha." do protótipo: a conferência também barra pela regra prescritível e pela base, que não são da ficha.
