@@ -169,3 +169,14 @@ describe('idoso com IMC de 27 a 29,99: a posição da ESPEN (spec antropometria-
     expect(FONTES.espenGeriatria.citacao).toMatch(/Volkert D et al\..*Clin Nutr 2019;38:10-47.*PMID 35306388/)
   })
 })
+
+describe('o texto pelo sexo da pessoa (spec antropometria-telas, D-1527; revisão r1, B2)', () => {
+  it('CB-1487: risco nutricional numa idosa: "panturrilha baixa na idosa"; num idoso, "no idoso"', () => {
+    const idosa = metaDePerda(caso({ idadeAnos: 70, objetivo: 'emagrecer', pesoKg: 50, estaturaCm: 160 }))
+    if (!idosa || idosa.mostra) throw new Error('a meta não devia vir')
+    expect(idosa.motivo).toMatch(/panturrilha baixa na idosa/)
+    const idoso = metaDePerda(caso({ sexo: 'M', idadeAnos: 70, objetivo: 'emagrecer', pesoKg: 50, estaturaCm: 160 }))
+    if (!idoso || idoso.mostra) throw new Error('a meta não devia vir')
+    expect(idoso.motivo).toMatch(/panturrilha baixa no idoso/)
+  })
+})

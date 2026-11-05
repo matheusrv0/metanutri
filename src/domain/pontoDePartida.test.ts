@@ -213,3 +213,17 @@ describe('o "magro" de Helms é proposta do app (spec antropometria-completa, ro
     expect(r.evidencia).toBe('limitada')
   })
 })
+
+describe('o texto pelo sexo da pessoa (spec antropometria-telas, D-1527; revisão r1, B2)', () => {
+  it('CB-1487: numa atleta, "se a atleta é magra" e "para esta atleta"; num atleta, "o atleta é magro" e "este atleta"', () => {
+    const semPercentual = proteinaPorObjetivo(caso({ sexo: 'F', objetivo: 'emagrecer' }), { perfil: 'atleta' })
+    expect(semPercentual?.calculou && semPercentual.avisos.join(' ')).toMatch(/não dá para saber se a atleta é magra/)
+    const naoMagra = proteinaPorObjetivo(caso({ sexo: 'F', objetivo: 'emagrecer' }, { gorduraPct: 40 }), { perfil: 'atleta' })
+    expect(naoMagra?.calculou && naoMagra.avisos.join(' ')).toMatch(/para esta atleta, vale a ISSN/)
+    const homem = proteinaPorObjetivo(caso({ objetivo: 'emagrecer' }, { gorduraPct: 30 }), { perfil: 'atleta' })
+    expect(homem?.calculou && homem.avisos.join(' ')).toMatch(/para este atleta, vale a ISSN/)
+    expect(proteinaPorObjetivo(caso({ objetivo: 'emagrecer' }), { perfil: 'atleta' })?.calculou && 'ok').toBe('ok')
+    const semSexo = proteinaPorObjetivo(caso({ sexo: null, objetivo: 'emagrecer' }), { perfil: 'atleta' })
+    if (semSexo?.calculou) expect(semSexo.avisos.join(' ')).toMatch(/se a pessoa é magra/)
+  })
+})

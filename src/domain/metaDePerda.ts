@@ -77,7 +77,9 @@ export function metaDePerda(caso: Caso, entrada: EntradaDaMeta = {}): ResultadoD
   const prioridade = prioridadeDoCaso(caso)
   if (peso === null || estatura === null || prioridade === null) return { mostra: false, motivo: 'A meta de perda precisa do peso e da estatura.' }
   if (prioridade.riscoNutricional) {
-    return { mostra: false, motivo: 'Risco nutricional (IMC baixo pelo GLIM ou panturrilha baixa no idoso): a prioridade é preservar ou recuperar a massa magra, não perder peso.' }
+    // Spec antropometria-telas, D-1527: "na idosa" ou "no idoso", pelo sexo (a prioridade só sai com sexo).
+    const quem = caso.sexo === 'F' ? 'na idosa' : 'no idoso'
+    return { mostra: false, motivo: `Risco nutricional (IMC baixo pelo GLIM ou panturrilha baixa ${quem}): a prioridade é preservar ou recuperar a massa magra, não perder peso.` }
   }
   if (prioridade.nivel === 0 && caso.objetivo !== 'emagrecer') return null
 

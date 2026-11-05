@@ -104,3 +104,25 @@ describe('proposta do app (spec antropometria-completa, revisão, CA-2083)', () 
     expect(p.gatilhos.every((g) => g.fonte.citacao.length > 20)).toBe(true)
   })
 })
+
+describe('o texto pelo sexo da pessoa (spec antropometria-telas, D-1527; revisão r1, B2)', () => {
+  it('CB-1487: "o risco da paciente" numa mulher e "do paciente" num homem', () => {
+    expect(nivelDePrioridade(entrada({ sexo: 'F' })).avisos).toContain('Risco pelas medidas antropométricas; o risco da paciente depende também de doenças e fatores de risco.')
+    expect(nivelDePrioridade(entrada({ sexo: 'M' })).avisos).toContain('Risco pelas medidas antropométricas; o risco do paciente depende também de doenças e fatores de risco.')
+  })
+
+  it('CB-1487: idosa com sobrepeso: "(idosa)" no gatilho e "Idosa:" na nota do IMC; no homem, "(idoso)" e "Idoso:"', () => {
+    const idosa = nivelDePrioridade(entrada({ sexo: 'F', idadeAnos: 70, imc: 28 }))
+    expect(idosa.gatilhos.map((g) => g.descricao)).toContain('IMC de 27 a 29,99 (idosa)')
+    expect(idosa.avisos).toContain('Idosa: a faixa de referência do IMC é > 22 e < 27 kg/m² (SISVAN).')
+    const idoso = nivelDePrioridade(entrada({ sexo: 'M', idadeAnos: 70, imc: 28 }))
+    expect(idoso.gatilhos.map((g) => g.descricao)).toContain('IMC de 27 a 29,99 (idoso)')
+    expect(idoso.avisos).toContain('Idoso: a faixa de referência do IMC é > 22 e < 27 kg/m² (SISVAN).')
+  })
+
+  it('CB-1487: a panturrilha baixa da idosa diz "corte da idosa"', () => {
+    const idosa = nivelDePrioridade(entrada({ sexo: 'F', idadeAnos: 70, imc: 24, panturrilhaCm: 30 }))
+    expect(idosa.avisos.join(' ')).toMatch(/^.*Panturrilha abaixo do corte da idosa \(redução de massa muscular\)/)
+    expect(nivelDePrioridade(entrada({ sexo: 'M', idadeAnos: 70, imc: 24, panturrilhaCm: 30 })).avisos.join(' ')).toMatch(/corte do idoso/)
+  })
+})

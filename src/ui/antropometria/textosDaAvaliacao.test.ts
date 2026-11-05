@@ -224,6 +224,15 @@ describe('avisosNaTela: o que o protótipo não mostra vai para a ajuda (CB-1453
     expect(r.naAjuda).toHaveLength(2)
   })
 
+  it('CB-1487 (D-1527): a nota do IMC da idosa também vai para a ajuda; a frase do risco da paciente fica', () => {
+    const r = avisosNaTela('prioridade', [
+      'Idosa: a faixa de referência do IMC é > 22 e < 27 kg/m² (SISVAN).',
+      'Risco pelas medidas antropométricas; o risco da paciente depende também de doenças e fatores de risco.',
+    ])
+    expect(r.visiveis).toEqual(['Risco pelas medidas antropométricas; o risco da paciente depende também de doenças e fatores de risco.'])
+    expect(r.naAjuda).toEqual(['Idosa: a faixa de referência do IMC é > 22 e < 27 kg/m² (SISVAN).'])
+  })
+
   it('meta: ficam o piso de 800 kcal e a resposta à gordura alvo; o resto vai para a ajuda', () => {
     const r = avisosNaTela('meta', [
       'A perda desacelera: cerca de metade do efeito de um corte calórico permanente aparece em ~1 ano (Hall 2011).',

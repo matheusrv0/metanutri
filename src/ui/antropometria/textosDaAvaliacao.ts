@@ -378,7 +378,7 @@ const FICAM_NA_TELA: Readonly<Record<BlocoDoPontoDePartida, (aviso: string) => b
   gasto: () => false,
   proteina: () => false,
   // O protótipo mostra a frase do risco e o aviso da cintura; os outros alertas da pessoa (GLIM, panturrilha) também.
-  prioridade: (a) => !a.startsWith(PROPOSTA_DO_APP) && !a.startsWith('Idoso: a faixa de referência'),
+  prioridade: (a) => !a.startsWith(PROPOSTA_DO_APP) && !/^Idos[ao]: a faixa de referência/.test(a),
   // O piso de 800 kcal e a resposta à gordura alvo digitada (o "alvoErro" do protótipo).
   meta: (a) => a.startsWith('Abaixo de 800 kcal') || a.startsWith('O % de gordura alvo') || a.startsWith('Sem o % de gordura atual'),
 }

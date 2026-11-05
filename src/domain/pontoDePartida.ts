@@ -189,10 +189,12 @@ function regraDaProteina(caso: Caso, entrada: EntradaDaProteina, imc: number | n
       ]
       return { faixa: { min: 2.3, max: 3.1 }, sobre: 'massa-magra', fonte: FONTES.helms2014, evidencia: 'proposta-do-app', avisos, usaPercentual: true }
     }
+    // Spec antropometria-telas, D-1527: o texto segue o sexo da pessoa; sem sexo, "a pessoa".
+    const quem = caso.sexo === 'F' ? { se: 'a atleta é magra', para: 'esta atleta' } : caso.sexo === 'M' ? { se: 'o atleta é magro', para: 'este atleta' } : { se: 'a pessoa é magra', para: 'esta pessoa' }
     const motivo =
       g === null || limite === null
-        ? 'Sem o % de gordura (ou fora de 20 a 79 anos), não dá para saber se o atleta é magro: vale a ISSN; a faixa de Helms (2014) é de atletas magros.'
-        : 'A faixa de Helms (2014) é de atletas magros (% de gordura abaixo do início do sobrepeso de Gallagher): para este atleta, vale a ISSN.'
+        ? `Sem o % de gordura (ou fora de 20 a 79 anos), não dá para saber se ${quem.se}: vale a ISSN; a faixa de Helms (2014) é de atletas magros.`
+        : `A faixa de Helms (2014) é de atletas magros (% de gordura abaixo do início do sobrepeso de Gallagher): para ${quem.para}, vale a ISSN.`
     return { ...issn, avisos: [motivo], usaPercentual: g !== null }
   }
   if (ativo) return issn
