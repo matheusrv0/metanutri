@@ -160,6 +160,56 @@ Configurações ganha "E-mails"; a Adesão ganha o último acesso e o envelope; 
   guardou. Com uma marcação desta aba ainda a caminho, a releitura espera: a resposta que chega depois de um toque novo é
   descartada, para não desmarcar o que acabou de ser marcado. Sem servidor (`naNuvem` falso), nada muda.
 
+### 2.1 A correção da revisão r1 (04/11/2026)
+
+As decisões D-1246 a D-1255 da SPEC (seção 1.8), no código:
+
+- **DP-LP-32** · **O corte mora no banco** (D-1246). `acompanhamentos` ganha `cortado_em` (só o banco escreve: o app
+  não grava nem apaga, como o `ultimo_acesso`) e nasce `tokens_trocados` (`token_hash` pk, SHA-256 do token; `link_id`
+  com `on delete cascade`; `trocado_em`), sem nenhuma permissão para `anon` e `authenticated`. Um gatilho depois de
+  `update of token` (`trocar_o_endereco`, `security definer`) guarda o resumo do token de antes, marca como cortados os
+  links do mesmo paciente na mesma conta (os que apontam para o fixo pela migração, em cadeia, e os do mesmo
+  `paciente_id`) e faz a limpeza do D-1248. O gatilho de antes (`cuidar_do_link`) mantém o token atual quando o app
+  grava um token que já foi trocado (a aba antiga, CA-2290) e recusa criar link com ele. `missoes_por_token`,
+  `registrar_acesso`, `desligar_aviso` e `marcar_missoes` (refeita aqui, a do 010 com o corte) ignoram o link cortado. A
+  tela pergunta `link_trocado(p_token)` (anon) só quando o link não abriu: verdadeiro para o token cortado ou guardado em
+  `tokens_trocados`. O limite (DP-LP-6) não conta link cortado. O 017 continua idempotente; se o 010 rodar de novo, o 017
+  roda logo depois (a nota do topo).
+- **DP-LP-33** · **A tela do endereço trocado** (D-1246). `fonteSupabase.porToken` pergunta `link_trocado` quando a
+  função do paciente não devolve nada; trocado, rejeita com `LinkTrocado` (como o `LinkSemConexao`), e a
+  `fonteDoPaciente` não cai na cópia do aparelho. A `TelaMissoesPaciente` mostra "Este link foi trocado." e apaga a cópia
+  sem internet (pelo token) e a lembrança daquele token.
+- **DP-LP-34** · **O e-mail por confirmar mora na chave** (D-1247). `chaves_de_aviso` ganha `email` (o endereço
+  normalizado, só na chave de aceite; com ele, a lista de avisos pode vir vazia). "Receber" com e-mail digitado cria a
+  chave com o endereço e manda o S1 e o S3 "Confirme o seu e-mail", sem tocar em `emails_dos_links`. O "Confirmar" da
+  página grava o endereço (origem `paciente`, `confirmado_em`) e os aceites marcados; a chave do endereço que não é o do
+  link continua recusada para os aceites sem e-mail (CA-2257). A recuperação e o `emailsPorHash` só olham o e-mail da
+  ficha ou o confirmado. O pedido que não sai devolve a anotação do limite do dia (`devolver_limite`, só a chave de
+  serviço) e não grava nada. `emails_do_link` devolve também `email_ficha` (o diálogo de troca mostra ele mascarado).
+- **DP-LP-35** · **A limpeza da troca** (D-1248), no mesmo gatilho do DP-LP-32: o e-mail de origem `paciente` volta ao
+  `email_ficha` (ou fica nulo), as chaves de aceite abertas do link saem e os aceites ativos de endereço que não é o da
+  ficha se encerram (`saiu_em`). O S4 (`enviar-link`, `'trocou'`) vai só para o `email_ficha`; o app só o pede com a
+  caixa do diálogo marcada.
+- **DP-LP-36** · **O tempo fixo da recuperação** (D-1249): `TEMPO_DA_RECUPERACAO_MS` = 3.000. O núcleo começa o trabalho
+  e espera os 3 s (`esperar`, injetável; por padrão o `setTimeout`), sem esperar o trabalho. O `index.ts` da `meu-link`
+  passa `emSegundoPlano` = `EdgeRuntime.waitUntil` quando o ambiente tem (o caso de o trabalho passar dos 3 s); o
+  trabalho nunca rejeita (a falha vira registro).
+- **DP-LP-37** · **O Turnstile** (D-1251): `turnstileConfere` recebe o host esperado (o de `ENDERECO_DO_APP`) e exige
+  `action === 'recuperar-link'` e `hostname` igual.
+- **DP-LP-38** · **A chave de descadastro** (D-1252): `chaveDeSair` recebe o resumo do endereço e acha (ou cria) a chave
+  do link, do aviso e do endereço. Em `avisos-resposta`, a chave `sair` com link só age se o resumo dela é o do e-mail de
+  agora do link; senão, "Este endereço não vale." (404).
+- **DP-LP-39** · **Como paciente** (D-1253): a `AreaDeTrabalho` passa `comoPaciente` (sem sessão) à
+  `TelaMissoesPaciente`; sem ele, a tela não lembra o plano e não registra o acesso. `sair` (`usarConta.ts`) apaga
+  `metanutri:meus-planos`.
+- **DP-LP-40** · **O teto por conta e o remetente** (D-1254): `Tetos` ganha `conta` (`TETO_CONTA_DIA`, padrão
+  `max(30, ⌊0,4 × TETO_DIA⌋)`), a `Contagem` ganha `porConta` (os envios do dia do teto por conta,
+  `enviosDoDiaPorConta`) e `cortarNoTeto` corta cada item também pela conta dele. `enviarServico` devolve `'conta'`
+  quando é a conta que passou (a `enviar-link` responde a frase do CA-2262). `nomeLimpoDoRemetente` (comum.ts) tira
+  endereço web, e-mail, aspas e sinais de cabeçalho e corta em 60 caracteres; o banco de verdade
+  (`bancoDosAvisosSupabase.nutricionista`) já devolve o nome limpo.
+- **DP-LP-41** · **Os planos** (D-1255): `textoDosLimites` junta as duas linhas quando os números são iguais.
+
 ## 3. O contrato (banco, funções e tipos)
 
 ### 3.1 `supabase/017-lado-do-paciente.sql` (uma transação, pode rodar de novo)
@@ -286,6 +336,18 @@ este link?", o `/p/<token>` e a barra de baixo; e `src/ui/tema/globals.css`, a r
 pegava a barra do dia de antes dos segmentos. O R-LP-5 deixava os arquivos da marca de fora enquanto o `marca-no-link`
 recebia correções; com ela na `main` (3d3428ae), a regra foi ajustada aqui.
 
+**Acrescentados na correção da revisão r1** (T42 a T57): `supabase/017-lado-do-paciente.sql`,
+`src/data/sqlLadoDoPaciente.test.ts`, `testes/seguranca/ladoDoPaciente.test.ts`, `avisos.test.ts`, `preparo.ts` e
+`tabelas.test.ts`; `supabase/functions/_shared/avisos/` (`meuLink.ts`, `avisosResposta.ts`, `enviarLink.ts`,
+`comum.ts`, `portas.ts`, `bancoDosAvisosSupabase.ts`, `emails.ts`, `tetos.ts`, `rodada.ts`, `turnstile.ts`) e
+`supabase/functions/meu-link/index.ts`; os testes `src/data/servidor*.test.ts` e o banco de mentira
+(`servidorAvisosFalsos.test-utils.ts`); `src/domain/fonteSupabase.ts`, `repositorioAcompanhamentos.ts`,
+`emailsDoLink.ts`, `meusPlanos.ts`, `conta.ts`; `src/ui/missoes/TelaMissoesPaciente.tsx`, `DialogoTrocarEndereco.tsx`,
+`CartaoLinkMissoes.tsx`, `MeuPlano.tsx`, `link/FolhaReceberPorEmail.tsx`; `src/ui/pacientes/CartaoLinkDoPaciente.tsx`,
+`TelaPaciente.tsx`; `src/ui/avisos/TelaAvisosDoEmail.tsx`; `src/ui/AreaDeTrabalho.tsx`; `src/ui/estado/usarConta.ts`;
+`src/ui/publico/TelaPrivacidade.tsx`; `src/seguranca/csp.test.ts`; `e2e/servidor-falso/lado-do-paciente.spec.ts` e
+`e2e/apoio/servidorFalso.ts`; e os testes desses arquivos.
+
 ## 5. Tarefas (uma por commit)
 
 Cada tarefa termina com os testes dela verdes (`npx vitest run <arquivos>`), lint e tipos dos arquivos tocados. A
@@ -334,6 +396,27 @@ dependência está entre colchetes.
 | T39 | `feat(lgpd)`: Política e pergunta de autorização (PARA O DONO APROVAR) | T1 |
 | T41 | `fix(link)`: a aba que volta relê o link (DP-LP-31, CB-1221) | T22 |
 | T40 | `docs`: a validação e as divergências no PLAN | todas |
+
+**A correção da revisão r1** (seção 2.1), um commit por correção, cada uma com o teste antes:
+
+| # | Tarefa | Depende |
+|---|---|---|
+| T42 | `docs`: SPEC (seção 1.8, 2.7, CB-1228 a CB-1231) e este PLAN | — |
+| T43 | `fix(banco)`: o 017 corta os endereços antigos e devolve o link ao e-mail da ficha na troca (DP-LP-32, DP-LP-35); testes de texto e no Supabase local | T42 |
+| T44 | `fix(link)`: a tela "Este link foi trocado." e a cópia que sai (DP-LP-33) | T43 |
+| T45 | `fix(avisos)`: o e-mail digitado só vale confirmado; o pedido que não sai não conta (DP-LP-34) | T43 |
+| T46 | `fix(avisos)`: o S4 só para o e-mail da ficha, com a caixa do diálogo (DP-LP-35) | T45 |
+| T47 | `fix(avisos)`: "Recuperar meu link" no tempo fixo (DP-LP-36) | T45 |
+| T48 | `fix(link)`: alvos de 44 px no Plano e em "Receber por e-mail" (CA-2295) | — |
+| T49 | `fix(avisos)`: o Turnstile confere a ação e o host (DP-LP-37) | — |
+| T50 | `fix(avisos)`: a chave de descadastro presa ao endereço (DP-LP-38) | T45 |
+| T51 | `fix(link)`: só lembra como paciente; "Sair" apaga os planos lembrados (DP-LP-39) | — |
+| T52 | `fix(ficha)`: "Excluir paciente" por último no celular (CA-587) e a falha de apagar os e-mails aparece (CB-1228) | — |
+| T53 | `fix(avisos)`: o teto por conta e o remetente limpo (DP-LP-40) | T45 |
+| T54 | `fix(planos)`: sem linha repetida (DP-LP-41) | — |
+| T55 | `fix(lgpd)`: a Política diz o que o código faz (D-1250, PARA O DONO APROVAR) | T45 |
+| T56 | `test(seguranca)`: o token do caminho não sai no `Referer` (R-LP-6) | — |
+| T57 | `docs`: a validação da correção | todas |
 
 ## 6. Matriz CA/CB × teste
 
@@ -401,6 +484,18 @@ Todo teste leva o ID no nome. "Dono" é conferência que só ele faz (seção 9)
 | CB-1224 | `linkFixo.test.tsx` |
 | CB-1225 | `servidorEnviarLink.test.ts` |
 | CB-1226 | `meusPlanos.test.ts`, `link/instalar.test.tsx` |
+| CA-2289, CA-2290, CB-1231 | `src/data/sqlLadoDoPaciente.test.ts` (texto); `testes/seguranca/ladoDoPaciente.test.ts` (no banco local); `src/domain/fonteSupabase*.test.ts` e `src/ui/missoes/linkQueNaoAbre.test.tsx` (a tela e a cópia que sai); a sonda `sonda-trocar-endereco.mts` da revisão |
+| CA-2291, CA-2292, CB-1229 | `servidorMeuLink.test.ts`, `servidorAvisosResposta.test.ts`, `servidorAvisosEmails.test.ts`; `link/receberPorEmail.test.tsx`; `telaAvisosDoEmail.test.tsx`; `testes/seguranca/avisos.test.ts` |
+| CA-2293, CB-1230 | `servidorEnviarLink.test.ts`; `src/ui/missoes/linkFixo.test.tsx`; `testes/seguranca/ladoDoPaciente.test.ts` e `avisos.test.ts` |
+| CA-2294 | `servidorMeuLink.test.ts`; a sonda `sonda-tempo-recuperar.mts` da revisão |
+| CA-2295 | `e2e/servidor-falso/lado-do-paciente.spec.ts` (390 px) |
+| CA-2296 | `servidorAvisosResend.test.ts` (o `turnstileConfere`) |
+| CA-2297 | `servidorAvisosResposta.test.ts`; `testes/seguranca/avisos.test.ts` |
+| CA-2298 | `src/ui/missoes/ultimoAcesso.test.tsx`; `src/ui/estado/usarConta*.test.ts` |
+| CA-2299 | `servidorAvisosTetos.test.ts`, `servidorEnviarLink.test.ts`, `servidorAvisosRodada.test.ts`, `servidorAvisosEmails.test.ts` |
+| CA-587 (B6), CB-1228 | `src/ui/pacientes/excluirPaciente.test.tsx` |
+| D-1255 (B10) | `src/domain/conta.test.ts` |
+| R-LP-6 (B5) | `src/seguranca/csp.test.ts` |
 
 ## 7. Riscos
 
@@ -413,6 +508,12 @@ Todo teste leva o ID no nome. "Dono" é conferência que só ele faz (seção 9)
   `RESEND_API_KEY` fica sem valor e as funções respondem "Não foi possível enviar agora.".
 - **R-LP-4** · O `<base href="/">` muda a resolução de endereços relativos do app. O app não tem link relativo de página
   (só `#/…`, que resolve igual na raiz). Coberto pelo e2e de sempre.
+- **R-LP-6** · **Risco aceito (B5 da revisão r1): o token vai no caminho** (`/p/<token>`, `/avisos/<chave>` e o
+  `?c=<chave>` do um clique), e não mais no `#`. O manifesto do "Meu plano" (DP-LP-2) precisa do endereço com o token,
+  e o iPhone guarda o ícone pelo endereço da página. Por isso o token chega aos registros da Cloudflare e da Supabase
+  (o `request.url` das funções). O `Referrer-Policy: strict-origin-when-cross-origin` do `_headers` vale para `/*`
+  (`/p/*` e `/avisos/*` também): outro site recebe só a origem, sem o caminho (teste em `src/seguranca/csp.test.ts`).
+  Fica para o dono conferir que o Web Analytics da Cloudflare está desligado em `app.metanutri.com.br`.
 - **R-LP-5** · O `marca-no-link` ainda recebe correções. Os arquivos dela (`TelaSuaMarca`, `CartaoSuaMarca`,
   `PreviaDoLink`, `globals.css`, `mensagemDoBanco.ts`, `logoDaMarca.ts`) não são tocados aqui; a `LinkDoPaciente` mantém as
   props de que a prévia precisa.
