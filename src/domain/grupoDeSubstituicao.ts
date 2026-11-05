@@ -67,6 +67,13 @@ export function grupoDeSubstituicao(a: Alimento): GrupoDeSubstituicao {
 }
 
 /**
+ * D-1133: o alimento está num grupo da tabela da seção 3 da spec (a lista de equivalentes, Philippi et al., Rev. Nutr.
+ * 1999;12(1):65-80), e não em "os demais", o grupo da tabela de composição. Dentro de um desses grupos, o grupo já diz que
+ * a troca é equivalente.
+ */
+export const temGrupoConhecido = (a: Alimento): boolean => GRUPOS.some(([, casa]) => casa(a))
+
+/**
  * A forma do ovo, entre ovos: ovo inteiro só por ovo inteiro, gema só por gema, clara só por clara (duas gemas não são um ovo,
  * D-194). O queijo, que divide o grupo com o ovo, troca só com o ovo inteiro, nos dois sentidos (D-1108, revisão rodada
  * 2, M2): a clara cozida por proteína pedia 135 g de requeijão.

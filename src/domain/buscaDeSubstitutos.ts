@@ -4,7 +4,7 @@
 import { MICRONUTRIENTES_ADEQUACAO } from './adequacao.ts'
 import { MAXIMO_DE_PEDACOS, MEDIDAS_DE_CONTAR, medidaParaMostrar, medidasDoAlimento } from './busca.ts'
 import { posicaoNoConsumo } from './consumoPof.ts'
-import { ehFrutaInteira, ehSucoOuPolpaDeFruta, noMesmoGrupo } from './grupoDeSubstituicao.ts'
+import { ehFrutaInteira, ehSucoOuPolpaDeFruta, noMesmoGrupo, temGrupoConhecido } from './grupoDeSubstituicao.ts'
 import { unidadeDo } from './liquido.ts'
 import { CAFE_OU_CHA, ehDeUsoComum, ehFrito, ehPoOuDesidratado, ehPratoComposto, ehProcessado, ehSegundaEscolha, ehUltraprocessado } from './prescritivel.ts'
 import { casaRestricao, comoRestricoes, ehNaoGosta, type RestricoesDoPaciente } from './restricoes.ts'
@@ -277,14 +277,18 @@ const MAIOR_RAZAO_DE_ENERGIA = 2
  * Rev. Nutr. 1999;12(1):65-80): o mesmo macro dominante das trocas da folha (a), a energia na porção entre metade e o
  * dobro (b) e o pó ou desidratado só no lugar de outro (c). A faixa de metade ao dobro é a tolerância desta busca, que
  * procura pelo nutriente: a energia só barra o absurdo ("leite em pó 526 g" no lugar de um copo de leite).
+ * D-1133: a regra (a) vale só quando o grupo do item ou do candidato é desconhecido. Dentro de um grupo da tabela, o grupo
+ * já diz que a troca é equivalente: o leite integral ("de gordura") troca com o desnatado e a bebida de soja ("de
+ * carboidrato"), e as verduras, cujos macros são frações de grama, trocam entre si.
  */
 export function naTrocaEquivalente(base: Alimento, gramas: number): (candidato: Alimento, gramasDoCandidato: number) => boolean {
   const macro = macroDominante(base)
+  const itemNoGrupo = temGrupoConhecido(base)
   const kcalPorCem = base.nutrientes.energia_kcal
   const energiaDoItem = kcalPorCem !== null && kcalPorCem > ENERGIA_QUASE_ZERO_KCAL ? (kcalPorCem * gramas) / 100 : null
   const baseEmPo = ehPoOuDesidratado(base)
   return (a, gramasDoCandidato) => {
-    if (macroDominante(a) !== macro) return false
+    if (!(itemNoGrupo && temGrupoConhecido(a)) && macroDominante(a) !== macro) return false
     if (!baseEmPo && ehPoOuDesidratado(a)) return false
     if (energiaDoItem === null) return true
     // CB-1111: sem energia na tabela, não dá para dizer que a troca é equivalente.
