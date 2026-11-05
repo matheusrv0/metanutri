@@ -7,6 +7,7 @@ import {
   IA_CANCELADA,
   IA_DEMOROU,
   IA_INDISPONIVEL,
+  IA_VAZIA,
   MUITAS_SUGESTOES,
   planoVigente,
   RECUSA_DA_IA,
@@ -246,6 +247,8 @@ describe('o sucesso', () => {
       },
       foraDaBase: 1,
       uso: { usados: 1, limite: 20, renovaEm: '2026-12-01' },
+      // D-1352: o modelo que respondeu, para o origemIa do caso.
+      modelo: 'claude-opus-5-5',
     })
     expect(m.banco.usos).toHaveLength(1)
     expect(m.banco.usos[0]?.status).toBe('ok')
@@ -286,6 +289,36 @@ describe('o sucesso', () => {
     expect(r.status).toBe(200)
     expect(r.corpo).not.toHaveProperty('uso')
     expect(m.banco.usos[0]?.status).toBe('ok')
+  })
+})
+
+describe('CA-2400 e D-1348: a sugestão vazia não conta no mês, mas o custo entra no teto do dia', () => {
+  const inicioDoMes = new Date('2026-11-01T03:00:00Z')
+  it.each([
+    ['gerar só com ids fora da base', JSON.stringify({ refeicoes: [{ refeicao: 0, principal: [{ alimentoId: 777_777, gramas: 30 }], opcao2: [] }], mudancas: [], pontosAConfirmar: [] })],
+    ['gerar sem refeição nenhuma', JSON.stringify({ refeicoes: [], mudancas: [], pontosAConfirmar: ['Confirme a rotina.'] })],
+    ['gerar só com a opção 2', JSON.stringify({ refeicoes: [{ refeicao: 0, principal: [], opcao2: [{ alimentoId: 53, gramas: 50 }] }], mudancas: [], pontosAConfirmar: [] })],
+  ])('%s: 502 vazia, uso erro com o custo real', async (_, texto) => {
+    const m = montar({ respostas: [{ ...OK, texto }] })
+    expect(await pedir(PEDIDO_BASE, m.dep)).toEqual({ status: 502, corpo: { erro: IA_VAZIA, codigo: 'vazia' } })
+    expect(m.banco.usos[0]?.status).toBe('erro')
+    expect(m.banco.usos[0]?.conclusao).toMatchObject({ custoMicrodolares: 140_800, custoEstimado: false })
+    expect(await m.dep.banco.usosNoMes(CONTA_IA.id, inicioDoMes)).toBe(0)
+    expect(await m.dep.banco.custoDesde(new Date(AGORA_IA.getTime() - 24 * 3_600_000))).toBe(140_800)
+  })
+
+  it('ajustar sem nenhuma mudança que passe: 502 vazia', async () => {
+    const texto = JSON.stringify({ refeicoes: [], mudancas: [{ tipo: 'remover', refeicao: 1, opcao: 'principal', item: 9, alimentoId: null, gramas: null, motivo: 'não existe' }], pontosAConfirmar: [] })
+    const m = montar({ respostas: [{ ...OK, texto }] })
+    const r = await pedir({ ...PEDIDO_BASE, modo: 'ajustar', plano: [{ refeicao: 1, opcao: 'principal', item: 0, alimentoId: 3, gramas: 150 }] }, m.dep)
+    expect(r).toEqual({ status: 502, corpo: { erro: IA_VAZIA, codigo: 'vazia' } })
+    expect(m.banco.usos[0]?.status).toBe('erro')
+  })
+
+  it('CB-1304: uma refeição vazia numa sugestão com itens continua 200', async () => {
+    const texto = JSON.stringify({ refeicoes: [{ refeicao: 1, principal: [{ alimentoId: 3, gramas: 120 }], opcao2: [] }], mudancas: [], pontosAConfirmar: [] })
+    const r = await pedir(PEDIDO_BASE, montar({ respostas: [{ ...OK, texto }] }).dep)
+    expect(r.status).toBe(200)
   })
 })
 

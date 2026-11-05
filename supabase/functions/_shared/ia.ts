@@ -12,6 +12,7 @@ import {
   IA_CANCELADA,
   IA_DEMOROU,
   IA_INDISPONIVEL,
+  IA_VAZIA,
   MUITAS_SUGESTOES,
   RECUSA_DA_IA,
   SEM_CONSENTIMENTO,
@@ -23,6 +24,7 @@ import {
   LIMITE_DE_SUGESTOES_IA_POR_HORA,
   limparPedido,
   renovaEm,
+  respostaVazia,
   textoDoLimite,
   type PedidoDeSugestao,
   type PlanoDaConta,
@@ -33,7 +35,7 @@ import { montarMensagem } from './iaPrompt.ts'
 import { PEDIDO_INVALIDO, respostaDeErro as erro, type ContaQuePede, type Registro, type RespostaDaFuncao } from './portas.ts'
 
 export { custoEmMicrodolares, FATOR_DOS_EUA, PRECOS, type PrecoDoModelo } from './iaCusto.ts'
-export { ESTUDANTE_SEM_APROVACAO, IA_CANCELADA, IA_DEMOROU, IA_INDISPONIVEL, MUITAS_SUGESTOES, RECUSA_DA_IA, SEM_CONSENTIMENTO, SEM_CRN_IA, SEM_PERFIL_IA, SEM_SESSAO_IA }
+export { ESTUDANTE_SEM_APROVACAO, IA_CANCELADA, IA_DEMOROU, IA_INDISPONIVEL, IA_VAZIA, MUITAS_SUGESTOES, RECUSA_DA_IA, SEM_CONSENTIMENTO, SEM_CRN_IA, SEM_PERFIL_IA, SEM_SESSAO_IA }
 
 const UM_DIA_MS = 24 * 60 * 60 * 1000
 /** `IA_TETO_DIARIO_USD`: um número maior que zero; sem ele, ou inválido, US$ 5 (D-1318). */
@@ -250,8 +252,16 @@ export async function sugerirPlano(pedido: PedidoDaIa, dep: DependenciasDaIa): P
     return erro(IA_INDISPONIVEL, 502, 'resposta-invalida')
   }
 
+  // CA-2400 e D-1348: nada que sirva não conta no mês; o custo real fica anotado e entra no teto do dia.
+  if (respostaVazia(sugestao.modo, conferida.resposta)) {
+    await concluir('erro', resposta.modelo, resposta.tokens)
+    dep.log('IA: sugestão vazia. Fora da base:', conferida.foraDaBase)
+    return erro(IA_VAZIA, 502, 'vazia')
+  }
+
   await concluir('ok', resposta.modelo, resposta.tokens)
-  const corpo = { resposta: conferida.resposta, foraDaBase: conferida.foraDaBase }
+  // D-1352: o modelo que respondeu vai para o origemIa do caso.
+  const corpo = { resposta: conferida.resposta, foraDaBase: conferida.foraDaBase, modelo: resposta.modelo }
   try {
     return { status: 200, corpo: { ...corpo, uso: usoCom(await dep.banco.usosNoMes(conta, inicio)) } }
   } catch (falha) {

@@ -15,6 +15,8 @@ export const RECUSA_DA_IA = 'A IA não respondeu a este pedido. Mude o texto do 
 export const IA_DEMOROU = 'A sugestão demorou demais. Tente de novo; esta não conta no limite.'
 export const IA_INDISPONIVEL = 'As sugestões com IA estão indisponíveis agora. Tente mais tarde.'
 export const MUITAS_SUGESTOES = 'Muitas sugestões seguidas. Espere alguns minutos e tente de novo.'
+/** D-1348: a IA não devolveu nada utilizável (nenhum item da base, ou nenhuma mudança que passe). */
+export const IA_VAZIA = 'A IA não sugeriu nada da base para este pedido. Tente de novo; esta não conta no limite.'
 /** D-1330: a plataforma abortou o sinal do pedido (ninguém lê esta resposta; o edge-runtime de hoje não aborta). */
 export const IA_CANCELADA = 'A sugestão foi cancelada.'
 
@@ -707,6 +709,14 @@ const cortar = (texto: string, limite: number): string => {
 
 const gramasValidas = (g: unknown): g is number =>
   typeof g === 'number' && Number.isFinite(g) && g >= LIMITES_DA_RESPOSTA.gramasMin && g <= LIMITES_DA_RESPOSTA.gramasMax
+
+/**
+ * D-1348: a resposta conferida não tem nada que sirva: no modo gerar, nenhum item numa opção principal; no ajustar,
+ * nenhuma mudança.
+ */
+export function respostaVazia(modo: ModoIa, resposta: RespostaDaIa): boolean {
+  return modo === 'gerar' ? resposta.refeicoes.every((r) => r.principal.length === 0) : resposta.mudancas.length === 0
+}
 
 /**
  * O texto da IA vira a resposta conferida. Texto que não é JSON ou fora do esquema: `ok: false` (CA-2314). Dentro do
