@@ -214,9 +214,11 @@ const EMAIL_SEM_FINAL = /(?<![\p{L}\p{N}._%+-])[\p{L}\p{N}._%+-]+@[\p{L}\p{N}-]+
 const PERFIL = /(?<![\p{L}\p{N}])@[\p{L}\p{N}._]{2,}/gu
 /**
  * D-1341: o perfil depois de "insta", "instagram", "ig" ou "tiktok", quando o nome tem ponto, sublinhado ou algarismo
- * ("insta fulana.nutri"); "vê receitas no instagram todo dia" fica.
+ * ("insta fulana.nutri"); "vê receitas no instagram todo dia" fica. D-1345: a rede é uma palavra inteira, seguida de
+ * espaço ou de dois-pontos, e o nome começa por letra (ou sublinhado): "igual.", "igreja.", "instante.", "IG 24s"
+ * (idade gestacional) e "IG 100" (índice glicêmico) ficam.
  */
-const PERFIL_DEPOIS_DA_REDE = /(?<![\p{L}\p{N}])((?:insta(?:gram)?|ig|tiktok)\s*:?\s*)([\p{L}\p{N}._]{3,})/giu
+const PERFIL_DEPOIS_DA_REDE = /(?<![\p{L}\p{N}])((?:insta(?:gram)?|ig|tiktok)(?:\s*:\s*|\s+))([\p{L}_][\p{L}\p{N}._]{2,})/giu
 /** Endereço web com qualquer esquema (http, https, e o "hxxp" que disfarça, D-1341) ou www. */
 const ENDERECO_WEB = /(?:(?<![\p{L}\p{N}])[a-z]{2,10}:\/\/|www\.)\S+/giu
 /**
@@ -240,6 +242,38 @@ const NUMEROS_POR_EXTENSO = new RegExp(`(?<![\\p{L}])${NUMERO_ESCRITO}(?:[\\s,;.
 const SEQUENCIA_DE_ALGARISMOS = /[+(]?\p{Nd}(?:[\p{Nd}\s().+/\-–—_·•]|,(?=\p{Nd}))*\p{Nd}/gu
 const MINIMO_DE_ALGARISMOS = 8
 
+/** D-1344: quantidade escrita com separador: o de milhar ("1.800", "50.000") ou o decimal com vírgula ("12,5", "0,5"). */
+const QUANTIDADE_COM_SEPARADOR = /^(?:[1-9]\d{0,2}\.\d{3}(?:,\d{1,2})?|(?:0|[1-9]\d{0,3}),\d{1,2})$/
+/** D-1344: número sem separador, sem zero à esquerda e com até 5 algarismos (o CEP "01310" não é quantidade). */
+const NUMERO_SIMPLES = /^(?:0|[1-9]\d{0,4})$/
+const NUMEROS_DA_SEQUENCIA = /\p{Nd}+(?:[.,]\p{Nd}+)*/gu
+/** D-1344: dois números ligados por hífen, travessão curto ou longo, com ou sem espaço em volta. */
+const FAIXA = /^(\d[\d.,]*)(\s*)[-–—](\s*)(\d[\d.,]*)$/
+/** D-1344: a unidade clínica logo depois da faixa ("1500-1800 kcal"). */
+const UNIDADE_CLINICA = /^\s*(?:kcal|kj|g|mg|mcg|µg|μg|ug|ml|l|mm|cm|kg|%|ui|mmol|meq|semanas?|dias?)(?![\p{L}\p{N}])/iu
+
+const valorDa = (quantidade: string): number => Number(quantidade.replace(/\./g, '').replace(',', '.'))
+const ehQuantidade = (n: string): boolean => QUANTIDADE_COM_SEPARADOR.test(n) || NUMERO_SIMPLES.test(n)
+
+/**
+ * D-1331, D-1341 e D-1344: a sequência de 8 ou mais algarismos é contato, menos a de quantidades clínicas: a lista em
+ * que todo número tem separador de milhar ou vírgula decimal ("12,5 15,0 20,5", "1.000 · 2.000 · 5.000"), e a faixa
+ * de dois números, o menor antes, com espaço em volta do traço, com os dois números com separador ou com a unidade
+ * clínica logo depois ("1500-1800 kcal", "1200 - 1500"). O "+" e o DDD entre parênteses continuam sendo telefone.
+ */
+function ehContatoNumerico(trecho: string, depois: string): boolean {
+  if (trecho.replace(/\P{Nd}/gu, '').length < MINIMO_DE_ALGARISMOS) return false
+  if (trecho.includes('+') || trecho.includes(')')) return true
+  const corpo = trecho.replace(/^\(/, '')
+  const numeros = corpo.match(NUMEROS_DA_SEQUENCIA) ?? []
+  if (numeros.length > 0 && numeros.every((n) => QUANTIDADE_COM_SEPARADOR.test(n))) return false
+  const faixa = FAIXA.exec(corpo)
+  if (faixa === null) return true
+  const [, menor = '', antes = '', depoisDoTraco = '', maior = ''] = faixa
+  if (!ehQuantidade(menor) || !ehQuantidade(maior) || valorDa(menor) > valorDa(maior)) return true
+  return !((antes !== '' && depoisDoTraco !== '') || UNIDADE_CLINICA.test(depois))
+}
+
 /** Tira e-mail (inclusive por extenso), perfil com @, endereço web e sequência longa de algarismos do texto já em NFKC. */
 const tirarContato = (normal: string): string =>
   normal
@@ -252,24 +286,35 @@ const tirarContato = (normal: string): string =>
     .replace(PERFIL_DEPOIS_DA_REDE, (trecho, rede: string, nome: string) => (/[._\p{N}]/u.test(nome) ? `${rede}${REMOVIDO}` : trecho))
     .replace(DATA_POR_EXTENSO, REMOVIDO)
     .replace(NUMEROS_POR_EXTENSO, REMOVIDO)
-    .replace(SEQUENCIA_DE_ALGARISMOS, (trecho) => (trecho.replace(/\P{Nd}/gu, '').length >= MINIMO_DE_ALGARISMOS ? REMOVIDO : trecho))
+    .replace(SEQUENCIA_DE_ALGARISMOS, (trecho: string, onde: number, texto: string) =>
+      ehContatoNumerico(trecho, texto.slice(onde + trecho.length, onde + trecho.length + 12)) ? REMOVIDO : trecho,
+    )
 
 /**
- * D-1314 e D-1331, no pedido: o texto em NFKC e sem contato. A NFKC vale no texto inteiro: é ela que transforma os sinais
- * largos (＜ ＞) nos que a mensagem da IA tira (D-1340).
+ * D-1335 e D-1346: os sinais de marcação, pelo que a NFKC lê como `<` ou `>`: os comuns e os largos e pequenos
+ * (＜ ＞ ﹤ ﹥). Um teste confere que não há outro caractere que a NFKC transforme nesses sinais.
+ */
+export const SINAIS_DE_MARCACAO = /[<>﹤﹥＜＞]+/g
+
+/**
+ * D-1314, D-1331 e D-1346, no pedido: o texto em NFKC, sem os sinais de marcação e sem contato, nessa ordem. A NFKC
+ * vale no texto inteiro e vem antes de tirar os sinais (os largos viram os comuns); tirá-los antes de procurar o contato
+ * junta o que eles separavam ("98765<4321").
  */
 export function limparTexto(texto: string): string {
-  return tirarContato(texto.normalize('NFKC'))
+  return tirarContato(texto.normalize('NFKC').replace(SINAIS_DE_MARCACAO, ' '))
 }
 
 /**
- * D-1340, no texto da IA: a mesma limpeza de contato, mas a NFKC só serve para achar o contato; sem contato, o texto
- * chega à tela como a IA escreveu ("2ª", "½ xícara").
+ * D-1340 e D-1346, no texto da IA: os sinais de marcação saem pelo que a NFKC lê (antes de procurar o contato, pelo
+ * mesmo motivo do pedido), e a NFKC só serve para achar o contato; sem contato, o texto chega à tela como a IA escreveu
+ * ("2ª", "½ xícara").
  */
 export function limparTextoDaIa(texto: string): string {
-  const normal = texto.normalize('NFKC')
+  const semSinais = texto.replace(SINAIS_DE_MARCACAO, ' ')
+  const normal = semSinais.normalize('NFKC')
   const limpo = tirarContato(normal)
-  return limpo === normal ? texto : limpo
+  return limpo === normal ? semSinais : limpo
 }
 
 /** O índice (em unidades UTF-16) logo depois dos primeiros `n` caracteres de `texto`: o par de surrogates conta um. */
@@ -313,7 +358,7 @@ export function textoCurto(valor: unknown, limite: number): string {
   if (typeof valor !== 'string') return ''
   const junto = cortePrevio(valor, limite).replace(CARACTERES_PROIBIDOS, ' ').replace(/\s+/g, ' ').trim()
   if (junto === '') return ''
-  return cortarEmCaracteres(limparTexto(junto), limite)
+  return cortarEmCaracteres(limparTexto(junto).replace(/\s+/g, ' ').trim(), limite)
 }
 
 // ---------- Limites do pedido (D-1314, CA-2311) ----------
@@ -636,17 +681,13 @@ function formaDoEsquema(json: unknown): string | null {
 }
 
 /**
- * D-1335, D-1339, D-1340 e CA-2389: o texto da IA ("motivo" e "pontosAConfirmar") sem `<`, `>`, sem os caracteres
- * proibidos e sem contato (uma injeção na anamnese não põe telefone nem link na tela), com os espaços juntos e cortado no
+ * D-1335, D-1339, D-1340, D-1346 e CA-2389: o texto da IA ("motivo" e "pontosAConfirmar") sem os sinais de marcação
+ * (pelo que a NFKC lê como `<` ou `>`), sem os caracteres proibidos e sem contato (uma injeção na anamnese não põe telefone nem link na tela), com os espaços juntos e cortado no
  * limite por caractere. O corte prévio do D-1337 vale aqui também.
  */
 const cortar = (texto: string, limite: number): string => {
-  const limpo = cortePrevio(texto, limite)
-    .replace(CARACTERES_PROIBIDOS, ' ')
-    .replace(/[<>]+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-  return cortarEmCaracteres(limparTextoDaIa(limpo), limite, '…')
+  const semProibidos = cortePrevio(texto, limite).replace(CARACTERES_PROIBIDOS, ' ')
+  return cortarEmCaracteres(limparTextoDaIa(semProibidos).replace(/\s+/g, ' ').trim(), limite, '…')
 }
 
 const gramasValidas = (g: unknown): g is number =>

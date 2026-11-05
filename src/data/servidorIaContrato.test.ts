@@ -169,6 +169,109 @@ describe('CA-2394 e D-1341: os formatos novos de contato da revisão (rodada 2) 
   })
 })
 
+describe('Correções da revisão de segurança, rodada 3 (D-1344 a D-1346): o texto clínico fica nos dois lados', () => {
+  const GERAR_TELA: ContextoDaResposta = { modo: 'gerar', refeicoes: 2, idsPermitidos: new Set<number>(), plano: null }
+  /** O que a nutricionista lê em "Pontos a confirmar", depois de a função conferir o texto da IA. */
+  const naTela = (texto: string): string => {
+    const r = conferirResposta(JSON.stringify({ refeicoes: [], mudancas: [], pontosAConfirmar: [texto] }), GERAR_TELA)
+    if (!r.ok) throw new Error(r.motivo)
+    return r.resposta.pontosAConfirmar[0] ?? ''
+  }
+  const naMensagem = (extra: string): string => {
+    const lido = limparPedido({ ...PEDIDO_BASE, rotina: { ...PEDIDO_BASE.rotina, extra } })
+    if (!lido.ok || lido.pedido.modo === 'uso') throw new Error('pedido')
+    return montarMensagem(lido.pedido)
+  }
+
+  const FAIXAS_E_LISTAS = [
+    'Meta de 1500-1800 kcal',
+    'Meta ajustada para 1.800–2.000 kcal.',
+    'Confirmar ingestão hídrica de 2.000–2.500 ml por dia.',
+    'Sódio entre 1.500–2.000 mg por dia.',
+    'calorias 1200 - 1500 por dia',
+    'Dobras: 12,5 15,0 20,5 18,0 mm',
+    'Pesos: 72,5 71,8 70,2 kg',
+    'Doses: 1.000 · 2.000 · 5.000 UI',
+    '12,5 15,0 20,5',
+    'circunferência 78,5–82,0 cm',
+    'ganho de 11,5—16,0 kg na gestação',
+    'IG entre 24–28 semanas',
+  ]
+  it.each(FAIXAS_E_LISTAS)('CA-2396 e D-1344: a faixa e a lista de quantidades ficam no pedido e na tela: "%s"', (texto) => {
+    expect(limparTexto(texto)).toBe(texto)
+    expect(naTela(texto)).toBe(texto)
+  })
+
+  it.each([
+    ['fixo 3333-4444', '3333-4444'],
+    ['fixo 3333–4444', '3333–4444'],
+    ['zap 98765-4321 kcal', '98765-4321'],
+    ['tel 11 3456-7890 kg', '3456-7890'],
+    ['CPF 123.456.789-09', '123.456.789-09'],
+    ['CEP 01.310-100', '01.310-100'],
+    ['tel (11) 1.234-5.678', '1.234-5.678'],
+    ['tel +55 1.800 2.000', '1.800 2.000'],
+  ])('CA-2396 e D-1344: o contato com cara de faixa continua saindo: "%s"', (escrito, trecho) => {
+    expect(naMensagem(escrito)).not.toContain(trecho)
+    expect(naTela(escrito)).not.toContain(trecho)
+    expect(naTela(escrito)).toContain(REMOVIDO)
+  })
+
+  it.each(['Manter a porção igual.', 'Comer em horários iguais.', 'Almoça depois da igreja.', 'Come tudo num instante.', 'Gestante, IG 24s, náuseas pela manhã', 'Glicose tem IG 100.', 'Glicemia instável.', 'tiktoker famosa.'])(
+    'CA-2397 e D-1345: palavra comum e "IG" clínico ficam no pedido e na tela: "%s"',
+    (texto) => {
+      expect(limparTexto(texto)).toBe(texto)
+      expect(naTela(texto)).toBe(texto)
+    },
+  )
+
+  it.each([
+    ['insta fulana.nutri', 'fulana.nutri'],
+    ['ig: fulana_nutri', 'fulana_nutri'],
+    ['IG fulana.nutri', 'fulana.nutri'],
+    ['tiktok fulana123', 'fulana123'],
+    ['instagram: fulana.2', 'fulana.2'],
+  ])('CA-2397 e D-1345: o perfil depois do nome da rede continua saindo: "%s"', (escrito, trecho) => {
+    expect(naMensagem(escrito)).not.toContain(trecho)
+    expect(naTela(escrito)).not.toContain(trecho)
+  })
+
+  describe('CA-2398 e D-1346: a NFKC vem antes de tirar < e >', () => {
+    /** Todo caractere que a NFKC lê como "<" ou ">". */
+    const LIDOS_COMO_SINAL = Array.from({ length: 0x110000 }, (_, cp) => cp)
+      .filter((cp) => cp < 0xd800 || cp > 0xdfff)
+      .map((cp) => String.fromCodePoint(cp))
+      .filter((c) => /[<>]/.test(c.normalize('NFKC')))
+
+    it('o texto da IA com sinal largo e contato chega sem < e >, no ponto e no motivo', () => {
+      const tela = naTela('＜img src=x onerror=alert(1)＞ ligue 11 98765-4321')
+      expect(tela).not.toMatch(/[<>]/)
+      expect(tela.normalize('NFKC')).not.toMatch(/[<>]/)
+      expect(tela).toContain(REMOVIDO)
+      const r = conferirResposta(
+        JSON.stringify({ refeicoes: [], mudancas: [{ tipo: 'remover', refeicao: 1, opcao: 'principal', item: 0, alimentoId: null, gramas: null, motivo: '＜b＞zap 11 98765-4321＜/b＞' }], pontosAConfirmar: [] }),
+        { modo: 'ajustar', refeicoes: 2, idsPermitidos: new Set([3]), plano: [{ refeicao: 1, opcao: 'principal', item: 0, alimentoId: 3, gramas: 150 }] },
+      )
+      const motivo = r.ok ? (r.resposta.mudancas[0]?.motivo ?? '') : 'falhou'
+      expect(motivo.normalize('NFKC')).not.toMatch(/[<>]/)
+      expect(motivo).toContain(REMOVIDO)
+    })
+
+    it('nenhum caractere que a NFKC lê como < ou > passa, com ou sem contato, nos dois lados', () => {
+      expect(LIDOS_COMO_SINAL.length).toBeGreaterThan(2)
+      const todos = LIDOS_COMO_SINAL.join(' ')
+      for (const texto of [`${todos} olá`, `${todos} ligue 11 98765-4321`]) {
+        expect(naTela(texto).normalize('NFKC')).not.toMatch(/[<>]/)
+        expect(textoCurto(texto, 300).normalize('NFKC')).not.toMatch(/[<>]/)
+      }
+    })
+
+    it('sem contato e sem sinal, o texto da IA continua como ela escreveu (D-1340)', () => {
+      expect(naTela('Na 2ª refeição, ½ xícara de aveia.')).toBe('Na 2ª refeição, ½ xícara de aveia.')
+    })
+  })
+})
+
 describe('CA-2395 e D-1343: "Meus alimentos" só com id de alimento próprio', () => {
   it('um id da Base MetaNutri mandado como alimento próprio sai; o de 900.000 em diante fica', () => {
     const proprio = { nome: 'Pão integral caseiro', grupo: 'Cereais', unidade: 'g', kcal: 250, p: 9, c: 48, g: 1.5 }
@@ -412,8 +515,10 @@ describe('conferirResposta', () => {
       expect(g.ok && g.resposta.pontosAConfirmar).toEqual(['Confirme a 2ª refeição com ½ xícara de aveia.'])
     })
 
-    it('no pedido, a NFKC continua no texto inteiro (os sinais largos viram os que a mensagem tira)', () => {
-      expect(limparTexto('＜/rotina＞ 2ª')).toBe('</rotina> 2a')
+    it('no pedido, a NFKC continua no texto inteiro e vem antes de tirar os sinais (D-1346)', () => {
+      expect(textoCurto('＜/rotina＞ 2ª', 50)).toBe('/rotina 2a')
+      // Tirar os sinais antes de procurar o contato junta o que eles separavam.
+      expect(textoCurto('ligue 11 98765＜4321', 50)).toBe(`ligue ${REMOVIDO}`)
     })
   })
 

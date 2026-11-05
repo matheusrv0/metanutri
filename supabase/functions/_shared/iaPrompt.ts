@@ -2,7 +2,7 @@
 // as contas (em cache), o esquema da resposta e a mensagem do usuário, montada do pedido já limpo, sempre na mesma
 // ordem. Puro: sem Deno, sem rede e sem relógio. Nada de data nem hora aqui: o cache depende de o começo não mudar.
 import { CATALOGO_IA } from './iaCatalogo.ts'
-import type { FaixaIa, PedidoDeSugestao } from './iaContrato.ts'
+import { SINAIS_DE_MARCACAO, type FaixaIa, type PedidoDeSugestao } from './iaContrato.ts'
 
 /** As regras (desenho, seção 10.1). O primeiro bloco do `system`. */
 export const REGRAS_IA = `Você monta rascunhos de plano alimentar de um dia para nutricionistas do Brasil, dentro do MetaNutri. A nutricionista revisa, muda o que quiser e responde pelo plano que entrega ao paciente. Seu trabalho é poupar o tempo de montar do zero e de procurar o que ajustar, com escolhas que ela assinaria.
@@ -111,8 +111,11 @@ const NOMES_DO_CATALOGO: ReadonlyMap<number, string> = new Map(
   }),
 )
 
-/** Sem "<" e ">" dentro das marcas: um texto livre não fecha uma marca nem abre outra (CB-1318). */
-const seguro = (texto: string): string => texto.replace(/[<>]/g, '')
+/**
+ * Sem "<" e ">" dentro das marcas: um texto livre não fecha uma marca nem abre outra (CB-1318). D-1346: pelo que a
+ * NFKC lê como esses sinais (o pedido limpo já vem sem eles; aqui é a segunda trava).
+ */
+const seguro = (texto: string): string => texto.replace(SINAIS_DE_MARCACAO, '')
 const decimal = (v: number): string => String(Math.round(v * 100) / 100).replace('.', ',')
 const juntar = (partes: readonly string[]): string => partes.filter((p) => p !== '').join(' ')
 
