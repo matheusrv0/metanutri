@@ -113,11 +113,11 @@ describe('CA-2300: a permissão do navegador e o método, pelo que a função de
 describe('o banco de verdade fala com as funções do 016 pelos nomes e parâmetros de lá', () => {
   const chamadas = [...bancoDaIa.matchAll(/rpc\('([a-z_]+)', \{([^}]*)\}/g)].map((m) => ({ nome: m[1] ?? '', parametros: [...(m[2] ?? '').matchAll(/(p_[a-z_]+):/g)].map((p) => p[1] ?? '') }))
 
-  it('as quatro funções são chamadas', () => {
-    expect(chamadas.map((c) => c.nome).sort()).toEqual(['concluir_uso_da_ia', 'custo_da_ia_desde', 'reservar_uso_da_ia', 'uso_da_ia_no_mes'])
+  it('as cinco funções são chamadas (a da autorização, D-1347)', () => {
+    expect(chamadas.map((c) => c.nome).sort()).toEqual(['concluir_uso_da_ia', 'consentimento_ia_do_paciente', 'custo_da_ia_desde', 'reservar_uso_da_ia', 'uso_da_ia_no_mes'])
   })
 
-  it.each(['reservar_uso_da_ia', 'concluir_uso_da_ia', 'uso_da_ia_no_mes', 'custo_da_ia_desde'])('%s: cada parâmetro existe no SQL, na mesma ordem', (nome) => {
+  it.each(['reservar_uso_da_ia', 'concluir_uso_da_ia', 'uso_da_ia_no_mes', 'custo_da_ia_desde', 'consentimento_ia_do_paciente'])('%s: cada parâmetro existe no SQL, na mesma ordem', (nome) => {
     const chamada = chamadas.find((c) => c.nome === nome)
     const assinatura = sql.split(`create or replace function public.${nome}(`)[1]?.split(')')[0] ?? ''
     const doSql = [...assinatura.matchAll(/(p_[a-z_]+) /g)].map((p) => p[1])

@@ -16,6 +16,7 @@ const FUNCOES = [
   'concluir_uso_da_ia(bigint, text, text, integer, integer, integer, integer, bigint, integer, boolean)',
   'uso_da_ia_no_mes(uuid, timestamptz)',
   'custo_da_ia_desde(timestamptz)',
+  'consentimento_ia_do_paciente(uuid, text)',
 ] as const
 
 describe('banco: assistente de IA (016)', () => {
@@ -111,6 +112,19 @@ describe('banco: assistente de IA (016)', () => {
     it('CA-2382: concluir guarda se o custo é estimado (a chamada cortada), sem nulo', () => {
       expect(corpoDa('concluir_uso_da_ia')).toContain('custo_estimado = coalesce(p_custo_estimado, false)')
       expect(semComentarios).toMatch(/p_duracao integer,\s+p_custo_estimado boolean\s+\)\s+returns boolean/)
+    })
+
+    it('CA-2399 e D-1347: a autorização é lida da ficha na cópia da conta; só sai sim ou não', () => {
+      const corpo = corpoDa('consentimento_ia_do_paciente')
+      expect(semComentarios).toMatch(/consentimento_ia_do_paciente\(p_conta uuid, p_paciente text\)\s+returns boolean/)
+      expect(corpo).toContain("if p_paciente is null or p_paciente !~ '^[A-Za-z0-9_-]{1,64}$' then return false; end if;")
+      expect(corpo).toContain("select c.dados -> 'dados' ->> 'metanutri:pacientes' into v_fichas from public.copias c where c.nutricionista_id = p_conta;")
+      // O texto que não é JSON dá falso, sem erro.
+      expect(corpo).toMatch(/v_lista := v_fichas::jsonb;\s+exception when others then\s+return false;/)
+      expect(corpo).toContain("and f ->> 'id' = p_paciente")
+      expect(corpo).toContain("and jsonb_typeof(f -> 'consentimentoIa') = 'object'")
+      expect(corpo).toContain(String.raw`and coalesce(f -> 'consentimentoIa' ->> 'em', '') ~ '^\d{4}-\d{2}-\d{2}$'`)
+      expect(corpo).not.toMatch(/insert|update|delete/i)
     })
 
     it('CA-2310: o custo das últimas 24 h soma todas as contas, sem nulo', () => {

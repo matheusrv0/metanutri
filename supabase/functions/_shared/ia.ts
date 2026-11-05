@@ -1,8 +1,8 @@
 // O núcleo da função sugerir-plano (spec assistente-ia, D-1316 a D-1320). Puro: o banco, o modelo, o relógio e o
 // registro chegam de fora (src/data/servidorIa.test.ts). Ordem de cada pedido:
-//   1. sessão; 2. formato e autorização do paciente; 3. quem pode usar e o plano da assinatura; 4. o modo `uso` responde
-//   o contador; 5. o teto de gasto do dia; 6. a reserva atômica do uso (mês e hora); 7. a chamada à IA; 8. a conferência
-//   do JSON; 9. a conclusão do uso, com tokens e custo.
+//   1. sessão; 2. formato e autorização declarada; 3. quem pode usar e o plano da assinatura; 4. o modo `uso` responde
+//   o contador; 5. a autorização gravada na ficha (D-1347); 6. o teto de gasto do dia; 7. a reserva atômica do uso (mês
+//   e hora); 8. a chamada à IA; 9. a conferência do JSON; 10. a conclusão do uso, com tokens e custo.
 // O registro nunca leva o corpo do pedido, o texto da resposta nem o id da conta (CA-2320).
 import { IDS_DO_CATALOGO_IA } from './iaCatalogo.ts'
 import { custoEmMicrodolares, tokensDoCorte } from './iaCusto.ts'
@@ -128,6 +128,19 @@ export async function sugerirPlano(pedido: PedidoDaIa, dep: DependenciasDaIa): P
     }
   }
   const sugestao: PedidoDeSugestao = lido.pedido
+
+  // CA-2399 e D-1347: a autorização gravada na ficha do paciente, na cópia da conta, antes de gastar qualquer coisa.
+  const pacienteId = 'pacienteId' in lido ? lido.pacienteId : null
+  if (pacienteId === null) return erro(SEM_CONSENTIMENTO, 403, 'sem-consentimento')
+  try {
+    if (!(await dep.banco.consentimentoNaFicha(conta, pacienteId))) {
+      dep.log('IA: a ficha não tem a autorização do paciente; a IA não foi chamada.')
+      return erro(SEM_CONSENTIMENTO, 403, 'sem-consentimento')
+    }
+  } catch (falha) {
+    dep.log('IA: não consegui ler a autorização da ficha:', mensagemDe(falha))
+    return erro(IA_INDISPONIVEL, 503, 'indisponivel')
+  }
 
   // CA-2310: o teto de gasto do dia, de todas as contas, antes de reservar.
   try {

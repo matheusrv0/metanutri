@@ -38,8 +38,23 @@ const JSON_OK = JSON.stringify({
 const TOKENS = [{ modelo: 'claude-opus-5-5', entrada: 1500, cacheGravados: 0, cacheLidos: 10_000, saida: 6000 }]
 const OK: RespostaDoModelo = { tipo: 'ok', texto: JSON_OK, modelo: 'claude-opus-5-5', tokens: TOKENS }
 
-function montar(o: { readonly conta?: ContaParaIa; readonly respostas?: readonly RespostaDoModelo[]; readonly usos?: readonly Omit<UsoGuardado, 'id' | 'conclusao'>[]; readonly gastoDoDia?: number; readonly falhas?: readonly MetodoDoBanco[] } = {}) {
-  const banco = bancoDaIaFalso({ ...(o.conta ? { conta: o.conta } : {}), ...(o.usos ? { usos: o.usos } : {}), ...(o.gastoDoDia !== undefined ? { gastoDoDia: o.gastoDoDia } : {}), ...(o.falhas ? { falhas: o.falhas } : {}) })
+function montar(
+  o: {
+    readonly conta?: ContaParaIa
+    readonly respostas?: readonly RespostaDoModelo[]
+    readonly usos?: readonly Omit<UsoGuardado, 'id' | 'conclusao'>[]
+    readonly gastoDoDia?: number
+    readonly falhas?: readonly MetodoDoBanco[]
+    readonly consentimentos?: ReadonlySet<string>
+  } = {},
+) {
+  const banco = bancoDaIaFalso({
+    ...(o.conta ? { conta: o.conta } : {}),
+    ...(o.usos ? { usos: o.usos } : {}),
+    ...(o.gastoDoDia !== undefined ? { gastoDoDia: o.gastoDoDia } : {}),
+    ...(o.falhas ? { falhas: o.falhas } : {}),
+    ...(o.consentimentos ? { consentimentos: o.consentimentos } : {}),
+  })
   const modelo = modeloFalsoDeTeste(o.respostas ?? [OK])
   const registro: string[] = []
   let relogio = AGORA_IA.getTime()
@@ -104,6 +119,48 @@ describe('a ordem: sessão, formato, autorização e quem pode', () => {
   })
 })
 
+describe('CA-2399 e D-1347: a autorização gravada na ficha, conferida no servidor', () => {
+  it('sem a autorização na ficha da cópia da conta: 403 sem reservar nem chamar a IA', async () => {
+    const m = montar({ consentimentos: new Set() })
+    expect(await pedir(PEDIDO_BASE, m.dep)).toEqual({ status: 403, corpo: { erro: SEM_CONSENTIMENTO, codigo: 'sem-consentimento' } })
+    expect(m.banco.ordem).toEqual(['lerConta', 'consentimentoNaFicha'])
+    expect(m.banco.usos).toEqual([])
+    expect(m.modelo.chamadas).toEqual([])
+  })
+
+  it.each([
+    ['sem pacienteId', undefined],
+    ['pacienteId vazio', ''],
+    ['pacienteId que não é texto', 42],
+    ['pacienteId com caractere estranho', 'paciente 1; drop'],
+    ['pacienteId longo demais', 'p'.repeat(65)],
+  ])('%s: 403 sem perguntar ao banco pela ficha', async (_, pacienteId) => {
+    const m = montar()
+    expect(await pedir({ ...PEDIDO_BASE, pacienteId }, m.dep)).toEqual({ status: 403, corpo: { erro: SEM_CONSENTIMENTO, codigo: 'sem-consentimento' } })
+    expect(m.banco.ordem).toEqual(['lerConta'])
+    expect(m.modelo.chamadas).toEqual([])
+  })
+
+  it('a ficha que não se lê: 503 indisponível, sem reservar', async () => {
+    const m = montar({ falhas: ['consentimentoNaFicha'] })
+    expect(await pedir(PEDIDO_BASE, m.dep)).toEqual({ status: 503, corpo: { erro: IA_INDISPONIVEL, codigo: 'indisponivel' } })
+    expect(m.banco.usos).toEqual([])
+  })
+
+  it('com a autorização, segue; o banco é perguntado pela conta e pela ficha, e a mensagem à IA não leva o id', async () => {
+    const m = montar()
+    expect((await pedir(PEDIDO_BASE, m.dep)).status).toBe(200)
+    expect(m.banco.fichas).toEqual([[CONTA_IA.id, PEDIDO_BASE.pacienteId]])
+    expect(m.modelo.chamadas[0]?.mensagem).not.toContain(PEDIDO_BASE.pacienteId)
+  })
+
+  it('o modo uso não precisa de ficha', async () => {
+    const m = montar({ consentimentos: new Set() })
+    expect((await pedir({ versao: 1, modo: 'uso' }, m.dep)).status).toBe(200)
+    expect(m.banco.ordem).not.toContain('consentimentoNaFicha')
+  })
+})
+
 describe('CA-2307: o limite do mês vem do plano que vale', () => {
   const em = (plano: string, status: string, expiraEm: string | null) => ({ plano, status, expiraEm })
   it.each([
@@ -159,7 +216,7 @@ describe('os limites e o teto do dia', () => {
   it('CA-2310: o gasto do dia no teto: 503, sem reservar e sem chamar a IA', async () => {
     const m = montar({ gastoDoDia: 5_000_000 })
     expect(await pedir(PEDIDO_BASE, m.dep)).toEqual({ status: 503, corpo: { erro: IA_INDISPONIVEL, codigo: 'indisponivel' } })
-    expect(m.banco.ordem).toEqual(['lerConta', 'custoDesde'])
+    expect(m.banco.ordem).toEqual(['lerConta', 'consentimentoNaFicha', 'custoDesde'])
     expect(m.modelo.chamadas).toEqual([])
     expect((await pedir(PEDIDO_BASE, montar({ gastoDoDia: 4_999_999 }).dep)).status).toBe(200)
   })

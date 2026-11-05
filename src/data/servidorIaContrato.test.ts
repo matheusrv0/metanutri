@@ -409,6 +409,17 @@ describe('limparPedido', () => {
     expect(limparPedido(corpo)).toEqual({ ok: false, codigo: 'pedido-invalido' })
   })
 
+  it('CA-2399 e D-1347: o id da ficha sai à parte, nunca dentro do pedido limpo; o que não é id vira nulo', () => {
+    const lido = limparPedido({ ...PEDIDO_BASE, pacienteId: '7f6c2b1e-6a4b-4c3d-9e8f-0a1b2c3d4e5f' })
+    if (!lido.ok || !('pacienteId' in lido)) throw new Error('pedido')
+    expect(lido.pacienteId).toBe('7f6c2b1e-6a4b-4c3d-9e8f-0a1b2c3d4e5f')
+    expect(JSON.stringify(lido.pedido)).not.toContain('7f6c2b1e')
+    for (const ruim of [undefined, null, '', 42, 'com espaço', 'a;b', 'p'.repeat(65), ['x']]) {
+      const r = limparPedido({ ...PEDIDO_BASE, pacienteId: ruim })
+      expect(r.ok && 'pacienteId' in r ? r.pacienteId : 'falhou').toBeNull()
+    }
+  })
+
   it('CA-2304: sem consentimento true é sem-consentimento', () => {
     expect(limparPedido({ ...PEDIDO_BASE, consentimento: 'sim' })).toEqual({ ok: false, codigo: 'sem-consentimento' })
     expect(limparPedido({ ...PEDIDO_BASE, consentimento: undefined })).toEqual({ ok: false, codigo: 'sem-consentimento' })

@@ -1,5 +1,6 @@
 import { IDS_DO_CATALOGO_IA } from '../../supabase/functions/_shared/iaCatalogo.ts'
 import { ESTUDANTE_SEM_APROVACAO, limparPedido, REMOVIDO, SEM_CONSENTIMENTO, SEM_CRN_IA, SEM_PERFIL_IA } from '../../supabase/functions/_shared/iaContrato.ts'
+import { montarMensagem } from '../../supabase/functions/_shared/iaPrompt.ts'
 import { casoDaGestante, HOJE, pacienteDaGestante, planoDeAdulto, refeicao, restricoesDoCaso, SEGREDOS } from './ia.test-utils.ts'
 import {
   atividadeDoFator,
@@ -82,9 +83,15 @@ describe('spec assistente-ia, CA-2335: quando a IA não pode ser usada', () => {
 })
 
 describe('CA-2330 e CA-2331: o paciente no pedido', () => {
-  it('CA-2330: nada da ficha fora da lista branca, nem os ids do paciente, do caso e da conta', () => {
-    const texto = JSON.stringify(pedidoDaGestante())
+  it('CA-2330: nada da ficha fora da lista branca, nem os ids do caso e da conta; o da ficha só em pacienteId (D-1347)', () => {
+    const { pacienteId, ...pedido } = pedidoDaGestante()
+    expect(pacienteId).toBe('pac-123')
+    const texto = JSON.stringify(pedido)
     for (const segredo of [...SEGREDOS, 'pac-123', 'caso-9', '99999-8888']) expect(texto, segredo).not.toContain(segredo)
+    // E a mensagem à IA, montada do pedido limpo pela função, não leva o id da ficha.
+    const lido = limparPedido(pedidoDaGestante())
+    if (!lido.ok || !('pacienteId' in lido)) throw new Error('pedido')
+    expect(montarMensagem(lido.pedido)).not.toContain('pac-123')
   })
 
   it('CA-2330: com textos sorteados nos campos que não vão, nenhum aparece no pedido', () => {
@@ -137,9 +144,9 @@ describe('CA-2330 e CA-2331: o paciente no pedido', () => {
   })
 
   it('o pedido montado passa na lista branca da função sem perder nada', () => {
-    const pedido = pedidoDaGestante()
-    const lido = limparPedido(pedido)
-    expect(lido).toEqual({ ok: true, pedido })
+    const { pacienteId, ...pedido } = pedidoDaGestante()
+    const lido = limparPedido({ ...pedido, pacienteId })
+    expect(lido).toEqual({ ok: true, pacienteId, pedido })
   })
 })
 

@@ -193,6 +193,12 @@ export interface PedidoDeSugestao {
 /** O modo `uso` só pergunta o contador (CA-2306). */
 export type PedidoDaFuncao = { readonly modo: 'uso' } | PedidoDeSugestao
 
+/**
+ * D-1347: o corpo que o navegador manda nos modos gerar e ajustar: o pedido e o id da ficha do paciente. O id nunca vai
+ * à IA; só serve para a função achar a autorização na cópia da conta.
+ */
+export type CorpoDoPedidoIa = PedidoDeSugestao & { readonly pacienteId: string }
+
 // ---------- Limpeza dos textos (D-1314) ----------
 
 export const REMOVIDO = '[removido]'
@@ -561,7 +567,15 @@ function lacunas(v: unknown): LacunasIa | null {
   }
 }
 
-export type PedidoLido = { readonly ok: true; readonly pedido: PedidoDaFuncao } | { readonly ok: false; readonly codigo: 'pedido-invalido' | 'sem-consentimento' }
+export type PedidoLido =
+  | { readonly ok: true; readonly pedido: { readonly modo: 'uso' } }
+  /** D-1347: `pacienteId` fica fora do pedido limpo; nulo quando não é um id de ficha. */
+  | { readonly ok: true; readonly pedido: PedidoDeSugestao; readonly pacienteId: string | null }
+  | { readonly ok: false; readonly codigo: 'pedido-invalido' | 'sem-consentimento' }
+
+/** D-1347: o id da ficha (o `randomUUID` do app; o 016 confere o mesmo formato). */
+const ID_DE_FICHA = /^[A-Za-z0-9_-]{1,64}$/
+const idDeFicha = (v: unknown): string | null => (typeof v === 'string' && ID_DE_FICHA.test(v) ? v : null)
 
 const INVALIDO: PedidoLido = { ok: false, codigo: 'pedido-invalido' }
 
@@ -591,6 +605,7 @@ export function limparPedido(corpo: unknown): PedidoLido {
   }
   return {
     ok: true,
+    pacienteId: idDeFicha(corpo['pacienteId']),
     pedido: {
       versao: 1,
       modo,

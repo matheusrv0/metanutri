@@ -49,11 +49,56 @@ describe('CA-2322: só o servidor chama as funções da IA', () => {
     ['concluir_uso_da_ia', () => ({ p_reserva: 1, p_status: 'ok', p_modelo: 'x', p_entrada: 0, p_cache_gravados: 0, p_cache_lidos: 0, p_saida: 0, p_custo: 0, p_duracao: 0, p_custo_estimado: false })],
     ['uso_da_ia_no_mes', () => ({ p_conta: c.vitima.id, p_inicio_mes: inicioDoMes() })],
     ['custo_da_ia_desde', () => ({ p_desde: new Date(Date.now() - 24 * UMA_HORA_MS).toISOString() })],
+    ['consentimento_ia_do_paciente', () => ({ p_conta: c.vitima.id, p_paciente: 'paciente-1' })],
   ] as const)('%s é recusada para outra conta e para quem não entrou', async (funcao, args) => {
     for (const cliente of [c.atacante.cliente, c.anonimo, c.vitima.cliente]) {
       const r = await cliente.rpc(funcao, args())
       barrado(r)
       semNadaDaVitima(c, r)
+    }
+  })
+})
+
+describe('CA-2399 e D-1347: a autorização do paciente, lida da ficha na cópia da conta', () => {
+  const fichas = [
+    { id: 'com-autorizacao', nome: 'Paciente A', consentimentoIa: { em: '2026-11-03', versao: 'ia-1' } },
+    { id: 'sem-autorizacao', nome: 'Paciente B', consentimentoIa: null },
+    { id: 'data-estragada', nome: 'Paciente C', consentimentoIa: { em: 'ontem', versao: 'ia-1' } },
+    { id: 'de-antes', nome: 'Paciente D' },
+  ]
+  const copiaCom = (pacientes: string) => ({ formato: 1, geradoEm: new Date().toISOString(), dados: { 'metanutri:pacientes': pacientes } })
+  const autorizou = async (conta: string, paciente: string): Promise<unknown> => {
+    const r = await c.servico.rpc('consentimento_ia_do_paciente', { p_conta: conta, p_paciente: paciente })
+    expect(r.error).toBeNull()
+    return r.data
+  }
+  const gravarCopiaDoAtacante = async (dados: unknown) => {
+    const r = await c.servico.from('copias').update({ dados }).eq('nutricionista_id', c.atacante.id)
+    expect(r.error).toBeNull()
+  }
+
+  it('só a ficha com consentimentoIa.em no formato AAAA-MM-DD autoriza', async () => {
+    await gravarCopiaDoAtacante(copiaCom(JSON.stringify(fichas)))
+    try {
+      expect(await autorizou(c.atacante.id, 'com-autorizacao')).toBe(true)
+      for (const id of ['sem-autorizacao', 'data-estragada', 'de-antes', 'nao-existe', "com-autorizacao' or '1'='1"]) expect(await autorizou(c.atacante.id, id)).toBe(false)
+      // A ficha de uma conta não autoriza na outra.
+      expect(await autorizou(c.vitima.id, 'com-autorizacao')).toBe(false)
+    } finally {
+      await gravarCopiaDoAtacante({ meu: true })
+    }
+  })
+
+  it('a cópia sem fichas, com texto que não é JSON ou com outra forma dá falso, sem erro', async () => {
+    try {
+      for (const dados of [{ meu: true }, copiaCom('{isto não é json'), copiaCom('{"id":"com-autorizacao"}'), { formato: 1, dados: { 'metanutri:pacientes': 42 } }]) {
+        await gravarCopiaDoAtacante(dados)
+        expect(await autorizou(c.atacante.id, 'com-autorizacao')).toBe(false)
+      }
+      // A conta sem cópia nenhuma.
+      expect(await autorizou('00000000-0000-4000-8000-00000000abcd', 'com-autorizacao')).toBe(false)
+    } finally {
+      await gravarCopiaDoAtacante({ meu: true })
     }
   })
 })

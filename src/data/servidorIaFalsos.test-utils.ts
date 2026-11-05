@@ -34,6 +34,8 @@ export const PEDIDO_BASE = {
   plano: null,
   lacunas: null,
   pedido: '',
+  // D-1347: o id da ficha, só para a função achar a autorização na cópia da conta; nunca vai à IA.
+  pacienteId: 'paciente-1',
 } as const
 
 export interface OpcoesDoFluxo {
@@ -118,10 +120,22 @@ export const CONTA_PADRAO: ContaParaIa = {
  * O banco da IA em memória, com a mesma conta do 016: o mês conta 'ok' e as reservas de menos de 10 minutos desde o
  * início do mês; a hora conta tudo da última hora. `falhas` faz um método rejeitar. `ordem` guarda cada consulta.
  */
-export function bancoDaIaFalso(o: { readonly conta?: ContaParaIa; readonly usos?: readonly Omit<UsoGuardado, 'id' | 'conclusao'>[]; readonly gastoDoDia?: number; readonly falhas?: readonly MetodoDoBanco[]; readonly agora?: () => Date } = {}) {
+export function bancoDaIaFalso(
+  o: {
+    readonly conta?: ContaParaIa
+    readonly usos?: readonly Omit<UsoGuardado, 'id' | 'conclusao'>[]
+    readonly gastoDoDia?: number
+    readonly falhas?: readonly MetodoDoBanco[]
+    readonly agora?: () => Date
+    /** D-1347: os ids das fichas com a autorização gravada na cópia da conta (padrão: a do `PEDIDO_BASE`). */
+    readonly consentimentos?: ReadonlySet<string>
+  } = {},
+) {
   const agora = o.agora ?? (() => AGORA_IA)
   const usos: UsoGuardado[] = (o.usos ?? []).map((u, i) => ({ ...u, id: i + 1, conclusao: null }))
   const ordem: string[] = []
+  const fichas: (readonly [string, string])[] = []
+  const consentimentos = o.consentimentos ?? new Set([PEDIDO_BASE.pacienteId])
   const falhas = new Set(o.falhas ?? [])
   const talvezFalhar = (metodo: MetodoDoBanco) => {
     ordem.push(metodo)
@@ -133,6 +147,11 @@ export function bancoDaIaFalso(o: { readonly conta?: ContaParaIa; readonly usos?
     async lerConta() {
       talvezFalhar('lerConta')
       return o.conta ?? CONTA_PADRAO
+    },
+    async consentimentoNaFicha(conta, pacienteId) {
+      talvezFalhar('consentimentoNaFicha')
+      fichas.push([conta, pacienteId])
+      return consentimentos.has(pacienteId)
     },
     async reservar(conta, modo, limiteMes, inicio, limiteHora) {
       talvezFalhar('reservar')
@@ -159,7 +178,7 @@ export function bancoDaIaFalso(o: { readonly conta?: ContaParaIa; readonly usos?
       return (o.gastoDoDia ?? 0) + usos.filter((u) => u.criadoEm.getTime() > desde.getTime()).reduce((s, u) => s + u.custo, 0)
     },
   }
-  return { banco, usos, ordem }
+  return { banco, usos, ordem, fichas }
 }
 
 /** O modelo de mentira: cada chamada tira a primeira resposta da lista (a última fica valendo). */

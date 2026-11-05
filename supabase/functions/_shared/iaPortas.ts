@@ -82,6 +82,8 @@ export interface ConclusaoDoUso {
  */
 export interface BancoDaIa {
   lerConta(conta: string): Promise<ContaParaIa>
+  /** D-1347: a ficha `pacienteId` da cópia da conta tem a autorização para o uso de IA (só o sim ou não). */
+  consentimentoNaFicha(conta: string, pacienteId: string): Promise<boolean>
   reservar(conta: string, modo: ModoIa, limiteMes: number, inicioDoMes: Date, limiteHora: number): Promise<Reserva>
   concluir(reserva: number, conclusao: ConclusaoDoUso): Promise<void>
   usosNoMes(conta: string, inicioDoMes: Date): Promise<number>

@@ -10,6 +10,7 @@ import {
   textoCurto,
   textoDoLimite,
   type CandidatoIa,
+  type CorpoDoPedidoIa,
   type FaixaIa,
   type ItemDoPlanoIa,
   type LacunasIa,
@@ -17,7 +18,6 @@ import {
   type MeuAlimentoIa,
   type Orcamento,
   type PacienteIa,
-  type PedidoDeSugestao,
   type RefeicaoIa,
   type RestricoesIa,
   type RotinaIa,
@@ -310,9 +310,13 @@ export interface EntradaDoPedido {
   readonly lacunas?: LacunasIa
 }
 
-/** O corpo do pedido à função (D-1314): só a lista branca. A autorização é conferida antes (CA-2335). */
-export function montarPedidoIa(e: EntradaDoPedido): PedidoDeSugestao {
+/**
+ * O corpo do pedido à função (D-1314): só a lista branca. A autorização é conferida antes (CA-2335) e de novo na função,
+ * pela ficha: por isso vai o id dela, em `pacienteId`, que a função não passa à IA (D-1347).
+ */
+export function montarPedidoIa(e: EntradaDoPedido): CorpoDoPedidoIa {
   return {
+    pacienteId: e.paciente.id,
     versao: 1,
     modo: e.modo,
     consentimento: true,

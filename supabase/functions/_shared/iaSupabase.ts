@@ -36,6 +36,12 @@ export function criarBancoDaIa(cliente: SupabaseClient, log: Registro): BancoDaI
             : null,
       }
     },
+    // D-1347: a autorização da ficha, lida pela função do 016 (devolve só verdadeiro ou falso).
+    async consentimentoNaFicha(conta, pacienteId) {
+      const { data, error } = await cliente.rpc('consentimento_ia_do_paciente', { p_conta: conta, p_paciente: pacienteId })
+      if (error) throw new Error(error.message || 'A leitura da autorização falhou.')
+      return data === true
+    },
     // CA-2323: contar e anotar são um passo só, na função do banco, com a conta travada.
     async reservar(conta, modo, limiteMes, inicioDoMes, limiteHora) {
       const { data, error } = await cliente.rpc('reservar_uso_da_ia', {

@@ -10,8 +10,9 @@
 --   * a tabela uso_da_ia guarda cada sugestão pedida à IA: a conta, o modo, o modelo, o resultado, os tokens, o custo
 --     e a duração. Nenhum dado do paciente; consentimento_declarado só diz que a ficha tinha a autorização;
 --     custo_estimado marca a chamada cortada (prazo, rede, cancelamento), anotada com uma estimativa, nunca com zero;
---   * quatro funções que só o servidor chama: reservar (conta o mês e a hora e anota, num passo só), concluir, contar
---     o mês (o contador da gaveta) e somar o custo de todas as contas desde uma data (o teto do dia).
+--   * cinco funções que só o servidor chama: reservar (conta o mês e a hora e anota, num passo só), concluir, contar
+--     o mês (o contador da gaveta), somar o custo de todas as contas desde uma data (o teto do dia) e conferir se a
+--     ficha do paciente tem a autorização para o uso de IA (D-1347), sem tirar nada da ficha além do sim ou não.
 
 begin;
 
@@ -169,6 +170,42 @@ as $$
 $$;
 
 
+-- ---------- A autorização do paciente na ficha (D-1336 e D-1347, CA-2399) ----------
+
+-- Antes de chamar a IA, a função sugerir-plano confere se a ficha do paciente tem a autorização gravada. A ficha mora
+-- na cópia da conta (002): `copias.dados` é a cópia inteira, e as fichas são o texto JSON de `dados.metanutri:pacientes`.
+-- Verdadeiro só com `consentimentoIa.em` no formato AAAA-MM-DD. A cópia sem fichas, a ficha que não existe e o texto
+-- que não se lê dão falso. Nada da ficha sai daqui além desse sim ou não.
+create or replace function public.consentimento_ia_do_paciente(p_conta uuid, p_paciente text)
+returns boolean
+language plpgsql
+stable
+set search_path = public
+as $$
+declare
+  v_fichas text;
+  v_lista jsonb;
+begin
+  if p_paciente is null or p_paciente !~ '^[A-Za-z0-9_-]{1,64}$' then return false; end if;
+  select c.dados -> 'dados' ->> 'metanutri:pacientes' into v_fichas from public.copias c where c.nutricionista_id = p_conta;
+  if v_fichas is null then return false; end if;
+  begin
+    v_lista := v_fichas::jsonb;
+  exception when others then
+    return false;
+  end;
+  if jsonb_typeof(v_lista) is distinct from 'array' then return false; end if;
+  return exists (
+    select 1 from jsonb_array_elements(v_lista) f
+     where jsonb_typeof(f) = 'object'
+       and f ->> 'id' = p_paciente
+       and jsonb_typeof(f -> 'consentimentoIa') = 'object'
+       and coalesce(f -> 'consentimentoIa' ->> 'em', '') ~ '^\d{4}-\d{2}-\d{2}$'
+  );
+end;
+$$;
+
+
 -- Só o servidor (service_role) chama. Sem security definer: elas rodam com as permissões de quem chama.
 revoke all on function public.reservar_uso_da_ia(uuid, text, boolean, integer, timestamptz, integer) from public, anon, authenticated;
 grant execute on function public.reservar_uso_da_ia(uuid, text, boolean, integer, timestamptz, integer) to service_role;
@@ -178,6 +215,8 @@ revoke all on function public.uso_da_ia_no_mes(uuid, timestamptz) from public, a
 grant execute on function public.uso_da_ia_no_mes(uuid, timestamptz) to service_role;
 revoke all on function public.custo_da_ia_desde(timestamptz) from public, anon, authenticated;
 grant execute on function public.custo_da_ia_desde(timestamptz) to service_role;
+revoke all on function public.consentimento_ia_do_paciente(uuid, text) from public, anon, authenticated;
+grant execute on function public.consentimento_ia_do_paciente(uuid, text) to service_role;
 
 notify pgrst, 'reload schema';
 
@@ -193,3 +232,5 @@ commit;
 -- -- uma linha: false
 -- select has_function_privilege('service_role', 'public.reservar_uso_da_ia(uuid, text, boolean, integer, timestamptz, integer)', 'execute') as servidor_reserva;
 -- -- uma linha: true
+-- select has_function_privilege('authenticated', 'public.consentimento_ia_do_paciente(uuid, text)', 'execute') as logado_le_a_ficha;
+-- -- uma linha: false
