@@ -78,7 +78,7 @@ Esta spec só descreve o que a F3 terá de cumprir (D-1460); nada dela é implem
 | D-1410 | **Circunferências** em três grupos (Membros superiores, Tronco, Membros inferiores), cada um com "Ocultar" e "Exibir" e, fechado, "N de M medidas preenchidas". Direito e esquerdo onde o plano guarda os dois (braço relaxado, braço contraído, panturrilha, coxa proximal, coxa média); **antebraço e punho num campo só**, como o motor guarda (D-1003). A cintura leva, embaixo do nome, o ponto: "Ponto médio (OMS)" ou "Crista ilíaca (NIH)"; plano antigo, "Ponto não registrado" até a escolha. A ajuda da cintura segue o ponto escolhido | Protótipo; o protótipo tem lado esquerdo também no antebraço e no punho, e o motor não (seção 7) |
 | D-1411 | **Diâmetros ósseos** (punho, cotovelo e joelho) num cartão que nasce fechado, com o resumo "Punho 5,1 · cotovelo 6,2 · joelho 9,1 cm" (o que falta sai "—"); o joelho diz "Técnica em conferência" no lugar da ajuda | Protótipo; a técnica do joelho é [NV] (spec do motor, seção 6) |
 | D-1412 | **Dobras cutâneas.** Protocolo (os 8 do motor, com o nome do motor; os de Slaughter só até 18 anos), adipômetro (Lange, Harpenden, Outro) e a linha do protocolo: "<fonte> · <população> · <conversão>" ("conversão de Siri", "conversão de Lohman", "dá a gordura direto"), mais a nota da faixa de idade e, fora dela, "Fora da população de origem: ...". As dobras do protocolo levam o ponto e "(usada no protocolo)" para o leitor de tela; as outras ficam apagadas e guardadas. A frase embaixo: "As N dobras marcadas entram no protocolo. As outras ficam guardadas." ou "Falta 1 das N dobras marcadas para calcular a gordura." / "Faltam 2 das N ...". São 10 dobras na ordem do protótipo; a supraespinal e a suprailíaca de linha não informada (a dos planos de antes) só aparecem quando têm valor | Protótipo; D-1039 (linha da suprailíaca). Esconder um valor gravado seria perder dado |
-| D-1413 | **A suprailíaca marcada** é a da linha do protocolo: a anterior em Jackson & Pollock, a média em Durnin & Womersley e Petroski; em Guedes e Faulkner, que não registram a linha, a média (a ordem da D-1039 revista), ou a de linha não informada quando ela tem valor | D-1039 revista; o protótipo marca a média em Guedes e Faulkner |
+| D-1413 | **A suprailíaca marcada** é a da linha do protocolo: a anterior em Jackson & Pollock, a média em Durnin & Womersley e Petroski; em Guedes e Faulkner, que não registram a linha, a média (a ordem da D-1039 revista), ou a de linha não informada quando ela tem valor *Revista (D-1521):* a marcada é a que entra na conta; a da linha do protocolo só quando ela tem valor ou quando nenhuma tem | D-1039 revista; o protótipo marca a média em Guedes e Faulkner |
 | D-1414 | **Slaughter num menino.** Com Slaughter (tríceps e subescapular) e sexo masculino, aparecem a maturação sexual (Tanner 1–2, 3, 4–5) e o grupo do estudo (Branco, Negro), com a nota "Pedidos quando a soma é de até 35 mm. O grupo é a classificação do estudo e não foi validado para a população brasileira." | D-1012: o motor pede as duas entradas e deixa a tela decidir onde. Sem elas, o protocolo não calcula para meninos |
 | D-1415 | **Ajuda com imagem.** Cada medida tem o "?" ("Como medir: <medida>") que abre a ajuda: título, imagem (quando há), crédito embaixo da imagem e o texto da técnica, os do protótipo. Uma ajuda aberta por vez; Esc e "Fechar a ajuda" fecham e o foco volta ao "?". No celular, a ajuda abre embaixo, presa à tela, com no máximo 70% da altura e rolagem própria. As imagens são as 15 do protótipo, em WebP, em `public/imagens/antropometria/`; o crédito exigido pela licença fica sempre visível embaixo da imagem (CDC: fonte, domínio público, disponível em cdc.gov, sem endosso; CC BY 4.0: autor, licença com link) e também em `THIRD_PARTY_NOTICES.md` | Protótipo; pesquisa 5.1 e LICENCAS.md |
 | D-1416 | **Resultado.** Tabela "Indicador \| Real \| Recomendação \| Situação" em quatro grupos: "Peso e composição" (IMC, gordura, massa gorda, massa magra, soma de dobras), "Gordura central" (cintura, RCQ, RCE, pescoço), "Braço · Frisancho" (CB, DCT, CMB, AMB, AGB e as adequações) e "Outras" (panturrilha, compleição). As linhas são as do motor (`resultadoAntropometrico`), na ordem dele; a que não vale para a pessoa não aparece; grupo sem linha não aparece. O título do cartão diz de onde vem a gordura: "Gordura por <protocolo>" ou "Gordura pela bioimpedância" | Protótipo e D-1016 (a tela só desenha) |
@@ -188,13 +188,31 @@ Tomadas sob o "apenas faça", pelos princípios da Mor e do dono, onde a spec e 
 | D-1490 | **O documento sem cidade.** O perfil não tem endereço nem cidade: o cabeçalho traz telefone e e-mail de Configurações, e a assinatura traz o nome, a profissão com o CRN e a data por extenso. Sem telefone e e-mail, a linha de contato não sai | O app não guarda endereço; não inventar dado |
 | D-1491 | **Resultados do documento** são as linhas do motor que têm valor, na ordem dele; a soma de dobras fica no bloco das dobras. Os nomes seguem o motor, com os do protótipo onde ele tem ("Cintura/quadril", "Cintura/estatura", "Músculo do braço (CMB)", "Dobra tricipital", "Massa magra") | DP-AT-8; "seção sem dado não sai" vale também linha a linha |
 | D-1492 | **Circunferências no documento:** a tabela "Membros" com direito e esquerdo traz braço relaxado, braço contraído, panturrilha, coxa proximal e coxa média; antebraço e punho, que têm um campo só (D-1003), saem na mesma tabela com o valor ocupando as duas colunas. "Tronco" traz pescoço, ombro, peitoral, cintura (com o ponto), abdômen e quadril. Linha sem valor não sai | D-1003; o protótipo inventava o lado esquerdo |
-| D-1493 | **O "●" das dobras** marca a dobra cujo valor entrou na conta: a suprailíaca da linha do protocolo e, sem ela, a que o motor usou (D-1039); em Guedes e Faulkner, a de linha não informada quando tem valor, senão a média | D-1413; o documento diz o que a conta usou |
+| D-1493 | **O "●" das dobras** marca a dobra cujo valor entrou na conta: a suprailíaca da linha do protocolo e, sem ela, a que o motor usou (D-1039); em Guedes e Faulkner, a de linha não informada quando tem valor, senão a média *Completada (D-1521):* o código só marcava a da linha do protocolo; passa a marcar a que o motor usou | D-1413; o documento diz o que a conta usou |
 | D-1494 | **A comparação do documento** é com a avaliação anterior à aberta, pela data (não com a penúltima da lista), com as linhas Peso, Cintura, Quadril, Soma das N dobras, Gordura corporal e Massa magra, as notas da D-1428 e a legenda da MMD com o ETM padrão da ISAK nível 1 | O documento é da avaliação aberta (D-1429), que pode ser uma antiga |
 | D-1495 | **Quem assina o documento:** a nutricionista com nome e "Nutricionista · CRN"; a conta de estudante com o estagiário e o preceptor do plano e a frase de proposta (`FRASE_PROPOSTA`), como as folhas de hoje; nutricionista sem nome nem CRN, ou ninguém, a linha "Assinatura" em branco | D-1431 |
 | D-1496 | **"Gerado no MetaNutri"** sai uma vez, no fim da última página, e a linha fina das páginas seguintes é a do `regraDaLinhaFina` ("Paciente · Avaliação de dd/mm/aaaa" e quem assina). O documento não numera as páginas | A paginação é do navegador; a dieta impressa já faz assim |
 | D-1497 | **O rascunho do diagnóstico** ("Usar o resumo das classificações") escreve uma linha por indicador classificado do motor, na ordem dele: "IMC: Sobrepeso (26,58 kg/m²; SISVAN, 2011).", e antes delas o método da gordura com a fonte ("Gordura corporal estimada por Jackson & Pollock, 7 dobras (Jackson, Pollock e Ward, 1980; Siri, 1961)."). Sem adjetivo, sem conclusão. O botão só aparece com o campo vazio | DP-AT-18; CFN 594, art. 4º §1º (o protocolo usado); nunca apagar o que ela escreveu |
 | D-1498 | **Documento de plano sem paciente:** o nome do plano, a idade e o sexo do plano, sem "Avaliação" (primeira ou retorno) e sem comparação | D-1402 |
 | D-1499 | **Na tela, o documento é uma folha fluida** (até a largura do A4); no papel, A4 retrato com as margens do plano impresso. Abaixo de 640 px, as tabelas de resultado e de comparação viram duas linhas por item | D-1439 e D-1440: a prévia não pode rolar de lado |
+
+### Correções da revisão r1 (D-1520 a D-1529, 04/11/2026)
+
+A revisão independente da F1 (rodada 1) reprovou por dois achados médios (M1 e M2) e cinco baixos (B1 a B6, sem o B7, que
+era da junção com a `main`). Decididas no "apenas faça", pela fonte de cada protocolo e pelas regras de hoje do app.
+
+| # | Decisão | Motivo |
+|---|---|---|
+| D-1520 | **A suprailíaca da etapa 1 é a da tela nova** (M1). Jackson, Pollock e Ward (1980) mediram a suprailíaca das mulheres na linha axilar anterior (D-1039; CA-2078 do motor). Na "Composição corporal" da etapa 1, o campo da suprailíaca lê e grava a dobra que a tela nova marca (D-1521) e leva o nome dela: "Suprailíaca · axilar anterior" em Jackson & Pollock 3 numa mulher; em Faulkner, "Suprailíaca · linha não informada" quando ela tem valor, senão "Suprailíaca · axilar média"; no homem com Jackson & Pollock 3 (que não usa a suprailíaca) e sem sexo, a de linha não informada, como hoje. A conta da etapa 1 lê as dobras pela regra do motor (D-1039): o plano antigo, só com a de linha não informada, dá o mesmo número de antes (CB-1400) | A D-1400 manda as duas telas mostrarem o mesmo dado; a etapa 1 lia a de linha não informada e a tela nova gravava a anterior. Passar o valor antigo para a axilar anterior inventaria uma linha que ninguém registrou |
+| D-1521 | **A dobra marcada é a que entra na conta** (B4), na tela nova, no documento e na etapa 1: a suprailíaca da linha do protocolo quando ela tem valor; sem ela, a que o motor usa (D-1039: a de linha não informada, depois a da outra linha); sem nenhuma, a da linha do protocolo (em Guedes e Faulkner, a média). Revê a D-1413 e completa a D-1493 | A tela marcava a axilar anterior vazia e dizia "As 3 dobras marcadas entram no protocolo." com a conta usando a de linha não informada |
+| D-1522 | **Faixas na tela nova** (M2): as da etapa 1 (`FAIXAS`), com as frases de `validarCaso`: peso de 5 a 350 kg ("Peso deve estar entre 5 e 350 kg."), estatura de 45 a 250 cm, cintura de 30 a 250 cm e panturrilha de 10 a 80 cm. A panturrilha esquerda e as do "Estimar altura e peso atual" usam a faixa da panturrilha (é a mesma medida). Número fora da faixa fica no campo, com a frase embaixo e `aria-invalid`, e não vira dado (o campo do plano fica vazio), como o texto que não é número (CB-1409). Nenhuma faixa nova: as outras medidas esperam a Mor (seção 1) | Seção 1: "A tela só confere o que já confere hoje". O número ia para o resultado e para o documento assinado |
+| D-1523 | **Valor fora da faixa gravado antes** (pela etapa 1, que grava e avisa, ou num plano antigo): a tela nova o mostra no campo com a frase; o resultado, o ponto de partida, as estimativas, o Histórico e o documento o tratam como vazio ("Falta o peso") | O documento é assinado: número que a etapa 1 recusa não pode sair nele |
+| D-1524 | **Estatura em metros** ("1,65") é recusada com a frase da faixa ("Estatura deve estar entre 45 e 250 cm."); o app não converte sozinho | Converter enquanto a pessoa digita reescreveria o campo ("1" viraria "100"); a unidade "cm" está dentro do campo; nenhuma estatura real cabe entre 0,45 e 2,5 cm, então a recusa nunca pega uma medida de verdade |
+| D-1525 | **Zero e negativo** (B3): em toda medida da tela nova, "0" e "-5" ficam no campo com "Use um número maior que zero." e não viram dado; nos campos com faixa (D-1522), vale a frase da faixa | O motor já tratava como vazio, mas o campo ficava com o número sem dizer por quê |
+| D-1526 | **Histórico abaixo de 640 px** (B1): a primeira e a atual, com as duas colunas "Desde" (D-1440 e D-1487; o gráfico já fazia assim). Para caber em 360 px, as duas datas saem sem o ano ("12/05", como as colunas "Desde"); o ano fica no resumo da barra. Revê a última frase da CB-1455 | A CB-1455 deixava só a atual no celular, contra a D-1440 |
+| D-1527 | **Texto do motor pelo sexo** (B2): "o risco da paciente" ou "do paciente"; "IMC de 27 a 29,99 (idosa)" ou "(idoso)"; "Idosa:" ou "Idoso:" na nota do IMC; "corte da idosa" ou "do idoso"; "panturrilha baixa na idosa" ou "no idoso"; "se a atleta é magra" ou "se o atleta é magro" e "para esta atleta" ou "este atleta"; sem sexo, "a pessoa" | Contrato do dono ("da paciente"/"do paciente"); CB-1411 (nenhum rótulo assume sexo) |
+| D-1528 | **Data local** (B5): plano sem data da consulta usa o dia da última alteração no relógio de quem usa (`diaLocal`), na lista "Avaliação de", na barra, no Histórico e no documento; o "Ver exemplo" nasce com a data da consulta do dia local | Depois das 21h de Brasília, o UTC já é o dia seguinte; a mesma correção da CB-1448 |
+| D-1529 | **Duas avaliações no mesmo dia na lista** (B6): "Avaliação de 03/11/2026 · 1ª do dia" e "Avaliação de 03/11/2026 · 2ª do dia", na ordem do Histórico (a alterada por último é a 2ª, CB-1440); avaliação sozinha no dia fica sem o sufixo | O app não guarda a hora da consulta; a hora da última alteração mudaria a cada número digitado |
 
 ## 3. Critérios de aceite
 
@@ -535,7 +553,8 @@ A faixa D-1480 a D-1499 acabou nas decisões acima; o que a implementação deci
   documento em 50%; "Risco substancialmente aumentado" quebra entre as palavras dentro dela, sem espremer o nome do
   indicador. Na tabela do Histórico, abaixo de 640 px, o nome quebra depois da "/" ("Cintura/ estatura") e o recuo das
   colunas diminui: a tabela cabe em 360 px. As datas da tabela seguem a D-1440 como o protótipo: no computador (1024 px
-  ou mais), todas; no tablet, a primeira e a atual; no celular, só a atual, com as duas colunas "Desde".
+  ou mais), todas; no tablet, a primeira e a atual; no celular, só a atual, com as duas colunas "Desde". *Revista (D-1526):*
+  no celular também a primeira e a atual, sem o ano.
 - **CB-1456** · **Lactante sem perfil escolhido:** o bloco da proteína já diz o motivo do motor (CB-1449), sem pedir o
   perfil de atividade, que na lactação não muda nada.
 - **CB-1457** · **Barra do Histórico:** no Histórico, a barra mostra só o resumo ("4 avaliações · de ... a ...") e o
@@ -548,6 +567,39 @@ A faixa D-1480 a D-1499 acabou nas decisões acima; o que a implementação deci
   a cintura não medida (ou no menor perímetro), o IMC baixo pelo GLIM, a panturrilha baixa do idoso e a frase do risco
   que o protótipo mostra; na meta, o piso de 800 kcal/dia e a resposta à gordura alvo digitada. O selo "Proposta do app
   (sem diretriz)" aparece uma vez, no cabeçalho da prioridade.
+
+### Correções da revisão r1 (CB-1480 a CB-1489, 04/11/2026)
+
+Os casos que provam as decisões D-1520 a D-1529.
+
+- **CB-1480** · **Jackson & Pollock 3 numa mulher, nas duas telas** (M1, D-1520): mulher de 34 anos com 70 kg; na tela
+  nova, tríceps 20, "Suprailíaca · axilar anterior" 18 e coxa 25. A etapa 1 do mesmo plano mostra "Suprailíaca · axilar
+  anterior" com 18, "Usada neste protocolo", e a gordura da tela nova (25,4%), sem "Faltam dobras". O contrário também:
+  a suprailíaca digitada na etapa 1 grava a da axilar anterior, e a tela nova a mostra lá, marcada.
+- **CB-1481** · **Plano antigo com a suprailíaca de linha não informada, em Jackson & Pollock 3 numa mulher** (B4,
+  D-1521): a tela nova marca "Suprailíaca · linha não informada", a que a conta usa, e deixa a axilar anterior apagada;
+  a frase é "As 3 dobras marcadas entram no protocolo."; o documento põe o "●" nela; a etapa 1 mostra "Suprailíaca ·
+  linha não informada" com o valor e o mesmo número de antes (CB-1400).
+- **CB-1482** · **Faulkner com a suprailíaca da axilar média** (digitada na tela nova): a etapa 1 mostra "Suprailíaca ·
+  axilar média" com o valor e calcula a gordura de Faulkner com ele.
+- **CB-1483** · **Número absurdo digitado na tela nova** (M2, D-1522, D-1524): peso 9999, estatura 1,65, cintura 300 e
+  panturrilha 5: cada campo mostra a frase da etapa 1 embaixo, marca `aria-invalid`, e o plano fica sem o número; o
+  resultado diz o que falta, sem IMC.
+- **CB-1484** · **Número absurdo gravado pela etapa 1** (M2, D-1523): com peso 9999 no plano, a tela nova mostra "9999"
+  com "Peso deve estar entre 5 e 350 kg."; o resultado, o gasto de repouso, o Histórico e o documento ficam sem peso.
+- **CB-1485** · **Zero e negativo** (B3, D-1525): "0" e "-5" no peso dão a frase da faixa e nenhum dado; numa dobra ou
+  numa circunferência sem faixa, "Use um número maior que zero." e nenhum dado; "71,5" e "71.5" continuam valendo 71,5.
+- **CB-1486** · **Histórico em 360 px com 3 ou mais avaliações** (B1, D-1526): a tabela mostra a primeira e a atual, sem
+  o ano, e as duas colunas "Desde"; as datas do meio somem; nada rola de lado.
+- **CB-1487** · **Texto do motor pelo sexo** (B2, D-1527): numa mulher, "o risco da paciente"; num homem, "o risco do
+  paciente"; numa idosa com sobrepeso, "IMC de 27 a 29,99 (idosa)" e "Idosa: a faixa de referência do IMC ..."; numa
+  atleta, "se a atleta é magra" ou "para esta atleta".
+- **CB-1488** · **Plano sem data da consulta alterado às 21h30 de Brasília** (B5, D-1528; 00h30 UTC do dia seguinte): a
+  lista, a barra e o Histórico mostram o dia de quem usa; o "Ver exemplo" às 21h30 nasce com a data da consulta do dia
+  de quem usa.
+- **CB-1489** · **Duas avaliações no mesmo dia** (B6, D-1529): a lista "Avaliação de" mostra "Avaliação de 03/11/2026 ·
+  1ª do dia" e "Avaliação de 03/11/2026 · 2ª do dia", a 2ª sendo a alterada por último; a de outro dia fica sem
+  sufixo; o texto inteiro cabe de 360 a 412 px (CB-1452).
 
 ## 5. O que fica para a Mor e para o dono
 

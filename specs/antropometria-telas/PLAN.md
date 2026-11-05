@@ -1,6 +1,7 @@
 # PLAN — Antropometria completa: as telas
 
-**Spec de origem:** `./SPEC.md` (D-1400 a D-1460, CA-2400 a CA-2491, CB-1400 a CB-1417).
+**Spec de origem:** `./SPEC.md` (D-1400 a D-1460, CA-2400 a CA-2491, CB-1400 a CB-1417; correções da revisão r1:
+D-1520 a D-1529 e CB-1480 a CB-1489).
 **Motor:** `specs/antropometria-completa/` (D-1000 a D-1042), na `main` desde o 8a96bc8.
 **Protótipo aprovado:** `AvaliacaoAntropometrica.dc.html`, `HistoricoAntropometrico.dc.html` e
 `DocumentoAvaliacao.dc.html` (canvas "MetaNutri Redesenho", 03/11/2026).
@@ -131,6 +132,12 @@ LEIA-ME (DP-AT-9). Na tela, um componente por arquivo, em `src/ui/antropometria/
 | T23 | Exclusão das fotos | `supabase/functions/_shared/exclusaoSupabase.ts`, `excluirConta.ts` (comentário), `src/data/servidorExcluirLigacao.test.ts`, `testes/seguranca/exclusao.test.ts`, `src/ui/casos/DialogoExcluir.tsx` | CA-2489 | T22 |
 | T24 | CSP | `src/seguranca/csp.ts`, `csp.test.ts` | CA-2491 | T2 |
 | T25 | Fotos e anexos: a tela | `CartaoFotos.tsx`, `ListaDeFotos.tsx`, `CompararFotos.tsx`, `ListaDeAnexos.tsx`, `armazenamentoDeFotos.ts`, `reduzirFoto.ts` (+ testes) | CA-2480 a CA-2487, CA-2490, CB-1413 a CB-1416 | T21 a T24 |
+| R1 | Revisão r1, M1 e B4: a suprailíaca da etapa 1 e a marcada | `src/domain/protocolosDeDobras.ts` (`dobrasUsadas`), `composicao.ts`, `documentoDaAvaliacao.ts`, `src/ui/caso/CamposComposicao.tsx`, `src/ui/antropometria/textosDaAvaliacao.ts` (+ testes) | CB-1480 a CB-1482, D-1520, D-1521 | T20 |
+| R2 | Revisão r1, M2 e B3: as faixas da etapa 1 na tela nova, zero e negativo | `src/domain/caso.ts` (`erroDaFaixa`, `casoNasFaixas`), `historicoAntropometrico.ts`, `CampoMedida.tsx`, `CartaoPesoEstatura.tsx`, `CartaoCircunferencias.tsx`, `LinhaDeMedida.tsx`, `PainelEstimar.tsx`, `TelaAntropometria.tsx` (+ testes) | CB-1483 a CB-1485, D-1522 a D-1525 | T20 |
+| R3 | Revisão r1, B1: a primeira e a atual no Histórico do celular | `TabelaAvaliacoes.tsx` (+ teste; e2e em 390 px) | CB-1486, D-1526 | T20 |
+| R4 | Revisão r1, B2: texto do motor pelo sexo | `src/domain/prioridadeClinica.ts`, `metaDePerda.ts`, `pontoDePartida.ts`, `textosDaAvaliacao.ts` (o filtro da nota do idoso) (+ testes) | CB-1487, D-1527 | T20 |
+| R5 | Revisão r1, B5: data local no plano sem data da consulta | `src/domain/avaliacoesDoPaciente.ts`, `TelaAntropometria.tsx`, `src/ui/AreaDeTrabalho.tsx` ("Ver exemplo") (+ testes) | CB-1488, D-1528 | T20 |
+| R6 | Revisão r1, B6: duas avaliações no mesmo dia na lista | `src/domain/avaliacoesDoPaciente.ts` (o rótulo), `BarraDaAvaliacao.tsx` (+ testes) | CB-1489, D-1529 | R5 |
 | T26 | Validação | este plano (checklist e matriz), prints | todos | T3 a T25 |
 | T27 | **F3, bloqueada:** "Enviar por e-mail" | (quando o Resend do `lado-do-paciente` entrar) | D-1460 | infraestrutura do Resend |
 
@@ -224,6 +231,23 @@ ver resultado, histórico e documento). Prints em `scratchpad/antropometria-tela
 Domínio com tipo pelo conteúdo, lados pelo cabeçalho (JPEG SOF, PNG IHDR), limites, caminhos e comparação. SQL 018 com
 balde, políticas e contagem; ataques no Supabase local. Exclusão na função e no plano. CSP. A tela.
 
+### R1 a R6 · Correções da revisão r1 (04/11/2026)
+
+A revisão independente (rodada 1, ramo `antropometria-com-main`) reprovou por M1 e M2; os baixos B1 a B6 entram junto. As
+sondas do revisor ficam fora do repositório e não mudam: provam o defeito, e os testes daqui provam a correção.
+
+- **R1** · `dobrasUsadas(id, sexo, dobras)` no motor: as dobras cujo valor entra na conta (a resolução da D-1039), e a
+  da linha do protocolo quando nenhuma tem valor (a média em Guedes e Faulkner). A tela (`dobrasNaTela`), o documento
+  (o "●") e a etapa 1 (o campo da suprailíaca e o "Usada neste protocolo") usam a mesma função. `calcularComposicao`
+  lê as dobras por `valoresDasDobras` (JP 3 da mulher pede a `suprailiacaAnt`), e a falta diz o nome da dobra.
+- **R2** · `erroDaFaixa(campo, valor)` sai de `validarCaso` (as frases ficam iguais) e `casoNasFaixas(caso)` deixa vazio
+  o que está fora da faixa: a tela nova passa por ela o plano com a ficha, e o Histórico e o documento, cada avaliação.
+  `CampoMedida` ganha `faixa` e recusa zero e negativo; o texto recusado fica no campo e o plano recebe `null`.
+- **R3** · A coluna da primeira data não some abaixo de 640 px; o ano das duas datas some (`max-sm:hidden`).
+- **R4** · As frases do motor recebem o sexo do caso; o filtro do "Ponto de partida" aceita "Idoso:" e "Idosa:".
+- **R5** · `diaLocal(new Date(atualizadoEm))` no lugar do `slice(0, 10)`; o "Ver exemplo" com `diaLocal()`.
+- **R6** · `rotuloDaAvaliacao` no domínio: o sufixo "· Nª do dia" só quando o dia se repete, contado da alterada antes.
+
 ### T27 · F3 (bloqueada)
 
 Quando a infraestrutura do Resend do `lado-do-paciente` entrar: a função que gera o link com prazo de 7 dias, o envio pelo
@@ -242,7 +266,10 @@ Resend, o registro na ficha e o painel "Enviar a avaliação por e-mail" do prot
 - **Proteína do idoso com doença** inferida da ficha (DP-AT-5) e a pergunta da TFGe para quem tem doença renal (D-1420).
 - **Slaughter só até 18 anos** na escolha (DP-AT-6).
 - **Rascunho do diagnóstico** (DP-AT-18): conferir se o texto ajuda ou atrapalha.
-- **Faixas plausíveis** de cada medida (pesquisa 1.7 B): sem fonte; a tela não avisa valor fora delas.
+- **Faixas plausíveis** de cada medida (pesquisa 1.7 B): sem fonte; a tela não avisa valor fora delas. A tela nova só
+  confere as 4 faixas que a etapa 1 já conferia (peso, estatura, cintura e panturrilha, D-1522).
+- **Suprailíaca na etapa 1** (D-1520): em Jackson & Pollock 3 numa mulher, o campo é o da linha axilar anterior; o valor
+  dos planos de antes continua como "linha não informada" e é o usado na conta enquanto a anterior estiver vazia.
 - **Gasto de repouso no plano** (DP-AT-4): levar Cunningham para a energia do plano?
 
 ## Andamento (04/11/2026, ramo `antropometria-historico`)
