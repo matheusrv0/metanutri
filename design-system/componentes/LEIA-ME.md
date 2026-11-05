@@ -112,9 +112,61 @@ rápido que uma lista suspensa. `valor={null}` é o estado vazio.
 />
 ```
 
+### CaixaDeMarcar
+A caixa de marcar do navegador, na cor da ação, com o rótulo como área de toque de 44 px no celular e no tablet. O
+rótulo pode ficar só para o leitor de tela quando a linha já diz o que se marca; `marcada="misto"` é o "algumas
+marcadas" do "Marcar todas". *Nasceu na importação de pacientes (spec importar-pacientes).*
+
+```tsx
+<CaixaDeMarcar rotulo="Marcar todas" marcada={todas ? true : algumas ? 'misto' : false} aoMudar={marcarTodas} />
+<CaixaDeMarcar rotulo={`Importar ${nome}`} rotuloOculto marcada={marcada} aoMudar={alternar} descritaPor={idDoMotivo} />
+```
+
+### ListaNativa
+O `<select>` do navegador com o desenho do Input (44 px e 16 px no toque, 40 px e 14 px com mouse). É a lista das
+telas de trabalho: no celular abre a do aparelho, e dezenas delas numa tela não pesam. O `Select` (Radix) fica para a
+lista que precisa de desenho dentro das opções. *Nasceu na importação de pacientes.*
+
+```tsx
+<ListaNativa aria-label="Destino da coluna Celular" value={destino} onChange={(e) => mudar(e.target.value)}>
+  <option value="telefone">Telefone</option>
+</ListaNativa>
+```
+
+### EscolhaDeCor
+Cores prontas como grupo de opções (spec marca-no-link, D-953): rádios nativos (Tab entra pela escolhida, as setas
+andam), cada cor com nome e código para o leitor de tela ("Verde-folha, #3F5F2A") e a escolhida com anel e visto, além
+da cor. As cores vão no estilo, uma a uma: são dado de quem usa. O visto é branco, então as opções precisam de 4,5:1 ou
+mais com o branco.
+
+```tsx
+<h2 id="titulo-cor">Cor</h2>
+<EscolhaDeCor rotuloId="titulo-cor" opcoes={CORES_PRONTAS} valor={cor} aoEscolher={setCor} />
+```
+
+### CampoCor
+"Outra cor": o seletor de cor do navegador e o campo `#RRGGBB`, lado a lado (D-953). Aceita com ou sem `#`, em
+maiúscula ou minúscula, e chama `aoEscolher` só com uma cor válida, já em `#rrggbb`. Fora do formato, a cor de antes
+continua e "Use o formato #RRGGBB." aparece junto do campo, ligado a ele, aos 7 caracteres ou ao sair do campo.
+`descricaoId` liga ao campo uma descrição de fora (o contraste, a recusa). Sem o seletor no navegador, fica o campo.
+
+```tsx
+<CampoCor rotulo="Outra cor" valor={cor} aoEscolher={setCor} descricaoId="contraste-da-cor" />
+```
+
 ---
 
 ## display/
+
+### PlacaLogo
+A logo da nutricionista numa placa branca, nos dois temas (spec marca-no-link, D-957): logo de letra escura não some
+no escuro, JPG de fundo branco não vira retângulo solto. `tamanho="link"` (padrão) é o topo do link do paciente, até
+40 × 200 px; `"grande"` é a parte "Logo" de "Sua marca", numa faixa de 96 px. Nunca estica. `aoFalhar`: a imagem não
+abriu, e quem usa volta à logo do MetaNutri.
+
+```tsx
+<PlacaLogo src={marca.logo} alt="Sua logo" aoFalhar={() => setLogoQuebrada(true)} />
+```
 
 ### Logo
 A marca, do kit de 27/09/2026: o símbolo (check de quatro bolinhas, a última laranja é a
@@ -405,6 +457,15 @@ Adequação. As etapas vêm de `@/ui/navegacao.ts`, não de prop.
 
 ```tsx
 <EtapasDoCaso abaAtual="plano" aoEscolher={setAba} />
+```
+
+### Passos
+Os passos de um fluxo curto, no desenho das etapas do plano, sem conhecer o domínio: o atual com
+`aria-current="step"`, o feito com o visto e o botão de voltar, o ainda não alcançado só como texto. *Nasceu na
+importação de pacientes.*
+
+```tsx
+<Passos rotulo="Passos da importação" passos={[{ valor: 'arquivo', rotulo: 'Arquivo' }]} atual="arquivo" aoEscolher={ir} />
 ```
 
 ---

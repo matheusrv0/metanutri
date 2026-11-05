@@ -8,6 +8,7 @@ import { createHash, randomBytes, randomUUID } from 'node:crypto'
 import { expect } from 'vitest'
 import { ambienteLocal, type Ambiente } from './local.ts'
 import { codigoDoApp } from './totp.ts'
+import { CORES_PRONTAS } from '../../src/domain/corDaMarca.ts'
 
 export { ambienteLocal, type Ambiente }
 
@@ -34,6 +35,9 @@ const OPCOES = {
 }
 
 export const BALDE = 'comprovantes'
+/** Spec marca-no-link: um PNG de verdade, de 1 por 1 pixel, em data URI, e uma cor que passa no D-954. */
+export const LOGO_DE_TESTE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='
+export const COR_DE_TESTE = CORES_PRONTAS.find((cor) => cor.nome === 'Verde-folha')?.valor ?? ''
 const PDF = new TextEncoder().encode('%PDF-1.4\n% comprovante de teste\n%%EOF\n')
 export const arquivoPdf = (texto = 'comprovante'): Blob => new Blob([PDF, new TextEncoder().encode(texto)], { type: 'application/pdf' })
 
@@ -204,6 +208,11 @@ export async function prepararCenario(): Promise<Cenario> {
     'gravar a cópia da vítima',
     (await contaVitima.cliente.from('copias').insert({ nutricionista_id: contaVitima.id, dados: { segredo: marcador }, aparelho: `aparelho ${marcador}` })).error,
   )
+  // Spec marca-no-link: a marca publicada da vítima, gravada pelo próprio login, como o "Salvar" de "Sua marca".
+  falhou(
+    'gravar a marca da vítima',
+    (await contaVitima.cliente.from('marcas').upsert({ nutricionista_id: contaVitima.id, logo: LOGO_DE_TESTE, cor: COR_DE_TESTE }, { onConflict: 'nutricionista_id' })).error,
+  )
   const arquivo = `${contaVitima.id}/comprovante.pdf`
   const segundoArquivo = `${contaVitima.id}/comprovante-2.pdf`
   await enviarArquivo(contaVitima, arquivo)
@@ -299,6 +308,8 @@ export const TABELAS_DA_CONTA: readonly { readonly tabela: string; readonly dono
   { tabela: 'tentativas_de_cartao', dono: 'nutricionista_id' },
   { tabela: 'chamadas_da_cobranca', dono: 'nutricionista_id' },
   { tabela: 'uso_da_ia', dono: 'nutricionista_id' },
+  // Spec marca-no-link (DP-ML-1): a marca publicada.
+  { tabela: 'marcas', dono: 'nutricionista_id' },
 ]
 
 /** As tabelas sem dono que ninguém de fora lê nem escreve. */

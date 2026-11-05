@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Flame, FolderOpen, Download, Sparkles, Search, TriangleAlert, ArrowLeftRight, LayoutDashboard, BookOpen } from 'lucide-react'
+import { CORES_PRONTAS } from '@/domain/corDaMarca.ts'
 import type { ResultadoMacro } from '@/domain/macros.ts'
 import { useTema } from '@/ui/tema/contextoTema.ts'
 import { Alert } from '@ds/componentes/display/alert.tsx'
@@ -12,6 +13,7 @@ import { Fontes } from '@ds/componentes/display/Fontes.tsx'
 import { Recolhivel } from '@ds/componentes/display/Recolhivel.tsx'
 import { GraficoBarras } from '@ds/componentes/display/GraficoBarras.tsx'
 import { IconeMarca, NOMES_ICONE_MARCA } from '@ds/componentes/display/IconeMarca.tsx'
+import { PlacaLogo } from '@ds/componentes/display/PlacaLogo.tsx'
 import { PontosDaMarca } from '@ds/componentes/display/PontosDaMarca.tsx'
 import { Icon } from '@ds/componentes/display/Icon.tsx'
 import { LinhaLista } from '@ds/componentes/display/LinhaLista.tsx'
@@ -20,16 +22,21 @@ import { Separator } from '@ds/componentes/display/separator.tsx'
 import { Table, TableBody, TableCell, TableFootnotes, TableHead, TableHeader, TableRow } from '@ds/componentes/display/table.tsx'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@ds/componentes/display/tooltip.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
+import { CaixaDeMarcar } from '@ds/componentes/forms/CaixaDeMarcar.tsx'
+import { CampoCor } from '@ds/componentes/forms/CampoCor.tsx'
 import { CampoNumero } from '@ds/componentes/forms/CampoNumero.tsx'
 import { CampoTexto } from '@ds/componentes/forms/CampoTexto.tsx'
+import { EscolhaDeCor } from '@ds/componentes/forms/EscolhaDeCor.tsx'
 import { GrupoOpcoes } from '@ds/componentes/forms/GrupoOpcoes.tsx'
 import { Input } from '@ds/componentes/forms/input.tsx'
 import { Label } from '@ds/componentes/forms/label.tsx'
+import { ListaNativa } from '@ds/componentes/forms/ListaNativa.tsx'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@ds/componentes/forms/select.tsx'
 import { Switch } from '@ds/componentes/forms/switch.tsx'
 import { Textarea } from '@ds/componentes/forms/textarea.tsx'
 import { EtapasDoCaso } from '@ds/componentes/navigation/EtapasDoCaso.tsx'
 import { ItemMenu } from '@ds/componentes/navigation/ItemMenu.tsx'
+import { Passos } from '@ds/componentes/navigation/Passos.tsx'
 import { SeletorSegmentado } from '@ds/componentes/navigation/SeletorSegmentado.tsx'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@ds/componentes/navigation/tabs.tsx'
 import { BarraAdequacao } from '@ds/componentes/nutricao/BarraAdequacao.tsx'
@@ -88,6 +95,7 @@ export function TelaDesignSystem() {
   const [ligado, setLigado] = useState(true)
   const [aba, setAba] = useState<'caso' | 'plano' | 'adequacao'>('plano')
   const [menu, setMenu] = useState('painel')
+  const [corDaMarca, setCorDaMarca] = useState(CORES_PRONTAS[2]?.valor ?? '')
 
   return (
     <TooltipProvider>
@@ -448,6 +456,20 @@ export function TelaDesignSystem() {
           </Linha>
         </Secao>
 
+        <Secao nome="PlacaLogo · EscolhaDeCor · CampoCor" arquivo="display/ · forms/" descricao="A marca da nutricionista: a logo numa placa branca nos dois temas, as cores prontas e outra cor">
+          <Linha estado="Placa no link e grande">
+            <PlacaLogo src="marca/simbolo.svg" alt="Logo de exemplo" />
+            <PlacaLogo src="marca/simbolo.svg" alt="Logo de exemplo, grande" tamanho="grande" className="max-w-sm" />
+          </Linha>
+          <Linha estado="Cores prontas e outra cor">
+            <span id="vitrine-cor" className="sr-only">
+              Cor da marca
+            </span>
+            <EscolhaDeCor rotuloId="vitrine-cor" opcoes={CORES_PRONTAS} valor={corDaMarca} aoEscolher={setCorDaMarca} />
+            <CampoCor rotulo="Outra cor" valor={corDaMarca} aoEscolher={setCorDaMarca} />
+          </Linha>
+        </Secao>
+
         <Secao nome="Dialog · Sheet · DropdownMenu" arquivo="overlay/" descricao="Camadas flutuantes: véu, sombra pop e Esc para fechar">
           <Linha estado="Abrir">
             <Dialog>
@@ -549,6 +571,10 @@ export function TelaDesignSystem() {
           </div>
         </Secao>
 
+        <Secao nome="Passos · CaixaDeMarcar · ListaNativa" arquivo="navigation/ · forms/" descricao="Os passos de um fluxo curto, a caixa de marcar com 44 px de toque e a lista do navegador com o desenho do campo">
+          <PassosVitrine />
+        </Secao>
+
         <Secao nome="SeletorSegmentado · AnelProgresso" arquivo="navigation/ · display/" descricao="Pílula de escolha e anel com o número escrito no meio">
           <SeletorVitrine />
           <div className="flex gap-4">
@@ -596,6 +622,47 @@ export function TelaDesignSystem() {
         </Secao>
       </div>
     </TooltipProvider>
+  )
+}
+
+function PassosVitrine() {
+  const [passo, setPasso] = useState<'arquivo' | 'colunas' | 'previa'>('colunas')
+  const [marcas, setMarcas] = useState<readonly boolean[]>([true, false, true])
+  const [destino, setDestino] = useState('telefone')
+  const todas = marcas.every(Boolean) ? true : marcas.some(Boolean) ? 'misto' : false
+  return (
+    <div className="flex flex-col gap-4">
+      <Passos
+        rotulo="Passos de exemplo"
+        passos={[
+          { valor: 'arquivo', rotulo: 'Arquivo' },
+          { valor: 'colunas', rotulo: 'Colunas' },
+          { valor: 'previa', rotulo: 'Prévia' },
+        ]}
+        atual={passo}
+        alcancados={['previa']}
+        aoEscolher={setPasso}
+      />
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+        <CaixaDeMarcar rotulo="Marcar todas" marcada={todas} aoMudar={(v) => setMarcas(marcas.map(() => v))} />
+        {marcas.map((marcada, i) => (
+          <CaixaDeMarcar key={i} rotulo={`Linha ${i + 2}`} marcada={marcada} aoMudar={(v) => setMarcas(marcas.map((m, j) => (j === i ? v : m)))} />
+        ))}
+        <CaixaDeMarcar rotulo="Já está na conta" marcada={false} desativada aoMudar={() => undefined} />
+      </div>
+      <div className="grid max-w-md grid-cols-[minmax(0,1fr)] gap-2 sm:grid-cols-2">
+        <ListaNativa aria-label="Vai para" value={destino} onChange={(e) => setDestino(e.target.value)}>
+          <option value="nome">Nome</option>
+          <option value="telefone">Telefone</option>
+          <option value="nao">Não importar</option>
+        </ListaNativa>
+        <ListaNativa aria-label="Sexo" aria-invalid defaultValue="">
+          <option value="">—</option>
+          <option value="F">F</option>
+          <option value="M">M</option>
+        </ListaNativa>
+      </div>
+    </div>
   )
 }
 

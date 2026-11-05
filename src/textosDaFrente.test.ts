@@ -35,6 +35,8 @@ const PASTAS = [
   'src/ui/whatsapp',
   'src/ui/layout',
   'src/ui/estado',
+  // Spec marca-no-link (CA-1982): Conta e assinatura › Sua marca.
+  'src/ui/marca',
   'src/export',
   'src/seo',
 ]
@@ -57,6 +59,11 @@ const SOLTOS = [
   'src/domain/folhaDieta.ts',
   'src/domain/fonteSupabase.ts',
   'src/domain/legal.ts',
+  // Spec marca-no-link: as frases da logo, da cor e do "Salvar" de Sua marca.
+  'src/domain/logoDaMarca.ts',
+  'src/domain/corDaMarca.ts',
+  'src/domain/marca.ts',
+  'src/domain/marcaNaNuvem.ts',
   'src/domain/missoes.ts',
   'src/domain/negocio.ts',
   'src/domain/negocioTextos.ts',
@@ -198,7 +205,10 @@ const PROIBIDOS: readonly (readonly [string, RegExp])[] = [
   ['"os casos não serão salvos"', /os casos não serão salvos/i],
   ['"não sobrevivem ao fechar"', /não sobrevivem/i],
   ['"Se for recusar, o motivo"', /Se for recusar/i],
-  ['"logo" no lugar de "logotipo"', /\b(a|uma|Sua|Remover) logo\b/],
+  // CA-1982 (spec marca-no-link, D-963): o termo é "logo" ("Enviar logo", "Sua logo e sua cor no link do paciente"),
+  // aprovado no protótipo de 29/10/2026; "logotipo" não aparece em tela. A exceção é o texto alternativo da imagem do
+  // MetaNutri ("Logotipo do MetaNutri em fundo verde-petróleo…", da prévia do link nas redes).
+  ['CA-1982: "logotipo" (o termo é "logo")', /logotipo(?! do MetaNutri\b)/i],
   // Aspas curvas no texto de tela (glossário): "assim" vira “assim”. O HTML do cabeçalho de busca usa aspas de atributo.
   ['aspas retas em volta de palavras', /(^|\s)"[\p{L}\d][^"<>=]*"(\s|[.,:;)]|$)/u],
 ]
@@ -224,6 +234,9 @@ describe('CA-1170: termos antigos nos textos desta frente', () => {
       'src/ui/config/TelaConfiguracoes.tsx',
       'src/ui/ajuda/TelaAjuda.tsx',
       'src/ui/negocio/ListaDeContas.tsx',
+      'src/ui/marca/TelaSuaMarca.tsx',
+      'src/ui/marca/CartaoSuaMarca.tsx',
+      'src/domain/logoDaMarca.ts',
       'src/domain/conta.ts',
       'index.html',
       'supabase/emails/trocar-email.html',
@@ -251,6 +264,17 @@ describe('CA-1170: termos antigos nos textos desta frente', () => {
 
   it.each(PROIBIDOS)('nenhum texto tem %s', (_nome, padrao) => {
     expect(achados(padrao)).toEqual([])
+  })
+
+  it('CA-1982: a guarda de "logotipo" deixa passar só o texto alternativo da imagem do MetaNutri', () => {
+    const [, logotipo] = PROIBIDOS.find(([nome]) => nome.startsWith('CA-1982')) ?? ['', /$^/]
+    expect(logotipo.test('com o seu logotipo e o seu CRN.')).toBe(true)
+    expect(logotipo.test('Logotipo')).toBe(true)
+    expect(logotipo.test('Logotipo do MetaNutri em fundo verde-petróleo, com a frase “Software de nutrição que diz o que comer”.')).toBe(false)
+    // O texto alternativo existe de verdade, e é a única ocorrência nas telas lidas.
+    const ocorrencias = [...TEXTOS_POR_ARQUIVO].flatMap(([caminho, textos]) => textos.filter((t) => /logotipo/i.test(t)).map(() => caminho))
+    expect(ocorrencias.length).toBeGreaterThan(0)
+    expect(achados(/Logotipo do MetaNutri/).length).toBe(ocorrencias.length)
   })
 })
 

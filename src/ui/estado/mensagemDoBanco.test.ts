@@ -1,6 +1,16 @@
 import sql011 from '../../../supabase/011-seguranca-lote-2.sql?raw'
 import sql012 from '../../../supabase/012-dieta-no-link.sql?raw'
-import { COPIA_GRANDE_DEMAIS, DIETA_GRANDE_DEMAIS, FALHA_DE_REDE, LINK_GRANDE_DEMAIS, mensagemDoBanco, TRAVAS_DE_TAMANHO } from './mensagemDoBanco.ts'
+import sql015 from '../../../supabase/015-marca-no-link.sql?raw'
+import {
+  COPIA_GRANDE_DEMAIS,
+  COR_FORA_DO_FORMATO,
+  DIETA_GRANDE_DEMAIS,
+  FALHA_DE_REDE,
+  LINK_GRANDE_DEMAIS,
+  LOGO_PESADA_DEMAIS,
+  mensagemDoBanco,
+  TRAVAS_DE_TAMANHO,
+} from './mensagemDoBanco.ts'
 
 /** A mensagem que o banco manda quando uma trava (check) recusa a linha. */
 const recusaDaTrava = (tabela: string, trava: string) => ({ code: '23514', message: `new row for relation "${tabela}" violates check constraint "${trava}"` })
@@ -60,8 +70,18 @@ describe('as travas de tamanho (D-107)', () => {
     expect(mensagemDoBanco({ code: '42501', message: 'permission denied "copias_dados_tamanho"' })).toBe(FALHA_DE_REDE)
   })
 
-  it('as travas que a tela conhece são exatamente as do 011 e do 012', () => {
-    const doBanco = [...`${sql011}\n${sql012}`.matchAll(/add constraint (\w+_tamanho) check/g)].map((m) => m[1] ?? '').sort()
+  it('as travas que a tela conhece são exatamente as do 011, do 012 e do 015', () => {
+    const doBanco = [
+      ...[...`${sql011}\n${sql012}`.matchAll(/add constraint (\w+_tamanho) check/g)].map((m) => m[1] ?? ''),
+      ...[...sql015.matchAll(/add constraint (marcas_\w+) check/g)].map((m) => m[1] ?? ''),
+    ].sort()
     expect(Object.keys(TRAVAS_DE_TAMANHO).sort()).toEqual(doBanco)
+  })
+
+  it('spec marca-no-link (DP-ML-2): a logo e a cor recusadas pelo banco têm as frases do D-963', () => {
+    expect(mensagemDoBanco(recusaDaTrava('marcas', 'marcas_logo_png'))).toBe(LOGO_PESADA_DEMAIS)
+    expect(mensagemDoBanco(recusaDaTrava('marcas', 'marcas_cor_formato'))).toBe(COR_FORA_DO_FORMATO)
+    expect(LOGO_PESADA_DEMAIS).toBe('Use uma logo mais simples.')
+    expect(COR_FORA_DO_FORMATO).toBe('Use o formato #RRGGBB.')
   })
 })

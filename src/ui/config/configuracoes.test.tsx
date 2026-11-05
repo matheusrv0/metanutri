@@ -3,10 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { CHAVES_DE_DADOS, linhaDeResponsabilidade, montarBackup, PERFIL_VAZIO, restaurarBackup } from '@/domain/perfil.ts'
 import type { Armazenamento } from '@/domain/persistencia.ts'
 import { armazenamentoDaConta } from '@/domain/armazenamentoDaConta.ts'
-import { criarCasoVazio } from '@/domain/caso.ts'
-import { criarPlanoPadrao } from '@/domain/plano.ts'
 import { ContextoArmazenamento } from '../estado/contextoArmazenamento.ts'
-import { FolhaDieta } from '../exportar/FolhaDieta.tsx'
 import { TelaConfiguracoes } from './TelaConfiguracoes.tsx'
 
 class MemoriaFalsa implements Armazenamento {
@@ -52,28 +49,8 @@ describe('Configurações', () => {
     expect(restaurarBackup(new MemoriaFalsa(), '{"formato":9}').erro).toContain('não é um backup do MetaNutri')
   })
 
-  it('CA-487: a logo PNG escolhida em Configurações chega à folha da dieta', async () => {
-    // Um PNG de verdade, de 1 por 1 pixel.
-    const bytes = Uint8Array.from(atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='), (c) => c.charCodeAt(0))
-    const tela = render(<TelaConfiguracoes />)
-    await userEvent.setup().upload(screen.getByLabelText('Escolher imagem'), new File([bytes], 'logo.png', { type: 'image/png' }))
-    expect(await screen.findByText('Logotipo salvo. Ele aparece no alto do plano impresso.')).toBeInTheDocument()
-    tela.unmount()
-
-    let n = 0
-    const { container } = render(<FolhaDieta caso={criarCasoVazio('c1')} plano={criarPlanoPadrao(() => `r${++n}`)} />)
-    const logo = container.querySelector('header img')
-    expect(logo?.getAttribute('src')).toMatch(/^data:image\/png;base64,iVBORw0KGgo/)
-  })
-
-  it('CA-487: arquivo que não é imagem não vira logo e a tela diz o que escolher', async () => {
-    render(<TelaConfiguracoes />)
-    // O seletor do sistema já filtra imagens; aqui o arquivo passa por ele, como num navegador que não filtra.
-    await userEvent.setup({ applyAccept: false }).upload(screen.getByLabelText('Escolher imagem'), new File(['<script>alert(1)</script>'], 'logo.html', { type: 'text/html' }))
-    expect(await screen.findByText('Escolha uma imagem PNG, JPG ou SVG.')).toBeInTheDocument()
-    expect(JSON.parse(localStorage.getItem('metanutri:perfil') ?? '{}').logo ?? null).toBeNull()
-    expect(screen.queryByRole('img', { name: 'Seu logotipo' })).not.toBeInTheDocument()
-  })
+  // Spec marca-no-link (D-950): a logo saiu de Configurações. O CA-487 (só imagem embutida vira logo) vale agora em
+  // Sua marca, que guarda só PNG (src/ui/marca/TelaSuaMarca.test.tsx, CA-1952 a CA-1955), e no perfil (perfil.test.ts).
 
   it('guarda o perfil ao digitar e mostra como sai no documento', async () => {
     render(<TelaConfiguracoes />)
@@ -103,13 +80,13 @@ describe('Configurações', () => {
     }
   })
 
-  it('CA-1195 (spec textos-e-promessas): Preceptor(a) e logotipo, no mesmo nome dos documentos', async () => {
+  // O cartão do logotipo do CA-1195 saiu de Configurações pela spec marca-no-link (D-950): a logo mora em Sua marca.
+  it('CA-1195 (spec textos-e-promessas): Preceptor(a), no mesmo nome dos documentos', async () => {
     render(<TelaConfiguracoes />)
     await userEvent.setup().click(screen.getByRole('radio', { name: 'Estudante' }))
     expect(screen.getByLabelText('Preceptor(a)')).toBeInTheDocument()
     expect(screen.getByText('Quem assina com você no estágio.')).toBeInTheDocument()
     expect(screen.getByText('Estes dados aparecem no rodapé dos documentos.')).toBeInTheDocument()
-    expect(screen.getByText('O logotipo aparece no alto do plano impresso.')).toBeInTheDocument()
     expect(screen.getByText(/Como aparece no documento:/)).toBeInTheDocument()
     expect(document.body.textContent).not.toMatch(/Responsável técnico|folha da dieta|a logo|vai sair/)
   })

@@ -29,6 +29,7 @@ const MUDANCA: Readonly<Record<string, Readonly<Record<string, unknown>>>> = {
   tentativas_de_cartao: { recusada: true },
   chamadas_da_cobranca: { tipo: 'conferir' },
   uso_da_ia: { status: 'erro', custo_microdolares: 0 },
+  marcas: { cor: '#7a2944', logo: null },
 }
 
 /** Uma linha nova em nome da vítima, em cada tabela. */
@@ -54,6 +55,8 @@ function linhaEmNomeDa(conta: string, tabela: string): Readonly<Record<string, u
       return { nutricionista_id: conta, tipo: 'cartao' }
     case 'uso_da_ia':
       return { nutricionista_id: conta, modo: 'gerar', status: 'reservado', consentimento_declarado: true }
+    case 'marcas':
+      return { nutricionista_id: conta, cor: '#7a2944' }
     default:
       throw new Error(`tabela sem linha de ataque: ${tabela}`)
   }
@@ -71,6 +74,7 @@ describe('controle: o cenário não é vazio', () => {
     ['assinaturas', 'nutricionista_id'],
     ['perfis', 'id'],
     ['pedidos_estudante', 'usuario'],
+    ['marcas', 'nutricionista_id'],
   ] as const)('a própria vítima lê a linha dela em %s com o mesmo filtro do ataque', async (tabela, dono) => {
     const r = await c.vitima.cliente.from(tabela).select('*').eq(dono, c.vitima.id)
     expect(r.error).toBeNull()

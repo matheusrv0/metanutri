@@ -1,4 +1,4 @@
-import { Plus, UserRound } from 'lucide-react'
+import { FileSpreadsheet, Plus, UserRound } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { idadeDe } from '@/domain/pacientes.ts'
 import { formatarAlteracao } from '../casos/formatarAlteracao.ts'
@@ -7,13 +7,21 @@ import { Button } from '@ds/componentes/forms/button.tsx'
 import { Card } from '@ds/componentes/display/card.tsx'
 import { useCasos } from '../estado/contextoCasos.ts'
 import { usePacientes } from '../estado/contextoPacientes.ts'
+import { useAgora } from '../estado/usarAgora.ts'
+import { LinhaDaImportacao } from './LinhaDaImportacao.tsx'
 
 interface TelaPacientesProps {
   readonly aoAbrir: (id: string) => void
+  /** Spec importar-pacientes, D-900: abre "Importar planilha". Sem ele, o botão não aparece. */
+  readonly aoImportar?: (() => void) | undefined
+  /** Injetável no teste; decide se a importação ainda está nas 24 horas do "Desfazer" (D-913). */
+  readonly agora?: Date | undefined
 }
 
 /** Lista de pacientes: quem é atendido, com quantos planos cada um tem. */
-export function TelaPacientes({ aoAbrir }: TelaPacientesProps) {
+export function TelaPacientes({ aoAbrir, aoImportar, agora: agoraFixo }: TelaPacientesProps) {
+  const agoraVivo = useAgora()
+  const agora = agoraFixo ?? agoraVivo
   const { pacientes, repositorio } = usePacientes()
   const { casos } = useCasos()
   const [busca, setBusca] = useState('')
@@ -31,18 +39,31 @@ export function TelaPacientes({ aoAbrir }: TelaPacientesProps) {
 
   const criar = () => aoAbrir(repositorio.criar('').id)
 
+  // D-900: ao lado de "Novo paciente" e de "Cadastrar paciente" (a lista vazia é onde quem vem de outro sistema procura).
+  const importar = aoImportar ? (
+    <Button variant="outline" onClick={aoImportar}>
+      <FileSpreadsheet aria-hidden="true" />
+      Importar planilha
+    </Button>
+  ) : null
+
   return (
     <div className="flex flex-col gap-6">
+      {/* Spec importar-pacientes, D-913: por 24 horas, a importação recente com o "Desfazer". */}
+      <LinhaDaImportacao agora={agora} />
       {/* D-247 (spec revisao-geral-trabalho): o título da página já diz "Pacientes"; o cartão fica só com a busca. */}
       <Card className="gap-4">
         <div className="flex flex-wrap items-end gap-3">
           <div className="min-w-56 flex-1">
             <CampoTexto rotulo="Buscar paciente" valor={busca} aoMudar={setBusca} placeholder="Nome…" />
           </div>
-          <Button onClick={criar}>
-            <Plus aria-hidden="true" />
-            Novo paciente
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={criar}>
+              <Plus aria-hidden="true" />
+              Novo paciente
+            </Button>
+            {importar}
+          </div>
         </div>
       </Card>
 
@@ -55,10 +76,13 @@ export function TelaPacientes({ aoAbrir }: TelaPacientesProps) {
           <p className="max-w-[52ch] text-sm text-muted-foreground">
             Cadastre o paciente uma vez: os planos dele usam a idade, o sexo, as restrições e o histórico da ficha.
           </p>
-          <Button onClick={criar}>
-            <Plus aria-hidden="true" />
-            Cadastrar paciente
-          </Button>
+          <div className="flex flex-wrap justify-center gap-2">
+            <Button onClick={criar}>
+              <Plus aria-hidden="true" />
+              Cadastrar paciente
+            </Button>
+            {busca.trim() ? null : importar}
+          </div>
         </Card>
       ) : (
         <ul className="grid grid-cols-[minmax(0,1fr)] gap-4 sm:grid-cols-2 2xl:grid-cols-3" aria-label="Pacientes">

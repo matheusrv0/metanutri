@@ -410,7 +410,8 @@ Revisão da rodada 3 sem nada crítico ou importante; dois Minors e uma linha de
   `{ ...fichaVaziaDela, ...ficha }`: os campos que ela conhece vêm primeiro, na ordem dela, e os outros depois. Para o
   texto de uma ficha desta versão sair igual dessa leitura, `criarPacienteVazio` põe os campos novos (`proximaConsulta`,
   `respostasAnamnese`, `suplementos`, `pedidoExames`) depois de `atualizadoEm`. Sem isso, a aba antiga que salva uma ficha
-  regravaria todas com outra ordem, e todas contariam como mudadas agora.
+  regravaria todas com outra ordem, e todas contariam como mudadas agora. *(29/10/2026, spec `importar-pacientes`,
+  D-912: o campo `importacao` entra no fim, depois dos da ficha única.)*
 - **DP-35 · Só sobe o valor daqui mais novo (D-170, CA-599, revisão final).** A chave que a cópia não traz e fica aqui
   entra em `mantidas` (e sobe) só quando a marca daqui é igual ou mais nova que a marca que a cópia traz dela (sem marca
   na cópia, conta como mais nova). Mais velha, a chave fica aqui sem subir e assume a marca da cópia: outro aparelho tem

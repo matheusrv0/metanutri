@@ -619,3 +619,48 @@ describe('A fonte do link do paciente: nuvem e cópia do aparelho (spec revisao-
     expect(await fonte.porToken(salvo.token)).toEqual(salvo)
   })
 })
+
+describe('a marca no link do paciente (spec marca-no-link)', () => {
+  function memoria(): Armazenamento {
+    const dados = new Map<string, string>()
+    return { getItem: (c) => dados.get(c) ?? null, setItem: (c, v) => void dados.set(c, v), removeItem: (c) => void dados.delete(c) }
+  }
+  const LOGO = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='
+
+  it('CA-1974: a linha da função traz a marca, e o link abre com ela', async () => {
+    const { cliente } = clienteFalso({ dados: [{ ...LINHA, marca_logo: LOGO, marca_cor: '#7a2944' }] })
+    const a = await fonteSupabase(cliente).porToken('kf3mq9zt7bnd')
+    expect(a?.marca).toEqual({ logo: LOGO, cor: '#7a2944' })
+    expect(a?.nome).toBe('Ana')
+  })
+
+  it('CA-1968: a função antiga (banco sem o 015) não traz as colunas, e o link abre sem marca', async () => {
+    const { cliente } = clienteFalso({ dados: [LINHA] })
+    expect((await fonteSupabase(cliente).porToken('kf3mq9zt7bnd'))?.marca).toEqual({ logo: null, cor: null })
+  })
+
+  it('CA-1967: a marca é lida a cada abertura, sem ficar guardada de uma vez para outra', async () => {
+    const primeira = clienteFalso({ dados: [LINHA] })
+    expect((await fonteSupabase(primeira.cliente).porToken('kf3mq9zt7bnd'))?.marca?.cor).toBeNull()
+    const depois = clienteFalso({ dados: [{ ...LINHA, marca_cor: '#1f4e8c' }] })
+    expect((await fonteSupabase(depois.cliente).porToken('kf3mq9zt7bnd'))?.marca?.cor).toBe('#1f4e8c')
+  })
+
+  it('a marca passa pela fonte do paciente; a cópia do aparelho (sem nuvem) não tem marca', async () => {
+    const { cliente } = clienteFalso({ dados: [{ ...LINHA, marca_cor: '#1f4e8c' }] })
+    const repo = criarRepositorioAcompanhamentos(memoria())
+    expect((await fonteDoPaciente(cliente, repo, vi.fn()).porToken('kf3mq9zt7bnd'))?.marca?.cor).toBe('#1f4e8c')
+    const copia = repo.salvar(acompanhamento())
+    const semNuvem = clienteFalso({ dados: [] })
+    expect((await fonteDoPaciente(semNuvem.cliente, repo, vi.fn()).porToken(copia.token))?.marca).toBeUndefined()
+  })
+
+  it('DP-ML-14: o link que a tela grava (as marcações) nunca leva a marca para a cópia do aparelho nem para a nuvem', async () => {
+    const { cliente, chamadas } = clienteFalso({ dados: null })
+    const repo = criarRepositorioAcompanhamentos(memoria())
+    const fonte = fonteDoPaciente(cliente, repo, vi.fn())
+    await fonte.salvar({ ...acompanhamento(), marca: { logo: LOGO, cor: '#1f4e8c' } })
+    expect(JSON.stringify(chamadas)).not.toContain('iVBORw0KGgo')
+    expect(JSON.stringify(repo.listar())).not.toContain('iVBORw0KGgo')
+  })
+})

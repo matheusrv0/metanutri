@@ -1,4 +1,5 @@
 // Perfil de quem usa: nome, registro e o que sai nos documentos.
+import { ehCorPadrao, normalizarCor } from './corDaMarca.ts'
 import type { Armazenamento } from './persistencia.ts'
 import { CHAVE_ACOMPANHAMENTOS, semMudancasPendentes } from './repositorioAcompanhamentos.ts'
 
@@ -14,8 +15,15 @@ export interface Perfil {
   readonly responsavel: string
   readonly telefone: string
   readonly email: string
-  /** Logo em data URI, guardada no próprio aparelho. */
+  /**
+   * Logo em data URI. Desde a spec marca-no-link, "Sua marca" grava aqui a cópia reduzida em PNG (D-951); a de antes,
+   * de Configurações, pode ser PNG, JPG ou SVG, até 500 KB, e passa pela redução no primeiro "Salvar" (DP-ML-12).
+   */
   readonly logo: string | null
+  /** A cor da marca no link do paciente (`#rrggbb`); nula é a padrão do MetaNutri (D-953, CB-960). */
+  readonly cor: string | null
+  /** "Salvar" de "Sua marca" já publicou a marca no link (D-961). Antes disso, a logo antiga não vai sozinha para o link. */
+  readonly marcaPublicada: boolean
 }
 
 export const PERFIL_VAZIO: Perfil = {
@@ -27,6 +35,8 @@ export const PERFIL_VAZIO: Perfil = {
   telefone: '',
   email: '',
   logo: null,
+  cor: null,
+  marcaPublicada: false,
 }
 
 /** Linha de responsabilidade que vai no rodapé dos documentos. */
@@ -55,12 +65,13 @@ export function lerPerfil(armazenamento: Armazenamento | null): Perfil {
     const bruto: unknown = JSON.parse(armazenamento.getItem(CHAVE) ?? 'null')
     if (!bruto || typeof bruto !== 'object') return PERFIL_VAZIO
     const o = bruto as Record<string, unknown>
-    const texto = (campo: Exclude<keyof Perfil, 'tipo' | 'logo'>): string => {
+    const texto = (campo: Exclude<keyof Perfil, 'tipo' | 'logo' | 'cor' | 'marcaPublicada'>): string => {
       const valor = o[campo]
       return typeof valor === 'string' ? valor : PERFIL_VAZIO[campo]
     }
     const tipo = o['tipo']
     const logo = o['logo']
+    const cor = typeof o['cor'] === 'string' ? normalizarCor(o['cor']) : null
     return {
       nome: texto('nome'),
       tipo: tipo === 'estudante' || tipo === 'profissional' ? tipo : PERFIL_VAZIO.tipo,
@@ -70,6 +81,8 @@ export function lerPerfil(armazenamento: Armazenamento | null): Perfil {
       telefone: texto('telefone'),
       email: texto('email'),
       logo: typeof logo === 'string' && ehLogoEmbutida(logo) ? logo : null,
+      cor: ehCorPadrao(cor) ? null : cor,
+      marcaPublicada: o['marcaPublicada'] === true,
     }
   } catch {
     return PERFIL_VAZIO

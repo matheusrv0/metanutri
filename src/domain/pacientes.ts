@@ -57,6 +57,16 @@ export interface Paciente {
   readonly doencas: readonly string[]
   readonly consumoMensal: ConsumoMensal
   readonly examesRecentes: readonly ExameRecente[]
+  // ---- Importar pacientes por planilha (spec importar-pacientes, D-912) ----
+  /** A importação de onde a ficha veio; `null` na ficha cadastrada à mão. O nome do arquivo não é guardado. */
+  readonly importacao: ImportacaoDoPaciente | null
+}
+
+/** D-912: o código da importação e a hora dela. O "Desfazer" (D-913) apaga os que vieram juntos e não mudaram. */
+export interface ImportacaoDoPaciente {
+  readonly id: string
+  /** Em ISO: a hora da importação, a mesma do `criadoEm` e do `atualizadoEm` de quem veio nela. */
+  readonly em: string
 }
 
 /** Um resultado de exame registrado na anamnese (D-362). */
@@ -105,6 +115,8 @@ export function criarPacienteVazio(id: string, agora: string): Paciente {
     doencas: [],
     consumoMensal: CONSUMO_VAZIO,
     examesRecentes: [],
+    // O da importação vem por último, pelo mesmo motivo (spec importar-pacientes, DP-IP-28).
+    importacao: null,
   }
 }
 
@@ -148,6 +160,13 @@ export function normalizarExamesRecentes(valor: unknown): ExameRecente[] {
   })
 }
 
+/** D-912: a importação guardada; estragada (ou de outro formato) vira nula. */
+export function lerImportacao(valor: unknown): ImportacaoDoPaciente | null {
+  if (typeof valor !== 'object' || valor === null) return null
+  const o = valor as Record<string, unknown>
+  return typeof o['id'] === 'string' && o['id'] !== '' && typeof o['em'] === 'string' ? { id: o['id'], em: o['em'] } : null
+}
+
 /** Uma restrição por linha; linhas vazias são ignoradas. */
 export function listaDeRestricoes(texto: string): readonly string[] {
   return texto
@@ -166,8 +185,12 @@ export interface RepositorioPacientes {
   listar(): readonly Paciente[]
   obter(id: string): Paciente | null
   criar(nome: string): Paciente
+  /** Spec importar-pacientes, D-910: os importados, todos de uma vez, numa gravação só. */
+  criarVarios(pacientes: readonly Paciente[]): void
   salvar(paciente: Paciente): Paciente
   excluir(id: string): void
+  /** D-913: o "Desfazer" da importação, numa gravação só (as lápides de sempre vão para a nuvem). */
+  excluirVarios(ids: readonly string[]): void
   readonly persistente: boolean
 }
 
@@ -209,6 +232,7 @@ export function criarRepositorioPacientes(armazenamento: Armazenamento | null, o
       doencas: listaDeTextos(completo.doencas),
       consumoMensal: lerConsumo(completo.consumoMensal),
       examesRecentes: normalizarExamesRecentes(completo.examesRecentes),
+      importacao: lerImportacao(completo.importacao),
     }
   }
 
@@ -259,6 +283,11 @@ export function criarRepositorioPacientes(armazenamento: Armazenamento | null, o
       return paciente
     },
 
+    criarVarios(pacientes) {
+      if (pacientes.length === 0) return
+      gravar([...lerGuardados(), ...pacientes])
+    },
+
     salvar(paciente) {
       const atualizado = { ...paciente, atualizadoEm: agora() }
       const guardados = lerGuardados()
@@ -273,6 +302,13 @@ export function criarRepositorioPacientes(armazenamento: Armazenamento | null, o
 
     excluir(id) {
       gravar(lerGuardados().filter((p) => p.id !== id))
+    },
+
+    excluirVarios(ids) {
+      const saem = new Set(ids)
+      const guardados = lerGuardados()
+      const ficam = guardados.filter((p) => !saem.has(p.id))
+      if (ficam.length !== guardados.length) gravar(ficam)
     },
   }
 }

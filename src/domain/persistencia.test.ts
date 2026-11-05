@@ -228,6 +228,37 @@ describe('repositório de casos', () => {
     expect(depois.caso['nome']).toBe('Futuro, editado')
   })
 
+  it('CA-2001 (spec antropometria-completa): plano gravado antes das medidas novas abre com os mesmos valores e as novas vazias', () => {
+    const arm = new MemoriaFalsa()
+    const repo = criarRepositorio(arm)
+    const criado = repo.criar('Antes das medidas novas')
+    repo.salvar({
+      ...criado,
+      caso: {
+        ...criado.caso,
+        circunferenciaCinturaCm: 91,
+        circunferenciaPanturrilhaCm: 36,
+        composicao: { ...criado.caso.composicao, dobras: { ...criado.caso.composicao.dobras, tricipital: 14, coxa: 21 } },
+      },
+    })
+    // O JSON como a versão de antes gravava: sem `medidasCorporais` e só com as 6 dobras.
+    const chave = `metanutri:caso:${criado.caso.id}`
+    const gravado = JSON.parse(arm.getItem(chave) ?? '{}') as { caso: Record<string, unknown> & { composicao: { dobras: Record<string, unknown> } } }
+    delete gravado.caso['medidasCorporais']
+    const { tricipital, subescapular, suprailiaca, abdominal, peitoral, coxa } = gravado.caso.composicao.dobras
+    gravado.caso.composicao.dobras = { tricipital, subescapular, suprailiaca, abdominal, peitoral, coxa }
+    arm.setItem(chave, JSON.stringify(gravado))
+
+    const lido = criarRepositorio(arm).obter(criado.caso.id)
+    expect(lido?.caso.circunferenciaCinturaCm).toBe(91)
+    expect(lido?.caso.circunferenciaPanturrilhaCm).toBe(36)
+    expect(lido?.caso.composicao.dobras.tricipital).toBe(14)
+    expect(lido?.caso.composicao.dobras.coxa).toBe(21)
+    expect(lido?.caso.composicao.dobras.panturrilhaMedial).toBeNull()
+    expect(lido?.caso.medidasCorporais.quadrilCm).toBeNull()
+    expect(lido?.caso.medidasCorporais.pontoDaCintura).toBeNull()
+  })
+
   it('operar em caso inexistente é erro', () => {
     const repo = criarRepositorio(new MemoriaFalsa(), { agora: relogio(), gerarId: ids() })
     expect(() => repo.duplicar('x')).toThrow(/x/)

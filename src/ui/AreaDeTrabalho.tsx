@@ -1,5 +1,5 @@
 import { ArrowRight, FolderOpen, Plus, RefreshCw } from 'lucide-react'
-import { useState } from 'react'
+import { lazy, Suspense, useState, type ReactNode } from 'react'
 import { dietaDoPlano } from '@/domain/dietaDoLink.ts'
 import { diaLocal } from '@/domain/acompanhamento.ts'
 import { aguaDoCaso } from '@/domain/agua.ts'
@@ -32,6 +32,8 @@ import { TelaCaso } from './caso/TelaCaso.tsx'
 import { TelaCasos } from './casos/TelaCasos.tsx'
 import { TelaConfiguracoes } from './config/TelaConfiguracoes.tsx'
 import { TelaConta } from './conta/TelaConta.tsx'
+import { publicadorDaMarca } from './marca/publicarNaNuvem.ts'
+import { TelaSuaMarca } from './marca/TelaSuaMarca.tsx'
 import { useAcompanhamentos } from './estado/contextoAcompanhamentos.ts'
 import { useArmazenamento } from './estado/contextoArmazenamento.ts'
 import { useBaseAmpliada } from './estado/usarBaseAmpliada.ts'
@@ -59,6 +61,10 @@ import { TelaNegocio } from './negocio/TelaNegocio.tsx'
 import { TelaSegundoFator } from './segundoFator/TelaSegundoFator.tsx'
 import { TelaPaciente } from './pacientes/TelaPaciente.tsx'
 import { TelaPacientes } from './pacientes/TelaPacientes.tsx'
+
+// Spec importar-pacientes, DP-IP-1: a tela de importar e os leitores de planilha num pedaço separado do JavaScript,
+// pedido só quando a rota abre (o service worker o guarda com o resto do app).
+const TelaImportarPacientes = lazy(() => import('./pacientes/importar/TelaImportarPacientes.tsx').then((m) => ({ default: m.TelaImportarPacientes })))
 import { processadorDoSite } from './pagamento/processadorMercadoPago.ts'
 import { AvisoCrn } from './painel/AvisoCrn.tsx'
 import { AvisoDoEstudante } from './painel/AvisoEstudante.tsx'
@@ -206,8 +212,30 @@ export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pe
   if (rota.tela === 'pacientes') {
     return (
       <Estrutura {...base} titulo="Pacientes">
-        <TelaPacientes aoAbrir={(id) => navegar({ tela: 'paciente', pacienteId: id })} />
+        <TelaPacientes aoAbrir={(id) => navegar({ tela: 'paciente', pacienteId: id })} aoImportar={() => navegar({ tela: 'importar-pacientes' })} />
       </Estrutura>
+    )
+  }
+
+  if (rota.tela === 'importar-pacientes') {
+    const voltar = () => navegar({ tela: 'pacientes' })
+    // Uma função, não um componente: o elemento é sempre a Estrutura, e a tela não remonta a cada desenho daqui.
+    const moldura = (acoes: ReactNode, conteudo: ReactNode) => (
+      <Estrutura {...base} titulo="Importar planilha" trilha={[{ rotulo: 'Pacientes', aoClicar: voltar }]} acoes={acoes}>
+        {conteudo}
+      </Estrutura>
+    )
+    return (
+      <Suspense
+        fallback={moldura(
+          null,
+          <p role="status" className="text-sm text-muted-foreground">
+            Abrindo…
+          </p>,
+        )}
+      >
+        <TelaImportarPacientes moldura={moldura} aoSair={voltar} />
+      </Suspense>
     )
   }
 
@@ -325,10 +353,20 @@ export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pe
           aoEntrar={() => navegar({ tela: 'entrar' })}
           aoVerPrecos={() => navegar({ tela: 'precos' })}
           aoIrParaConfig={() => navegar({ tela: 'config' })}
+          aoAbrirMarca={() => navegar({ tela: 'marca' })}
           aoAssinar={(plano, ciclo) => navegar({ tela: 'assinar', plano, ciclo })}
           aoMudouAssinatura={() => cobranca.recarregar()}
           criarProcessador={processadorDoSite()}
         />
+      </Estrutura>
+    )
+  }
+
+  // Spec marca-no-link (D-950): Conta e assinatura › Sua marca.
+  if (rota.tela === 'marca') {
+    return (
+      <Estrutura {...base} titulo="Sua marca" trilha={[{ rotulo: 'Conta e assinatura', aoClicar: () => navegar({ tela: 'conta' }) }]}>
+        <TelaSuaMarca publicar={publicadorDaMarca(sessao?.id ?? null)} />
       </Estrutura>
     )
   }
