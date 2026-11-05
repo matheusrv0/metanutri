@@ -61,6 +61,12 @@ opção do item aparece embaixo dele no plano, na folha, no link e no Word.
 | T23 | Café e chá como item (recomendação 2) | `src/domain/buscaDeSubstitutos.ts`; testes: `buscaDeSubstitutos.test.ts`, `painelSubstitutos.test.tsx` | CA-2145 | T22 |
 | T24 | Validação da rodada 2 | `npm run lint`, `npm run typecheck`, `npx vitest run --maxWorkers=4`; e2e `busca-substitutos` e `planejador` (`--workers=2`, na configuração normal, com a trava `trava-e2e` da rodada: vários testes têm a porta escrita dentro); `npm run build` e `npm run test:csp` (com as travas); as sondas r2 e s1 a s8; prints da lista que abre sozinha (leite 150 ml, banana 100 g, arroz 150 g) em 1440 e 390 px | todos | T23 |
 | T25 | O toque de 44 px na lista "Outro nutriente" (achado na T24) | `src/ui/plano/BuscaDeSubstitutos.tsx` (a lista transparente cobre também a borda da caixa); teste: `e2e/busca-substitutos.spec.ts` (CA-2126 já confere a lista desde a T15) | CA-2126 | T24 |
+| T26 | Spec e plano da rodada 3 | `specs/busca-substitutos/SPEC.md`, `PLAN.md` | — | T25 |
+| T27 | O grupo conhecido dispensa o macro dominante (M1) | `src/domain/grupoDeSubstituicao.ts` (`temGrupoConhecido`), `src/domain/buscaDeSubstitutos.ts` (`naTrocaEquivalente`); testes: `src/domain/trocaEquivalente.test.ts` (CA-2136 com a regra a só fora dos grupos; CA-2146 novo) | CA-2136, CA-2137, CA-2146 | T26 |
+| T28 | O mesmo alimento, em toda a lista (M2) | `src/domain/buscaDeSubstitutos.ts` (`mesmoAlimentoDe` e a variedade sobre a lista inteira), `src/domain/trocas.ts` (o `nomeDaVariedade` deixa de ser exportado: só a folha o usa, e a folha não muda); testes: `trocaEquivalente.test.ts` (CA-2143 revisto; CA-2147 e CA-2148 novos) | CA-2143, CA-2147, CA-2148 | T27 |
+| T29 | A medida do leite e da bebida (B1) | `src/domain/busca.ts` (`medidaParaMostrar` aceita, sem mudar quem já a chama, um filtro das medidas), `src/domain/liquido.ts` (a bebida de soja e o leite semidesnatado em ml), `src/domain/buscaDeSubstitutos.ts` (a porção do líquido em copo ou ml); testes: `buscaDeSubstitutos.test.ts` (CA-2149) | CA-2149 | T28 |
+| T30 | O toque de 44 px no "Adicionar em" do Cobrir (recomendação leve 2 da rodada 3: o mesmo defeito da T25, na gaveta do Cobrir; fora da busca, D-802) | `src/ui/adequacao/GavetaCobrir.tsx` (a lista transparente cobre também a borda); teste: `e2e/celular-planejador.spec.ts` (M-010 mede o toque da lista) | D-802 | T29 |
+| T31 | Validação da rodada 3 | `npm run lint`, `npm run typecheck`, `npx vitest run --maxWorkers=4`; e2e `busca-substitutos`, `planejador` e `celular-planejador` (`--workers=2`, configuração normal, `trava-e2e`); `npm run build`; as sondas r2 e r3 (`r2-2` e `r2-4` valem pelas cópias `r3-2` e `r3-4`); a varredura da vista padrão antes e depois; prints (leite integral 150 ml, queijo minas, batata inglesa e arroz) | todos | T30 |
 
 ## Verificação de cada tarefa
 
@@ -85,6 +91,15 @@ opção do item aparece embaixo dele no plano, na folha, no link e no Word.
    mesmo grupo, porque as castanhas são de gordura). A D-1130 corta a segunda variação do mesmo alimento (leite integral →
    só um outro leite). A D-1132 troca a lista do café e do chá por uma frase. A recomendação 3 (pratos de café da manhã
    contra almoço) fica para a próxima melhoria.
+
+   **Rodada 3 (T26 a T31).** A D-1133 devolve a troca dentro dos grupos da seção 3 (o leite integral volta a trocar com
+   o desnatado e a bebida de soja; as verduras e o tofu voltam a ter lista); a energia e o pó continuam barrando o
+   absurdo. A D-1134 mede "o mesmo alimento" pelo nome sem o preparo, e a D-1130 passa a valer para toda a lista: os
+   queijos e as batatas voltam, e cada alimento aparece uma vez só. A farinha de mandioca crua e a torrada são o mesmo
+   alimento e deixam de trocar entre si no mesmo grupo. A D-1135 tira o copo de requeijão do leite e põe a bebida de soja e
+   o leite semidesnatado em ml **em todo o app** (plano, folha, link), não só na busca: é a regra D-378 de sempre, que
+   esses dois nomes não pegavam. A T30 mexe no Cobrir (fora desta spec), porque é o mesmo defeito de 2 px da T25 e a
+   correção é de uma linha.
 
 1. **A coluna do Resumo do dia desce enquanto o painel está aberto (D-1116).** Pôr o painel exatamente no lugar dela
    exigiria mexer em `AreaDeTrabalho.tsx`, que dois ramos em andamento estão mudando. `TelaPlano` ocupa as duas colunas
