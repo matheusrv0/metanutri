@@ -1,6 +1,7 @@
 // As avaliações antropométricas de um paciente (spec antropometria-telas, D-1400): cada plano completo dele é uma
 // avaliação, na data da consulta do plano. Plano rápido não tem medidas e não entra.
 import { diaLocal } from './acompanhamento.ts'
+import { dataCompleta } from './formatarData.ts'
 import type { CasoSalvo } from './persistencia.ts'
 
 export interface AvaliacaoNaLista {
@@ -39,4 +40,19 @@ export function tipoDaAvaliacao(casoId: string, avaliacoes: readonly AvaliacaoNa
   const posicao = daMaisVelha.findIndex((a) => a.casoId === casoId)
   if (posicao < 0) return null
   return posicao === 0 ? 'Primeira avaliação' : `Retorno · ${posicao + 1}ª avaliação`
+}
+
+/**
+ * D-1404 e D-1529: o texto de cada avaliação na lista, na ordem dela. Duas ou mais no mesmo dia levam "· Nª do dia",
+ * contadas da alterada antes (a 1ª) à alterada por último, como as colunas do Histórico (CB-1440). O app não guarda a
+ * hora da consulta.
+ */
+export function rotulosDaLista(lista: readonly { readonly casoId: string; readonly data: string }[]): string[] {
+  return lista.map((a, i) => {
+    const rotulo = `Avaliação de ${dataCompleta(a.data) || 'data não informada'}`
+    if (lista.filter((b) => b.data === a.data).length < 2) return rotulo
+    // A lista vem da mais nova à mais velha; no mesmo dia, a alterada por último primeiro.
+    const ordem = lista.slice(i).filter((b) => b.data === a.data).length
+    return `${rotulo} · ${ordem}ª do dia`
+  })
 }

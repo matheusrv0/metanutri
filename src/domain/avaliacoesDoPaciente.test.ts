@@ -1,5 +1,5 @@
 // As avaliações de um paciente são os planos completos dele (spec antropometria-telas, D-1400, D-1401 e D-1404).
-import { avaliacoesDoPaciente, avaliacaoMaisRecente, dataDaAvaliacao, tipoDaAvaliacao } from './avaliacoesDoPaciente.ts'
+import { avaliacoesDoPaciente, avaliacaoMaisRecente, dataDaAvaliacao, rotulosDaLista, tipoDaAvaliacao } from './avaliacoesDoPaciente.ts'
 import { criarCasoVazio } from './caso.ts'
 import type { CasoSalvo } from './persistencia.ts'
 import type { Caso } from './tipos.ts'
@@ -55,5 +55,23 @@ describe('a data local do plano sem data da consulta (spec antropometria-telas, 
     expect(avaliacoesDoPaciente('p1', [semData]).map((a) => a.data)).toEqual(['2026-11-03'])
     // Com a data da consulta, vale ela.
     expect(dataDaAvaliacao(salvo('nov', { dataConsulta: '2026-11-05' }, noite))).toBe('2026-11-05')
+  })
+})
+
+describe('duas avaliações no mesmo dia na lista (spec antropometria-telas, D-1529; revisão r1, B6)', () => {
+  it('CB-1489: "· 1ª do dia" na alterada antes e "· 2ª do dia" na alterada por último; a sozinha no dia, sem sufixo', () => {
+    const lista = avaliacoesDoPaciente('p1', [
+      salvo('manha', { dataConsulta: '2026-11-03' }, '2026-11-03T12:00:00.000Z'),
+      salvo('set', { dataConsulta: '2026-09-08' }),
+      salvo('tarde', { dataConsulta: '2026-11-03' }, '2026-11-03T18:00:00.000Z'),
+    ])
+    expect(lista.map((a) => a.casoId)).toEqual(['tarde', 'manha', 'set'])
+    expect(rotulosDaLista(lista)).toEqual(['Avaliação de 03/11/2026 · 2ª do dia', 'Avaliação de 03/11/2026 · 1ª do dia', 'Avaliação de 08/09/2026'])
+  })
+
+  it('CB-1489: três no mesmo dia contam até a 3ª; sem data, "data não informada"', () => {
+    const tres = [3, 2, 1].map((n) => ({ casoId: `c${n}`, data: '2026-11-03' }))
+    expect(rotulosDaLista(tres)).toEqual(['Avaliação de 03/11/2026 · 3ª do dia', 'Avaliação de 03/11/2026 · 2ª do dia', 'Avaliação de 03/11/2026 · 1ª do dia'])
+    expect(rotulosDaLista([{ casoId: 'x', data: '' }])).toEqual(['Avaliação de data não informada'])
   })
 })

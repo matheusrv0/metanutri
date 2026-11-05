@@ -37,6 +37,15 @@ describe('a tela da antropometria (spec antropometria-telas, CA-2400 a CA-2409 e
     expect(within(lista).getAllByRole('option').map((o) => o.textContent)).toEqual(['Avaliação de 03/11/2026', 'Avaliação de 08/09/2026', 'Avaliação de 12/05/2026'])
   })
 
+  it('CB-1489 (D-1529): duas avaliações no mesmo dia aparecem diferentes na lista', () => {
+    const planos = [...AVALIACOES, planoDe('nov2', { pacienteId: 'renata', dataConsulta: '2026-11-03' })]
+    abrir({ tela: 'antropometria', casoId: 'nov', vista: 'avaliacao' }, { pacientes: [RENATA], planos })
+    const opcoes = within(screen.getByRole('combobox', { name: 'Avaliação' }))
+      .getAllByRole('option')
+      .map((o) => o.textContent)
+    expect([...opcoes].sort()).toEqual(['Avaliação de 03/11/2026 · 1ª do dia', 'Avaliação de 03/11/2026 · 2ª do dia', 'Avaliação de 08/09/2026', 'Avaliação de 12/05/2026'])
+  })
+
   it('CA-2402: sem avaliação, o vazio com "Nova avaliação"', async () => {
     const { usuario, aoNovaAvaliacao } = abrir({ tela: 'antropometria-do-paciente', pacienteId: 'renata' }, { pacientes: [RENATA], planos: [] })
     expect(screen.getByText('Nenhuma avaliação ainda.')).toBeInTheDocument()

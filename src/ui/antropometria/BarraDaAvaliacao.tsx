@@ -1,4 +1,4 @@
-import { dataCompleta } from '@/domain/formatarData.ts'
+import { rotulosDaLista } from '@/domain/avaliacoesDoPaciente.ts'
 import type { ModalidadeDaAvaliacao } from '@/domain/tipos.ts'
 import { Escolha } from './Escolha.tsx'
 import { SeletorSegmentado } from '@ds/componentes/navigation/SeletorSegmentado.tsx'
@@ -20,9 +20,7 @@ interface BarraDaAvaliacaoProps {
   readonly aoMudarVista: ((vista: VistaDaAntropometria) => void) | null
 }
 
-const rotuloDaData = (data: string) => `Avaliação de ${dataCompleta(data) || 'data não informada'}`
-
-/** A barra da tela: qual avaliação, a modalidade e "Avaliação | Histórico" (spec antropometria-telas, D-1404). */
+/** A barra da tela: qual avaliação, a modalidade e "Avaliação | Histórico" (spec antropometria-telas, D-1404 e D-1529). */
 export function BarraDaAvaliacao({
   avaliacoes,
   casoId,
@@ -34,6 +32,7 @@ export function BarraDaAvaliacao({
   vista,
   aoMudarVista,
 }: BarraDaAvaliacaoProps) {
+  const rotulos = avaliacoes ? rotulosDaLista(avaliacoes) : []
   return (
     <div className="flex flex-wrap items-end gap-x-4 gap-y-3 print:hidden">
       {resumo !== null ? (
@@ -46,15 +45,15 @@ export function BarraDaAvaliacao({
               rotulo="Avaliação"
               rotuloOculto
               className="w-full sm:w-64"
-              opcoes={avaliacoes.map((a) => ({
+              opcoes={avaliacoes.map((a, i) => ({
                 valor: a.casoId,
-                rotulo: rotuloDaData(a.data),
+                rotulo: rotulos[i] ?? '',
               }))}
               valor={casoId}
               aoEscolher={aoEscolherAvaliacao}
             />
           ) : (
-            <p className="text-sm font-semibold text-heading">{rotuloDaData(data)}</p>
+            <p className="text-sm font-semibold text-heading">{rotulosDaLista([{ casoId, data }])[0]}</p>
           )}
           <Escolha
             rotulo="Modalidade"
