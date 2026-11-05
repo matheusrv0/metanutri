@@ -151,7 +151,8 @@ export function GavetaCobrir({
           </label>
           {/* A lista nativa corta o nome longo da refeição ("Almoço de domingo na casa da sogra…") e não quebra a linha.
               O nome escolhido fica num texto que quebra, e a lista nativa, transparente, cobre a caixa inteira: o toque
-              e o teclado continuam nela, e no celular a lista abre do jeito do aparelho. */}
+              e o teclado continuam nela, e no celular a lista abre do jeito do aparelho. Ela cobre também a borda
+              (-inset-px): com inset-0 ficava com 42 px de toque, não 44 (spec busca-substitutos, T30). */}
           <div className="relative flex min-h-11 items-center rounded-md border border-input bg-card py-2 pl-3 pr-9 text-base has-[:focus-visible]:border-primary has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring sm:min-h-10 sm:text-sm sm:pointer-coarse:min-h-11 sm:pointer-coarse:text-base">
             <span aria-hidden="true" className="min-w-0 break-words">
               {escolhida ? `${escolhida.horario} ${escolhida.nome}` : 'Refeição de cada alimento'}
@@ -161,7 +162,7 @@ export function GavetaCobrir({
               id="refeicao-destino"
               value={refeicaoId}
               onChange={(e) => setRefeicaoId(e.target.value)}
-              className="absolute inset-0 size-full cursor-pointer appearance-none opacity-0"
+              className="absolute -inset-px h-[calc(100%+2px)] w-[calc(100%+2px)] cursor-pointer appearance-none opacity-0"
             >
               <option value="">Refeição de cada alimento</option>
               {plano.refeicoes.map((r) => (
