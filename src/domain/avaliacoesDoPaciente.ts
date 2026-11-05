@@ -1,21 +1,30 @@
 // As avaliações antropométricas de um paciente (spec antropometria-telas, D-1400): cada plano completo dele é uma
 // avaliação, na data da consulta do plano. Plano rápido não tem medidas e não entra.
+import { diaLocal } from './acompanhamento.ts'
 import type { CasoSalvo } from './persistencia.ts'
 
 export interface AvaliacaoNaLista {
   readonly casoId: string
-  /** AAAA-MM-DD: a data da consulta; sem ela, o dia da última alteração. */
+  /** AAAA-MM-DD: a data da consulta; sem ela, o dia da última alteração no relógio de quem usa (D-1528). */
   readonly data: string
   readonly registro: CasoSalvo
 }
 
-const dataDa = (r: CasoSalvo): string => r.caso.dataConsulta ?? r.atualizadoEm.slice(0, 10)
+/**
+ * AAAA-MM-DD da avaliação: a data da consulta; sem ela, o dia da última alteração no relógio de quem usa (D-1528). O
+ * `atualizadoEm` é UTC: depois das 21h de Brasília, o recorte dele já seria o dia seguinte (o mesmo da CB-1448).
+ */
+export function dataDaAvaliacao(r: CasoSalvo): string {
+  if (r.caso.dataConsulta) return r.caso.dataConsulta
+  const alterado = new Date(r.atualizadoEm)
+  return Number.isNaN(alterado.getTime()) ? r.atualizadoEm.slice(0, 10) : diaLocal(alterado)
+}
 
 /** D-1404: da avaliação mais nova à mais velha; na mesma data, a alterada por último primeiro. */
 export function avaliacoesDoPaciente(pacienteId: string, registros: readonly CasoSalvo[]): AvaliacaoNaLista[] {
   return registros
     .filter((r) => r.caso.pacienteId === pacienteId && r.caso.modo === 'completo')
-    .map((registro) => ({ casoId: registro.caso.id, data: dataDa(registro), registro }))
+    .map((registro) => ({ casoId: registro.caso.id, data: dataDaAvaliacao(registro), registro }))
     .sort((a, b) => b.data.localeCompare(a.data) || b.registro.atualizadoEm.localeCompare(a.registro.atualizadoEm))
 }
 

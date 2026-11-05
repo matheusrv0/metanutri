@@ -50,6 +50,20 @@ describe('App: estrutura', () => {
     expect(screen.getByText('Nenhum plano ainda.')).toBeInTheDocument()
   })
 
+  it('CB-1488 (spec antropometria-telas, D-1528): "Ver um plano de exemplo" às 21h30 de Brasília nasce com o dia de quem usa', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date(2026, 10, 3, 21, 30))
+    try {
+      renderizar()
+      await userEvent.setup().click(screen.getByRole('button', { name: 'Ver um plano de exemplo' }))
+      const repo = criarRepositorio(localStorage)
+      const [exemplo] = repo.listar()
+      expect(exemplo ? repo.obter(exemplo.id)?.caso.dataConsulta : null).toBe('2026-11-03')
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   it('CA-324: o botão Novo plano do Painel fica no topo e pergunta o modo', async () => {
     renderizar()
     const usuario = userEvent.setup()

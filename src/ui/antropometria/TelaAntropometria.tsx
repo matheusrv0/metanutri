@@ -2,7 +2,7 @@ import { FileText } from 'lucide-react'
 import { useCallback, useMemo, useState, type ReactNode } from 'react'
 import { diaLocal } from '@/domain/acompanhamento.ts'
 import type { AssinaturaDoPlano } from '@/domain/assinaturaDoPlano.ts'
-import { avaliacoesDoPaciente, type AvaliacaoNaLista } from '@/domain/avaliacoesDoPaciente.ts'
+import { avaliacoesDoPaciente, dataDaAvaliacao, type AvaliacaoNaLista } from '@/domain/avaliacoesDoPaciente.ts'
 import { casoNasFaixas } from '@/domain/caso.ts'
 import { propostaNaDieta } from '@/domain/documentoDoPaciente.ts'
 import { casoComFicha } from '@/domain/fichaNoPlano.ts'
@@ -172,7 +172,8 @@ export function TelaAntropometria({ rota, navegar, moldura, aoNovaAvaliacao, ass
       ) : null}
     </>
   )
-  const dataDaAvaliacao = registro.caso.dataConsulta ?? registro.atualizadoEm.slice(0, 10)
+  // D-1528: sem a data da consulta, o dia da última alteração no relógio de quem usa.
+  const data = dataDaAvaliacao(registro)
 
   return moldura(
     { titulo, trilha, acoes },
@@ -182,7 +183,7 @@ export function TelaAntropometria({ rota, navegar, moldura, aoNovaAvaliacao, ass
       <BarraDaAvaliacao
         avaliacoes={paciente ? avaliacoes : null}
         casoId={registro.caso.id}
-        data={dataDaAvaliacao}
+        data={data}
         aoEscolherAvaliacao={(id) => navegar({ tela: 'antropometria', casoId: id, vista })}
         resumo={historico?.resumo ?? null}
         modalidade={registro.caso.avaliacao.modalidade}
@@ -198,7 +199,7 @@ export function TelaAntropometria({ rota, navegar, moldura, aoNovaAvaliacao, ass
       {documentoAberto ? (
         <DialogoDocumentoAvaliacao
           entrada={{
-            atual: { casoId: registro.caso.id, data: dataDaAvaliacao, caso },
+            atual: { casoId: registro.caso.id, data, caso },
             avaliacoes: paciente ? avaliacoesParaHistorico(avaliacoes, paciente, hoje) : [],
             paciente,
             hoje,

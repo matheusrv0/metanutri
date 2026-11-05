@@ -179,7 +179,8 @@ export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pe
 
   // Primeiro acesso: um dia inteiro montado, para entender o sistema mexendo nele.
   const verExemplo = () => {
-    const salvo = repositorio.salvar(criarExemplo(() => globalThis.crypto.randomUUID(), new Date().toISOString().slice(0, 10)))
+    // Spec antropometria-telas, D-1528: o dia de quem usa, não o do UTC (que depois das 21h de Brasília já é amanhã).
+    const salvo = repositorio.salvar(criarExemplo(() => globalThis.crypto.randomUUID(), diaLocal(new Date())))
     atualizar()
     navegar({ tela: 'planejador', casoId: salvo.caso.id, aba: 'plano' })
   }

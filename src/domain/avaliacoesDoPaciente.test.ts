@@ -1,5 +1,5 @@
 // As avaliações de um paciente são os planos completos dele (spec antropometria-telas, D-1400, D-1401 e D-1404).
-import { avaliacoesDoPaciente, avaliacaoMaisRecente, tipoDaAvaliacao } from './avaliacoesDoPaciente.ts'
+import { avaliacoesDoPaciente, avaliacaoMaisRecente, dataDaAvaliacao, tipoDaAvaliacao } from './avaliacoesDoPaciente.ts'
 import { criarCasoVazio } from './caso.ts'
 import type { CasoSalvo } from './persistencia.ts'
 import type { Caso } from './tipos.ts'
@@ -44,5 +44,16 @@ describe('as avaliações do paciente (spec antropometria-telas, CA-2401)', () =
     expect(tipoDaAvaliacao('semData', lista)).toBe('Retorno · 2ª avaliação')
     expect(tipoDaAvaliacao('nov', lista)).toBe('Retorno · 4ª avaliação')
     expect(tipoDaAvaliacao('rapido', lista)).toBeNull()
+  })
+})
+
+describe('a data local do plano sem data da consulta (spec antropometria-telas, D-1528; revisão r1, B5)', () => {
+  it('CB-1488: alterado às 21h30 de Brasília (00h30 UTC do dia seguinte), fica no dia de quem usa', () => {
+    const noite = new Date(2026, 10, 3, 21, 30).toISOString()
+    const semData = salvo('semData', { dataConsulta: null, modo: 'completo' }, noite)
+    expect(dataDaAvaliacao(semData)).toBe('2026-11-03')
+    expect(avaliacoesDoPaciente('p1', [semData]).map((a) => a.data)).toEqual(['2026-11-03'])
+    // Com a data da consulta, vale ela.
+    expect(dataDaAvaliacao(salvo('nov', { dataConsulta: '2026-11-05' }, noite))).toBe('2026-11-05')
   })
 })
