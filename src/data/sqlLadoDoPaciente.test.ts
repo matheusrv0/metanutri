@@ -14,7 +14,7 @@ function funcao(assinatura: string): string {
   return sql.slice(inicio, corpo)
 }
 
-const TABELAS_NOVAS = ['config_de_emails', 'emails_dos_links', 'aceites', 'chaves_de_aviso', 'envios', 'supressao', 'limites_de_envio', 'estado_dos_avisos'] as const
+const TABELAS_NOVAS = ['config_de_emails', 'emails_dos_links', 'aceites', 'chaves_de_aviso', 'envios', 'supressao', 'limites_de_envio', 'estado_dos_avisos', 'tokens_trocados'] as const
 
 /** As colunas que a função do paciente devolve, na ordem. */
 const colunasDe = (texto: string, assinatura: string): string[] => {
@@ -79,7 +79,7 @@ describe('banco: o lado do paciente (017, spec lado-do-paciente)', () => {
     // Só o dono lê o que é dele; ninguém escreve nas tabelas dos e-mails pelo navegador (as funções escrevem).
     expect(sql).toContain('grant select, insert, update, delete on public.config_de_emails to authenticated;')
     for (const tabela of ['emails_dos_links', 'aceites', 'envios']) expect(sql, tabela).toContain(`grant select on public.${tabela} to authenticated;`)
-    for (const tabela of ['chaves_de_aviso', 'supressao', 'limites_de_envio', 'estado_dos_avisos']) expect(sql, tabela).not.toMatch(new RegExp(`grant [^;]* on public\\.${tabela} `))
+    for (const tabela of ['chaves_de_aviso', 'supressao', 'limites_de_envio', 'estado_dos_avisos', 'tokens_trocados']) expect(sql, tabela).not.toMatch(new RegExp(`grant [^;]* on public\\.${tabela} `))
     const politicas = [...sql.matchAll(/create policy "([^"]+)" on public\.(\w+)\s+for (\w+) to (\w+)/g)].map((m) => `${m[2]}:${m[1]}:${m[3]}:${m[4]}`)
     expect(politicas).toEqual([
       'config_de_emails:dono le:select:authenticated',
@@ -218,5 +218,72 @@ describe('banco: o lado do paciente (017, spec lado-do-paciente)', () => {
     const topo = sql.split('begin;')[0] ?? ''
     expect(topo).toContain('Rode DEPOIS do 001 ao 015 e ANTES de publicar o site e as funções desta versão.')
     expect(topo).toContain('Se rodar o 004, o 012 ou o 015 de')
+    // DP-LP-32: o 017 refaz a marcação do paciente (a do 010) com o corte.
+    expect(topo).toContain('Se rodar o 010 de novo, também')
+  })
+})
+
+describe('banco: a troca do endereço corta quem tinha o link (017, revisão r1, D-1246 e D-1248)', () => {
+  it('DP-LP-32: o link cortado e os endereços trocados, que só o banco escreve', () => {
+    expect(sql).toContain('alter table public.acompanhamentos add column if not exists cortado_em timestamptz')
+    const tabela = sql.slice(sql.indexOf('create table if not exists public.tokens_trocados ('))
+    const definicao = tabela.slice(0, tabela.indexOf(');'))
+    expect(definicao).toContain("token_hash text primary key check (token_hash ~ '^[0-9a-f]{64}$')")
+    expect(definicao).toContain('link_id uuid not null references public.acompanhamentos (id) on delete cascade')
+    // O resumo do token, nunca o token.
+    expect(definicao).not.toMatch(/\btoken text\b/)
+    expect(funcao('create or replace function public.hash_do_token(p_token text)')).toContain("encode(sha256(convert_to(coalesce(p_token, ''), 'UTF8')), 'hex')")
+    expect(sql).toContain('revoke all on function public.hash_do_token(text) from public, anon, authenticated;')
+  })
+
+  it('CA-2289: trocar o token guarda o resumo do de antes e corta os links antigos do mesmo paciente, na mesma conta', () => {
+    const trocar = funcao('create or replace function public.trocar_o_endereco()')
+    expect(trocar).toContain('security definer')
+    expect(trocar).toContain('if new.token is not distinct from old.token then')
+    expect(trocar).toContain('insert into public.tokens_trocados (token_hash, link_id) values (public.hash_do_token(old.token), new.id)')
+    // Os da migração (em cadeia) e os do mesmo paciente, só da mesma conta.
+    expect(trocar).toContain('with recursive antigos (id) as (')
+    expect(trocar).toContain('a.substituido_por = new.id and a.nutricionista_id = new.nutricionista_id')
+    expect(trocar).toContain('new.paciente_id is not null and a.paciente_id = new.paciente_id')
+    expect(trocar).toContain('set cortado_em = now()')
+    expect(sql).toContain('create trigger trocar_o_endereco\n  after update of token on public.acompanhamentos')
+    expect(sql).toContain('revoke all on function public.trocar_o_endereco() from public, anon, authenticated;')
+  })
+
+  it('CA-2293: a troca devolve o link ao e-mail da ficha, encerra os aceites do outro endereço e derruba as confirmações abertas', () => {
+    const trocar = funcao('create or replace function public.trocar_o_endereco()')
+    expect(trocar).toMatch(/update public\.emails_dos_links e\s+set email = e\.email_ficha,/)
+    expect(trocar).toContain("where e.link_id = new.id and e.origem = 'paciente'")
+    expect(trocar).toMatch(/update public\.aceites x set saiu_em = now\(\)\s+where x\.link_id = new\.id and x\.saiu_em is null/)
+    expect(trocar).toContain("delete from public.chaves_de_aviso k where k.link_id = new.id and k.tipo = 'aceite' and k.usado_em is null;")
+  })
+
+  it('CA-2290: a aba antiga não faz o endereço trocado voltar, e o app não escreve o corte', () => {
+    const cuidar = funcao('create or replace function public.cuidar_do_link()')
+    expect(cuidar).toContain('new.cortado_em := null;')
+    expect(cuidar).toContain('new.cortado_em := old.cortado_em;')
+    expect(cuidar).toMatch(/if new\.token is distinct from old\.token then\s+if public\.link_trocado\(new\.token\) then\s+new\.token := old\.token;/)
+    expect(cuidar).toContain("raise exception 'Este endereço já foi usado.' using errcode = '23505';")
+  })
+
+  it('CA-2289: o endereço cortado não abre, não marca, não registra acesso nem desliga aviso, e a tela sabe que foi trocado', () => {
+    const porToken = funcao('create function public.missoes_por_token(p_token text)')
+    expect(porToken).toContain('where p.token = p_token and p.cortado_em is null')
+    expect(porToken).toContain('f.nutricionista_id = pedido.nutricionista_id and f.cortado_em is null')
+    for (const assinatura of ['create or replace function public.registrar_acesso(p_token text)', 'create or replace function public.desligar_aviso(p_token text, p_tipo text)']) {
+      expect(funcao(assinatura), assinatura).toContain('where p.token = p_token and p.cortado_em is null')
+    }
+    const marcar = funcao('create or replace function public.marcar_missoes(p_token text, p_marcacoes jsonb)')
+    expect(marcar).toContain('where token = p_token and cortado_em is null;')
+    expect(marcar).toContain("raise exception 'Este link já guarda marcações demais.' using errcode = '22023';")
+    const trocado = funcao('create or replace function public.link_trocado(p_token text)')
+    expect(trocado).toContain('security definer')
+    expect(trocado).toContain('public.tokens_trocados t where t.token_hash = public.hash_do_token(p_token)')
+    expect(trocado).toContain('a.token = p_token and a.cortado_em is not null')
+    expect(sql).toContain('grant execute on function public.link_trocado(text) to anon, authenticated;')
+  })
+
+  it('DP-LP-6: o link cortado não conta no limite', () => {
+    expect(funcao('create or replace function public.conferir_link_do_paciente()')).toContain('substituido_por is null and cortado_em is null')
   })
 })

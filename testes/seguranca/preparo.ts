@@ -345,6 +345,8 @@ export const TABELAS_FECHADAS: readonly string[] = [
   'supressao',
   'limites_de_envio',
   'estado_dos_avisos',
+  // Revisão r1 (D-1246): os resumos dos endereços trocados.
+  'tokens_trocados',
 ]
 
 const ordenar = (linhas: readonly unknown[]): unknown[] => [...linhas].map((l) => JSON.stringify(l)).sort()

@@ -153,8 +153,11 @@ const numero = (r: Resultado, onde: string): number => {
 export function criarBancoDosAvisos(cliente: SupabaseClient, aleatorio: (tamanho: number) => Uint8Array): BancoDosAvisos {
   const de = (tabela: string) => cliente.from(tabela)
 
+  // D-1246: o link cortado pela troca do endereço não existe para as funções de e-mail.
+  const links = () => de('acompanhamentos').select(COLUNAS_DO_LINK).is('cortado_em', null)
+
   const linkPorId = async (id: string): Promise<LinkDoBanco | null> => {
-    const l = dados(await de('acompanhamentos').select(COLUNAS_DO_LINK).eq('id', id).maybeSingle(), 'link')
+    const l = dados(await links().eq('id', id).maybeSingle(), 'link')
     return l ? paraLink(l as Linha) : null
   }
 
@@ -162,7 +165,7 @@ export function criarBancoDosAvisos(cliente: SupabaseClient, aleatorio: (tamanho
 
   return {
     async linkPorToken(token) {
-      const l = dados(await de('acompanhamentos').select(COLUNAS_DO_LINK).eq('token', token).maybeSingle(), 'link pelo token')
+      const l = dados(await links().eq('token', token).maybeSingle(), 'link pelo token')
       if (!l) return null
       const link = paraLink(l as Linha)
       if (link.substituidoPor === null) return link
@@ -172,18 +175,18 @@ export function criarBancoDosAvisos(cliente: SupabaseClient, aleatorio: (tamanho
     },
     async linksPorIds(ids) {
       if (ids.length === 0) return []
-      return linhas(dados(await de('acompanhamentos').select(COLUNAS_DO_LINK).in('id', [...ids]), 'links')).map(paraLink)
+      return linhas(dados(await links().in('id', [...ids]), 'links')).map(paraLink)
     },
     async linksDaConta(id) {
-      const lidas = await todas((a, b) => de('acompanhamentos').select(COLUNAS_DO_LINK).eq('nutricionista_id', id).is('substituido_por', null).order('id').range(a, b), 'links da conta')
+      const lidas = await todas((a, b) => links().eq('nutricionista_id', id).is('substituido_por', null).order('id').range(a, b), 'links da conta')
       return lidas.map(paraLink)
     },
     async contasComLinks() {
-      const lidas = await todas((a, b) => de('acompanhamentos').select('nutricionista_id').is('substituido_por', null).order('id').range(a, b), 'contas com links')
+      const lidas = await todas((a, b) => de('acompanhamentos').select('nutricionista_id').is('substituido_por', null).is('cortado_em', null).order('id').range(a, b), 'contas com links')
       return [...new Set(lidas.map((l) => String(l['nutricionista_id'])))]
     },
     async linksComA1Vencido(ate) {
-      const lidas = await todas((a, b) => de('acompanhamentos').select(COLUNAS_DO_LINK).not('a1_para', 'is', null).lte('a1_para', ate.toISOString()).order('id').range(a, b), 'A1 vencidos')
+      const lidas = await todas((a, b) => links().not('a1_para', 'is', null).lte('a1_para', ate.toISOString()).order('id').range(a, b), 'A1 vencidos')
       return lidas.map(paraLink)
     },
     async agendarA1(id, quando) {

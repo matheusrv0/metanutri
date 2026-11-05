@@ -421,6 +421,25 @@ describe('o paciente pede sem conta (função meu-link)', () => {
     expect((await c.servico.from('emails_dos_links').select('confirmado_em').eq('link_id', link.id).single()).data?.confirmado_em).not.toBeNull()
   })
 
+  it('CA-2289: depois da troca, o endereço do plano anterior não pede o link por e-mail nem liga aviso', async () => {
+    // O link de um plano anterior (antes do link fixo), que a migração fez apontar para o fixo, e a troca do endereço.
+    const fixo = await novoLink('Rita Prado', endereco('rita'))
+    const antigo = { id: randomUUID(), token: `lp${randomUUID().replace(/-/g, '').slice(0, 16)}` }
+    sem(
+      'o link do plano anterior',
+      (await c.vitima.cliente.from('acompanhamentos').insert({ id: antigo.id, nutricionista_id: c.vitima.id, token: antigo.token, caso_id: 'caso-antigo', paciente_id: `paciente-${fixo.id}`, nome: 'Rita Prado', substituido_por: fixo.id }))
+        .error,
+    )
+    sem('trocar o endereço', (await c.vitima.cliente.from('acompanhamentos').update({ token: `lp${randomUUID().replace(/-/g, '').slice(0, 16)}` }).eq('id', fixo.id)).error)
+    const antes = enviados.length
+    const naoAbre = { status: 404, corpo: { erro: 'Este link não abre mais.' } }
+    for (const token of [antigo.token, fixo.token]) {
+      expect(await meuLink({ metodo: 'POST', ip: null, corpo: { acao: 'receber', token, email: endereco('quem.pegou'), avisos: ['semana'] } }, dependenciasDoMeuLink())).toEqual(naoAbre)
+      expect(await meuLink({ metodo: 'POST', ip: null, corpo: { acao: 'ligar', token, tipo: 'semana' } }, dependenciasDoMeuLink())).toEqual(naoAbre)
+    }
+    expect(enviados.length).toBe(antes)
+  })
+
   it('CA-2236: o domínio sem servidor de e-mail é recusado, e nada sai', async () => {
     const antes = enviados.length
     const r = await meuLink({ metodo: 'POST', ip: null, corpo: { acao: 'receber', token: link.token, email: 'pedro@semservidor.com.br', avisos: [] } }, dependenciasDoMeuLink())

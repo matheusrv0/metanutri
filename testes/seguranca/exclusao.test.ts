@@ -210,7 +210,7 @@ describe('CA-812 a CA-820: a conta com tudo é excluída, e só ela', () => {
   })
 
   it('CA-2284: o e-mail, os aceites, as chaves e os envios do link saem com a conta; a supressão fica, só com o resumo', async () => {
-    for (const tabela of ['emails_dos_links', 'aceites', 'chaves_de_aviso', 'envios']) {
+    for (const tabela of ['emails_dos_links', 'aceites', 'chaves_de_aviso', 'envios', 'tokens_trocados']) {
       const r = await c.servico.from(tabela).select('*').eq('link_id', c.vitima.linkId)
       expect(r.error, tabela).toBeNull()
       expect(r.data, tabela).toEqual([])

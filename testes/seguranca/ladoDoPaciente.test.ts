@@ -15,7 +15,7 @@ beforeAll(async () => {
   c = await prepararCenario()
 })
 
-const TABELAS_NOVAS = ['config_de_emails', 'emails_dos_links', 'aceites', 'chaves_de_aviso', 'envios', 'supressao', 'limites_de_envio', 'estado_dos_avisos'] as const
+const TABELAS_NOVAS = ['config_de_emails', 'emails_dos_links', 'aceites', 'chaves_de_aviso', 'envios', 'supressao', 'limites_de_envio', 'estado_dos_avisos', 'tokens_trocados'] as const
 const MES_MS = 30 * 24 * 60 * 60 * 1000
 const hojeEmBrasilia = (): string => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date())
 
@@ -57,8 +57,8 @@ describe('as portas fechadas das tabelas e das funções novas', () => {
     recusadoCom(await c.anonimo.from(tabela).insert({}).select(), ['42501'])
   })
 
-  it('a conta comum não lê a supressão, as chaves, os limites nem o estado dos avisos', async () => {
-    for (const tabela of ['supressao', 'chaves_de_aviso', 'limites_de_envio', 'estado_dos_avisos']) recusadoCom(await c.atacante.cliente.from(tabela).select('*'), ['42501'])
+  it('a conta comum não lê a supressão, as chaves, os limites, o estado dos avisos nem os endereços trocados', async () => {
+    for (const tabela of ['supressao', 'chaves_de_aviso', 'limites_de_envio', 'estado_dos_avisos', 'tokens_trocados']) recusadoCom(await c.atacante.cliente.from(tabela).select('*'), ['42501'])
   })
 
   it.each([
@@ -69,6 +69,7 @@ describe('as portas fechadas das tabelas e das funções novas', () => {
     ['mascarar_email', { p_email: 'a@b.com' }],
     ['avisos_do_link', { p_link: randomUUID() }],
     ['dono_do_link', { p_link: randomUUID() }],
+    ['hash_do_token', { p_token: 'abcdefghjkmn' }],
     ['pedir_avisos', { p_vez: 'manha' }],
   ] as const)('%s é recusada para visitante, conta comum e administrador', async (funcao, args) => {
     for (const cliente of [c.anonimo, c.atacante.cliente, c.admin.cliente]) barrado(await cliente.rpc(funcao, args))
@@ -363,5 +364,154 @@ describe('o Painel do dono e o servidor (CA-2281, CA-2285)', () => {
     for (const tabela of ['aceites', 'envios', 'chaves_de_aviso', 'emails_dos_links']) {
       barradoOuVazio(await c.servico.from(tabela).select('*').eq('link_id', link.id))
     }
+  })
+})
+
+describe('"Trocar o endereço" corta quem tinha o link (revisão r1: CA-2289, CA-2290, CA-2293, CB-1231)', () => {
+  const daFicha = 'ficha.troca.lp@gmail.com'
+  const doPaciente = 'paciente.troca.lp@gmail.com'
+  let antigo: { readonly id: string; readonly token: string }
+  let fixo: { readonly id: string; readonly token: string }
+  let novo = ''
+
+  const tokenNovo = (): string => `lp${randomUUID().replace(/-/g, '').slice(0, 12)}`
+  const trocado = async (token: string): Promise<unknown> => {
+    const r = await c.anonimo.rpc('link_trocado', { p_token: token })
+    expect(r.error).toBeNull()
+    return r.data
+  }
+
+  beforeAll(async () => {
+    // O link do plano anterior (antes do link fixo) e o fixo, de um paciente da vítima (Solo). A migração do app
+    // (`migrarParaLinkFixo`) aponta o antigo para o fixo, como o 017.
+    antigo = await novoLink(c.vitima, 'paciente-troca', new Date(Date.now() - 2 * MES_MS).toISOString())
+    fixo = await novoLink(c.vitima, 'paciente-troca')
+    sem('migrar', (await c.vitima.cliente.from('acompanhamentos').update({ substituido_por: fixo.id }).eq('id', antigo.id)).error)
+    sem('e-mail da ficha', (await c.vitima.cliente.rpc('definir_email_da_ficha', { p_link: fixo.id, p_email: daFicha })).error)
+    // O paciente deu (e confirmou) o próprio e-mail no link; um aceite em cada endereço e uma confirmação aberta.
+    sem(
+      'e-mail do paciente',
+      (await c.servico.from('emails_dos_links').update({ email: doPaciente, email_hash: await hashDoEmail(doPaciente), origem: 'paciente', confirmado_em: new Date().toISOString() }).eq('link_id', fixo.id)).error,
+    )
+    await aceitar(c.vitima, fixo.id, 'semana', doPaciente)
+    await aceitar(c.vitima, fixo.id, 'plano', daFicha)
+    sem(
+      'confirmação aberta',
+      (
+        await c.servico.from('chaves_de_aviso').insert({
+          chave: randomUUID().replace(/-/g, ''),
+          link_id: fixo.id,
+          nutricionista_id: c.vitima.id,
+          tipo: 'aceite',
+          avisos: ['lembrete'],
+          email_hash: await hashDoEmail(doPaciente),
+          vence_em: new Date(Date.now() + MES_MS).toISOString(),
+        })
+      ).error,
+    )
+  })
+
+  it('antes da troca, o endereço do plano anterior abre o fixo, e nenhum dos dois foi trocado', async () => {
+    expect(await abrir(antigo.token)).toMatchObject({ id: fixo.id, token: fixo.token })
+    expect(await trocado(antigo.token)).toBe(false)
+    expect(await trocado(fixo.token)).toBe(false)
+  })
+
+  it('CA-2289: trocado, o endereço de antes e o do plano anterior não abrem e não levam ao endereço novo', async () => {
+    novo = tokenNovo()
+    sem('trocar o endereço', (await c.vitima.cliente.from('acompanhamentos').update({ token: novo }).eq('id', fixo.id)).error)
+    expect(await abrir(fixo.token)).toBeNull()
+    expect(await abrir(antigo.token)).toBeNull()
+    expect(await abrir(novo)).toMatchObject({ id: fixo.id, token: novo })
+    // A tela sabe que foi trocado (só sim ou não), e o que nunca existiu não foi trocado.
+    expect(await trocado(fixo.token)).toBe(true)
+    expect(await trocado(antigo.token)).toBe(true)
+    expect(await trocado(novo)).toBe(false)
+    expect(await trocado(tokenNovo())).toBe(false)
+    expect((await linhaDoLink(antigo.id))['cortado_em']).not.toBeNull()
+    expect((await linhaDoLink(fixo.id))['cortado_em']).toBeNull()
+    // Só o resumo do endereço de antes fica guardado, e ninguém o lê pela API.
+    const guardados = await c.servico.from('tokens_trocados').select('token_hash, link_id').eq('link_id', fixo.id)
+    expect(JSON.stringify(guardados.data)).not.toContain(fixo.token)
+    expect(guardados.data).toHaveLength(1)
+  })
+
+  it('CA-2289: o endereço cortado não marca, não registra acesso nem desliga aviso', async () => {
+    sem('zerar o acesso', (await c.servico.from('acompanhamentos').update({ ultimo_acesso: null }).eq('id', fixo.id)).error)
+    for (const token of [antigo.token, fixo.token]) {
+      expect((await c.anonimo.rpc('marcar_missoes', { p_token: token, p_marcacoes: [{ dia: '2026-11-04', feitas: ['m1'] }] })).error).toBeNull()
+      expect((await c.anonimo.rpc('registrar_acesso', { p_token: token })).error).toBeNull()
+      expect((await c.anonimo.rpc('desligar_aviso', { p_token: token, p_tipo: 'plano' })).error).toBeNull()
+    }
+    expect((await linhaDoLink(antigo.id))['marcacoes']).toEqual([])
+    expect((await linhaDoLink(fixo.id))['marcacoes']).toEqual([])
+    expect((await linhaDoLink(fixo.id))['ultimo_acesso']).toBeNull()
+    const plano = await c.servico.from('aceites').select('saiu_em').eq('link_id', fixo.id).eq('tipo', 'plano')
+    expect(plano.data).toEqual([{ saiu_em: null }])
+    // O endereço novo marca como sempre.
+    expect((await c.anonimo.rpc('marcar_missoes', { p_token: novo, p_marcacoes: [{ dia: '2026-11-04', feitas: ['m1'] }] })).error).toBeNull()
+    expect((await linhaDoLink(fixo.id))['marcacoes']).toEqual([{ dia: '2026-11-04', feitas: ['m1'] }])
+  })
+
+  it('CA-2293: a troca devolve o link ao e-mail da ficha, encerra o aceite do outro endereço e derruba a confirmação aberta', async () => {
+    const lido = await c.vitima.cliente.rpc('emails_do_link', { p_link: fixo.id })
+    expect(lido.error).toBeNull()
+    expect(lido.data).toMatchObject({ email: daFicha, origem: 'ficha', confirmado_em: null, pendentes: [] })
+    const aceites = await c.servico.from('aceites').select('tipo, email_hash, saiu_em').eq('link_id', fixo.id).order('tipo')
+    expect(aceites.data).toEqual([
+      { tipo: 'plano', email_hash: await hashDoEmail(daFicha), saiu_em: null },
+      { tipo: 'semana', email_hash: await hashDoEmail(doPaciente), saiu_em: expect.any(String) },
+    ])
+    expect((await c.servico.from('chaves_de_aviso').select('chave').eq('link_id', fixo.id).eq('tipo', 'aceite').is('usado_em', null)).data).toEqual([])
+    expect((await abrir(novo))?.['email_mascarado']).toBe(mascararEmail(daFicha))
+  })
+
+  it('CA-2290: a aba antiga que grava o link com o endereço de antes não o faz voltar a abrir', async () => {
+    const r = await c.vitima.cliente.from('acompanhamentos').update({ token: fixo.token, mensagem: 'Bom dia, Juliana.' }).eq('id', fixo.id).select('token, mensagem')
+    expect(r.error).toBeNull()
+    expect(r.data).toEqual([{ token: novo, mensagem: 'Bom dia, Juliana.' }])
+    expect(await abrir(fixo.token)).toBeNull()
+    expect(await abrir(novo)).toMatchObject({ id: fixo.id, mensagem: 'Bom dia, Juliana.' })
+  })
+
+  it('CA-2290: nenhum link novo nasce com um endereço trocado', async () => {
+    const r = await c.vitima.cliente.from('acompanhamentos').insert({ id: randomUUID(), nutricionista_id: c.vitima.id, token: fixo.token, caso_id: 'caso-lp', paciente_id: 'paciente-outro', nome: 'Outro' })
+    recusadoCom(r, ['23505'])
+  })
+
+  it('o app não escreve o corte nem o tira', async () => {
+    sem('tentar tirar o corte', (await c.vitima.cliente.from('acompanhamentos').update({ cortado_em: null, substituido_por: null }).eq('id', antigo.id)).error)
+    expect((await linhaDoLink(antigo.id))['cortado_em']).not.toBeNull()
+    expect(await abrir(antigo.token)).toBeNull()
+    const outro = randomUUID()
+    sem(
+      'criar com o corte',
+      (await c.vitima.cliente.from('acompanhamentos').insert({ id: outro, nutricionista_id: c.vitima.id, token: tokenNovo(), caso_id: 'caso-lp', paciente_id: 'paciente-corte', nome: 'Corte', cortado_em: new Date().toISOString() }))
+        .error,
+    )
+    expect((await linhaDoLink(outro))['cortado_em']).toBeNull()
+  })
+
+  it('CB-1231: trocado duas vezes, os dois endereços de antes dizem "trocado"; removido o link, os resumos saem junto', async () => {
+    const terceiro = tokenNovo()
+    sem('trocar de novo', (await c.vitima.cliente.from('acompanhamentos').update({ token: terceiro }).eq('id', fixo.id)).error)
+    expect(await trocado(fixo.token)).toBe(true)
+    expect(await trocado(novo)).toBe(true)
+    expect(await abrir(novo)).toBeNull()
+    expect(await abrir(terceiro)).toMatchObject({ id: fixo.id })
+    sem('remover o link', (await c.vitima.cliente.from('acompanhamentos').delete().eq('id', fixo.id)).error)
+    expect((await c.servico.from('tokens_trocados').select('token_hash').eq('link_id', fixo.id)).data).toEqual([])
+  })
+
+  it('o corte é da conta: a troca de uma conta não corta o link de outra com o mesmo paciente', async () => {
+    const daVitima = await novoLink(c.vitima, 'paciente-comum')
+    const doServico = randomUUID()
+    sem(
+      'o link da outra conta',
+      (await c.servico.from('acompanhamentos').insert({ id: doServico, nutricionista_id: c.atacante.id, token: tokenNovo(), caso_id: 'caso-lp', paciente_id: 'paciente-comum', nome: 'Comum' })).error,
+    )
+    sem('trocar', (await c.servico.from('acompanhamentos').update({ token: tokenNovo() }).eq('id', doServico)).error)
+    expect((await linhaDoLink(daVitima.id))['cortado_em']).toBeNull()
+    expect(await abrir(daVitima.token)).toMatchObject({ id: daVitima.id })
   })
 })

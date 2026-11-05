@@ -5,11 +5,14 @@
 -- Pode rodar de novo: nenhum dado é apagado (a migração do link fixo só marca os links antigos de cada paciente).
 -- Rode DEPOIS do 001 ao 015 e ANTES de publicar o site e as funções desta versão. Se rodar o 004, o 012 ou o 015 de
 -- novo, rode este logo depois: os três refazem a função do paciente sem as colunas novas. Se rodar o 011 de novo,
--- também: ele refaz o limite de links contando os links substituídos.
+-- também: ele refaz o limite de links contando os links substituídos. Se rodar o 010 de novo, também: ele refaz a
+-- marcação do paciente sem o corte do endereço trocado.
 --
 -- O que muda:
 --   * o link passa a ser do paciente (D-1214): ganha a mensagem, a próxima consulta, o último acesso, a data do plano e o
 --     `substituido_por` da migração (D-1217); o limite da assinatura conta pacientes com link (DP-LP-6);
+--   * "Trocar o endereço" corta todos os endereços antigos do paciente e devolve o link ao e-mail da ficha (D-1246 e
+--     D-1248, revisão de 04/11): o banco guarda só o resumo do token trocado;
 --   * os e-mails ganham tabelas próprias, nenhuma aberta a quem não tem conta: o e-mail do link e as ofertas, os
 --     aceites, as chaves das páginas de aceite e de descadastro, o histórico de envios, a supressão (só o resumo do
 --     endereço), os limites de pedido, a configuração de e-mail da conta e o estado dos avisos;
@@ -37,6 +40,8 @@ alter table public.acompanhamentos add column if not exists ultimo_acesso date;
 alter table public.acompanhamentos add column if not exists substituido_por uuid references public.acompanhamentos (id) on delete cascade;
 -- O A1 agendado (DP-LP-10): só as funções do servidor escrevem.
 alter table public.acompanhamentos add column if not exists a1_para timestamptz;
+-- D-1246 (DP-LP-32): o link antigo que "Trocar o endereço" cortou. Só o banco escreve: cortado, nunca volta a abrir.
+alter table public.acompanhamentos add column if not exists cortado_em timestamptz;
 
 -- A data do plano (o lembrete e o A1 contam a partir dela). Na primeira vez, vale a criação do link; depois, o gatilho
 -- abaixo a muda quando as missões, a dieta ou o plano do link mudam.
@@ -65,6 +70,50 @@ alter table public.acompanhamentos add constraint acompanhamentos_proxima_consul
   check (proxima_consulta is null or proxima_consulta ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2})?$');
 alter table public.acompanhamentos drop constraint if exists acompanhamentos_substituido_por_outro;
 alter table public.acompanhamentos add constraint acompanhamentos_substituido_por_outro check (substituido_por is null or substituido_por <> id);
+
+
+-- ---------- O endereço trocado (D-1246, DP-LP-32, revisão de 04/11) ----------
+
+-- Os endereços que "Trocar o endereço" aposentou: só o resumo (SHA-256) do token, para a tela dizer "Este link foi
+-- trocado." e para nenhum link voltar a abrir com ele. Removido o link, os resumos dele saem junto. Ninguém lê pela API.
+create table if not exists public.tokens_trocados (
+  token_hash text primary key check (token_hash ~ '^[0-9a-f]{64}$'),
+  link_id uuid not null references public.acompanhamentos (id) on delete cascade,
+  trocado_em timestamptz not null default now()
+);
+create index if not exists tokens_trocados_por_link on public.tokens_trocados (link_id);
+alter table public.tokens_trocados enable row level security;
+revoke all on public.tokens_trocados from anon, authenticated;
+
+-- O resumo do token, como o banco o guarda.
+create or replace function public.hash_do_token(p_token text)
+returns text
+language sql
+immutable
+set search_path = public
+as $$
+  select encode(sha256(convert_to(coalesce(p_token, ''), 'UTF8')), 'hex');
+$$;
+
+revoke all on function public.hash_do_token(text) from public, anon, authenticated;
+
+-- CA-2289: o endereço que foi trocado (o resumo guardado) ou o link antigo que a troca cortou. A tela do paciente
+-- pergunta só quando o link não abriu; a resposta é sim ou não, sem nada do link.
+create or replace function public.link_trocado(p_token text)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select coalesce(p_token, '') <> '' and (
+    exists (select 1 from public.tokens_trocados t where t.token_hash = public.hash_do_token(p_token))
+    or exists (select 1 from public.acompanhamentos a where a.token = p_token and a.cortado_em is not null)
+  );
+$$;
+
+revoke all on function public.link_trocado(text) from public;
+grant execute on function public.link_trocado(text) to anon, authenticated;
 
 
 -- ---------- O limite conta pacientes com link (DP-LP-6) e o fixo é da mesma conta ----------
@@ -118,9 +167,9 @@ begin
     v_limite := least(coalesce(v_limite, 1000), 1000);
 
     -- Dois links criados ao mesmo tempo (duas abas) esperam um pelo outro para contar. DP-LP-6: só os links fixos
-    -- (um por paciente) contam.
+    -- (um por paciente) contam; o cortado pela troca do endereço (D-1246) não abre e não conta.
     perform pg_advisory_xact_lock(hashtext('links:' || new.nutricionista_id::text));
-    select count(*) into v_links from public.acompanhamentos where nutricionista_id = new.nutricionista_id and substituido_por is null;
+    select count(*) into v_links from public.acompanhamentos where nutricionista_id = new.nutricionista_id and substituido_por is null and cortado_em is null;
     if v_links >= v_limite then
       raise exception 'Você chegou ao limite de links do seu plano.' using errcode = 'P0001';
     end if;
@@ -135,8 +184,10 @@ create trigger conferir_link_do_paciente
   before insert or update on public.acompanhamentos
   for each row execute function public.conferir_link_do_paciente();
 
--- A data do plano e o que só a nuvem escreve. O app (papel `authenticated`) não grava o último acesso nem o A1 agendado:
--- o primeiro vem do paciente, pelo token; o segundo, das funções do servidor.
+-- A data do plano e o que só a nuvem escreve. O app (papel `authenticated`) não grava o último acesso, o A1 agendado
+-- nem o corte da troca do endereço: o primeiro vem do paciente, pelo token; o segundo, das funções do servidor; o
+-- terceiro, do gatilho da troca (D-1246). E o endereço trocado nunca volta (CA-2290): a aba antiga que grava o link com
+-- o token de antes fica com o token de agora, e nenhum link novo nasce com ele.
 create or replace function public.cuidar_do_link()
 returns trigger
 language plpgsql
@@ -148,6 +199,11 @@ begin
     if current_user in ('authenticated', 'anon') then
       new.ultimo_acesso := null;
       new.a1_para := null;
+      new.cortado_em := null;
+    end if;
+    -- Só o link novo: o upsert que regrava um link que já existe segue para o conflito, como antes.
+    if public.link_trocado(new.token) and not exists (select 1 from public.acompanhamentos where id = new.id) then
+      raise exception 'Este endereço já foi usado.' using errcode = '23505';
     end if;
     return new;
   end if;
@@ -160,6 +216,12 @@ begin
   if current_user in ('authenticated', 'anon') then
     new.ultimo_acesso := old.ultimo_acesso;
     new.a1_para := old.a1_para;
+    new.cortado_em := old.cortado_em;
+  end if;
+  if new.token is distinct from old.token then
+    if public.link_trocado(new.token) then
+      new.token := old.token;
+    end if;
   end if;
   return new;
 end;
@@ -176,12 +238,13 @@ create trigger cuidar_do_link
 -- ---------- A migração para o link fixo (D-1217, DP-LP-5) ----------
 
 -- Em cada conta, o link mais recente de cada paciente é o fixo; os outros do mesmo paciente passam a abrir o fixo e
--- guardam as marcações deles. Link sem paciente fica como está. Rodar de novo não muda o que já foi marcado.
+-- guardam as marcações deles. Link sem paciente fica como está. Rodar de novo não muda o que já foi marcado. O link
+-- cortado pela troca do endereço (D-1246) não entra: ele nunca volta a ser o fixo.
 with ordenados as (
   select a.id,
          first_value(a.id) over (partition by a.nutricionista_id, a.paciente_id order by a.criado_em desc, a.id desc) as fixo
     from public.acompanhamentos a
-   where a.paciente_id is not null and a.substituido_por is null
+   where a.paciente_id is not null and a.substituido_por is null and a.cortado_em is null
 )
 update public.acompanhamentos a
    set substituido_por = o.fixo
@@ -346,6 +409,63 @@ create table if not exists public.estado_dos_avisos (
 insert into public.estado_dos_avisos (id) values (1) on conflict (id) do nothing;
 
 
+-- ---------- "Trocar o endereço" corta quem tinha o link (D-1246, D-1248, DP-LP-32, DP-LP-35) ----------
+
+-- Depois de o token do link mudar: o resumo do token de antes fica guardado (CA-2289, CB-1231); os links antigos do
+-- mesmo paciente na mesma conta, os que a migração fez apontar para este (em cadeia) e os do mesmo `paciente_id`,
+-- ficam cortados; e o link volta ao e-mail da ficha (CA-2293): o e-mail que o paciente deu sai, as confirmações
+-- abertas caem e os aceites de outro endereço se encerram. Roda como o dono das funções: o app não escreve o corte.
+create or replace function public.trocar_o_endereco()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if new.token is not distinct from old.token then
+    return null;
+  end if;
+  insert into public.tokens_trocados (token_hash, link_id) values (public.hash_do_token(old.token), new.id)
+    on conflict (token_hash) do nothing;
+
+  with recursive antigos (id) as (
+    select a.id from public.acompanhamentos a
+     where a.substituido_por = new.id and a.nutricionista_id = new.nutricionista_id
+    union
+    select a.id from public.acompanhamentos a
+      join antigos on a.substituido_por = antigos.id
+     where a.nutricionista_id = new.nutricionista_id
+  )
+  update public.acompanhamentos a
+     set cortado_em = now()
+   where a.cortado_em is null
+     and a.id <> new.id
+     and a.nutricionista_id = new.nutricionista_id
+     and (a.id in (select antigos.id from antigos) or (new.paciente_id is not null and a.paciente_id = new.paciente_id));
+
+  update public.emails_dos_links e
+     set email = e.email_ficha,
+         email_hash = case when e.email_ficha is null then null else public.hash_do_email(e.email_ficha) end,
+         origem = case when e.email_ficha is null then null else 'ficha' end,
+         confirmado_em = null,
+         atualizado_em = now()
+   where e.link_id = new.id and e.origem = 'paciente';
+  update public.aceites x set saiu_em = now()
+   where x.link_id = new.id and x.saiu_em is null
+     and x.email_hash is distinct from (select e.email_hash from public.emails_dos_links e where e.link_id = new.id);
+  delete from public.chaves_de_aviso k where k.link_id = new.id and k.tipo = 'aceite' and k.usado_em is null;
+  return null;
+end;
+$$;
+
+revoke all on function public.trocar_o_endereco() from public, anon, authenticated;
+
+drop trigger if exists trocar_o_endereco on public.acompanhamentos;
+create trigger trocar_o_endereco
+  after update of token on public.acompanhamentos
+  for each row execute function public.trocar_o_endereco();
+
+
 -- ---------- Quem lê e quem escreve as tabelas novas ----------
 
 alter table public.config_de_emails enable row level security;
@@ -485,7 +605,8 @@ grant execute on function public.avisos_do_link(uuid) to service_role;
 -- ---------- A porta do paciente (D-1210, D-1213, D-1217, CA-2212, CA-2235, CA-2256) ----------
 
 -- A mesma função do 015, com as colunas novas no fim. O token antigo de um paciente abre o link fixo dele (DP-LP-5): o
--- `token` devolvido é o do fixo, e a tela troca o endereço. O nome da nutricionista vem do Perfil publicado ou da conta
+-- `token` devolvido é o do fixo, e a tela troca o endereço. O token cortado pela troca do endereço não abre nada
+-- (D-1246): ele nunca chega ao token novo. O nome da nutricionista vem do Perfil publicado ou da conta
 -- (DP-LP-8); o e-mail, só mascarado. O dono do link nunca sai na resposta (CA-1974). Tem que derrubar antes: o Postgres
 -- não deixa `create or replace` mudar o tipo de retorno de uma função que já existe.
 drop function if exists public.missoes_por_token(text);
@@ -521,13 +642,13 @@ as $$
   with pedido as (
     select p.id, p.substituido_por, p.nutricionista_id
       from public.acompanhamentos p
-     where p.token = p_token
+     where p.token = p_token and p.cortado_em is null
      limit 1
   ),
   alvo as (
     select coalesce(f.id, pedido.id) as id
       from pedido
-      left join public.acompanhamentos f on f.id = pedido.substituido_por and f.nutricionista_id = pedido.nutricionista_id
+      left join public.acompanhamentos f on f.id = pedido.substituido_por and f.nutricionista_id = pedido.nutricionista_id and f.cortado_em is null
   )
   select a.id, a.token, a.caso_id, a.paciente_id, a.nome, a.criado_em, a.missoes, a.marcacoes, a.uso_nao_comercial, a.dieta,
          m.logo, m.cor,
@@ -549,7 +670,7 @@ revoke all on function public.missoes_por_token(text) from public;
 grant execute on function public.missoes_por_token(text) to anon, authenticated;
 
 -- D-1223 e CA-2239: o link registra o dia (de Brasília) em que foi aberto, só a data, uma vez por dia. O token antigo
--- registra no fixo.
+-- registra no fixo; o cortado pela troca do endereço não registra nada (CA-2289).
 create or replace function public.registrar_acesso(p_token text)
 returns void
 language plpgsql
@@ -562,8 +683,8 @@ declare
 begin
   select coalesce(f.id, p.id) into v_link
     from public.acompanhamentos p
-    left join public.acompanhamentos f on f.id = p.substituido_por and f.nutricionista_id = p.nutricionista_id
-   where p.token = p_token
+    left join public.acompanhamentos f on f.id = p.substituido_por and f.nutricionista_id = p.nutricionista_id and f.cortado_em is null
+   where p.token = p_token and p.cortado_em is null
    limit 1;
   if v_link is null then
     return;
@@ -572,7 +693,8 @@ begin
 end;
 $$;
 
--- CA-2256: o paciente desliga um aviso no próprio link, na hora (ligar manda o S3, pela função `meu-link`).
+-- CA-2256: o paciente desliga um aviso no próprio link, na hora (ligar manda o S3, pela função `meu-link`). O token
+-- cortado pela troca do endereço não mexe em nada (CA-2289).
 create or replace function public.desligar_aviso(p_token text, p_tipo text)
 returns void
 language plpgsql
@@ -587,8 +709,8 @@ begin
   end if;
   select coalesce(f.id, p.id) into v_link
     from public.acompanhamentos p
-    left join public.acompanhamentos f on f.id = p.substituido_por and f.nutricionista_id = p.nutricionista_id
-   where p.token = p_token
+    left join public.acompanhamentos f on f.id = p.substituido_por and f.nutricionista_id = p.nutricionista_id and f.cortado_em is null
+   where p.token = p_token and p.cortado_em is null
    limit 1;
   if v_link is null then
     return;
@@ -597,10 +719,35 @@ begin
 end;
 $$;
 
+-- A marcação do paciente (a do 010, CA-426), com o corte: o token cortado pela troca do endereço não grava nada
+-- (CA-2289). Sem erro: a tela dele já mostra "Este link foi trocado.".
+create or replace function public.marcar_missoes(p_token text, p_marcacoes jsonb)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if jsonb_typeof(p_marcacoes) is distinct from 'array' then
+    raise exception 'marcacoes precisa ser uma lista';
+  end if;
+
+  if pg_column_size(p_marcacoes) > 1048576 or jsonb_array_length(p_marcacoes) > 1500 then
+    raise exception 'Este link já guarda marcações demais.' using errcode = '22023';
+  end if;
+
+  update public.acompanhamentos
+  set marcacoes = p_marcacoes, atualizado_em = now()
+  where token = p_token and cortado_em is null;
+end;
+$$;
+
 revoke all on function public.registrar_acesso(text) from public;
 revoke all on function public.desligar_aviso(text, text) from public;
+revoke all on function public.marcar_missoes(text, jsonb) from public;
 grant execute on function public.registrar_acesso(text) to anon, authenticated;
 grant execute on function public.desligar_aviso(text, text) to anon, authenticated;
+grant execute on function public.marcar_missoes(text, jsonb) to anon, authenticated;
 
 
 -- ---------- A nutricionista: o e-mail do link e as ofertas (D-1227, DP-LP-7) ----------
@@ -982,11 +1129,13 @@ commit;
 
 -- Conferência depois de rodar (copie para uma consulta nova):
 -- select column_name from information_schema.columns where table_schema = 'public' and table_name = 'acompanhamentos'
---    and column_name in ('mensagem', 'mensagem_em', 'proxima_consulta', 'ultimo_acesso', 'substituido_por', 'plano_em', 'a1_para') order by 1;
--- -- sete linhas
+--    and column_name in ('mensagem', 'mensagem_em', 'proxima_consulta', 'ultimo_acesso', 'substituido_por', 'plano_em', 'a1_para', 'cortado_em') order by 1;
+-- -- oito linhas
 -- select relname, relrowsecurity from pg_class where relnamespace = 'public'::regnamespace and relname in
---    ('config_de_emails', 'emails_dos_links', 'aceites', 'chaves_de_aviso', 'envios', 'supressao', 'limites_de_envio', 'estado_dos_avisos') order by 1;
--- -- oito linhas, todas true
+--    ('config_de_emails', 'emails_dos_links', 'aceites', 'chaves_de_aviso', 'envios', 'supressao', 'limites_de_envio', 'estado_dos_avisos', 'tokens_trocados') order by 1;
+-- -- nove linhas, todas true
+-- select tgname from pg_trigger where tgrelid = 'public.acompanhamentos'::regclass and tgname in ('cuidar_do_link', 'trocar_o_endereco') order by 1;
+-- -- duas linhas (D-1246: a troca do endereço corta os endereços antigos)
 -- select has_table_privilege('anon', 'public.envios', 'select') as anon_le, has_table_privilege('authenticated', 'public.supressao', 'select') as logado_le_supressao;
 -- -- false, false
 -- select pg_get_function_result('public.missoes_por_token(text)'::regprocedure);
