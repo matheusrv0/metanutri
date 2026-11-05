@@ -309,7 +309,8 @@ describe('D-1102: as bases que entram', () => {
   it('CA-2113: da base ampliada, só o sugerível', () => {
     registrarBaseAmpliada(BASE_AMPLIADA)
     const candidatos = lista(buscar(ARROZ, 150, [CHO], { limite: 500 }))
-    expect(candidatos.some((c) => c.alimento.descricao === 'Macarrão, trigo, cozido')).toBe(true)
+    // D-1134: "Macarrão, trigo, cozido" e "Macarrão, trigo, com ovos, cozido" são o mesmo alimento; a lista traz um.
+    expect(candidatos.some((c) => /^Macarrão, trigo,( com ovos,)? cozido$/.test(c.alimento.descricao))).toBe(true)
     const naoSugeriveis = new Set(BASE_AMPLIADA.filter((a) => a.ampliada?.sugerivel !== true).map((a) => a.id))
     expect(lista(buscar(ARROZ, 150, [CHO], { mesmoGrupo: false, limite: 1000 })).some((c) => naoSugeriveis.has(c.alimento.id))).toBe(false)
   })

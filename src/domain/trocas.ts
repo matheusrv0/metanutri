@@ -149,11 +149,8 @@ const PECAS_DE_FRUTA: ReadonlySet<string> = new Set(['unidade', 'unidade pequena
 /** "Arroz, tipo 1, cozido" → "arroz": o que vem antes da primeira vírgula. */
 const nomeBase = (descricao: string): string => (descricao.split(',')[0] ?? descricao).trim().toLowerCase()
 
-/**
- * Todo pão começa por "Pão,": o que distingue o pão é a parte seguinte ("Pão, milho", "Pão, trigo"). A busca de
- * substitutos usa o mesmo nome para a variedade (spec busca-substitutos, D-1130).
- */
-export const nomeDaVariedade = (a: Alimento): string =>
+/** Todo pão começa por "Pão,": o que distingue o pão é a parte seguinte ("Pão, milho", "Pão, trigo"). */
+const nomeDaVariedade = (a: Alimento): string =>
   papelDe(a) === 'pao' ? partesDoNome(a.descricao).slice(0, 2).join(', ') : nomeBase(a.descricao)
 
 /**

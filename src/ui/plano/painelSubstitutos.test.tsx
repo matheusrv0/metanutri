@@ -412,10 +412,12 @@ describe('D-1117: a base ampliada chegando', () => {
     await usuario.click(screen.getByRole('button', { name: `Buscar substitutos para ${ARROZ}` }))
     await usuario.click(gaveta().getByRole('button', { name: /^Mostrar mais/ }))
     expect(gaveta().getByText('Parte da base ainda está carregando; a lista pode crescer.')).toBeInTheDocument()
-    expect(gaveta().queryByText('Macarrão, trigo, cozido')).not.toBeInTheDocument()
+    // D-1134: "Macarrão, trigo, cozido" e "Macarrão, trigo, com ovos, cozido" são o mesmo alimento; a lista traz um.
+    const macarrao = /^Macarrão, trigo,( com ovos,)? cozido$/
+    expect(gaveta().queryByText(macarrao)).not.toBeInTheDocument()
     liberar(arquivo as unknown as ArquivoBaseAmpliada)
     await waitFor(() => expect(gaveta().queryByText('Parte da base ainda está carregando; a lista pode crescer.')).not.toBeInTheDocument())
-    expect(gaveta().getByText('Macarrão, trigo, cozido')).toBeInTheDocument()
+    expect(gaveta().getByText(macarrao)).toBeInTheDocument()
   })
 })
 

@@ -9,7 +9,7 @@ import { unidadeDo } from './liquido.ts'
 import { CAFE_OU_CHA, ehDeUsoComum, ehFrito, ehPoOuDesidratado, ehPratoComposto, ehProcessado, ehSegundaEscolha, ehUltraprocessado } from './prescritivel.ts'
 import { casaRestricao, comoRestricoes, ehNaoGosta, type RestricoesDoPaciente } from './restricoes.ts'
 import { ehPrescritivelParaSugerir } from './sugestaoDoProprio.ts'
-import { ehTrocaRazoavel, macroDominante, nomeDaVariedade } from './trocas.ts'
+import { ehTrocaRazoavel, macroDominante } from './trocas.ts'
 import type { Alimento, BuscarAlimento, ChaveNutrienteAlimento, MedidaDoItem } from './tipos.ts'
 import { FIGADO } from './vitaminaA.ts'
 
@@ -300,25 +300,63 @@ export function naTrocaEquivalente(base: Alimento, gramas: number): (candidato: 
 }
 
 /**
- * D-1130: a regra de variedade das trocas da folha ("trocar arroz tipo 1 por arroz tipo 2 não é troca"), sobre a lista já
- * ordenada. Do alimento do próprio item fica no máximo uma variação: a que o paciente não recusa, a mais consumida no
- * Brasil (POF 2017-2018, como nas trocas do papel e da fruta) e, empatadas, a primeira na ordem (arroz tipo 1 → arroz
- * integral; feijão carioca → feijão preto, CA-2105). Da fruta inteira, nenhuma (D-422: banana prata não troca por banana
- * nanica); do suco e da polpa, uma (D-1131: o suco de laranja troca pela laranja). O limite de duas por nome que as trocas
- * usam nos outros alimentos não vem: a busca mostra 20, e a batata inglesa, a doce e a baroa são alimentos diferentes
- * (CA-2103).
+ * D-1134: a parte do nome que diz só o preparo, o estado e a conservação, o "tipo N", o "com" ou "sem" alguma coisa ou a
+ * forma do corte. Dois nomes que diferem só nessas partes são o mesmo alimento ("Arroz, tipo 1, cozido" e "Arroz, tipo 2,
+ * cozido"; "Pintado, assado" e "Pintado, grelhado"); o que sobra diz o alimento ("Queijo, minas, frescal" não é
+ * "Queijo, ricota").
  */
-function semOutraVariedade(base: Alimento, ordenados: readonly Ordenavel[]): readonly Ordenavel[] {
-  const nome = nomeDaVariedade(base)
-  const daMesma = (o: Ordenavel) => nomeDaVariedade(o.candidato.alimento) === nome
-  if (ehFrutaInteira(base)) return ordenados.filter((o) => !daMesma(o))
+const SO_PREPARO =
+  /^(crus?|cruas?|(pré )?cozid[oa]s?(\/\d+ ?minutos)?( (com|sem) sal| no vapor)?|assad[oa]s?|grelhad[oa]s?|frit[oa]s?|refogad[oa]s?|torrad[oa]s?|ensopad[oa]s?|pochê|sauté|tipo \d+|(com|sem) .+|salgad[oa]s?|congelad[oa]s?|fresc[oa]s?|enlatad[oa]s?|drenad[oa]s?|(em )?conserva( em .+)?|uht|parboilizad[oa]s?|filé|posta|moíd[oa]s?|\d+% magr[oa]s?)$/
+
+/** As partes do nome, em minúsculas; hífen e espaço contam igual, e o "filé mingnon" da TACO é o filé-mignon. */
+const partesDoNome = (descricao: string): readonly string[] =>
+  descricao
+    .split(',')
+    .map((p) => p.trim().toLowerCase().replace(/-/g, ' ').replace(/\s+/g, ' ').replace('mingnon', 'mignon'))
+    .filter((p) => p !== '')
+
+/**
+ * D-1134: o alimento, pelo nome sem o preparo. Na fruta, o nome da fruta (D-422: banana prata e banana nanica são a mesma
+ * fruta); o suco e a polpa são outro alimento que a fruta inteira (D-1131).
+ */
+export function mesmoAlimentoDe(a: Alimento): string {
+  const [alimento = '', ...resto] = partesDoNome(a.descricao)
+  if (ehSucoOuPolpaDeFruta(a)) return `${alimento} (suco ou polpa)`
+  if (ehFrutaInteira(a)) return alimento
+  return [alimento, ...resto.filter((p) => !SO_PREPARO.test(p))].join(', ')
+}
+
+/** D-422: a fruta inteira não troca pela mesma fruta, nem pelo suco dela. */
+const daMesmaFruta = (base: Alimento): ((a: Alimento) => boolean) => {
+  if (!ehFrutaInteira(base)) return () => false
+  const fruta = mesmoAlimentoDe(base)
+  return (a) => (ehFrutaInteira(a) || ehSucoOuPolpaDeFruta(a)) && partesDoNome(a.descricao)[0] === fruta
+}
+
+/**
+ * D-1130: a regra de variedade das trocas da folha ("trocar arroz tipo 1 por arroz tipo 2 não é troca"), sobre a lista já
+ * ordenada e para todo nome dela, com "o mesmo alimento" da D-1134. Do mesmo alimento do item, nenhum (arroz tipo 1 → nem
+ * tipo 2 nem parboilizado; a fruta inteira, nem outra variedade nem o suco da mesma fruta, D-422). De cada outro alimento,
+ * um: o que o paciente não recusa, o mais consumido no Brasil (POF 2017-2018, como nas trocas do papel e da fruta) e,
+ * empatados, o primeiro na ordem (batata inglesa → arroz tipo 1, não o tipo 1 e o tipo 2; patinho → um pintado só).
+ */
+function umDeCadaAlimento(base: Alimento, ordenados: readonly Ordenavel[]): readonly Ordenavel[] {
+  const doItem = mesmoAlimentoDe(base)
+  const mesmaFruta = daMesmaFruta(base)
   // `x` vem antes na ordem: no empate, ele fica.
   const melhor = (x: Ordenavel, y: Ordenavel): Ordenavel => {
     if (x.naoGosta !== y.naoGosta) return x.naoGosta ? y : x
     return naPof(y.candidato.alimento) < naPof(x.candidato.alimento) ? y : x
   }
-  const fica = ordenados.filter(daMesma).reduce<Ordenavel | null>((m, o) => (m === null ? o : melhor(m, o)), null)
-  return ordenados.filter((o) => !daMesma(o) || o === fica)
+  const porAlimento = new Map<string, Ordenavel>()
+  for (const o of ordenados) {
+    const alimento = mesmoAlimentoDe(o.candidato.alimento)
+    if (alimento === doItem || mesmaFruta(o.candidato.alimento)) continue
+    const atual = porAlimento.get(alimento)
+    porAlimento.set(alimento, atual === undefined ? o : melhor(atual, o))
+  }
+  const ficam = new Set(porAlimento.values())
+  return ordenados.filter((o) => ficam.has(o))
 }
 
 /** CA-2145: a frase do painel quando o item é café ou chá. */
@@ -392,7 +430,7 @@ export function buscarSubstitutos(
   }
 
   const melhor = candidatos.reduce((m, o) => Math.min(m, o.candidato.proximidade), Number.POSITIVE_INFINITY)
-  const ordenados = semOutraVariedade(base, candidatos.sort(compararCandidatos(melhor)))
+  const ordenados = umDeCadaAlimento(base, candidatos.sort(compararCandidatos(melhor)))
     .slice(0, opcoes.limite ?? LIMITE_DA_BUSCA)
     .map((o) => o.candidato)
   return { tipo: 'lista', candidatos: ordenados, restricaoTirou }

@@ -4,9 +4,9 @@
 // de três e o pó pelo nome. Rodada 3 (04/11/2026): D-1133, o macro dominante só fora dos grupos da seção 3 da spec.
 import arquivo from '../data/base-ampliada.json'
 import { decodificarBaseAmpliada, type ArquivoBaseAmpliada } from './baseAmpliada.ts'
-import { buscarSubstitutos, ENERGIA_QUASE_ZERO_KCAL, naTrocaEquivalente, nutrienteInicial, textoDaPorcao, type Candidato } from './buscaDeSubstitutos.ts'
+import { buscarSubstitutos, ENERGIA_QUASE_ZERO_KCAL, mesmoAlimentoDe, naTrocaEquivalente, nutrienteInicial, textoDaPorcao, type Candidato } from './buscaDeSubstitutos.ts'
 import { grupoDeSubstituicao } from './grupoDeSubstituicao.ts'
-import { ehDeUsoComum, ehPoOuDesidratado } from './prescritivel.ts'
+import { ehDeUsoComum, ehPoOuDesidratado, ehPrescritivel } from './prescritivel.ts'
 import { montarRestricoes } from './restricoes.ts'
 import { ALIMENTOS, alimentosParaSugerir, buscarAlimento, registrarBaseAmpliada } from './tabelas.ts'
 import type { Alimento, ChaveNutrienteAlimento } from './tipos.ts'
@@ -177,11 +177,14 @@ describe('D-1125: a troca equivalente no mesmo grupo', () => {
     expect(batatas).toHaveLength(3)
   })
 
-  it('CA-2143 (D-1130): do feijão carioca, a variação mais consumida (POF), o feijão preto, e nenhum outro feijão', () => {
+  it('CA-2143 (D-1130, rodada 3): do feijão carioca, o feijão preto; cada feijão é outro alimento e aparece uma vez só', () => {
     const carioca = porNome('Feijão, carioca, cozido')
     for (const nutrientes of [['proteina_g', 'carboidrato_g'], ['carboidrato_g']] as const) {
-      const feijoes = vista(carioca, 140, nutrientes).filter((c) => /^Feijão,/.test(c.alimento.descricao))
-      expect(feijoes.map((c) => c.alimento.descricao), nutrientes.join('+')).toEqual(['Feijão, preto, cozido'])
+      const feijoes = vista(carioca, 140, nutrientes)
+        .filter((c) => /^Feijão,/.test(c.alimento.descricao))
+        .map((c) => c.alimento.descricao)
+      expect(feijoes, nutrientes.join('+')).toContain('Feijão, preto, cozido')
+      expect(new Set(feijoes).size, nutrientes.join('+')).toBe(feijoes.length)
     }
   })
 
@@ -311,4 +314,94 @@ describe('D-1133: o grupo da tabela já diz que a troca é equivalente', () => {
     expect(naTrocaEquivalente(frango, 100)(quibebe, mesmaEnergia)).toBe(false)
     expect(nomes('Frango, com açafrão', 100, 'lipideos_g')).not.toContain('Quibebe')
   })
+})
+
+describe('D-1130 e D-1134 (rodada 3): o mesmo alimento, em toda a lista', () => {
+  const mesmo = (x: string, y: string) => mesmoAlimentoDe(porNome(x)) === mesmoAlimentoDe(porNome(y))
+
+  it('CA-2148: o que difere só pelo preparo, pelo estado, pelo "tipo N" ou por "com/sem" é o mesmo alimento', () => {
+    for (const [x, y] of [
+      ['Arroz, tipo 1, cozido', 'Arroz, tipo 2, cozido'],
+      ['Arroz, tipo 1, cozido', 'Arroz, parboilizado, cozido'],
+      ['Pintado, assado', 'Pintado, grelhado'],
+      ['Abadejo, filé, congelado, assado', 'Abadejo, filé, congelado,cozido'],
+      ['Abadejo, filé, congelado, assado', 'Abadejo, filé, congelado, grelhado'],
+      ['Carne, bovina, filé mingnon, sem gordura, grelhado', 'Carne, bovina, filé-mignon, sem gordura, assado'],
+      ['Frango, peito, sem pele, grelhado', 'Frango, peito, com pele, assado'],
+      ['Ovo, de galinha, inteiro, cozido/10minutos', 'Ovo, de galinha, inteiro, pochê'],
+      ['Batata, inglesa, cozida', 'Batata, inglesa, com casca, assada'],
+      ['Cereais, milho, flocos, com sal', 'Cereais, milho, flocos, sem sal'],
+      ['Farinha, de mandioca, crua', 'Farinha, de mandioca, torrada'],
+      ['Sardinha, assada', 'Sardinha, conserva em óleo'],
+      ['Banana, prata, crua', 'Banana, nanica, crua'],
+      ['Manga, Haden, crua', 'Manga, Palmer, crua'],
+    ] as const) {
+      expect(mesmo(x, y), `${x} = ${y}`).toBe(true)
+    }
+  })
+
+  it('CA-2148: o resto do nome diz o alimento: tipos de queijo, de feijão e de batata, cortes, leites e o suco são outros', () => {
+    for (const [x, y] of [
+      ['Arroz, integral, cozido', 'Arroz, tipo 1, cozido'],
+      ['Queijo, minas, frescal', 'Queijo, ricota'],
+      ['Queijo, minas, frescal', 'Queijo, minas, meia cura'],
+      ['Batata, inglesa, cozida', 'Batata, doce, cozida'],
+      ['Batata, inglesa, cozida', 'Batata, baroa, cozida'],
+      ['Carne, bovina, patinho, sem gordura, grelhado', 'Carne, bovina, alcatra, sem gordura, assada'],
+      ['Feijão, carioca, cozido', 'Feijão, preto, cozido'],
+      ['Leite, de vaca, integral', 'Leite, de vaca, desnatado, UHT'],
+      ['Pão, trigo, francês', 'Pão, trigo, forma, integral'],
+      ['Laranja, pêra, suco', 'Laranja, pêra, crua'],
+    ] as const) {
+      expect(mesmo(x, y), `${x} ≠ ${y}`).toBe(false)
+    }
+  })
+
+  const nomesDaVista = (base: string, gramas: number) => vista(porNome(base), gramas).map((c) => c.alimento.descricao.trim())
+  const queijos = (nomes: readonly string[]) => nomes.filter((n) => /^Queijo,/.test(n))
+
+  it('CA-2147: cada queijo troca por outros queijos', () => {
+    for (const gramas of [30, 100]) {
+      const n = nomesDaVista('Queijo, minas, frescal', gramas)
+      expect(queijos(n).length, `${gramas} g: ${n.join(' | ')}`).toBeGreaterThanOrEqual(3)
+    }
+    // Os queijos que a nutricionista prescreve (o petit suisse de morango é ultraprocessado).
+    for (const queijo of ALIMENTOS.filter((a) => /^Queijo,/.test(a.descricao.trim()) && ehPrescritivel(a))) {
+      const n = nomesDaVista(queijo.descricao.trim(), 30)
+      expect(queijos(n).length, `${queijo.descricao}: ${n.join(' | ')}`).toBeGreaterThanOrEqual(2)
+    }
+  })
+
+  it('CA-2147: a batata inglesa traz a batata-doce e a baroa, e o arroz uma vez só', () => {
+    const n = nomesDaVista('Batata, inglesa, cozida', 150)
+    expect(n).toEqual(expect.arrayContaining(['Batata, doce, cozida', 'Batata, baroa, cozida']))
+    expect(n.filter((x) => /^Arroz, tipo [12], cozido$/.test(x)), n.join(' | ')).toHaveLength(1)
+  })
+
+  it('CA-2147: o patinho traz outros cortes bovinos, e nenhum alimento em duas formas', () => {
+    const n = nomesDaVista('Carne, bovina, patinho, sem gordura, grelhado', 100)
+    expect(n.filter((x) => /^Carne, bovina,/.test(x)).length, n.join(' | ')).toBeGreaterThanOrEqual(2)
+    expect(n.filter((x) => /^Pintado,/.test(x)).length, n.join(' | ')).toBeLessThanOrEqual(1)
+    expect(n.filter((x) => /^Abadejo,/.test(x)).length, n.join(' | ')).toBeLessThanOrEqual(1)
+  })
+
+  it('CA-2147: em toda busca, nenhum candidato é o mesmo alimento do item nem o de outro candidato', () => {
+    const erros = new Map<string, string>()
+    const bases = [...ALIMENTOS, ...alimentosParaSugerir().filter((a) => a.id > 100_000)]
+    for (const base of bases) {
+      for (const mesmoGrupo of [true, false]) {
+        const candidatos = vista(base, 100, [nutrienteInicial(base)], mesmoGrupo, 1000)
+        const vistos = new Map<string, string>()
+        for (const c of candidatos) {
+          const alimento = mesmoAlimentoDe(c.alimento)
+          const onde = `${base.descricao.trim()} (${mesmoGrupo ? 'grupo' : 'todos'}) → ${c.alimento.descricao.trim()}`
+          if (alimento === mesmoAlimentoDe(base) && !erros.has('o mesmo alimento do item')) erros.set('o mesmo alimento do item', onde)
+          const antes = vistos.get(alimento)
+          if (antes !== undefined && !erros.has('dois do mesmo alimento')) erros.set('dois do mesmo alimento', `${onde} e ${antes}`)
+          vistos.set(alimento, c.alimento.descricao.trim())
+        }
+      }
+    }
+    expect(Object.fromEntries(erros)).toEqual({})
+  }, 600_000)
 })
