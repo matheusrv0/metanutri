@@ -166,3 +166,12 @@ baixos. Decisões D-1337 a D-1341 (e a do cancelamento, depois da prova no edge-
 - [x] **T22 — Texto da IA limpo de contato (D-1340, CA-2393).** `cortar` passa pela limpeza; a NFKC só onde há contato.
 - [x] **T23 — Formatos novos de contato (D-1341, CA-2394).** `iaContrato.ts`; os 22 formatos da revisão viram teste.
 - [x] **T24 — Recomendação leve: id de "Meus alimentos" (D-1343, CA-2395).** `iaContrato.ts`.
+
+## 8. Rodada de correção 3 (revisão de segurança, 04/11/2026)
+
+A revisão da rodada 3 aprovou o servidor, com três achados baixos da limpeza nova, a corrigir antes de a tela mostrar o
+texto da IA. Decisões D-1344 a D-1346, testes CA-2396 a CA-2398:
+
+- [x] **T25 — Faixas, "IG" e a NFKC antes dos sinais (D-1344 a D-1346, CA-2396 a CA-2398).** `iaContrato.ts`
+  (`ehContatoNumerico`, `PERFIL_DEPOIS_DA_REDE`, `SINAIS_DE_MARCACAO` em `limparTexto`, `limparTextoDaIa` e `textoCurto`) e
+  `iaPrompt.ts` (`seguro` com os mesmos sinais); as sondas da rodada 3 viram teste em `servidorIaContrato.test.ts`.
