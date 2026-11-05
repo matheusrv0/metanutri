@@ -22,7 +22,9 @@ import { comCuidadosDaFase, montarRestricoes, SEM_RESTRICOES } from './restricoe
 import { ALIMENTOS, alimentosParaSugerir, buscarAlimento, registrarBaseAmpliada, registrarProdutos } from './tabelas.ts'
 import type { Alimento, ChaveNutrienteAlimento } from './tipos.ts'
 import { MICRONUTRIENTES_ADEQUACAO } from './adequacao.ts'
-import { MEDIDAS_DE_CONTAR, MAXIMO_DE_PEDACOS } from './busca.ts'
+import { MEDIDAS_DE_CONTAR, MAXIMO_DE_PEDACOS, medidaParaMostrar } from './busca.ts'
+import { grupoDeSubstituicao } from './grupoDeSubstituicao.ts'
+import { unidadeDo } from './liquido.ts'
 
 const ARROZ = 3
 const FRANGO_GRELHADO = 410
@@ -448,5 +450,65 @@ describe('CB-1109: a busca roda sobre a base inteira sem travar', () => {
 
   it('a base da TACO tem o que o gabarito pede', () => {
     expect(ALIMENTOS.length).toBe(597)
+  })
+})
+
+describe('D-1135: a medida do leite, do iogurte e da bebida', () => {
+  const COPOS = new Set(['copo americano', 'copo grande'])
+
+  it('CA-2149: em toda busca, o líquido vem em copo ou só em ml, e nenhum leite ou iogurte em copo de requeijão', () => {
+    registrarBaseAmpliada(BASE_AMPLIADA)
+    try {
+      const erros = new Map<string, string>()
+      let liquidos = 0
+      const bases = [...ALIMENTOS, ...alimentosParaSugerir().filter((a) => a.id > 100_000)]
+      for (const base of bases) {
+        for (const mesmoGrupo of [true, false]) {
+          for (const gramas of [30, 150, 240]) {
+            const r = buscar(base.id, gramas, [nutrienteInicial(base)], { mesmoGrupo, limite: 1000 })
+            if (r.tipo !== 'lista') continue
+            for (const c of r.candidatos) {
+              const onde = `${base.descricao.trim()} ${gramas} g → ${cartao(c)}`
+              if (unidadeDo(c.alimento) === 'ml') {
+                liquidos += 1
+                if (c.medida !== null && !COPOS.has(c.medida.nome) && !erros.has('líquido fora do copo')) erros.set('líquido fora do copo', onde)
+              }
+              if (grupoDeSubstituicao(c.alimento).id === 'leite' && c.medida?.nome === 'copo de requeijão' && !erros.has('copo de requeijão no leite')) {
+                erros.set('copo de requeijão no leite', onde)
+              }
+            }
+          }
+        }
+      }
+      expect(liquidos).toBeGreaterThan(1000)
+      expect(Object.fromEntries(erros)).toEqual({})
+    } finally {
+      registrarBaseAmpliada([])
+    }
+  }, 600_000)
+
+  it('CA-2149: no lugar de 1 copo americano de leite integral, nem copo de requeijão nem xícara', () => {
+    const LEITE_INTEGRAL = 458
+    const textos = lista(buscar(LEITE_INTEGRAL, 150, [LIP], { limite: 1000 })).map(cartao)
+    expect(textos.length).toBeGreaterThanOrEqual(3)
+    expect(textos.filter((t) => /copo de requeijão|xícara/.test(t))).toEqual([])
+    // O leite de cabra vem em copo americano, no lugar do "meio copo de requeijão · 120 ml" da rodada 2.
+    expect(textos.find((t) => t.startsWith('Leite, de cabra'))).toMatch(/· 1 copo americano · 150 ml ·/)
+  })
+
+  it('CA-2149: a bebida de soja e o leite semidesnatado saem em ml, como os outros leites', () => {
+    const soja = ALIMENTOS.find((a) => a.descricao.trim() === 'Soja, extrato solúvel, natural, fluido')
+    const semidesnatado = BASE_AMPLIADA.find((a) => a.descricao.trim() === 'Leite, de vaca, semidesnatado')
+    expect(soja && unidadeDo(soja)).toBe('ml')
+    expect(semidesnatado && unidadeDo(semidesnatado)).toBe('ml')
+    const LEITE_INTEGRAL = 458
+    const daSoja = lista(buscar(LEITE_INTEGRAL, 150, [LIP])).find((c) => c.alimento.id === soja?.id)
+    expect(daSoja && textoDaPorcao(daSoja)).toMatch(/^\d+ ml$/)
+  })
+
+  it('CA-2149: fora da busca, a medida do plano, da folha e do link não muda', () => {
+    // 240 ml de leite integral continuam "1 copo de requeijão" no plano; a regra é só da busca.
+    expect(medidaParaMostrar(458, 240)?.medida).toBe('copo de requeijão')
+    expect(medidaParaMostrar(458, 240, (nome) => nome !== 'copo de requeijão')?.medida).not.toBe('copo de requeijão')
   })
 })

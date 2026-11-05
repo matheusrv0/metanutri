@@ -4,8 +4,8 @@
 import { MICRONUTRIENTES_ADEQUACAO } from './adequacao.ts'
 import { MAXIMO_DE_PEDACOS, MEDIDAS_DE_CONTAR, medidaParaMostrar, medidasDoAlimento } from './busca.ts'
 import { posicaoNoConsumo } from './consumoPof.ts'
-import { ehFrutaInteira, ehSucoOuPolpaDeFruta, noMesmoGrupo, temGrupoConhecido } from './grupoDeSubstituicao.ts'
-import { unidadeDo } from './liquido.ts'
+import { ehFrutaInteira, ehSucoOuPolpaDeFruta, grupoDeSubstituicao, noMesmoGrupo, temGrupoConhecido } from './grupoDeSubstituicao.ts'
+import { ehLiquido, unidadeDo } from './liquido.ts'
 import { CAFE_OU_CHA, ehDeUsoComum, ehFrito, ehPoOuDesidratado, ehPratoComposto, ehProcessado, ehSegundaEscolha, ehUltraprocessado } from './prescritivel.ts'
 import { casaRestricao, comoRestricoes, ehNaoGosta, type RestricoesDoPaciente } from './restricoes.ts'
 import { ehPrescritivelParaSugerir } from './sugestaoDoProprio.ts'
@@ -192,11 +192,25 @@ export function mensagemSemCandidato(restricaoTirou: boolean): string {
   return `Nenhum substituto com esses nutrientes${restricaoTirou ? ' dentro das restrições do paciente' : ''}. Tire um nutriente, desligue “Só do mesmo grupo” ou adicione manualmente.`
 }
 
+/** D-1135: o copo de beber; o copo de requeijão é a embalagem do requeijão. */
+const COPOS: ReadonlySet<string> = new Set(['copo americano', 'copo grande'])
+const COPO_DE_REQUEIJAO = 'copo de requeijão'
+
+/**
+ * D-1135: no líquido (leite, bebida, suco: o que sai em ml), a porção é em copo ou só em ml; no iogurte e nos outros do
+ * grupo dos leites, qualquer medida menos o copo de requeijão. Os outros alimentos usam todas as medidas, como sempre.
+ */
+function medidasAceitas(a: Alimento): ((nomeDaMedida: string) => boolean) | undefined {
+  if (ehLiquido(a)) return (nome) => COPOS.has(nome)
+  if (grupoDeSubstituicao(a).id === 'leite') return (nome) => nome !== COPO_DE_REQUEIJAO
+  return undefined
+}
+
 /** A porção na meia medida caseira (D-1104); `null` quando ela não serve (fora de 5 a 600 g ou mais de 4 pedaços). */
 function porcaoDe(a: Alimento, gramasIdeais: number): Pick<Candidato, 'gramas' | 'medida' | 'textoDaMedida'> | null {
   const gramas = Math.round(gramasIdeais)
   if (gramas < PORCAO_MINIMA_G || gramas > PORCAO_MAXIMA_G) return null
-  const medida = medidaParaMostrar(a.id, gramas)
+  const medida = medidaParaMostrar(a.id, gramas, medidasAceitas(a))
   if (medida && MEDIDAS_DE_CONTAR.has(medida.medida) && medida.quantidade > MAXIMO_DE_PEDACOS) return null
   const peso = medida ? medidasDoAlimento(a.id).find((m) => m.nome === medida.medida)?.gramas : undefined
   if (!medida || !peso) return { gramas, medida: null, textoDaMedida: null }
