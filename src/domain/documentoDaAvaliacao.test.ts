@@ -110,6 +110,24 @@ describe('documentoDaAvaliacao: a avaliação de exemplo (CA-2459)', () => {
     expect(d.somaDasDobras).toBe('Soma das 7 dobras: 158,0 mm')
   })
 
+  it('CB-1481 (D-1521): JP 3 num plano de antes, o "●" na suprailíaca de linha não informada, a que a conta usou', () => {
+    const v = criarCasoVazio('antigo')
+    const caso: Caso = {
+      ...v,
+      modo: 'completo',
+      pacienteId: 'renata',
+      dataConsulta: '2026-11-03',
+      sexo: 'F',
+      idadeAnos: 34,
+      pesoKg: 70,
+      estaturaCm: 165,
+      composicao: { ...v.composicao, protocolo: 'jackson-pollock-3', dobras: { ...v.composicao.dobras, tricipital: 20, suprailiaca: 18, coxa: 25 } },
+    }
+    const antigo = doc(av(caso), [av(caso)])
+    expect(antigo.dobras.filter((x) => x.usada).map((x) => x.nome)).toEqual(['Tríceps', 'Suprailíaca, linha não informada', 'Coxa'])
+    expect(antigo.somaDasDobras).toBe('Soma das 3 dobras: 63,0 mm')
+  })
+
   it('os diâmetros numa linha', () => {
     expect(d.diametros).toBe('Punho (biestiloide) 5,1 · Cotovelo (úmero) 6,2 · Joelho (fêmur) 9,1 cm')
   })

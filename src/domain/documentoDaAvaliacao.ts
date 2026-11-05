@@ -8,7 +8,7 @@ import { comparacaoEntre, formatarNumero, numeroComUnidade, opcoesDoMotor, type 
 import { gorduraDoCaso, type GorduraDoCaso } from './indicadoresDeGordura.ts'
 import { medidaValida, type LinhaDoResultado } from './linhaDoResultado.ts'
 import type { Paciente } from './pacientes.ts'
-import { protocoloPorId, type DobraCutanea } from './protocolosDeDobras.ts'
+import { dobrasUsadas, type DobraCutanea } from './protocolosDeDobras.ts'
 import { resultadoAntropometrico } from './resultadoAntropometrico.ts'
 import type { Caso, OrigemDasMedidas, Sexo } from './tipos.ts'
 
@@ -183,16 +183,11 @@ const ORDEM_DAS_DOBRAS: readonly (readonly [DobraCutanea, string])[] = [
   ['supraespinal', 'Supraespinal'],
 ]
 
-/** D-1493: as dobras do protocolo; a suprailíaca sem linha (Guedes, Faulkner) é a de linha não informada com valor, senão a média. */
-function dobrasUsadas(caso: Caso): ReadonlySet<DobraCutanea> {
-  const protocolo = protocoloPorId(caso.composicao.protocolo)
-  if (!protocolo || caso.sexo === null) return new Set()
-  const dobras = caso.composicao.dobras
-  return new Set(protocolo.porSexo[caso.sexo].dobras.map((d) => (d === 'suprailiaca' && medidaValida(dobras.suprailiaca) === null ? 'suprailiacaMed' : d)))
-}
+/** D-1493 e D-1521: as dobras cujo valor entrou na conta (a suprailíaca de linha não informada, quando foi ela). */
+const dobrasUsadasNoCaso = (caso: Caso): ReadonlySet<DobraCutanea> => new Set(dobrasUsadas(caso.composicao.protocolo, caso.sexo, caso.composicao.dobras))
 
 function dobrasDo(caso: Caso): DobraDoDocumento[] {
-  const usadas = dobrasUsadas(caso)
+  const usadas = dobrasUsadasNoCaso(caso)
   return ORDEM_DAS_DOBRAS.flatMap(([chave, nome]) => {
     const v = medidaValida(caso.composicao.dobras[chave])
     return v === null ? [] : [{ nome, valor: formatarNumero(v, 1), usada: usadas.has(chave) }]
@@ -284,7 +279,7 @@ export function documentoDaAvaliacao({ atual, avaliacoes, paciente }: EntradaDoD
   const linhas = linhasDoMotor(caso)
   const comValor = linhas.filter((l) => l.valor !== null)
   const soma = comValor.find((l) => l.id === 'soma-de-dobras')
-  const nDobras = dobrasUsadas(caso).size
+  const nDobras = dobrasUsadasNoCaso(caso).size
   const resultados = comValor.filter((l) => l.id !== 'soma-de-dobras').map((linha) => ({ nome: NOME_NO_DOCUMENTO[linha.id] ?? linha.nome, linha }))
   const referencias = [...new Set([...(gordura?.fontes ?? []), ...comValor.flatMap((l) => (l.fonte ? [l.fonte] : []))].map((f) => f.citacao))]
   const campos = camposDoPaciente(caso, paciente, posicao)

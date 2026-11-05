@@ -7,7 +7,7 @@ import type { OpcoesDaGordura } from '@/domain/indicadoresDeGordura.ts'
 import { medidaValida, type CampoQueFalta, type Detalhe, type IdDaLinha, type LinhaDoResultado, type NivelDaSituacao } from '@/domain/linhaDoResultado.ts'
 import type { BaseDoPeso, PesoIdeal } from '@/domain/pesoDeReferencia.ts'
 import type { Evidencia, FaixaDeProteina, PerfilDeAtividade, SugestaoDeProteina } from '@/domain/pontoDePartida.ts'
-import { conversaoDoProtocolo, protocoloPorId, type DobraCutanea, type Dobras, type IdProtocolo, type Protocolo, type VarianteDoProtocolo } from '@/domain/protocolosDeDobras.ts'
+import { conversaoDoProtocolo, dobrasUsadas, protocoloPorId, type DobraCutanea, type Dobras, type IdProtocolo, type Protocolo, type VarianteDoProtocolo } from '@/domain/protocolosDeDobras.ts'
 import type { Caso, OrigemDasMedidas, PontoDaCintura, Sexo } from '@/domain/tipos.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
 
@@ -142,14 +142,13 @@ const ORDEM_DAS_DOBRAS: readonly { readonly chave: DobraCutanea; readonly nome: 
 ]
 
 /**
- * As dobras da tela e as marcadas (D-1412 e D-1413). A suprailíaca marcada é a da linha do protocolo; nos que não
- * registram a linha (Guedes, Faulkner), a de linha não informada quando ela tem valor, senão a da axilar média.
- * `mostrar` diz se a dobra que só aparece com valor continua à vista (a que a pessoa apagou nesta sessão).
+ * As dobras da tela e as marcadas (D-1412, D-1413 e D-1521): marcadas são as que entram na conta. A suprailíaca é a da
+ * linha do protocolo quando tem valor; sem ela, a que o motor usa (a de linha não informada dos planos de antes); sem
+ * nenhuma, a da linha do protocolo (Guedes e Faulkner, a da axilar média). `mostrar` diz se a dobra que só aparece com
+ * valor continua à vista (a que a pessoa apagou nesta sessão).
  */
 export function dobrasNaTela(id: IdProtocolo, sexo: Sexo | null, dobras: Dobras, mostrar: (chave: DobraCutanea) => boolean = () => false): DobraNaTela[] {
-  const protocolo = protocoloPorId(id)
-  const exigidas = protocolo && sexo !== null ? protocolo.porSexo[sexo].dobras : []
-  const marcadas = new Set<DobraCutanea>(exigidas.map((d) => (d === 'suprailiaca' && medidaValida(dobras.suprailiaca) === null ? 'suprailiacaMed' : d)))
+  const marcadas = new Set<DobraCutanea>(dobrasUsadas(id, sexo, dobras))
   return ORDEM_DAS_DOBRAS.filter((d) => !d.soComValor || medidaValida(dobras[d.chave]) !== null || mostrar(d.chave)).map((d) => ({ chave: d.chave, nome: d.nome, marcada: marcadas.has(d.chave) }))
 }
 

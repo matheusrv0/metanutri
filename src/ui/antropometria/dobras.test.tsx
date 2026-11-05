@@ -57,6 +57,20 @@ describe('as dobras na tela (spec antropometria-telas, CA-2420 a CA-2426)', () =
     expect(cartao().queryByRole('textbox', { name: 'Supraespinal' })).not.toBeInTheDocument()
   })
 
+  it('CB-1481 (D-1521): JP 3 num plano de antes marca a suprailíaca de linha não informada, a que entra na conta', () => {
+    abrirAvaliacao(casoDe({ sexo: 'F', idadeAnos: 34, pesoKg: 70, estaturaCm: 165, composicao: { protocolo: 'jackson-pollock-3' }, dobras: { tricipital: 20, suprailiaca: 18, coxa: 25 } }))
+    expect(marcadas()).toEqual(['Tríceps', 'Suprailíaca · linha não informada', 'Coxa'])
+    expect(cartao().getByRole('textbox', { name: 'Suprailíaca · axilar anterior' }).className).toMatch(/text-muted-foreground/)
+    expect(cartao().getByText('As 3 dobras marcadas entram no protocolo. As outras ficam guardadas.')).toBeInTheDocument()
+  })
+
+  it('D-1521: a marcada é a que entra na conta; sem nenhuma com valor, a da linha do protocolo', () => {
+    const marcadasDe = (d: Partial<typeof vazias>) => dobrasNaTela('jackson-pollock-3', 'F', { ...vazias, ...d }).filter((x) => x.marcada).map((x) => x.chave)
+    expect(marcadasDe({})).toEqual(['tricipital', 'suprailiacaAnt', 'coxa'])
+    expect(marcadasDe({ suprailiaca: 18, suprailiacaAnt: 19 })).toEqual(['tricipital', 'suprailiacaAnt', 'coxa'])
+    expect(marcadasDe({ suprailiacaMed: 17 })).toEqual(['tricipital', 'suprailiacaMed', 'coxa'])
+  })
+
   it('CA-2423: homem de 65 anos com Jackson & Pollock 3, fora da população de origem', () => {
     abrirAvaliacao(casoDe({ sexo: 'M', idadeAnos: 65, composicao: { protocolo: 'jackson-pollock-3' } }))
     expect(cartao().getByText('Fora da população de origem: homens dos EUA, de 18 a 61 anos.')).toBeInTheDocument()

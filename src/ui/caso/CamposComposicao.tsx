@@ -1,5 +1,5 @@
 import { PROTOCOLOS, calcularComposicao, completarBioimpedancia, type ProtocoloDobras } from '@/domain/composicao.ts'
-import { protocoloPorId } from '@/domain/protocolosDeDobras.ts'
+import { dobrasUsadas, protocoloPorId, type DobraCutanea } from '@/domain/protocolosDeDobras.ts'
 import type { Caso } from '@/domain/tipos.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
 import { Fontes } from '@ds/componentes/display/Fontes.tsx'
@@ -17,14 +17,19 @@ interface CamposComposicaoProps {
   readonly aoAbrirAvaliacao?: (() => void) | undefined
 }
 
-const NOME_DOBRA: Record<string, string> = {
+/** Os nomes da avaliação completa: a suprailíaca leva a linha, para as duas telas mostrarem o mesmo campo (D-1520). */
+const NOME_DOBRA: Readonly<Partial<Record<DobraCutanea, string>>> = {
   tricipital: 'Tricipital',
   subescapular: 'Subescapular',
-  suprailiaca: 'Supra-ilíaca',
+  suprailiaca: 'Suprailíaca · linha não informada',
+  suprailiacaAnt: 'Suprailíaca · axilar anterior',
+  suprailiacaMed: 'Suprailíaca · axilar média',
   abdominal: 'Abdominal',
   peitoral: 'Peitoral',
   coxa: 'Coxa',
 }
+
+const SUPRAILIACAS: readonly DobraCutanea[] = ['suprailiaca', 'suprailiacaAnt', 'suprailiacaMed']
 
 /** Dobras cutâneas e bioimpedância, com o resultado e a fonte da equação usada. Mora dentro de um Recolhivel. */
 export function CamposComposicao({ caso, aoAlterar, comDobras = true, aoAbrirAvaliacao }: CamposComposicaoProps) {
@@ -32,7 +37,11 @@ export function CamposComposicao({ caso, aoAlterar, comDobras = true, aoAbrirAva
   // O protocolo gravado pode ser um dos 8 do motor (spec antropometria-telas, D-1434); a etapa 1 conhece os 2 de hoje.
   const deHoje = PROTOCOLOS.find((p) => p.id === composicao.protocolo)
   const protocolo = deHoje ?? PROTOCOLOS[0]
-  const usadas = caso.sexo && protocolo ? protocolo.necessarias(caso.sexo) : []
+  // D-1520 e D-1521 (spec antropometria-telas): as dobras que entram na conta são as que a avaliação completa marca. A
+  // suprailíaca da etapa 1 é a dela (em JP 3 na mulher, a da axilar anterior); sem uso no protocolo, a de linha não informada.
+  const usadas = deHoje ? dobrasUsadas(deHoje.id, caso.sexo, composicao.dobras) : []
+  const suprailiaca = usadas.find((d) => SUPRAILIACAS.includes(d)) ?? 'suprailiaca'
+  const campos: readonly DobraCutanea[] = ['tricipital', 'subescapular', suprailiaca, 'abdominal', 'peitoral', 'coxa']
 
   const resultado = calcularComposicao({
     protocolo: protocolo?.id ?? 'jackson-pollock-3',
@@ -78,7 +87,7 @@ export function CamposComposicao({ caso, aoAlterar, comDobras = true, aoAbrirAva
       {comDobras && deHoje ? (
         <>
           <div className="grid gap-4 sm:grid-cols-3">
-            {(Object.keys(NOME_DOBRA) as (keyof typeof composicao.dobras)[]).map((chave) => (
+            {campos.map((chave) => (
               <CampoNumero
                 key={chave}
                 rotulo={NOME_DOBRA[chave] ?? chave}
