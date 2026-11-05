@@ -8,13 +8,24 @@ interface TabelaAvaliacoesProps {
 }
 
 /**
- * Quais datas aparecem em cada largura (D-1440, como o protótipo): no computador, todas; no tablet, a primeira e a
- * atual; no celular, só a atual. As colunas "Desde" ficam sempre. Com uma avaliação só, ela é a atual.
+ * Quais datas aparecem em cada largura (D-1440 e D-1526): no computador, todas; no tablet e no celular, a primeira e a
+ * atual, como o gráfico. As colunas "Desde" ficam sempre. Com uma avaliação só, ela é a atual.
  */
 function classeDaData(coluna: ColunaDoHistorico, total: number): string {
-  if (total === 1 || coluna.papel === 'atual') return ''
-  if (coluna.papel === 'primeira') return 'max-sm:hidden'
+  if (total === 1 || coluna.papel !== null) return ''
   return 'max-lg:hidden'
+}
+
+/** "12/05/2026", com o ano escondido abaixo de 640 px ("12/05", como as colunas "Desde"; D-1526): cabe em 360 px. */
+function DataDaColuna({ data }: { readonly data: string }) {
+  const corte = data.lastIndexOf('/')
+  if (corte < 0) return data
+  return (
+    <>
+      {data.slice(0, corte)}
+      <span className="max-sm:hidden">{data.slice(corte)}</span>
+    </>
+  )
 }
 
 const SUB_DA_DATA = { primeira: 'primeira', atual: 'atual' } as const
@@ -56,7 +67,9 @@ export function TabelaAvaliacoes({ historico }: TabelaAvaliacoesProps) {
                 </th>
                 {colunas.map((c) => (
                   <th key={c.casoId} scope="col" className={cn('whitespace-nowrap pb-1.5 max-sm:pl-2 pl-3 text-right font-normal', classeDaData(c, total))}>
-                    <b className="block text-[0.8125rem] font-semibold text-foreground">{c.data}</b>
+                    <b className="block text-[0.8125rem] font-semibold text-foreground">
+                      <DataDaColuna data={c.data} />
+                    </b>
                     {total > 1 && c.papel ? SUB_DA_DATA[c.papel] : null}
                   </th>
                 ))}

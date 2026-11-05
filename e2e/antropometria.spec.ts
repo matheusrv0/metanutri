@@ -176,9 +176,17 @@ test.describe('antropometria: a F1 no celular (390 px, toque)', () => {
     expect(cabe, 'a lista corta "Avaliação de 03/11/2026"').toBe(true)
 
     await page.getByRole('radio', { name: 'Histórico' }).click()
-    await expect(page.getByRole('table', { name: 'Avaliações' })).toBeVisible()
+    const avaliacoes = page.getByRole('table', { name: 'Avaliações' })
+    await expect(avaliacoes).toBeVisible()
     await semRolagemLateral(page, 'Histórico')
     await alvosDe44(page, 'Histórico')
+    // CB-1486 (D-1526): a primeira e a atual, sem o ano, e as duas "Desde"; as do meio somem; a tabela cabe na tela.
+    const datas = await avaliacoes.evaluate((t) =>
+      [...t.querySelectorAll('thead th')].filter((th) => th instanceof HTMLElement && th.offsetWidth > 0).map((th) => th.querySelector('b')?.innerText ?? th.textContent),
+    )
+    expect(datas).toEqual(['Medida', '12/05', '03/11', 'Desde 08/09', 'Desde 12/05'])
+    const direita = await avaliacoes.evaluate((t) => t.getBoundingClientRect().right)
+    expect(direita, 'a tabela do Histórico passa da tela').toBeLessThanOrEqual(390)
 
     await page.getByRole('button', { name: 'Gerar documento' }).click()
     const dialogo = page.getByRole('dialog', { name: 'Documento da avaliação' })

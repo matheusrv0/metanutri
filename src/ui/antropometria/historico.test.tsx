@@ -224,4 +224,19 @@ describe('a vista Histórico (T16)', () => {
     abrirHistorico()
     expect(screen.getByText('Mesmo protocolo e mesmo ponto de cintura nas quatro')).toBeInTheDocument()
   })
+
+  it('CB-1486 (D-1526): abaixo de 640 px ficam a primeira e a atual, sem o ano, e as duas "Desde"; as do meio somem', () => {
+    abrirHistorico()
+    const cabecas = within(tabela()).getAllByRole('columnheader')
+    const [, primeira, meio1, meio2, atual, desdeAnterior, desdePrimeira] = cabecas
+    if (!primeira || !meio1 || !meio2 || !atual || !desdeAnterior || !desdePrimeira) throw new Error('faltam colunas')
+    for (const sempre of [primeira, atual, desdeAnterior, desdePrimeira]) expect(sempre.className).not.toMatch(/hidden/)
+    for (const meio of [meio1, meio2]) expect(meio.className).toMatch(/max-lg:hidden/)
+    // O ano das duas datas some no celular ("12/05", como as colunas "Desde"); o texto inteiro continua no computador.
+    for (const data of [primeira, atual]) expect(within(data).getByText('/2026').className).toMatch(/max-sm:hidden/)
+    const peso = within(tabela()).getByRole('rowheader', { name: /^Peso/ }).closest('tr')
+    if (!(peso instanceof HTMLElement)) throw new Error('sem a linha do peso')
+    const celulas = within(peso).getAllByRole('cell')
+    expect(celulas.map((c) => /hidden/.test(c.className))).toEqual([false, true, true, false, false, false])
+  })
 })
