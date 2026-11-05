@@ -280,6 +280,10 @@ enorme, avaliação vazia, 350 kg e dobra de 90 mm, duas avaliações no mesmo d
 gestante e diagnóstico longo, em 360, 390 e 1440 px. Os achados viraram CB-1454 e CB-1455. Falta a F2 (T21 a T25) e a
 T26.
 
+**Correções da revisão r1 (04/11/2026, ramo `antropometria-com-main`):** R1 a R6 feitas, um commit cada, depois do
+commit `docs` das decisões. As sondas do revisor que afirmavam o defeito (S4, S10 e S12) agora falham na asserção do
+defeito, e as contraprovas (os mesmos cenários com a asserção corrigida, fora do repositório) passam.
+
 ## Matriz CA × teste
 
 Preenchida na validação (T26). Da F1 já feita: CA-2449 a CA-2456 e CB-1412 em `src/ui/antropometria/historico.test.tsx`;
@@ -288,3 +292,13 @@ D-1491 a D-1498, CB-1444, CB-1447) em `src/domain/documentoDaAvaliacao.test.ts`;
 `src/domain/persistencia.test.ts`; CB-1449 e CB-1450 em `src/domain/pontoDePartida.test.ts` (CA-2445 na tela); CB-1453 em
 `pontoDePartida.test.tsx` e `textosDaAvaliacao.test.ts`; CA-2400, CA-2410, CA-2421, CA-2430, CA-2449, CA-2457,
 CA-2470, CA-2471 e CB-1452 em `e2e/antropometria.spec.ts`.
+
+Revisão r1: CB-1480 em `src/domain/composicao.test.ts` e `src/ui/caso/etapa1Antropometria.test.tsx`; CB-1481 em
+`src/domain/protocolosDeDobras.test.ts`, `composicao.test.ts`, `documentoDaAvaliacao.test.ts`, `etapa1Antropometria.test.tsx`
+e `src/ui/antropometria/dobras.test.tsx`; CB-1482 em `protocolosDeDobras.test.ts`, `composicao.test.ts` e
+`etapa1Antropometria.test.tsx`; CB-1483 em `src/domain/caso.test.ts`, `pesoEstatura.test.tsx` e
+`circunferencias.test.tsx`; CB-1484 em `caso.test.ts`, `historicoAntropometrico.test.ts`, `pesoEstatura.test.tsx` e
+`documento.test.tsx`; CB-1485 em `pesoEstatura.test.tsx` e `circunferencias.test.tsx`; CB-1486 em `historico.test.tsx` e
+`e2e/antropometria.spec.ts` (390 px); CB-1487 em `prioridadeClinica.test.ts`, `metaDePerda.test.ts`,
+`pontoDePartida.test.ts` e `textosDaAvaliacao.test.ts`; CB-1488 em `avaliacoesDoPaciente.test.ts` e `src/App.test.tsx`;
+CB-1489 em `avaliacoesDoPaciente.test.ts` e `telaAntropometria.test.tsx`.
