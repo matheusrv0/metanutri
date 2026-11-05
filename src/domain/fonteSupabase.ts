@@ -11,7 +11,7 @@ import { lerDadosDoLink, separarDadosDoLink } from './dadosDoLink.ts'
 import { lerDieta } from './dietaDoLink.ts'
 import { lerMarcaDoLink, separarMarca } from './marca.ts'
 import type { Missao } from './missoes.ts'
-import { fonteLocal, LinkSemConexao, MarcacaoRecusada, type AcompanhamentoDoLink, type FonteAcompanhamentos, type RepositorioAcompanhamentos } from './repositorioAcompanhamentos.ts'
+import { fonteLocal, LinkSemConexao, LinkTrocado, MarcacaoRecusada, type AcompanhamentoDoLink, type FonteAcompanhamentos, type RepositorioAcompanhamentos } from './repositorioAcompanhamentos.ts'
 
 interface ErroDoBanco {
   readonly message: string
@@ -164,7 +164,11 @@ export function fonteSupabase(cliente: ClienteMissoes, opcoes: OpcoesFonteSupaba
       const acompanhamento = daLinha(linha)
       // Spec marca-no-link (CA-1974): a marca vem na mesma linha; a função de antes não a traz, e o link abre sem ela.
       // Spec lado-do-paciente: o nome da nutricionista, o e-mail mascarado e os avisos também (só se mostram).
-      return acompanhamento ? { ...acompanhamento, marca: lerMarcaDoLink(linha), doLink: lerDadosDoLink(linha) } : null
+      if (acompanhamento) return { ...acompanhamento, marca: lerMarcaDoLink(linha), doLink: lerDadosDoLink(linha) }
+      // Revisão r1 (D-1246, CA-2289): o endereço trocado tem a tela dele. Sem resposta (ou banco sem o 017), vale o
+      // "não abre mais" de sempre.
+      if (await foiTrocado(cliente, token)) throw new LinkTrocado()
+      return null
     },
 
     /**
@@ -180,6 +184,16 @@ export function fonteSupabase(cliente: ClienteMissoes, opcoes: OpcoesFonteSupaba
   }
 }
 
+/** A nuvem diz que o endereço foi trocado (`link_trocado`, supabase/017): só um sim conta. */
+async function foiTrocado(cliente: ClienteMissoes, token: string): Promise<boolean> {
+  try {
+    const { data, error } = await cliente.rpc('link_trocado', { p_token: token })
+    return error === null && data === true
+  } catch {
+    return false
+  }
+}
+
 /** O link sem a marca (DP-ML-14) e sem os dados do link (spec lado-do-paciente) que vieram com ele. */
 const semMarca = (link: AcompanhamentoDoLink): Acompanhamento => separarDadosDoLink(separarMarca(link).acompanhamento).link
 
@@ -187,7 +201,8 @@ const semMarca = (link: AcompanhamentoDoLink): Acompanhamento => separarDadosDoL
  * A fonte do link do paciente (spec revisao-geral-publica, D-232): a nuvem, com a cópia do aparelho por trás. Sem
  * servidor, só o aparelho, como antes (CB-239). Com servidor:
  * - abrir: vale o da nuvem; sem ele, a cópia do aparelho (CA-754); sem os dois, nulo quando a nuvem respondeu que o
- *   link não existe (CA-755), e `LinkSemConexao` quando ela nem respondeu (CA-753);
+ *   link não existe (CA-755), e `LinkSemConexao` quando ela nem respondeu (CA-753); o endereço trocado (D-1246) rejeita
+ *   com `LinkTrocado`, e a cópia dele sai do aparelho (CA-2289);
  * - marcar: grava pela função do paciente e só depois a cópia do aparelho. Sem resposta da nuvem, rejeita com
  *   `LinkSemConexao`; recusada por um motivo da nuvem ("Este link já guarda marcações demais."), com `MarcacaoRecusada`
  *   e o motivo (M-3b). Nos dois casos nada é gravado aqui (CA-756), e a tela não finge que salvou.
@@ -216,10 +231,20 @@ export function fonteDoPaciente(cliente: ClienteMissoes | null, repositorio: Rep
     naNuvem: true,
     async porToken(token) {
       const { pedido, fonte } = daNuvem()
-      const achado = await fonte.porToken(token).catch(() => {
-        pedido.falhou = true
+      let trocado = false
+      const achado = await fonte.porToken(token).catch((erro: unknown) => {
+        if (erro instanceof LinkTrocado) trocado = true
+        else pedido.falhou = true
         return null
       })
+      if (trocado) {
+        const copiaVelha = repositorio.porToken(token)
+        if (copiaVelha) {
+          repositorio.remover(copiaVelha.id)
+          aoSalvar()
+        }
+        throw new LinkTrocado()
+      }
       if (achado) return achado
       const copia = repositorio.porToken(token)
       if (copia) return copia

@@ -12,7 +12,7 @@ import { separarDadosDoLink, SEM_DADOS_DO_LINK, temAvisoOferecido, textoDosAviso
 import { registrarAcesso, type ClienteDosEmails } from '@/domain/emailsDoLink.ts'
 import { separarMarca, SEM_MARCA, type MarcaDoLink } from '@/domain/marca.ts'
 import { esquecerPlano, lembrarPlano, trocarTokenLembrado } from '@/domain/meusPlanos.ts'
-import { MarcacaoRecusada, type FonteAcompanhamentos } from '@/domain/repositorioAcompanhamentos.ts'
+import { LinkTrocado, MarcacaoRecusada, type FonteAcompanhamentos } from '@/domain/repositorioAcompanhamentos.ts'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { Logo } from '@ds/componentes/display/Logo.tsx'
 import { armazenamentoLocal } from '../estado/armazenamentoLocal.ts'
@@ -62,7 +62,7 @@ function Aviso({ icone, titulo, texto, acao }: { readonly icone: ReactNode; read
   )
 }
 
-/** D-1222 e CA-2238: o link removido ou de endereço trocado. */
+/** D-1222 e CA-2238: o link removido. */
 function LinkQueNaoAbre() {
   return (
     <MolduraDoLink>
@@ -77,6 +77,27 @@ function LinkQueNaoAbre() {
             Recuperar pelo e-mail
           </Button>
           <p className="max-w-75 text-base text-muted-foreground">O link também está na mensagem da sua nutricionista no WhatsApp.</p>
+        </div>
+      </div>
+    </MolduraDoLink>
+  )
+}
+
+/**
+ * Revisão r1 (D-1246, CA-2289): o endereço que "Trocar o endereço" aposentou. Só a frase: quem tinha o link que vazou não
+ * ganha caminho para o endereço novo; o paciente pede o novo à nutricionista.
+ */
+function LinkTrocadoTela() {
+  return (
+    <MolduraDoLink>
+      <div className="flex flex-col gap-10">
+        <Logo tamanho={22} />
+        <div className="flex flex-col items-center gap-4 pt-8 text-center">
+          <span aria-hidden="true" className="grid size-15 place-content-center rounded-full bg-surfacesunken text-muted-foreground">
+            <Link2Off className="size-7" />
+          </span>
+          <h1 className="font-titulo text-2xl font-extrabold tracking-tight text-heading">Este link foi trocado.</h1>
+          <p className="max-w-75 text-base text-muted-foreground">Peça o novo a quem cuida do seu plano.</p>
         </div>
       </div>
     </MolduraDoLink>
@@ -100,6 +121,8 @@ interface Carga {
   readonly dados: DadosDoLink
   /** A nuvem não respondeu e o aparelho não tinha cópia (D-232): não dá para dizer que o link não existe. */
   readonly semConexao: boolean
+  /** Revisão r1 (D-1246): a nuvem disse que este endereço foi trocado. */
+  readonly trocado: boolean
 }
 
 const clientePadrao = (): ClienteDosEmails | null => obterSupabase() as unknown as ClienteDosEmails | null
@@ -133,10 +156,14 @@ export function TelaMissoesPaciente({ token, fonte, hoje = diaLocal(), agora, cl
         if (!vivo) return
         const separado = achado ? separarMarca(achado) : null
         const comDados = separado ? separarDadosDoLink(separado.acompanhamento) : null
-        setCarga({ token, tentativa, acompanhamento: comDados?.link ?? null, marca: separado?.marca ?? SEM_MARCA, dados: comDados?.dados ?? SEM_DADOS_DO_LINK, semConexao: false })
+        setCarga({ token, tentativa, acompanhamento: comDados?.link ?? null, marca: separado?.marca ?? SEM_MARCA, dados: comDados?.dados ?? SEM_DADOS_DO_LINK, semConexao: false, trocado: false })
       },
-      () => {
-        if (vivo) setCarga({ token, tentativa, acompanhamento: null, marca: SEM_MARCA, dados: SEM_DADOS_DO_LINK, semConexao: true })
+      (erro: unknown) => {
+        if (!vivo) return
+        const trocado = erro instanceof LinkTrocado
+        // CA-2289: o aparelho esquece o endereço trocado (a cópia sem internet já saiu na fonte).
+        if (trocado) esquecerPlano(armazenamentoLocal(), token)
+        setCarga({ token, tentativa, acompanhamento: null, marca: SEM_MARCA, dados: SEM_DADOS_DO_LINK, semConexao: !trocado, trocado })
       },
     )
     return () => {
@@ -159,7 +186,12 @@ export function TelaMissoesPaciente({ token, fonte, hoje = diaLocal(), agora, cl
           const comDados = separarDadosDoLink(separado.acompanhamento)
           setCarga((atual) => (atual?.token === token && atual.acompanhamento ? { ...atual, acompanhamento: comDados.link, marca: separado.marca, dados: comDados.dados } : atual))
         },
-        () => undefined,
+        (erro: unknown) => {
+          // CA-2289: o endereço trocado enquanto a página estava aberta.
+          if (!vivo || !(erro instanceof LinkTrocado)) return
+          esquecerPlano(armazenamentoLocal(), token)
+          setCarga((atual) => (atual?.token === token ? { ...atual, acompanhamento: null, trocado: true, semConexao: false } : atual))
+        },
       )
     }
     globalThis.document.addEventListener('visibilitychange', aoVoltar)
@@ -251,6 +283,8 @@ export function TelaMissoesPaciente({ token, fonte, hoje = diaLocal(), agora, cl
       </MolduraDoLink>
     )
   }
+
+  if (carga.trocado) return <LinkTrocadoTela />
 
   if (acompanhamento === null && carga.semConexao) {
     return (

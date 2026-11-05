@@ -17,7 +17,7 @@ import {
 } from './fonteSupabase.ts'
 import type { Missao } from './missoes.ts'
 import type { Armazenamento } from './persistencia.ts'
-import { criarRepositorioAcompanhamentos, LinkSemConexao, MarcacaoRecusada } from './repositorioAcompanhamentos.ts'
+import { criarRepositorioAcompanhamentos, LinkSemConexao, LinkTrocado, MarcacaoRecusada } from './repositorioAcompanhamentos.ts'
 
 const MISSOES: readonly Missao[] = [{ id: 'agua', texto: 'Beber água', origem: 'Hábito' }]
 
@@ -624,6 +624,56 @@ describe('A fonte do link do paciente: nuvem e cópia do aparelho (spec revisao-
     expect(await fonte.porToken('inexistente')).toBeNull()
     const salvo = await fonte.salvar(acompanhamento())
     expect(await fonte.porToken(salvo.token)).toEqual(salvo)
+  })
+
+  it('CA-2289: o endereço trocado não abre pela cópia do aparelho; a cópia sai e a lista do aparelho fica sabendo', async () => {
+    const repo = criarRepositorioAcompanhamentos(memoria())
+    const copia = repo.salvar(acompanhamento())
+    const aoSalvar = vi.fn()
+    const { cliente } = clientePorFuncao({ missoes_por_token: { data: [], error: null }, link_trocado: { data: true, error: null } })
+    await expect(fonteDoPaciente(cliente, repo, aoSalvar).porToken(copia.token)).rejects.toBeInstanceOf(LinkTrocado)
+    expect(repo.porToken(copia.token)).toBeNull()
+    expect(aoSalvar).toHaveBeenCalledOnce()
+  })
+})
+
+/** Um cliente que responde cada função do banco pelo nome (a do paciente e a pergunta do endereço trocado). */
+function clientePorFuncao(respostas: Readonly<Record<string, RespostaFalsa>>): { readonly cliente: ClienteMissoes; readonly chamadas: readonly string[] } {
+  const chamadas: string[] = []
+  const base = clienteFalso().cliente
+  return {
+    chamadas,
+    cliente: {
+      ...base,
+      rpc: (nome) => {
+        chamadas.push(nome)
+        return Promise.resolve(respostas[nome] ?? { data: null, error: null })
+      },
+    },
+  }
+}
+
+describe('o endereço trocado (revisão r1, D-1246 e CA-2289)', () => {
+  it('CA-2289: o link que não abriu e foi trocado rejeita com LinkTrocado', async () => {
+    const { cliente, chamadas } = clientePorFuncao({ missoes_por_token: { data: [], error: null }, link_trocado: { data: true, error: null } })
+    await expect(fonteSupabase(cliente).porToken('kf3mq9zt7bnd')).rejects.toBeInstanceOf(LinkTrocado)
+    expect(chamadas).toEqual(['missoes_por_token', 'link_trocado'])
+  })
+
+  it('CA-2238: o link que não abriu e não foi trocado é o "não abre mais" de sempre (nulo)', async () => {
+    const { cliente } = clientePorFuncao({ missoes_por_token: { data: [], error: null }, link_trocado: { data: false, error: null } })
+    expect(await fonteSupabase(cliente).porToken('kf3mq9zt7bnd')).toBeNull()
+  })
+
+  it('o banco sem a pergunta (sem o 017) ou com erro nela: vale o "não abre mais"', async () => {
+    const { cliente } = clientePorFuncao({ missoes_por_token: { data: [], error: null }, link_trocado: { data: null, error: { message: 'Could not find the function public.link_trocado', code: 'PGRST202' } } })
+    expect(await fonteSupabase(cliente).porToken('kf3mq9zt7bnd')).toBeNull()
+  })
+
+  it('o link que abriu não faz a pergunta', async () => {
+    const { cliente, chamadas } = clientePorFuncao({ missoes_por_token: { data: [LINHA], error: null } })
+    expect((await fonteSupabase(cliente).porToken('kf3mq9zt7bnd'))?.nome).toBe('Ana')
+    expect(chamadas).toEqual(['missoes_por_token'])
   })
 })
 

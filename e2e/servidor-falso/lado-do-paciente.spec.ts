@@ -194,6 +194,20 @@ test('CA-2238 e CA-2233: o link que não abre leva a "Recuperar meu link", e a r
   await semRolagemLateral(page)
 })
 
+test('CA-2289: o endereço trocado mostra só "Este link foi trocado." e o aparelho esquece o plano', async ({ page }) => {
+  await ligarServidorFalso(page, { link: null, linkTrocado: true })
+  await page.addInitScript(
+    (token) => localStorage.setItem('metanutri:meus-planos', JSON.stringify([{ token, primeiroNome: 'Juliana', nutricionista: 'Ana Lima', ultimoAcesso: '2026-11-02' }])),
+    TOKEN,
+  )
+  await page.goto(`/p/${TOKEN}`)
+  await expect(page.getByRole('heading', { level: 1, name: 'Este link foi trocado.' })).toBeVisible()
+  await expect(page.getByText('Peça o novo a quem cuida do seu plano.')).toBeVisible()
+  await expect(page.getByRole('button')).toHaveCount(0)
+  await expect.poll(() => page.evaluate(() => localStorage.getItem('metanutri:meus-planos') ?? '')).not.toContain(TOKEN)
+  await semRolagemLateral(page)
+})
+
 test('CA-2241: a página do aceite não aceita ao abrir; só o "Confirmar" registra', async ({ page }) => {
   const chave = 'a'.repeat(16) + 'B2c3D4e5F6g7H8i9'
   const servidor = await ligarServidorFalso(page, {

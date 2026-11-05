@@ -289,6 +289,17 @@ export class LinkSemConexao extends Error {
 }
 
 /**
+ * "Trocar o endereço" aposentou este endereço (spec lado-do-paciente, revisão r1, D-1246 e CA-2289): a nuvem disse que
+ * ele foi trocado. A tela mostra "Este link foi trocado.", e o aparelho não abre a cópia dele.
+ */
+export class LinkTrocado extends Error {
+  constructor() {
+    super('Este link foi trocado.')
+    this.name = 'LinkTrocado'
+  }
+}
+
+/**
  * A nuvem respondeu e recusou a marcação por um motivo dela, numa frase para quem lê, como "Este link já guarda
  * marcações demais." (spec revisao-geral-publica, revisão de 20/10/2026, M-3b). Tentar de novo não resolve, então a
  * tela mostra o motivo em vez de mandar conferir a internet.
