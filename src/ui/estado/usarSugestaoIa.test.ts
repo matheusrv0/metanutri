@@ -59,6 +59,38 @@ describe('useSugestaoIa (spec assistente-ia, T30)', () => {
     expect(result.current.uso?.usados).toBe(8)
   })
 
+  it('CA-2405 (D-1355): a resposta sem `uso` vale; o contador fica estimado (o de antes + 1) e é relido pelo modo uso', async () => {
+    let lidas = 0
+    const d = dependencias({
+      chamar: vi.fn(async (_nome: string, c: Record<string, unknown>) => {
+        if (c['modo'] !== 'uso') return { dados: { resposta: RESPOSTA, foraDaBase: 0, modelo: 'claude-opus-5-5' }, falha: null }
+        lidas += 1
+        // A primeira leitura (ao abrir) responde; a releitura depois da sugestão falha, como o banco que caiu.
+        return lidas === 1 ? { dados: { uso: USO }, falha: null } : { dados: null, falha: { status: 503, codigo: 'indisponivel', erro: null } }
+      }),
+    })
+    const { result } = renderHook(() => useSugestaoIa(d))
+    act(() => result.current.lerUso())
+    await waitFor(() => expect(result.current.uso).toEqual(USO))
+    await act(async () => result.current.pedir(corpo, CONTEXTO))
+    expect(result.current.estado.fase).toBe('resposta')
+    expect(result.current.uso).toEqual({ ...USO, usados: 8 })
+    await waitFor(() => expect(lidas).toBe(2))
+    expect(result.current.uso).toEqual({ ...USO, usados: 8 })
+  })
+
+  it('CA-2405 (D-1355): sem contador antes nem depois, a sugestão vale e o contador fica vazio', async () => {
+    const d = dependencias({
+      chamar: vi.fn(async (_nome: string, c: Record<string, unknown>) =>
+        c['modo'] === 'uso' ? { dados: null, falha: { status: 503, codigo: null, erro: null } } : { dados: { resposta: RESPOSTA, foraDaBase: 0, modelo: 'm' }, falha: null },
+      ),
+    })
+    const { result } = renderHook(() => useSugestaoIa(d))
+    await act(async () => result.current.pedir(corpo, CONTEXTO))
+    expect(result.current.estado.fase).toBe('resposta')
+    expect(result.current.uso).toBeNull()
+  })
+
   it('CA-2403: sem conseguir mandar a cópia, a frase de sem conexão, e nada é pedido', async () => {
     const d = dependencias({ salvarAgora: vi.fn(async () => false) })
     const { result } = renderHook(() => useSugestaoIa(d))

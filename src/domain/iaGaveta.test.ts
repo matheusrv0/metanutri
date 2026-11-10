@@ -152,8 +152,17 @@ describe('a resposta da função, conferida de novo no navegador', () => {
   })
 
   it('fora da forma: nulo', () => {
-    for (const ruim of [null, 'x', {}, { resposta, uso: null, foraDaBase: 0, modelo: 'm' }, { resposta: { refeicoes: 3 }, uso: { usados: 1, limite: 2, renovaEm: '2026-12-01' }, foraDaBase: 0, modelo: 'm' }]) {
+    for (const ruim of [null, 'x', {}, { uso: { usados: 1, limite: 2, renovaEm: '2026-12-01' }, foraDaBase: 0, modelo: 'm' }, { resposta: { refeicoes: 3 }, uso: { usados: 1, limite: 2, renovaEm: '2026-12-01' }, foraDaBase: 0, modelo: 'm' }]) {
       expect(lerRespostaDaFuncao(ruim, { modo: 'gerar', refeicoes: 1, idsPermitidos: ids, plano: null })).toBeNull()
+    }
+  })
+
+  it('CA-2405 (D-1355): sem `uso`, ou com ele fora da forma, a sugestão vale e o contador fica nulo', () => {
+    for (const uso of [undefined, null, { usados: 'x' }]) {
+      const lida = lerRespostaDaFuncao({ resposta, uso, foraDaBase: 0, modelo: 'claude-opus-5-5' }, { modo: 'gerar', refeicoes: 1, idsPermitidos: ids, plano: null })
+      expect(lida).not.toBeNull()
+      expect(lida?.uso).toBeNull()
+      expect(lida?.resposta.refeicoes[0]?.principal[0]).toEqual({ alimentoId: 53, gramas: 50 })
     }
   })
 })

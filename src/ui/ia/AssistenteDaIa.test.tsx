@@ -144,6 +144,27 @@ describe('AssistenteDaIa (spec assistente-ia, T34)', () => {
     expect(screen.getByTestId('plano').textContent).toBe('53,488,226|3,561,410,78,157|182,448|3,561,377,88')
   })
 
+  it('CA-2405: a resposta sem o contador (a função não o releu) mostra a proposta, e o contador é relido', async () => {
+    const usuario = userEvent.setup()
+    let lidas = 0
+    const deps: DependenciasDaSugestao = {
+      chamar: vi.fn(async (_n: string, c: Record<string, unknown>) => {
+        if (c['modo'] !== 'uso') return { dados: { resposta: SUGESTAO, foraDaBase: 0, modelo: 'claude-opus-5-5' }, falha: null }
+        lidas += 1
+        return { dados: { uso: { ...USO, usados: lidas === 1 ? 7 : 8 } }, falha: null }
+      }),
+      salvarAgora: vi.fn(async () => true),
+      online: () => true,
+    }
+    montar(deps)
+    await usuario.click(screen.getByRole('button', { name: 'Sugerir plano com IA' }))
+    await waitFor(() => expect(screen.getByText(/^7 de 20 sugestões em /)).toBeInTheDocument())
+    await usuario.click(screen.getByRole('button', { name: 'Sugerir plano' }))
+    expect(await screen.findByRole('button', { name: 'Usar como rascunho' })).toBeEnabled()
+    expect(screen.queryByText('As sugestões com IA estão indisponíveis agora. Tente mais tarde.')).not.toBeInTheDocument()
+    expect(screen.getByText(/^8 de 20 sugestões em /)).toBeInTheDocument()
+  })
+
   it('CA-2368: num plano vazio, "Usar como rascunho" entra direto', async () => {
     const usuario = userEvent.setup()
     montar(dependencias(), PLANO_VAZIO)

@@ -238,7 +238,11 @@ export function erroDaIa(falha: FalhaDaIa, uso: UsoDoMes | null, agora: Date): E
 
 export interface RespostaDaFuncao {
   readonly resposta: RespostaDaIa
-  readonly uso: UsoDoMes
+  /**
+   * O contador já com esta sugestão; nulo quando a função não conseguiu relê-lo depois do sucesso. A sugestão vale do
+   * mesmo jeito (D-1355): ela já contou no mês.
+   */
+  readonly uso: UsoDoMes | null
   /** Quantos itens saíram por estar fora da base, na função e aqui. */
   readonly foraDaBase: number
   /** O modelo que respondeu (D-1352). */
@@ -255,13 +259,16 @@ export function lerUso(valor: unknown): UsoDoMes | null {
   return { usados: usados as number, limite: limite as number, renovaEm }
 }
 
-/** A resposta 200 da função (D-1320), conferida de novo pelo mesmo código da função: o navegador não confia na rede. */
+/**
+ * A resposta 200 da função (D-1320), conferida de novo pelo mesmo código da função: o navegador não confia na rede. Sem
+ * `uso` (ou com ele fora da forma), a sugestão vale e o contador fica nulo (D-1355, CA-2405).
+ */
 export function lerRespostaDaFuncao(dados: unknown, contexto: ContextoDaResposta): RespostaDaFuncao | null {
   if (!ehObjeto(dados)) return null
   const uso = lerUso(dados['uso'])
   const modelo = typeof dados['modelo'] === 'string' ? dados['modelo'].slice(0, 64) : ''
   const fora = typeof dados['foraDaBase'] === 'number' && Number.isInteger(dados['foraDaBase']) ? dados['foraDaBase'] : 0
-  if (!uso || !ehObjeto(dados['resposta'])) return null
+  if (!ehObjeto(dados['resposta'])) return null
   // O id que a função deixou passar e o navegador não conhece fica: a conferência 1 o retira à vista, com "Alimento fora
   // da base" (CB-1308, CA-2380). Aqui vale a forma, as gramas, as refeições e os limites, pelo mesmo código da função.
   const idsDaResposta = JSON.stringify(dados['resposta']).match(/"alimentoId":\s*(\d+)/g)?.map((t) => Number(t.replace(/\D/g, ''))) ?? []

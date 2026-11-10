@@ -118,8 +118,14 @@ export function useSugestaoIa(dependencias?: DependenciasDaSugestao): ValorSuges
         }
         const lida = lerRespostaDaFuncao(dados, contexto)
         if (!lida) return falhou(RESPOSTA_INVALIDA)
-        setUso(lida.uso)
         setEstado({ fase: 'resposta', resposta: lida })
+        if (lida.uso) setUso(lida.uso)
+        else {
+          // D-1355: a função não conseguiu reler o contador, mas a sugestão já contou. Fica a estimativa e o pedido de
+          // releitura; o contador vazio nunca faz a sugestão sumir.
+          setUso((antes) => (antes ? { ...antes, usados: antes.usados + 1 } : null))
+          lerUsoAgora()
+        }
       } finally {
         if (vez.current === minha) {
           emAndamento.current = false
