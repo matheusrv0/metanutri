@@ -214,3 +214,22 @@ Feito, um commit por tarefa: T26 e T27 (antes), T28 a T37. O que mudou em relaç
   que o mostra em "Retirados pela conferência" com "Alimento fora da base" (CB-1308, CA-2380).
 - **T37.** O e2e fica em `e2e/servidor-falso/ia.spec.ts` (o projeto com a conta falsa), e o cenário `ia` entra no
   `Cenario` do servidor falso, com a cópia da conta já na nuvem (`copia`).
+
+## 10. Rodada de correção 1 da P2 (revisão de 10/11/2026)
+
+A revisão independente da P2 reprovou com 4 médios e 8 baixos. Decisões D-1355 a D-1365, testes CA-2405 a CA-2415, risco
+R9. Os B1 (R9) e B2 (D-1360) só mudam a spec. Uma tarefa por commit, em TDD; as sondas do revisor ficam como estão.
+
+| Tarefa | Arquivos, na ordem | CA |
+|---|---|---|
+| T38 — M1: a resposta sem `uso` | `src/domain/iaGaveta.ts` (`lerRespostaDaFuncao`), `src/ui/estado/usarSugestaoIa.ts` (+ testes) | CA-2405 |
+| T39 — M2: o estado de um plano só | `src/ui/ia/AssistenteDaIa.tsx`, `src/ui/AreaDeTrabalho.tsx` (a `key`) (+ testes) | CA-2406 |
+| T40 — M3: a gaveta no fluxo e o foco ao abrir | `src/ui/ia/AssistenteDaIa.tsx`, `src/ui/ia/GavetaIa.tsx` (+ testes) | CA-2407 |
+| T41 — M4: a espera sem o relógio na região viva | `src/ui/ia/EsperaDaIa.tsx` (+ teste) | CA-2409 |
+| T42 — B3: o foco volta ao botão | `src/ui/ia/BotoesDaIa.tsx`, `GavetaIa.tsx`, `AssistenteDaIa.tsx` (+ testes) | CA-2408 |
+| T43 — B4: a chave com alvo de 44 px | `src/ui/ia/AutorizacaoNaGaveta.tsx`, `src/ui/pacientes/AutorizacaoIa.tsx` (+ testes) | CA-2411 |
+| T44 — B5: adequar sem lacuna | `src/ui/ia/AdequarComIa.tsx`, `AssistenteDaIa.tsx` (+ testes) | CA-2412 |
+| T45 — B6: a meta da gaveta | `src/domain/iaGaveta.ts` (`textoDaMeta`, `metaDaGaveta`), `src/ui/ia/PedidoDaIa.tsx`, `AssistenteDaIa.tsx` (+ testes) | CA-2413 |
+| T46 — B7: o erro numa região que já existe | `src/ui/ia/ErroDaIa.tsx`, `GavetaIa.tsx`, `AssistenteDaIa.tsx` (+ testes) | CA-2410 |
+| T47 — B8: o e2e do CA-2403 | `e2e/servidor-falso/ia.spec.ts` | CA-2403 |
+| T48 — Recomendações leves | `src/ui/ia/AssistenteDaIa.tsx` ("Gerar de novo" confere de novo, botão neutro, proposta vazia), `e2e/servidor-falso/ia.spec.ts` (360 px) (+ testes) | CA-2414, CA-2415, CA-2381 |
