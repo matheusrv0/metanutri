@@ -85,8 +85,9 @@ export function diretivasDaPolitica({ supabase }: OpcoesDaPolitica): Politica {
     ['script-src', ["'self'", `'nonce-${NONCE_DO_ANTIFRAUDE}'`, SDK_DO_PAGAMENTO, VERIFICACAO]],
     // React, Radix, motion, o SDK do pagamento e o Turnstile escrevem estilo na página. Script, nunca.
     ['style-src', ["'self'", "'unsafe-inline'"]],
-    // `data:` é a logo do perfil (o FileReader a lê assim).
-    ['img-src', ["'self'", 'data:', ANTIFRAUDE, ANTIFRAUDE_BRASIL, ANTIFRAUDE_DOMINIO_BR]],
+    // `data:` é a logo do perfil (o FileReader a lê assim). O Supabase: a foto da avaliação, pela URL assinada de 10
+    // minutos do balde privado (spec antropometria-telas, D-1457 e CA-2491).
+    ['img-src', ["'self'", 'data:', ...(supabase ? [supabase] : []), ANTIFRAUDE, ANTIFRAUDE_BRASIL, ANTIFRAUDE_DOMINIO_BR]],
     // DP-CSP-4: as fontes vêm como arquivo do próprio site, nunca `data:`.
     ['font-src', ["'self'"]],
     [

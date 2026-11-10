@@ -11,7 +11,7 @@ describe('a regra de conteúdo do site (D-135)', () => {
         "default-src 'self'",
         `script-src 'self' 'nonce-${NONCE_DO_ANTIFRAUDE}' https://sdk.mercadopago.com https://challenges.cloudflare.com`,
         "style-src 'self' 'unsafe-inline'",
-        "img-src 'self' data: https://www.mercadolibre.com https://www.mercadolivre.com https://www.mercadopago.com.br",
+        `img-src 'self' data: ${SUPABASE} https://www.mercadolibre.com https://www.mercadolivre.com https://www.mercadopago.com.br`,
         "font-src 'self'",
         `connect-src 'self' ${SUPABASE} https://api.mercadopago.com https://secure-fields.mercadopago.com https://api-static.mercadopago.com https://www.mercadolibre.com https://www.mercadopago.com.br https://api.mercadolibre.com https://world.openfoodfacts.org`,
         'frame-src https://secure-fields.mercadopago.com https://api-static.mercadopago.com https://challenges.cloudflare.com',
@@ -66,6 +66,15 @@ describe('a regra de conteúdo do site (D-135)', () => {
     expect(valores(politica, 'connect-src')).toContain('https://www.mercadopago.com.br')
     // O servidor reserva dos campos do cartão (o sourceUrl do SDK).
     expect(valores(politica, 'connect-src')).toContain('https://api-static.mercadopago.com')
+  })
+
+  it('CA-2491 (spec antropometria-telas, D-1457): o img-src tem a origem do Supabase, para a foto da avaliação pela URL assinada; sem Supabase, não', () => {
+    expect(valores(politica, 'img-src')).toContain(SUPABASE)
+    // Só a origem, nunca um coringa de subdomínio ou de esquema.
+    expect(valores(politica, 'img-src')?.filter((fonte) => fonte.includes('supabase'))).toEqual([SUPABASE])
+    expect(valores(diretivasDaPolitica({ supabase: null }), 'img-src')).toEqual(["'self'", 'data:', 'https://www.mercadolibre.com', 'https://www.mercadolivre.com', 'https://www.mercadopago.com.br'])
+    // O site público não tem conta nem foto.
+    expect(textoDaPolitica(diretivasDoSite())).not.toMatch(/supabase/)
   })
 
   it('CA-485: sem o Supabase no build, a regra não libera Supabase nenhum', () => {
