@@ -1,5 +1,6 @@
 import { Check } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { anuncioDaEspera } from '@/domain/iaGaveta.ts'
 import { cn } from '@/lib/utils'
 
 /** D-1306 e D-1349: a linha ao lado do "Cancelar" (o servidor não para quando o navegador desiste, D-1330). */
@@ -14,8 +15,8 @@ interface EsperaDaIaProps {
 const relogio = (segundos: number): string => `${Math.floor(segundos / 60)}:${String(segundos % 60).padStart(2, '0')}`
 
 /**
- * D-1306: a espera honesta. O relógio em m:ss e as três etapas; a terceira (a conferência do app) acontece quando a
- * resposta chega, por isso fica por vir durante a espera.
+ * D-1306 e D-1358: a espera honesta. O relógio em m:ss (fora da região viva) e as três etapas; a terceira (a
+ * conferência do app) acontece quando a resposta chega, por isso fica por vir durante a espera.
  */
 export function EsperaDaIa({ inicio, modo }: EsperaDaIaProps) {
   const [agora, setAgora] = useState(() => Date.now())
@@ -28,9 +29,13 @@ export function EsperaDaIa({ inicio, modo }: EsperaDaIaProps) {
   const etapas = ['Pedido enviado, sem nome nem contato', modo === 'gerar' ? 'A IA monta as refeições' : 'A IA monta os ajustes', 'O app confere com a ficha e as regras']
 
   return (
-    <div role="status" aria-live="polite" className="flex flex-col gap-1.5 py-7">
+    <div className="flex flex-col gap-1.5 py-7">
+      {/* D-1358: a região viva fica à parte, sem o relógio; o leitor de tela não ouve os segundos. */}
+      <p role="status" aria-live="polite" className="sr-only">
+        {anuncioDaEspera(decorrido)}
+      </p>
       <p className="text-base font-semibold text-heading">Montando a sugestão. Leva de 1 a 2 minutos.</p>
-      <p className="numeros mb-3 mt-1 text-3xl font-bold tracking-tight text-heading" aria-label={`Tempo decorrido ${relogio(decorrido)}`}>
+      <p role="timer" className="numeros mb-3 mt-1 text-3xl font-bold tracking-tight text-heading" aria-label={`Tempo decorrido ${relogio(decorrido)}`}>
         {relogio(decorrido)}
       </p>
       <ol className="flex flex-col gap-2.5">

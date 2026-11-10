@@ -203,6 +203,23 @@ export function lacunasMarcadas(lacunas: LacunasIa, desmarcadas: ReadonlySet<str
   }
 }
 
+// ---------- A espera (D-1358) ----------
+
+const minutos = (m: number) => (m === 1 ? '1 minuto' : `${m} minutos`)
+
+/**
+ * D-1358: o que o leitor de tela ouve na espera. Nada no primeiro segundo (a região nasce vazia, para o anúncio
+ * valer), a frase uma vez e, a cada 30 s, um aviso curto. Nunca o relógio, que muda a cada segundo.
+ */
+export function anuncioDaEspera(segundos: number): string {
+  if (segundos < 1) return ''
+  if (segundos < 30) return 'Gerando a sugestão. Leva de 1 a 2 minutos.'
+  const passados = Math.floor(segundos / 30) * 30
+  const m = Math.floor(passados / 60)
+  const tempo = m === 0 ? '30 segundos' : passados % 60 === 0 ? minutos(m) : `${minutos(m)} e 30 segundos`
+  return `Ainda gerando: ${tempo}.`
+}
+
 // ---------- Os erros (CA-2374) ----------
 
 export interface FalhaDaIa {
