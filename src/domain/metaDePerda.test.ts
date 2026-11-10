@@ -180,3 +180,25 @@ describe('o texto pelo sexo da pessoa (spec antropometria-telas, D-1527; revisã
     expect(idoso.motivo).toMatch(/panturrilha baixa no idoso/)
   })
 })
+
+describe('a meta de perda pelo sexo (spec antropometria-telas, D-1501; revisão r2, B2-r2)', () => {
+  /** 65 anos, 158 cm, objetivo "emagrecer", com o IMC pedido. */
+  const comImc = (sexo: 'F' | 'M', imc: number): Caso => ({ ...criarCasoVazio('i'), sexo, idadeAnos: 65, pesoKg: imc * 1.58 ** 2, estaturaCm: 158, objetivo: 'emagrecer' })
+  const motivo = (c: Caso) => {
+    const r = metaDePerda(c)
+    if (!r || r.mostra) throw new Error('a meta não devia vir')
+    return r.motivo
+  }
+
+  it('CB-1461: idosa com IMC 24 ou 22: "Idosa com IMC..."; idoso, "Idoso com IMC..."', () => {
+    expect(motivo(comImc('F', 24))).toBe('Idosa com IMC na faixa de referência (> 22 e < 27, SISVAN): sem meta de perda de peso.')
+    expect(motivo(comImc('F', 22))).toBe('Idosa com IMC de 22 ou menos (baixo peso pelo SISVAN): sem meta de perda de peso.')
+    expect(motivo(comImc('M', 24))).toBe('Idoso com IMC na faixa de referência (> 22 e < 27, SISVAN): sem meta de perda de peso.')
+    expect(motivo(comImc('M', 22))).toBe('Idoso com IMC de 22 ou menos (baixo peso pelo SISVAN): sem meta de perda de peso.')
+  })
+
+  it('CB-1461: o aviso da ESPEN com IMC 28: "Idosa com IMC de 27 a 29,99" ou "Idoso ..."', () => {
+    expect(mostrada(metaDePerda(comImc('F', 28))).avisos.join(' ')).toMatch(/Idosa com IMC de 27 a 29,99: a ESPEN/)
+    expect(mostrada(metaDePerda(comImc('M', 28))).avisos.join(' ')).toMatch(/Idoso com IMC de 27 a 29,99: a ESPEN/)
+  })
+})

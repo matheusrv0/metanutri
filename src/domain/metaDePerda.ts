@@ -84,14 +84,16 @@ export function metaDePerda(caso: Caso, entrada: EntradaDaMeta = {}): ResultadoD
   if (prioridade.nivel === 0 && caso.objetivo !== 'emagrecer') return null
 
   const imc = naPrecisao(calcularImc(peso, estatura), 2)
+  // Spec antropometria-telas, D-1501: "Idosa" ou "Idoso" pelo sexo (a prioridade, acima, só sai com sexo).
+  const idosoNoTexto = caso.sexo === 'F' ? 'Idosa' : 'Idoso'
   // Revisão (item 1): no idoso, só com sobrepeso pelo SISVAN (IMC de 27 ou mais, Quadro 18).
   if (idade >= 60 && imc < 27) {
     return {
       mostra: false,
       motivo:
         imc <= 22
-          ? 'Idoso com IMC de 22 ou menos (baixo peso pelo SISVAN): sem meta de perda de peso.'
-          : 'Idoso com IMC na faixa de referência (> 22 e < 27, SISVAN): sem meta de perda de peso.',
+          ? `${idosoNoTexto} com IMC de 22 ou menos (baixo peso pelo SISVAN): sem meta de perda de peso.`
+          : `${idosoNoTexto} com IMC na faixa de referência (> 22 e < 27, SISVAN): sem meta de perda de peso.`,
     }
   }
   const tetoKgPorSemana = Math.min(1, 0.01 * peso)
@@ -104,7 +106,7 @@ export function metaDePerda(caso: Caso, entrada: EntradaDaMeta = {}): ResultadoD
   // Rodada 2 (D-1034 revista; a Mor revisa): o idoso com sobrepeso, abaixo da obesidade, leva a posição da ESPEN.
   if (idade >= 60 && imc < 30) {
     avisos.push(
-      `Idoso com IMC de 27 a 29,99: a ESPEN em geriatria só considera dieta para perder peso com obesidade e problema de saúde ligado ao peso, e junto com exercício (${FONTES.espenGeriatria.curta}).`,
+      `${idosoNoTexto} com IMC de 27 a 29,99: a ESPEN em geriatria só considera dieta para perder peso com obesidade e problema de saúde ligado ao peso, e junto com exercício (${FONTES.espenGeriatria.curta}).`,
     )
   }
   let alvoKg: PesoAlvo | null = null
