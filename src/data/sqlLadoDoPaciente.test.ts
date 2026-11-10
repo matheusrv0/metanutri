@@ -329,3 +329,42 @@ describe('banco: a confirmação presa ao endereço do link (017, revisão r2, D
     expect(sql).toContain('create trigger conferir_chave_do_aceite\n  before insert or update of token_hash, link_id, tipo on public.chaves_de_aviso')
   })
 })
+
+describe('banco: o "Confirmar" num passo só (017, revisão r3, D-1261)', () => {
+  const ASSINATURA = 'public.confirmar_email_do_paciente(text, text[], smallint, boolean, timestamptz)'
+  const confirmar = () => funcao('create or replace function public.confirmar_email_do_paciente(')
+
+  it('CA-2308 e CB-1232 (DP-LP-47): segura o link antes da chave e confere a chave com o token de agora', () => {
+    const corpo = confirmar()
+    expect(corpo).toContain('returns text')
+    expect(corpo).toContain('security definer')
+    expect(corpo).toContain('set search_path = public')
+    // O link primeiro (como a troca e o gatilho da chave): a troca que esteja no meio faz o "Confirmar" esperar.
+    const link = corpo.search(/from public\.acompanhamentos a\s+where a\.id = v_link_id and a\.cortado_em is null\s+for share;/)
+    const chave = corpo.search(/from public\.chaves_de_aviso c where c\.chave = p_chave for update;/)
+    expect(link).toBeGreaterThan(0)
+    expect(chave).toBeGreaterThan(link)
+    expect(corpo).toContain('if k.usado_em is not null then')
+    expect(corpo).toContain('k.token_hash is distinct from public.hash_do_token(v_token)')
+    expect(corpo).toContain('k.vence_em < p_agora')
+    expect(corpo).toContain("return 'nao-vale';")
+    expect(corpo).toContain("return 'usada';")
+    expect(corpo).toContain("return 'confirmado';")
+  })
+
+  it('CA-2308 e CA-2257: grava o e-mail, os aceites e a chave usada na mesma transação; a chave da ficha confere o e-mail do link', () => {
+    const corpo = confirmar()
+    expect(corpo).toContain("set email = k.email, email_hash = k.email_hash, origem = 'paciente', confirmado_em = p_agora")
+    expect(corpo).toContain('if v_email_hash_do_link is distinct from k.email_hash then')
+    expect(corpo).toContain('on conflict (link_id, tipo, email_hash) where saiu_em is null do nothing;')
+    expect(corpo).toContain('update public.chaves_de_aviso set usado_em = p_agora, desfazer = null where chave = p_chave;')
+    // A chave usada só no fim: nada é gravado antes de a chave e o link conferirem.
+    expect(corpo.indexOf('update public.chaves_de_aviso set usado_em')).toBeGreaterThan(corpo.indexOf('insert into public.aceites'))
+    expect(corpo.indexOf("return 'nao-vale';", corpo.indexOf('if v_email_hash_do_link'))).toBeLessThan(corpo.indexOf('insert into public.aceites'))
+  })
+
+  it('só a chave de serviço chama', () => {
+    expect(sql).toContain(`revoke all on function ${ASSINATURA} from public, anon, authenticated;`)
+    expect(sql).toContain(`grant execute on function ${ASSINATURA} to service_role;`)
+  })
+})

@@ -238,6 +238,50 @@ describe('o e-mail digitado no link só vale confirmado (D-1247)', () => {
     expect((await pedir({ acao: 'confirmar', chave: DO_EMAIL, avisos: [] })).status).toBe(404)
     expect(estado.emails.get('link-juliana')?.email).toBe('juliana.martins@gmail.com')
   })
+
+  /** A troca do endereço logo antes de o banco gravar o "Confirmar" (a página já leu a chave e o link de antes). */
+  function trocarAntesDeGravar(): void {
+    const { banco } = deps
+    const gravar = banco.gravarEmailDoPaciente
+    deps = {
+      ...deps,
+      banco: {
+        ...banco,
+        gravarEmailDoPaciente: async (...pedido: Parameters<typeof gravar>) => {
+          const link = estado.links.get('link-juliana')
+          if (link) estado.links.set(link.id, { ...link, token: 'novoendereco9' })
+          return gravar(...pedido)
+        },
+      },
+    }
+  }
+
+  it('CA-2308 e CB-1232: a troca entre a leitura da chave e a gravação: "Este endereço não vale.", o link fica com o da ficha e nada sai', async () => {
+    await comEmailPorConfirmar({ avisos: ['semana'] })
+    trocarAntesDeGravar()
+    expect(await pedir({ acao: 'confirmar', chave: DO_EMAIL, avisos: ['semana'] })).toEqual({ status: 404, corpo: { erro: CHAVE_QUE_NAO_VALE } })
+    expect(estado.emails.get('link-juliana')).toMatchObject({ email: 'juliana.martins@gmail.com', origem: 'ficha', confirmadoEm: null })
+    expect(estado.aceites.filter((a) => a.tipo === 'semana')).toHaveLength(0)
+    expect(estado.chaves.get(DO_EMAIL)?.usadoEm).toBeNull()
+    expect(resend.lotes).toHaveLength(0)
+  })
+
+  it('CA-2308: na chave do e-mail que o link já tem, a troca no meio também recusa o "Confirmar"', async () => {
+    await comPedidoDeAceite()
+    trocarAntesDeGravar()
+    expect((await pedir({ acao: 'confirmar', chave: ACEITE, avisos: ['semana'] })).status).toBe(404)
+    expect(estado.aceites).toHaveLength(0)
+    expect(estado.emails.get('link-juliana')?.confirmadoEm).toBeNull()
+  })
+
+  it('CB-1222 e D-1261: dois "Confirmar" da mesma chave ao mesmo tempo aceitam uma vez e mandam um S1 só', async () => {
+    await comEmailPorConfirmar({ avisos: ['semana'] })
+    const [a, b] = await Promise.all([pedir({ acao: 'confirmar', chave: DO_EMAIL, avisos: ['semana'] }), pedir({ acao: 'confirmar', chave: DO_EMAIL, avisos: ['semana'] })])
+    expect([a.status, b.status]).toEqual([200, 200])
+    expect(b.corpo).toMatchObject({ feito: true })
+    expect(resend.lotes.flatMap((l) => l.emails)).toHaveLength(1)
+    expect(estado.aceites.filter((x) => x.tipo === 'semana')).toHaveLength(1)
+  })
 })
 
 describe('a chave de descadastro é presa ao endereço (D-1252)', () => {

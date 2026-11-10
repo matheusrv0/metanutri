@@ -75,6 +75,7 @@ describe('as portas fechadas das tabelas e das funções novas', () => {
     ['dono_do_link', { p_link: randomUUID() }],
     ['hash_do_token', { p_token: 'abcdefghjkmn' }],
     ['pedir_avisos', { p_vez: 'manha' }],
+    ['confirmar_email_do_paciente', { p_chave: 'x'.repeat(32), p_avisos: [], p_dia_da_semana: 0, p_ofertas_padrao: true, p_agora: '2026-01-01T00:00:00Z' }],
   ] as const)('%s é recusada para visitante, conta comum e administrador', async (funcao, args) => {
     for (const cliente of [c.anonimo, c.atacante.cliente, c.admin.cliente]) barrado(await cliente.rpc(funcao, args))
   })
@@ -595,5 +596,80 @@ describe('a confirmação presa ao endereço do link (revisão r2: CA-2300, CB-1
     sem('trocar o endereço', (await c.vitima.cliente.from('acompanhamentos').update({ token: tokenNovo() }).eq('id', link.id)).error)
     expect((await pedido).ok).toBe(true)
     expect(await confirmacoesDo(link)).toEqual([])
+  })
+
+  describe('o "Confirmar" num passo só do banco (revisão r3: D-1261, CA-2308)', () => {
+    const ficha = 'juliana.r3.lp@gmail.com'
+
+    /** Um link com o e-mail da ficha e uma confirmação aberta do e-mail de quem pegou o link, com o endereço de agora. */
+    async function comConfirmacaoAberta(paciente: string) {
+      const link = await novoLink(c.vitima, paciente)
+      const fichaHash = await hashDoEmail(ficha)
+      sem(
+        'o e-mail da ficha',
+        (await c.servico.from('emails_dos_links').upsert({ link_id: link.id, nutricionista_id: c.vitima.id, email: ficha, email_hash: fichaHash, origem: 'ficha', email_ficha: ficha })).error,
+      )
+      const k = await confirmacao(link, link.token)
+      sem('a confirmação', (await c.servico.from('chaves_de_aviso').insert(k)).error)
+      return { link, chave: k.chave, emailHash: k.email_hash, fichaHash }
+    }
+    const confirmar = (chave: string, avisos: readonly string[] = ['semana']) =>
+      c.servico.rpc('confirmar_email_do_paciente', { p_chave: chave, p_avisos: [...avisos], p_dia_da_semana: 2, p_ofertas_padrao: true, p_agora: new Date().toISOString() })
+    const emailDo = async (link: { readonly id: string }) => (await c.servico.from('emails_dos_links').select('email, origem, confirmado_em').eq('link_id', link.id).single()).data as Linha
+    const aceitesAtivos = async (link: { readonly id: string }, emailHash: string) =>
+      (await c.servico.from('aceites').select('tipo').eq('link_id', link.id).eq('email_hash', emailHash).is('saiu_em', null)).data
+
+    it('CA-2308: sem corrida, grava o e-mail, os aceites e a chave usada; de novo, responde "usada" e não aceita de novo', async () => {
+      const { link, chave, emailHash } = await comConfirmacaoAberta('paciente-r3-a')
+      expect((await confirmar(chave)).data).toBe('confirmado')
+      expect(await emailDo(link)).toMatchObject({ email, origem: 'paciente' })
+      expect((await emailDo(link))['confirmado_em']).not.toBeNull()
+      expect(await aceitesAtivos(link, emailHash)).toEqual([{ tipo: 'semana' }])
+      expect((await c.servico.from('chaves_de_aviso').select('usado_em').eq('chave', chave).single()).data?.['usado_em']).not.toBeNull()
+      expect((await confirmar(chave)).data).toBe('usada')
+      expect(await aceitesAtivos(link, emailHash)).toHaveLength(1)
+    })
+
+    it('CA-2308: a chave de descadastro, a vencida, a de antes da troca e a que não existe não confirmam, e nada muda', async () => {
+      const { link, chave, emailHash } = await comConfirmacaoAberta('paciente-r3-b')
+      sem('vencer a chave', (await c.servico.from('chaves_de_aviso').update({ vence_em: new Date(Date.now() - 60_000).toISOString() }).eq('chave', chave)).error)
+      expect((await confirmar(chave)).data).toBe('nao-vale')
+      const sair = novaChave()
+      sem('a de descadastro', (await c.servico.from('chaves_de_aviso').insert({ chave: sair, link_id: link.id, nutricionista_id: c.vitima.id, tipo: 'sair', avisos: ['semana'], email_hash: emailHash })).error)
+      expect((await confirmar(sair)).data).toBe('nao-vale')
+      expect((await confirmar(novaChave())).data).toBe('nao-vale')
+      const outra = await comConfirmacaoAberta('paciente-r3-c')
+      sem('trocar o endereço', (await c.vitima.cliente.from('acompanhamentos').update({ token: tokenNovo() }).eq('id', outra.link.id)).error)
+      expect((await confirmar(outra.chave)).data).toBe('nao-vale')
+      for (const l of [link, outra.link]) expect(await emailDo(l)).toMatchObject({ email: ficha, origem: 'ficha' })
+      expect(await aceitesAtivos(link, emailHash)).toEqual([])
+    })
+
+    it('CA-2308 e CB-1232: a troca segura o link (outra transação) enquanto o "Confirmar" corre: ele espera, é recusado e o link fica com o da ficha', async () => {
+      const { link, chave, emailHash } = await comConfirmacaoAberta('paciente-r3-d')
+      const troca = sqlAoMesmoTempo(['begin;', `update public.acompanhamentos set token = '${tokenNovo()}' where id = '${link.id}';`, 'select pg_sleep(2);', 'commit;'].join('\n'))
+      await esperar(700)
+      const inicio = Date.now()
+      const r = await confirmar(chave)
+      expect(Date.now() - inicio).toBeGreaterThan(500)
+      expect(r.error).toBeNull()
+      expect(r.data).toBe('nao-vale')
+      expect((await troca).ok).toBe(true)
+      expect(await emailDo(link)).toMatchObject({ email: ficha, origem: 'ficha', confirmado_em: null })
+      expect(await aceitesAtivos(link, emailHash)).toEqual([])
+    })
+
+    it('CB-1232: o "Confirmar" segura o link (outra transação) enquanto a troca corre: a troca espera, devolve o link à ficha e encerra os aceites do outro endereço', async () => {
+      const { link, chave, emailHash, fichaHash } = await comConfirmacaoAberta('paciente-r3-e')
+      const pedido = sqlAoMesmoTempo(['begin;', `select public.confirmar_email_do_paciente('${chave}', array['semana'], 2::smallint, true, now());`, 'select pg_sleep(2);', 'commit;'].join('\n'))
+      await esperar(700)
+      const inicio = Date.now()
+      sem('trocar o endereço', (await c.vitima.cliente.from('acompanhamentos').update({ token: tokenNovo() }).eq('id', link.id)).error)
+      expect(Date.now() - inicio).toBeGreaterThan(500)
+      expect((await pedido).ok).toBe(true)
+      expect(await emailDo(link)).toMatchObject({ email: ficha, origem: 'ficha', confirmado_em: null })
+      expect(await aceitesAtivos(link, emailHash)).toEqual([])
+      expect((await c.servico.from('emails_dos_links').select('email_hash').eq('link_id', link.id).single()).data?.['email_hash']).toBe(fichaHash)
+    })
   })
 })

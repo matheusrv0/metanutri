@@ -153,21 +153,24 @@ async function confirmar(c: Contexto, pedidos: unknown, deps: DependenciasComuns
   // CA-2242: só o que a nutricionista oferece.
   const escolhidos = marcados.filter((t) => oferecidos(c).includes(t))
   const agora = deps.agora()
-  if (novo !== null) {
-    // CB-1229: vale o último confirmado. O mesmo endereço que o link já tem só fica confirmado.
-    if (c.email?.email === novo) await deps.banco.marcarConfirmado(c.link.id, agora)
-    else await deps.banco.gravarEmailDoPaciente(c.link, novo, emailHash, c.oferecerAosNovos, agora)
+  // D-1261 e CB-1232: o banco confere de novo a chave e o endereço de agora do link, segurando o link, e só então grava o
+  // e-mail (CB-1229: vale o último confirmado; o mesmo endereço só ganha a data), os aceites, o "parar todos" desfeito e
+  // a chave usada. A troca que caiu depois da leitura acima recusa aqui; a que vier depois devolve o link à ficha.
+  const feito = await deps.banco.gravarEmailDoPaciente({
+    chave: c.chave.chave,
+    avisos: escolhidos,
+    diaDaSemana: emBrasilia(new Date(c.chave.criadoEm)).diaDaSemana,
+    ofertasPadrao: c.oferecerAosNovos,
+    agora,
+  })
+  if (feito === 'nao-vale') return NAO_VALE
+  if (feito === 'usada') {
+    // Outro "Confirmar" da mesma chave chegou antes: a resposta dele, sem aceitar nem mandar de novo (CB-1222).
+    const depoisDoOutro = await carregar(c.chave.chave, deps)
+    return depoisDoOutro === null ? NAO_VALE : pagina(depoisDoOutro)
   }
-  const diaDaSemana = emBrasilia(new Date(c.chave.criadoEm)).diaDaSemana
-  for (const tipo of escolhidos) {
-    await deps.banco.criarAceite({ linkId: c.link.id, nutricionistaId: c.link.nutricionistaId, tipo, emailHash, aceitoEm: agora.toISOString(), diaDaSemana })
-  }
-  // Quem confirma os avisos volta a querer e-mail deste plano.
-  if (escolhidos.length > 0 && c.email?.parouTudoEm) await deps.banco.pararTudo(c.link.id, null)
-  if (escolhidos.length > 0 && novo === null) await deps.banco.marcarConfirmado(c.link.id, agora)
-  await deps.banco.marcarChave(c.chave.chave, { usadoEm: agora, desfazer: null })
   if (novo !== null) await mandarOLink(c.link, c.conta, novo, emailHash, deps)
-  const email = novo === null ? c.email : await deps.banco.emailDoLink(c.link.id)
+  const email = await deps.banco.emailDoLink(c.link.id)
   const depois = await deps.banco.aceitesDoLink(c.link.id)
   return pagina({ ...c, email, aceites: depois, chave: { ...c.chave, usadoEm: agora.toISOString() } }, { feito: true })
 }

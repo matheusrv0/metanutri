@@ -97,7 +97,22 @@ export interface ChaveDeAviso {
   readonly desfazer: Desfazer | null
 }
 
-export type EstadoDoEnvio = 'enviado' | 'entregue' | 'devolvido' | 'devolucao-temporaria' | 'queixa' | 'adiado' | 'pausado' | 'falhou'
+/** O que o "Confirmar" leva ao banco (D-1261). */
+export interface ConfirmacaoDoAceite {
+  readonly chave: string
+  /** Os avisos marcados, só os que a nutricionista oferece (CA-2242). */
+  readonly avisos: readonly TipoDeAviso[]
+  /** O dia da semana (0 = domingo, de Brasília) do pedido: o resumo da semana sai nele (D-1229). */
+  readonly diaDaSemana: number
+  /** As ofertas da linha que nasce, quando o link ainda não tem e-mail (D-1227). */
+  readonly ofertasPadrao: boolean
+  readonly agora: Date
+}
+
+/** 'usada': outro "Confirmar" da mesma chave chegou antes; 'nao-vale': a chave ou o endereço do link não conferem. */
+export type ResultadoDaConfirmacao = 'confirmado' | 'usada' | 'nao-vale'
+
+export type EstadoDoEnvio ='enviado' | 'entregue' | 'devolvido' | 'devolucao-temporaria' | 'queixa' | 'adiado' | 'pausado' | 'falhou'
 
 /** Os estados de um e-mail que saiu (os outros não saíram). */
 export const SAIRAM: readonly EstadoDoEnvio[] = ['enviado', 'entregue', 'devolvido', 'devolucao-temporaria', 'queixa']
@@ -178,12 +193,14 @@ export interface BancoDosAvisos {
   /** Os links com este endereço (a recuperação, D-1220): só o e-mail da ficha ou o confirmado pelo paciente (D-1247). */
   emailsPorHash(emailHash: string): Promise<readonly EmailDoLink[]>
   /**
-   * O e-mail que o paciente confirmou no link (D-1247): cria a linha, se faltar, com as ofertas padrão da conta; troca o
-   * endereço, a origem vira "paciente", com a data da confirmação, e o aceite do endereço antigo deixa de valer
-   * (CA-2257).
+   * O "Confirmar" da chave do aceite, num passo só do banco (D-1261, DP-LP-47; `confirmar_email_do_paciente` no 017).
+   * Segura o link, confere que a chave existe, não foi usada, não venceu e foi pedida com o endereço de agora do link (e,
+   * sem e-mail na chave, que o do link ainda é o dela), e só então grava: o e-mail digitado vai ao link (D-1247: cria a
+   * linha, se faltar, com as ofertas padrão; a origem vira "paciente", com a data; o mesmo endereço só ganha a data), os
+   * aceites dos avisos, o "parar todos" desfeito e a chave usada. O nome vem do D-1247 (a sonda da revisão r3 injeta a
+   * troca nele).
    */
-  gravarEmailDoPaciente(link: LinkDoBanco, email: string, emailHash: string, ofertasPadrao: boolean, confirmadoEm: Date): Promise<void>
-  marcarConfirmado(linkId: string, quando: Date): Promise<void>
+  gravarEmailDoPaciente(pedido: ConfirmacaoDoAceite): Promise<ResultadoDaConfirmacao>
   marcarConvite(linkId: string, quando: Date): Promise<void>
   /** "Parar todos os e-mails deste plano" (CA-2254); nulo desfaz. */
   pararTudo(linkId: string, quando: string | null): Promise<void>
@@ -192,8 +209,6 @@ export interface BancoDosAvisos {
   aceitesDoLink(linkId: string): Promise<readonly AceiteDoBanco[]>
   /** Os aceites sem descadastro, com link. */
   aceitesAtivos(): Promise<readonly AceiteDoBanco[]>
-  /** Cria o aceite, se não houver um ativo igual (link, tipo e endereço). */
-  criarAceite(aceite: Omit<AceiteDoBanco, 'id' | 'saiuEm' | 'pausadoEm'>): Promise<void>
   sairDosAceites(ids: readonly number[], quando: Date): Promise<void>
   /** "Desfazer": os aceites voltam sem novo S3 (CA-2253). */
   voltarAosAceites(ids: readonly number[]): Promise<void>

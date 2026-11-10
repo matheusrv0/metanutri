@@ -521,6 +521,94 @@ create trigger conferir_chave_do_aceite
   before insert or update of token_hash, link_id, tipo on public.chaves_de_aviso
   for each row execute function public.conferir_chave_do_aceite();
 
+-- D-1261 e CB-1232 (revisão r3, DP-LP-47): o "Confirmar" num passo só. O link vem antes da chave, como na troca e no
+-- gatilho acima: a troca que esteja no meio segura o link, o "Confirmar" espera, relê o token novo e recusa; se o
+-- "Confirmar" segura o link antes, é a troca que espera, e a limpeza dela devolve o link ao e-mail da ficha (D-1248).
+-- Nada é gravado antes de a chave e o link conferirem. Responde 'confirmado', 'usada' (outro "Confirmar" da mesma chave
+-- chegou antes) ou 'nao-vale'. Só a chave de serviço chama; os avisos chegam já filtrados pelo que a nutricionista oferece.
+create or replace function public.confirmar_email_do_paciente(
+  p_chave text,
+  p_avisos text[],
+  p_dia_da_semana smallint,
+  p_ofertas_padrao boolean,
+  p_agora timestamptz
+)
+returns text
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_link_id uuid;
+  v_token text;
+  v_nutri uuid;
+  v_email_do_link text;
+  v_email_hash_do_link text;
+  v_avisos text[] := coalesce(p_avisos, '{}'::text[]);
+  k public.chaves_de_aviso%rowtype;
+begin
+  select c.link_id into v_link_id from public.chaves_de_aviso c where c.chave = p_chave and c.tipo = 'aceite';
+  if v_link_id is null then
+    return 'nao-vale';
+  end if;
+  select a.token, a.nutricionista_id into v_token, v_nutri
+    from public.acompanhamentos a
+   where a.id = v_link_id and a.cortado_em is null
+     for share;
+  if v_token is null then
+    return 'nao-vale';
+  end if;
+  -- Relida depois de segurar o link: a troca que acabou de passar já a apagou.
+  select * into k from public.chaves_de_aviso c where c.chave = p_chave for update;
+  if not found or k.tipo <> 'aceite' or k.link_id is distinct from v_link_id or k.email_hash is null then
+    return 'nao-vale';
+  end if;
+  if k.usado_em is not null then
+    return 'usada';
+  end if;
+  if (k.vence_em is not null and k.vence_em < p_agora) or k.token_hash is distinct from public.hash_do_token(v_token) then
+    return 'nao-vale';
+  end if;
+
+  if k.email is not null then
+    -- D-1247: o e-mail digitado vai ao link. A linha nasce com as ofertas da conta; o mesmo endereço só ganha a data.
+    insert into public.emails_dos_links (link_id, nutricionista_id, oferta_plano, oferta_semana, oferta_lembrete)
+      values (v_link_id, v_nutri, p_ofertas_padrao, p_ofertas_padrao, p_ofertas_padrao)
+      on conflict (link_id) do nothing;
+    select e.email into v_email_do_link from public.emails_dos_links e where e.link_id = v_link_id for update;
+    if v_email_do_link is not distinct from k.email then
+      update public.emails_dos_links set confirmado_em = p_agora where link_id = v_link_id;
+    else
+      update public.emails_dos_links
+         set email = k.email, email_hash = k.email_hash, origem = 'paciente', confirmado_em = p_agora, atualizado_em = now()
+       where link_id = v_link_id;
+    end if;
+  else
+    -- CA-2257: a chave do e-mail que o link já tem só vale enquanto ele for o do link.
+    select e.email_hash into v_email_hash_do_link from public.emails_dos_links e where e.link_id = v_link_id for update;
+    if v_email_hash_do_link is distinct from k.email_hash then
+      return 'nao-vale';
+    end if;
+  end if;
+
+  insert into public.aceites (link_id, nutricionista_id, tipo, email_hash, aceito_em, dia_da_semana)
+    select distinct v_link_id, v_nutri, t, k.email_hash, p_agora, p_dia_da_semana from unnest(v_avisos) as t
+    on conflict (link_id, tipo, email_hash) where saiu_em is null do nothing;
+  if cardinality(v_avisos) > 0 then
+    -- Quem confirma os avisos volta a querer e-mail deste plano.
+    update public.emails_dos_links set parou_tudo_em = null, atualizado_em = now() where link_id = v_link_id and parou_tudo_em is not null;
+    if k.email is null then
+      update public.emails_dos_links set confirmado_em = p_agora where link_id = v_link_id;
+    end if;
+  end if;
+  update public.chaves_de_aviso set usado_em = p_agora, desfazer = null where chave = p_chave;
+  return 'confirmado';
+end;
+$$;
+
+revoke all on function public.confirmar_email_do_paciente(text, text[], smallint, boolean, timestamptz) from public, anon, authenticated;
+grant execute on function public.confirmar_email_do_paciente(text, text[], smallint, boolean, timestamptz) to service_role;
+
 
 -- ---------- Quem lê e quem escreve as tabelas novas ----------
 
@@ -1212,6 +1300,9 @@ commit;
 -- -- duas linhas (D-1246: a troca do endereço corta os endereços antigos)
 -- select tgname from pg_trigger where tgrelid = 'public.chaves_de_aviso'::regclass and tgname = 'conferir_chave_do_aceite';
 -- -- uma linha (D-1256: a confirmação só nasce com o endereço de agora do link)
+-- select has_function_privilege('anon', 'public.confirmar_email_do_paciente(text, text[], smallint, boolean, timestamptz)', 'execute') as anon_confirma,
+--        has_function_privilege('service_role', 'public.confirmar_email_do_paciente(text, text[], smallint, boolean, timestamptz)', 'execute') as servico_confirma;
+-- -- false, true (D-1261: o "Confirmar" num passo só do banco)
 -- select has_table_privilege('anon', 'public.envios', 'select') as anon_le, has_table_privilege('authenticated', 'public.supressao', 'select') as logado_le_supressao;
 -- -- false, false
 -- select pg_get_function_result('public.missoes_por_token(text)'::regprocedure);

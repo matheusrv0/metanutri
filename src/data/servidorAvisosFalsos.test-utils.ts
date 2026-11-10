@@ -115,27 +115,48 @@ export function bancoFalso(inicio: Partial<Pick<EstadoFalso, 'chaveDaRodada'>> =
           (e) => e.emailHash === hash && (e.origem === 'ficha' || e.confirmadoEm !== null) && (estado.links.get(e.linkId)?.substituidoPor ?? null) === null,
         ),
       ),
-    gravarEmailDoPaciente: (link, email, emailHash, oferece, confirmadoEm) =>
-      ok(() => {
+    // D-1261: como o `confirmar_email_do_paciente` do 017, tudo num passo só (aqui, sem nenhum `await` no meio).
+    gravarEmailDoPaciente: async (p) => {
+      const lida = estado.chaves.get(p.chave)
+      const linkDaChave = lida?.linkId ? estado.links.get(lida.linkId) : undefined
+      const tokenDeAgora = linkDaChave ? await hashDoToken(linkDaChave.token) : null
+      return ok(() => {
+        const k = estado.chaves.get(p.chave)
+        const link = k?.linkId ? estado.links.get(k.linkId) : undefined
+        if (!k || k.tipo !== 'aceite' || !link || k.emailHash === null || link !== linkDaChave) return 'nao-vale'
+        if (k.usadoEm !== null) return 'usada'
+        if ((k.venceEm !== null && Date.parse(k.venceEm) < p.agora.getTime()) || k.tokenHash !== tokenDeAgora) return 'nao-vale'
         const atual = estado.emails.get(link.id)
-        estado.emails.set(link.id, {
-          linkId: link.id,
-          nutricionistaId: link.nutricionistaId,
-          email,
-          emailHash,
-          origem: 'paciente',
-          emailFicha: atual?.emailFicha ?? null,
-          confirmadoEm: confirmadoEm.toISOString(),
-          ofertas: atual?.ofertas ?? { plano: oferece, semana: oferece, lembrete: oferece },
-          parouTudoEm: atual?.parouTudoEm ?? null,
-          conviteEm: atual?.conviteEm ?? null,
-        })
-      }),
-    marcarConfirmado: (id, quando) =>
-      ok(() => {
-        const e = estado.emails.get(id)
-        if (e) estado.emails.set(id, { ...e, confirmadoEm: quando.toISOString() })
-      }),
+        const quando = p.agora.toISOString()
+        let linha: EmailDoLink
+        if (k.email !== null) {
+          const base: EmailDoLink = atual ?? {
+            linkId: link.id,
+            nutricionistaId: link.nutricionistaId,
+            email: null,
+            emailHash: null,
+            origem: null,
+            emailFicha: null,
+            confirmadoEm: null,
+            ofertas: { plano: p.ofertasPadrao, semana: p.ofertasPadrao, lembrete: p.ofertasPadrao },
+            parouTudoEm: null,
+            conviteEm: null,
+          }
+          linha = base.email === k.email ? { ...base, confirmadoEm: quando } : { ...base, email: k.email, emailHash: k.emailHash, origem: 'paciente', confirmadoEm: quando }
+        } else {
+          if (atual?.emailHash !== k.emailHash) return 'nao-vale'
+          linha = atual
+        }
+        for (const tipo of new Set(p.avisos)) {
+          if (estado.aceites.some((x) => x.saiuEm === null && x.linkId === link.id && x.tipo === tipo && x.emailHash === k.emailHash)) continue
+          estado.aceites.push({ id: proximoAceite++, linkId: link.id, nutricionistaId: link.nutricionistaId, tipo, emailHash: k.emailHash, aceitoEm: quando, diaDaSemana: p.diaDaSemana, saiuEm: null, pausadoEm: null })
+        }
+        if (p.avisos.length > 0) linha = { ...linha, parouTudoEm: null, ...(k.email === null ? { confirmadoEm: quando } : {}) }
+        estado.emails.set(link.id, linha)
+        estado.chaves.set(k.chave, { ...k, usadoEm: quando, desfazer: null })
+        return 'confirmado'
+      })
+    },
     marcarConvite: (id, quando) =>
       ok(() => {
         const e = estado.emails.get(id)
@@ -148,11 +169,6 @@ export function bancoFalso(inicio: Partial<Pick<EstadoFalso, 'chaveDaRodada'>> =
       }),
     aceitesDoLink: (id) => ok(() => estado.aceites.filter((a) => a.linkId === id)),
     aceitesAtivos: () => ok(() => estado.aceites.filter((a) => a.saiuEm === null && a.linkId !== null)),
-    criarAceite: (a) =>
-      ok(() => {
-        if (estado.aceites.some((x) => x.saiuEm === null && x.linkId === a.linkId && x.tipo === a.tipo && x.emailHash === a.emailHash)) return
-        estado.aceites.push({ ...a, id: proximoAceite++, saiuEm: null, pausadoEm: null })
-      }),
     sairDosAceites: (ids, quando) => ok(() => void (estado.aceites = estado.aceites.map((a) => (ids.includes(a.id) ? { ...a, saiuEm: quando.toISOString() } : a)))),
     voltarAosAceites: (ids) => ok(() => void (estado.aceites = estado.aceites.map((a) => (ids.includes(a.id) ? { ...a, saiuEm: null } : a)))),
     pausarResumo: (id, quando) => ok(() => void (estado.aceites = estado.aceites.map((a) => (a.id === id ? { ...a, pausadoEm: quando ? quando.toISOString() : null } : a)))),

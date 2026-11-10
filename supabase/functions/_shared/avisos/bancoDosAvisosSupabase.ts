@@ -227,24 +227,19 @@ export function criarBancoDosAvisos(cliente: SupabaseClient, aleatorio: (tamanho
       const lidas = linhas(dados(await de('emails_dos_links').select(COLUNAS_DO_EMAIL).eq('email_hash', hash).or('origem.eq.ficha,confirmado_em.not.is.null'), 'e-mails pelo resumo'))
       return lidas.map(paraEmail)
     },
-    async gravarEmailDoPaciente(link, email, emailHash, oferece, confirmadoEm) {
-      // A linha nasce com as ofertas da conta; existindo, só o endereço muda (as ofertas são da nutricionista).
-      dados(
-        await de('emails_dos_links').upsert(
-          { link_id: link.id, nutricionista_id: link.nutricionistaId, oferta_plano: oferece, oferta_semana: oferece, oferta_lembrete: oferece },
-          { onConflict: 'link_id', ignoreDuplicates: true },
-        ),
-        'criar o e-mail do link',
+    async gravarEmailDoPaciente(p) {
+      // D-1261: tudo numa transação do banco (o link seguro antes da chave); aqui só se traduz a resposta.
+      const r = dados(
+        await cliente.rpc('confirmar_email_do_paciente', {
+          p_chave: p.chave,
+          p_avisos: [...p.avisos],
+          p_dia_da_semana: p.diaDaSemana,
+          p_ofertas_padrao: p.ofertasPadrao,
+          p_agora: p.agora.toISOString(),
+        }),
+        'confirmar o e-mail do paciente',
       )
-      dados(
-        await de('emails_dos_links')
-          .update({ email, email_hash: emailHash, origem: 'paciente', confirmado_em: confirmadoEm.toISOString(), atualizado_em: new Date().toISOString() })
-          .eq('link_id', link.id),
-        'gravar o e-mail do paciente',
-      )
-    },
-    async marcarConfirmado(id, quando) {
-      dados(await de('emails_dos_links').update({ confirmado_em: quando.toISOString() }).eq('link_id', id), 'confirmado')
+      return r === 'confirmado' || r === 'usada' ? r : 'nao-vale'
     },
     async marcarConvite(id, quando) {
       dados(await de('emails_dos_links').update({ convite_em: quando.toISOString() }).eq('link_id', id), 'convite')
@@ -261,18 +256,6 @@ export function criarBancoDosAvisos(cliente: SupabaseClient, aleatorio: (tamanho
     async aceitesAtivos() {
       const lidas = await todas((a, b) => de('aceites').select(COLUNAS_DO_ACEITE).is('saiu_em', null).not('link_id', 'is', null).order('id').range(a, b), 'aceites ativos')
       return lidas.map(paraAceite).filter((a): a is AceiteDoBanco => a !== null)
-    },
-    async criarAceite(a) {
-      const r = await de('aceites').insert({
-        link_id: a.linkId,
-        nutricionista_id: a.nutricionistaId,
-        tipo: a.tipo,
-        email_hash: a.emailHash,
-        aceito_em: a.aceitoEm,
-        dia_da_semana: a.diaDaSemana,
-      })
-      // Já havia um ativo igual (o índice único do 017): o aceite continua o mesmo.
-      if (r.error && r.error.code !== '23505') throw new Error(`criar o aceite: ${r.error.message}`)
     },
     async sairDosAceites(ids, quando) {
       if (ids.length === 0) return
