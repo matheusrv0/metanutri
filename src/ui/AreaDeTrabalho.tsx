@@ -487,8 +487,10 @@ export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pe
               />
             ) : rota.aba === 'plano' ? (
               <div className="flex flex-col gap-6">
-                {/* Spec assistente-ia (D-1350): os botões da IA ao lado de "Modelos de plano"; a gaveta no lugar da coluna da direita. */}
+                {/* Spec assistente-ia (D-1350): os botões da IA ao lado de "Modelos de plano"; a gaveta no lugar da coluna da direita.
+                    A `key` pelo caso e pelo paciente (D-1356): o estado da IA de um plano não passa para outro. */}
                 <AssistenteDaIa
+                  key={JSON.stringify([registro.caso.id, pacienteDoPlano?.id ?? null])}
                   caso={caso}
                   aoAlterarCaso={alterarCaso}
                   plano={registro.plano}

@@ -90,6 +90,8 @@ const SEM_PONTO = 'Marque ao menos um ponto.'
 const RASCUNHO = 'Sugestão da IA no plano, como rascunho.'
 
 const idNovo = () => globalThis.crypto.randomUUID()
+/** D-1356: o estado da gaveta é do caso e do paciente em que ela abriu. */
+const donoDo = (caso: Caso, paciente: Paciente | null): string => JSON.stringify([caso.id, paciente?.id ?? null])
 const temItens = (plano: Plano) => plano.refeicoes.some((r) => r.opcoes.principal.length > 0 || r.opcoes.substituto1.length > 0)
 const metaDoTexto = (texto: string): number | null => {
   const n = Number(texto.replace(/\./g, '').replace(',', '.'))
@@ -107,6 +109,8 @@ interface Formulario {
 }
 
 interface PedidoFeito {
+  /** O caso e o paciente para quem o pedido foi feito (D-1356): a resposta só vale para eles. */
+  readonly dono: string
   readonly corpo: CorpoDoPedidoIa
   readonly contexto: ContextoDaResposta
   readonly conferencia: ContextoDaConferencia
@@ -116,6 +120,8 @@ interface PedidoFeito {
 }
 
 interface Desfazer {
+  /** O plano de origem (D-1356): a faixa e o "Desfazer" só valem nele. */
+  readonly dono: string
   readonly plano: Plano
   readonly origemIa: OrigemIa | null
   readonly texto: string
@@ -131,7 +137,7 @@ export function AssistenteDaIa(p: AssistenteDaIaProps) {
   const meus = useMeusAlimentos()
   const largo = useMediaQuery('(min-width: 1180px)')
   const estreito = useMediaQuery('(max-width: 639.98px)')
-  const [aberta, setAberta] = useState<ModoDaGaveta | null>(null)
+  const [abertaEm, setAbertaEm] = useState<{ readonly modo: ModoDaGaveta; readonly dono: string } | null>(null)
   const [form, setForm] = useState<Formulario | null>(null)
   const [pedido, setPedido] = useState<PedidoFeito | null>(null)
   const [confirmando, setConfirmando] = useState(false)
@@ -139,6 +145,9 @@ export function AssistenteDaIa(p: AssistenteDaIaProps) {
   const [desfazer, setDesfazer] = useState<Desfazer | null>(null)
   const [erroLocal, setErroLocal] = useState<Erro | null>(null)
 
+  // D-1356: aberta noutro plano (a tela trocou sem desmontar), a gaveta não aparece neste.
+  const dono = donoDo(caso, paciente)
+  const aberta = abertaEm !== null && abertaEm.dono === dono ? abertaEm.modo : null
   const agora = new Date()
   const hoje = diaLocal(agora)
   const consentimento = paciente?.consentimentoIa ?? null
@@ -164,8 +173,8 @@ export function AssistenteDaIa(p: AssistenteDaIaProps) {
 
   const abrir = (modo: ModoDaGaveta) => {
     if (aberta === modo) return fechar()
-    if (aberta !== null) sugestao.cancelar()
-    setAberta(modo)
+    if (abertaEm !== null) sugestao.cancelar()
+    setAbertaEm({ modo, dono })
     setPedido(null)
     setConfirmando(false)
     setErroLocal(null)
@@ -186,7 +195,7 @@ export function AssistenteDaIa(p: AssistenteDaIaProps) {
 
   const fechar = () => {
     sugestao.cancelar()
-    setAberta(null)
+    setAbertaEm(null)
     setPedido(null)
     setConfirmando(false)
     setErroLocal(null)
@@ -253,7 +262,7 @@ export function AssistenteDaIa(p: AssistenteDaIaProps) {
       idsPermitidos: new Set([...IDS_DO_CATALOGO_IA, ...corpo.meusAlimentos.map((a) => a.id)]),
       plano: corpo.plano,
     }
-    const feito: PedidoFeito = { corpo, contexto, conferencia: conferencia(refeicoes, metaKcal), planoDoPedido: plano, assinaturaDoPlano: JSON.stringify(plano) }
+    const feito: PedidoFeito = { dono, corpo, contexto, conferencia: conferencia(refeicoes, metaKcal), planoDoPedido: plano, assinaturaDoPlano: JSON.stringify(plano) }
     setPedido(feito)
     setRecusadas(new Set())
     setConfirmando(false)
@@ -269,7 +278,7 @@ export function AssistenteDaIa(p: AssistenteDaIaProps) {
   }
 
   const estado = sugestao.estado
-  const resposta = estado.fase === 'resposta' && pedido ? estado.resposta : null
+  const resposta = estado.fase === 'resposta' && pedido && pedido.dono === dono ? estado.resposta : null
   const planoMudou = resposta !== null && pedido !== null && pedido.corpo.modo === 'ajustar' && JSON.stringify(plano) !== pedido.assinaturaDoPlano
   const proposta = resposta && pedido && pedido.corpo.modo === 'gerar' && p.basePronta ? conferirSugestao(resposta.resposta, pedido.conferencia) : null
   const mudancas = resposta && pedido && pedido.corpo.modo === 'ajustar' && p.basePronta && !planoMudou ? conferirMudancas(resposta.resposta.mudancas, pedido.planoDoPedido, pedido.conferencia) : null
@@ -279,23 +288,24 @@ export function AssistenteDaIa(p: AssistenteDaIaProps) {
 
   const marcarIa = (modelo: string) => ({ em: hoje, modelo: modelo || 'claude' })
   const usar = () => {
-    if (!proposta || !resposta) return
+    // D-1356: a proposta pedida para outro caso ou paciente não entra neste plano.
+    if (!proposta || !resposta || pedido?.dono !== dono) return
     if (temItens(plano) && !confirmando) return setConfirmando(true)
-    setDesfazer({ plano, origemIa: caso.origemIa, texto: RASCUNHO })
+    setDesfazer({ dono, plano, origemIa: caso.origemIa, texto: RASCUNHO })
     p.aoAlterarPlano(propostaParaPlano(proposta, idNovo))
     p.aoAlterarCaso({ origemIa: marcarIa(resposta.modelo) })
     fechar()
   }
   const aplicar = () => {
-    if (!mudancas || !resposta || !pedido || aceitas.size === 0) return
+    if (!mudancas || !resposta || !pedido || pedido.dono !== dono || aceitas.size === 0) return
     if (JSON.stringify(plano) !== pedido.assinaturaDoPlano) return setErroLocal(PLANO_MUDOU)
-    setDesfazer({ plano, origemIa: caso.origemIa, texto: aceitas.size === 1 ? '1 mudança aplicada.' : `${aceitas.size} mudanças aplicadas.` })
+    setDesfazer({ dono, plano, origemIa: caso.origemIa, texto: aceitas.size === 1 ? '1 mudança aplicada.' : `${aceitas.size} mudanças aplicadas.` })
     p.aoAlterarPlano(aplicarMudancas(plano, mudancas, aceitas, idNovo))
     p.aoAlterarCaso({ origemIa: marcarIa(resposta.modelo) })
     fechar()
   }
   const desfazerAgora = () => {
-    if (!desfazer) return
+    if (!desfazer || desfazer.dono !== dono) return
     p.aoAlterarPlano(desfazer.plano)
     p.aoAlterarCaso({ origemIa: desfazer.origemIa })
     setDesfazer(null)
@@ -489,7 +499,7 @@ export function AssistenteDaIa(p: AssistenteDaIaProps) {
   const vaiParaTextos = mudancas && lugar !== null ? textosDoVaiPara(mudancas, recusadas, buscarAlimento) : null
   const extras: ExtrasDoPlano = {
     ferramentas: (modelos) => <BotoesDaIa modelos={modelos} podeAdequar={temItens(plano)} motivo={motivoDoBotao} aberta={aberta} aoAbrir={abrir} />,
-    topo: desfazer ? <FaixaDaIa texto={desfazer.texto} aoDesfazer={desfazerAgora} /> : null,
+    topo: desfazer && desfazer.dono === dono ? <FaixaDaIa texto={desfazer.texto} aoDesfazer={desfazerAgora} /> : null,
     vaiPara: vaiParaTextos
       ? (refeicao, opcao, item) => (opcao === 'substituto2' ? null : (vaiParaTextos.get(chaveDoItem(refeicao, opcao === 'principal' ? 'principal' : 'opcao2', item)) ?? null))
       : undefined,

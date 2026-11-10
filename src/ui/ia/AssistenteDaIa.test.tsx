@@ -233,3 +233,90 @@ describe('AssistenteDaIa (spec assistente-ia, T34)', () => {
     expect(screen.queryByRole('table', { name: 'Efeito no plano' })).not.toBeInTheDocument()
   })
 })
+
+/**
+ * CA-2406: a tela troca de plano sem desmontar o assistente (as props mudam, como no endereço trocado à mão). A `key` da
+ * AreaDeTrabalho recomeça o estado; aqui vale a segunda defesa, o caso e o paciente guardados no pedido e no "Desfazer".
+ */
+function DoisPlanos({ deps }: { readonly deps: DependenciasDaSugestao }) {
+  type Qual = 'A' | 'B'
+  const [qual, setQual] = useState<Qual>('A')
+  const [casos, setCasos] = useState(() => ({ A: casoDaGestante({ id: 'caso-a', pacienteId: 'pac-a' }), B: casoDaGestante({ id: 'caso-b', pacienteId: 'pac-b' }) }))
+  const [planos, setPlanos] = useState<Record<Qual, Plano>>(() => ({ A: planoDeAdulto(), B: { refeicoes: planoDeAdulto().refeicoes.slice(0, 1) } }))
+  const [pacientes, setPacientes] = useState<Record<Qual, Paciente>>(() => ({
+    A: pacienteDaGestante({ id: 'pac-a', consentimentoIa: AUTORIZADA }),
+    B: pacienteDaGestante({ id: 'pac-b', consentimentoIa: AUTORIZADA }),
+  }))
+  const resumo = (p: Plano) => p.refeicoes.map((r) => r.opcoes.principal.map((i) => i.alimentoId).join(',')).join('|')
+  const mudarPlano = (p: Plano) => setPlanos((x) => ({ ...x, [qual]: p }))
+  return (
+    <>
+      <output data-testid="A">{resumo(planos.A)}</output>
+      <output data-testid="B">{resumo(planos.B)}</output>
+      <output data-testid="origemB">{JSON.stringify(casos.B.origemIa)}</output>
+      <button type="button" onClick={() => setQual(qual === 'A' ? 'B' : 'A')}>
+        trocar de plano
+      </button>
+      <AssistenteDaIa
+        caso={casos[qual]}
+        aoAlterarCaso={(m) => setCasos((c) => ({ ...c, [qual]: { ...c[qual], ...m } }))}
+        plano={planos[qual]}
+        aoAlterarPlano={mudarPlano}
+        paciente={pacientes[qual]}
+        aoAlterarPaciente={(p) => setPacientes((x) => ({ ...x, [qual]: p }))}
+        restricoes={restricoesDoCaso(casos[qual])}
+        perfil={PERFIL}
+        estudanteAprovado={false}
+        basePronta
+        aoVerPlanos={vi.fn()}
+        aoEditarNaFicha={vi.fn()}
+        conteudo={(e) => <TelaPlano plano={planos[qual]} aoAlterarPlano={mudarPlano} ferramentas={e.ferramentas} topo={e.topo} vaiPara={e.vaiPara} />}
+        lateral={<p>Resumo do dia</p>}
+        dependencias={deps}
+      />
+    </>
+  )
+}
+
+describe('AssistenteDaIa: o estado de um plano só (CA-2406, D-1356)', () => {
+  it('CA-2406: a faixa e o "Desfazer" do plano A não aparecem no plano B; de volta ao A, valem lá', async () => {
+    const usuario = userEvent.setup()
+    render(<DoisPlanos deps={dependencias()} />)
+    const antesDeB = screen.getByTestId('B').textContent
+    await usuario.click(screen.getByRole('button', { name: 'Sugerir plano com IA' }))
+    await usuario.click(screen.getByRole('button', { name: 'Sugerir plano' }))
+    await usuario.click(await screen.findByRole('button', { name: 'Usar como rascunho' }))
+    await usuario.click(screen.getByRole('button', { name: 'Substituir' }))
+    expect(screen.getByText('Sugestão da IA no plano, como rascunho.')).toBeInTheDocument()
+    await usuario.click(screen.getByRole('button', { name: 'trocar de plano' }))
+    expect(screen.queryByText('Sugestão da IA no plano, como rascunho.')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Desfazer' })).not.toBeInTheDocument()
+    expect(screen.getByTestId('B').textContent).toBe(antesDeB)
+    await usuario.click(screen.getByRole('button', { name: 'trocar de plano' }))
+    await usuario.click(screen.getByRole('button', { name: 'Desfazer' }))
+    expect(screen.getByTestId('A').textContent).toBe('53,488,226|3,561,410,78,157|182,448|3,561,377,88')
+    expect(screen.getByTestId('B').textContent).toBe(antesDeB)
+  })
+
+  it('CA-2406: a resposta pedida para A que chega com o plano B na tela não aparece em B nem entra nele', async () => {
+    const usuario = userEvent.setup()
+    let soltar: () => void = () => {}
+    const espera = new Promise<void>((r) => {
+      soltar = r
+    })
+    render(<DoisPlanos deps={dependencias(SUGESTAO, espera)} />)
+    const antesDeB = screen.getByTestId('B').textContent
+    await usuario.click(screen.getByRole('button', { name: 'Sugerir plano com IA' }))
+    await usuario.click(screen.getByRole('button', { name: 'Sugerir plano' }))
+    await usuario.click(screen.getByRole('button', { name: 'trocar de plano' }))
+    await act(async () => soltar())
+    expect(screen.queryByRole('complementary')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Usar como rascunho' })).not.toBeInTheDocument()
+    // Aberta de novo no plano B, a gaveta começa pelo pedido de B.
+    await usuario.click(screen.getByRole('button', { name: 'Sugerir plano com IA' }))
+    expect(screen.getByRole('button', { name: 'Sugerir plano' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Usar como rascunho' })).not.toBeInTheDocument()
+    expect(screen.getByTestId('B').textContent).toBe(antesDeB)
+    expect(screen.getByTestId('origemB').textContent).toBe('null')
+  })
+})
