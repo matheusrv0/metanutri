@@ -7,6 +7,7 @@ import { FAIXA_DO_GASTO_PADRAO, percentualDoGasto } from './energia.ts'
 import { QUANTIDADE_MAXIMA_G } from './busca.ts'
 import { conferirOpcao, faixaDoAlimento, motivoParaRetirar, PORCAO_REDUZIDA, QUANTIDADE_FORA, type ContextoDaConferencia, type Retirado } from './iaConferencia.ts'
 import { calcularMacros } from './macros.ts'
+import { lerOpcoesDoItem } from './opcoesDoItem.ts'
 import { ehItemDeReceita } from './receitaNoPlano.ts'
 import { totaisDoPlano } from './totais.ts'
 import type { ItemPlano, OpcaoId, Plano } from './tipos.ts'
@@ -15,6 +16,16 @@ export const ITEM_SUMIU = 'O item não está mais no plano'
 export const ITEM_DE_RECEITA = 'Receita: mude pela receita'
 
 const opcaoDoPlano = (opcao: OpcaoIa): OpcaoId => (opcao === 'principal' ? 'principal' : 'substituto1')
+
+/**
+ * O item que a mudança aceita refaz (sem a medida gravada: vale a automática), com as opções que a nutricionista escolheu
+ * na busca de substitutos (spec busca-substitutos, D-1114). A opção que virou o próprio item sai, como em `substituirItem`.
+ */
+function itemRefeito(antes: ItemPlano, alimentoId: number, gramas: number): ItemPlano {
+  const opcoes = lerOpcoesDoItem(antes).filter((o) => o.alimentoId !== alimentoId)
+  const item: ItemPlano = { id: antes.id, alimentoId, gramas }
+  return opcoes.length > 0 ? { ...item, opcoesDoItem: opcoes } : item
+}
 
 export interface ItemDaMudanca {
   readonly alimentoId: number
@@ -128,7 +139,7 @@ export function aplicarMudancasComMarcas(plano: Plano, mudancas: readonly Mudanc
     const teto = maximo ?? QUANTIDADE_MAXIMA_G
     const total = Math.max(igual.gramas, Math.min(soma, teto))
     if (total < soma) reduzidas.add(indice)
-    const somado: ItemPlano = { id: igual.id, alimentoId: igual.alimentoId, gramas: total }
+    const somado = itemRefeito(igual, igual.alimentoId, total)
     const vaga = lista.find((v) => v.item === igual)
     if (vaga) vaga.item = somado
     else novos.splice(novos.indexOf(igual), 1, somado)
@@ -147,10 +158,10 @@ export function aplicarMudancasComMarcas(plano: Plano, mudancas: readonly Mudanc
     if (m.tipo === 'remover' && vaga) {
       vaga.sai = true
     } else if (m.tipo === 'gramas' && vaga && c.para) {
-      vaga.item = { id: vaga.item.id, alimentoId: vaga.item.alimentoId, gramas: c.para.gramas }
+      vaga.item = itemRefeito(vaga.item, vaga.item.alimentoId, c.para.gramas)
     } else if (m.tipo === 'trocar' && vaga && c.para) {
       if (somarOuPor(lista, refeicao.novos[opcao], c.para, vaga, c.maximo, indice)) vaga.sai = true
-      else vaga.item = { id: vaga.item.id, alimentoId: c.para.alimentoId, gramas: c.para.gramas }
+      else vaga.item = itemRefeito(vaga.item, c.para.alimentoId, c.para.gramas)
     } else if (m.tipo === 'adicionar' && c.para) {
       if (!somarOuPor(lista, refeicao.novos[opcao], c.para, null, c.maximo, indice)) refeicao.novos[opcao].push({ id: gerarId(), alimentoId: c.para.alimentoId, gramas: c.para.gramas })
     }

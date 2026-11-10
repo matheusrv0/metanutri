@@ -100,6 +100,37 @@ describe('CA-2351: aplicar as mudanças aceitas', () => {
     expect(novo.refeicoes[1]?.opcoes.principal[1]).toHaveProperty('medida')
   })
 
+  it('junção com a busca de substitutos (D-1114): o item que muda pela IA mantém as opções escolhidas; a troca tira a que virou o item', () => {
+    // Arroz (item 0) com as opções 1 (que a troca põe no lugar) e 533; feijão (item 1) com a opção 182.
+    const comOpcoes: Plano = {
+      refeicoes: plano.refeicoes.map((r, i) =>
+        i === 1
+          ? {
+              ...r,
+              opcoes: {
+                ...r.opcoes,
+                principal: r.opcoes.principal.map((it, j) =>
+                  j === 0
+                    ? { ...it, opcoesDoItem: [{ alimentoId: 1, gramas: 150 }, { alimentoId: 533, gramas: 100 }] }
+                    : j === 1
+                      ? { ...it, opcoesDoItem: [{ alimentoId: 182, gramas: 90 }] }
+                      : it,
+                ),
+              },
+            }
+          : r,
+      ),
+    }
+    const conferidas = conferirMudancas([m({}), m({ tipo: 'gramas', item: 1, alimentoId: null, gramas: 100 })], comOpcoes, CTX)
+    const novo = aplicarMudancas(comOpcoes, conferidas, new Set([0, 1]), gerarId)
+    const [arroz, feijao] = novo.refeicoes[1]?.opcoes.principal ?? []
+    expect(arroz).toMatchObject({ alimentoId: 1, opcoesDoItem: [{ alimentoId: 533, gramas: 100 }] })
+    expect(feijao).toMatchObject({ alimentoId: 561, gramas: 100, opcoesDoItem: [{ alimentoId: 182, gramas: 90 }] })
+    // A soma num item que já existe (CB-1310) também fica com as opções dele.
+    const somado = aplicarMudancas(comOpcoes, conferirMudancas([m({ alimentoId: 561 })], comOpcoes, CTX), new Set([0]), gerarId)
+    expect(somado.refeicoes[1]?.opcoes.principal.find((i) => i.alimentoId === 561)?.opcoesDoItem).toEqual([{ alimentoId: 182, gramas: 90 }])
+  })
+
   it('CB-1310: trocar por um alimento que já está na mesma opção soma os gramas no item que existe', () => {
     // Alface: 30 g no plano, mais 25 g da troca, cabe nos 60 g da folha crua.
     const novo = aplicarMudancas(plano, conferirMudancas([m({ item: 0, alimentoId: 78, gramas: 25 })], plano, CTX), new Set([0]), gerarId)
