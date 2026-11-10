@@ -179,6 +179,15 @@ describe('os cabeçalhos do app (spec separacao-site-app, D-507)', () => {
     )
     expect(cabecalhosDoApp(daMeta)).not.toMatch(/cross-origin-opener-policy/i)
   })
+
+  it('R-LP-6 (spec lado-do-paciente, B5 da revisão r1): o token no caminho (/p/<token>, /avisos/<chave>) não sai no Referer para outro site', () => {
+    const texto = cabecalhosDoApp(daMeta)
+    // Uma regra só, a de todo endereço: nenhuma regra própria de /p/* ou /avisos/* troca o Referrer-Policy.
+    expect(texto.split('\n').filter((linha) => linha !== '' && !linha.startsWith(' '))).toEqual(['/*'])
+    const politicaDoReferer = texto.match(/^ {2}Referrer-Policy: (.+)$/m)?.[1]
+    // Para outro site, só a origem (sem o caminho); "no-referrer" e "same-origin" também serviriam.
+    expect(['strict-origin-when-cross-origin', 'strict-origin', 'same-origin', 'no-referrer']).toContain(politicaDoReferer)
+  })
 })
 
 describe('a origem do Supabase do build (DP-CSP-1)', () => {
