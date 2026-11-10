@@ -339,14 +339,29 @@ const partesDoNome = (descricao: string): readonly string[] =>
     .map((p) => p.trim().toLowerCase().replace(/-/g, ' ').replace(/\s+/g, ' ').replace('mingnon', 'mignon'))
     .filter((p) => p !== '')
 
+/** D-1137: os sinônimos óbvios da primeira parte do nome ("Mexerica" e "Tangerina" são a mesma fruta). */
+const SINONIMOS: ReadonlyMap<string, string> = new Map([['mexerica', 'tangerina']])
+/** D-1137: o tofu, pelo nome da TACO ("Soja, queijo (tofu)") ou da base ampliada ("Tofu, firme, …"). */
+const TOFU = /(^|[\s,(])tofu($|[\s,)])/i
+
+/** A primeira parte do nome, com o sinônimo trocado: o nome da fruta ou da verdura. */
+const nomeDoAlimento = (a: Alimento): string => {
+  const primeira = partesDoNome(a.descricao)[0] ?? ''
+  return SINONIMOS.get(primeira) ?? primeira
+}
+
 /**
  * D-1134: o alimento, pelo nome sem o preparo. Na fruta, o nome da fruta (D-422: banana prata e banana nanica são a mesma
- * fruta); o suco e a polpa são outro alimento que a fruta inteira (D-1131).
+ * fruta); o suco e a polpa são outro alimento que a fruta inteira (D-1131). D-1137: na verdura, o nome da verdura (alface
+ * crespa, lisa e americana são a mesma alface), e os sinônimos óbvios (mexerica e tangerina; o tofu da TACO e o da base
+ * ampliada) são o mesmo alimento.
  */
 export function mesmoAlimentoDe(a: Alimento): string {
-  const [alimento = '', ...resto] = partesDoNome(a.descricao)
+  if (TOFU.test(a.descricao)) return 'tofu'
+  const alimento = nomeDoAlimento(a)
   if (ehSucoOuPolpaDeFruta(a)) return `${alimento} (suco ou polpa)`
-  if (ehFrutaInteira(a)) return alimento
+  if (ehFrutaInteira(a) || grupoDeSubstituicao(a).id === 'verdura') return alimento
+  const [, ...resto] = partesDoNome(a.descricao)
   return [alimento, ...resto.filter((p) => !SO_PREPARO.test(p))].join(', ')
 }
 
@@ -354,7 +369,7 @@ export function mesmoAlimentoDe(a: Alimento): string {
 const daMesmaFruta = (base: Alimento): ((a: Alimento) => boolean) => {
   if (!ehFrutaInteira(base)) return () => false
   const fruta = mesmoAlimentoDe(base)
-  return (a) => (ehFrutaInteira(a) || ehSucoOuPolpaDeFruta(a)) && partesDoNome(a.descricao)[0] === fruta
+  return (a) => (ehFrutaInteira(a) || ehSucoOuPolpaDeFruta(a)) && nomeDoAlimento(a) === fruta
 }
 
 /**

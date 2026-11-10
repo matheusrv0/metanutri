@@ -406,6 +406,13 @@ describe('D-1130 e D-1134 (rodada 3): o mesmo alimento, em toda a lista', () => 
       ['Sardinha, assada', 'Sardinha, conserva em óleo'],
       ['Banana, prata, crua', 'Banana, nanica, crua'],
       ['Manga, Haden, crua', 'Manga, Palmer, crua'],
+      // D-1137 (rodada 4): na verdura, o nome da verdura; e os sinônimos óbvios.
+      ['Alface, crespa, crua', 'Alface, lisa, crua'],
+      ['Alface, crespa, crua', 'Alface, americana, crua'],
+      ['Tomate, com semente, cru', 'Tomate, salada'],
+      ['Abóbora, cabotian, cozida', 'Abóbora, moranga, refogada'],
+      ['Mexerica, Rio, crua', 'Tangerina, Poncã, crua'],
+      ['Soja, queijo (tofu)', 'Tofu, firme, com sulfato de cálcio'],
     ] as const) {
       expect(mesmo(x, y), `${x} = ${y}`).toBe(true)
     }
@@ -423,6 +430,8 @@ describe('D-1130 e D-1134 (rodada 3): o mesmo alimento, em toda a lista', () => 
       ['Leite, de vaca, integral', 'Leite, de vaca, desnatado, UHT'],
       ['Pão, trigo, francês', 'Pão, trigo, forma, integral'],
       ['Laranja, pêra, suco', 'Laranja, pêra, crua'],
+      ['Couve, manteiga, crua', 'Couve-flor, crua'],
+      ['Tangerina, Poncã, suco', 'Mexerica, Rio, crua'],
     ] as const) {
       expect(mesmo(x, y), `${x} ≠ ${y}`).toBe(false)
     }
@@ -454,6 +463,17 @@ describe('D-1130 e D-1134 (rodada 3): o mesmo alimento, em toda a lista', () => 
     expect(n.filter((x) => /^Carne, bovina,/.test(x)).length, n.join(' | ')).toBeGreaterThanOrEqual(2)
     expect(n.filter((x) => /^Pintado,/.test(x)).length, n.join(' | ')).toBeLessThanOrEqual(1)
     expect(n.filter((x) => /^Abadejo,/.test(x)).length, n.join(' | ')).toBeLessThanOrEqual(1)
+  })
+
+  it('CA-2151 (D-1137): a alface não troca por outra alface; mexerica e tangerina, uma só; o tofu, por nenhum outro tofu', () => {
+    const alface = nomesDaVista('Alface, crespa, crua', 50)
+    expect(alface.filter((x) => /^Alface,/.test(x)), alface.slice(0, 6).join(' | ')).toEqual([])
+    expect(alface.length, 'a alface continua com verduras').toBeGreaterThanOrEqual(5)
+    const banana = nomesDaVista('Banana, prata, crua', 100).filter((x) => /^(Mexerica|Tangerina),/.test(x))
+    expect(banana.length, banana.join(' | ')).toBeLessThanOrEqual(1)
+    const tofu = nomesDaVista('Soja, queijo (tofu)', 100)
+    expect(tofu.filter((x) => /tofu/i.test(x)), tofu.join(' | ')).toEqual([])
+    expect(tofu, 'o tofu continua com o tremoço').toContain('Tremoço, em conserva')
   })
 
   it('CA-2147: em toda busca, nenhum candidato é o mesmo alimento do item nem o de outro candidato', () => {
