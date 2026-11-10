@@ -110,7 +110,7 @@ Esta spec só descreve o que a F3 terá de cumprir (D-1460); nada dela é implem
 | # | Decisão | Motivo |
 |---|---|---|
 | D-1429 | **"Gerar documento"** abre a prévia do "Documento da avaliação" em A4, na moldura de impressão que o plano já usa (`.area-impressao`, papel sempre claro), com "Salvar em PDF" (a impressão do navegador) e "Fechar". O documento é do que está na avaliação aberta | Protótipo; impressão do plano (spec impressao-do-plano) |
-| D-1430 | **Blocos (CFN 594/2017; pesquisa 7.3).** 1. Cabeçalho: nome da nutricionista, "Nutricionista · CRN-n nº", telefone e e-mail do perfil. 2. Título "Avaliação antropométrica" com a data. 3. Paciente: nome, nascimento com a idade, sexo; avaliação ("Primeira avaliação" ou "Retorno · Nª avaliação") e modalidade. 4. Métodos: o protocolo com a conversão e o adipômetro, o ponto da cintura, o lado e a origem do peso e da estatura. 5. Medidas básicas: peso e estatura com a origem, IMC com a classificação e a fonte. 6. Circunferências (membros com direito e esquerdo; tronco). 7. Dobras com "●" nas do protocolo, a soma e o aviso de variabilidade. 8. Diâmetros. 9. Resultados: indicador, valor, referência, classificação e fonte curta. 10. Comparação com a avaliação anterior (quando há), com a leitura pela MMD. 11. Diagnóstico nutricional e observações, escritos pela nutricionista. 12. Referências (as citações completas das fontes usadas, sem repetir), o aviso "A interpretação é da nutricionista e não substitui avaliação clínica." e a assinatura com nome, profissão, CRN, cidade e data. Rodapé: "Gerado no MetaNutri". Seção sem dado não sai | CFN 594, arts. 4º, 5º e 8º; CFN 599, art. 21; a Mor pediu "menos informação" (esconder o vazio) |
+| D-1430 | **Blocos (CFN 594/2017; pesquisa 7.3).** 1. Cabeçalho: nome da nutricionista, "Nutricionista · CRN-n nº", telefone e e-mail do perfil. 2. Título "Avaliação antropométrica" com a data. 3. Paciente: nome, nascimento com a idade, sexo; avaliação ("Primeira avaliação" ou "Retorno · Nª avaliação") e modalidade. 4. Métodos: o protocolo com a conversão e o adipômetro, o ponto da cintura, o lado e a origem do peso e da estatura. 5. Medidas básicas: peso e estatura com a origem, IMC com a classificação e a fonte. 6. Circunferências (membros com direito e esquerdo; tronco). 7. Dobras com "●" nas do protocolo, a soma e o aviso de variabilidade. 8. Diâmetros. 9. Resultados: indicador, valor, referência, classificação e fonte curta. 10. Comparação com a avaliação anterior (quando há), com a leitura pela MMD. 11. Diagnóstico nutricional e observações, escritos pela nutricionista. 12. Referências (as citações completas das fontes usadas, sem repetir), o aviso "A interpretação é da nutricionista e não substitui avaliação clínica." e a assinatura com nome, profissão, CRN, cidade e data. Rodapé: "Gerado no MetaNutri". Seção sem dado não sai. *Revista (D-1540 a D-1543, 10/11/2026):* o IMC sem a fonte, os resultados sem a coluna "Fonte" e, no lugar das referências, a linha "Referências completas no MetaNutri." | CFN 594, arts. 4º, 5º e 8º; CFN 599, art. 21; a Mor pediu "menos informação" (esconder o vazio) |
 | D-1431 | **Quem assina.** Nutricionista com CRN: nome e CRN. Estudante: o mesmo bloco de estágio do plano (estagiário e preceptor) e a frase de proposta. Sem nome nem CRN: a linha "Assinatura" em branco. Exportação bloqueada pelo CRN (CA-290): "Gerar documento" fica desabilitado com o motivo | O mesmo `AssinaturaDoPlano` das folhas de hoje |
 | D-1432 | **Diagnóstico nutricional e observações** são campos de texto da prévia (não saem no papel como campo), gravados na avaliação. Começam vazios; o botão "Usar o resumo das classificações" escreve no campo um rascunho com as classificações do motor e as fontes, que a nutricionista revisa. Vazio, o documento sai com o espaço do diagnóstico em linhas para escrever à mão | CFN 594, art. 4º §1º: o diagnóstico é da nutricionista, "com indicação do protocolo utilizado". O protótipo mostra o texto pronto; o app não escreve diagnóstico sozinho |
 | D-1433 | **Página.** A4 retrato, papel claro nos dois temas, margens do plano impresso; da segunda página em diante, a linha fina "Paciente · Avaliação de dd/mm/aaaa" e "Nutricionista · CRN" (como a dieta). O bloco de assinatura não fica sozinho no topo de uma página | Protótipo (2 páginas); spec impressao-do-plano, CA-316 |
@@ -213,6 +213,20 @@ era da junção com a `main`). Decididas no "apenas faça", pela fonte de cada p
 | D-1527 | **Texto do motor pelo sexo** (B2): "o risco da paciente" ou "do paciente"; "IMC de 27 a 29,99 (idosa)" ou "(idoso)"; "Idosa:" ou "Idoso:" na nota do IMC; "corte da idosa" ou "do idoso"; "panturrilha baixa na idosa" ou "no idoso"; "se a atleta é magra" ou "se o atleta é magro" e "para esta atleta" ou "este atleta"; sem sexo, "a pessoa" | Contrato do dono ("da paciente"/"do paciente"); CB-1411 (nenhum rótulo assume sexo) |
 | D-1528 | **Data local** (B5): plano sem data da consulta usa o dia da última alteração no relógio de quem usa (`diaLocal`), na lista "Avaliação de", na barra, no Histórico e no documento; o "Ver exemplo" nasce com a data da consulta do dia local | Depois das 21h de Brasília, o UTC já é o dia seguinte; a mesma correção da CB-1448 |
 | D-1529 | **Duas avaliações no mesmo dia na lista** (B6): "Avaliação de 03/11/2026 · 1ª do dia" e "Avaliação de 03/11/2026 · 2ª do dia", na ordem do Histórico (a alterada por último é a 2ª, CB-1440); avaliação sozinha no dia fica sem o sufixo | O app não guarda a hora da consulta; a hora da última alteração mudaria a cada número digitado |
+
+### O documento sem a lista de referências (D-1540 a D-1545, 10/11/2026)
+
+O dono rejeita PDF poluído e aprovou ("sim", 10/11) trocar a meia página de "Referências" do fim do documento por uma
+linha só. Revê os blocos 5, 9 e 12 da D-1430 e os critérios CA-2459 e CA-2460.
+
+| # | Decisão | Motivo |
+|---|---|---|
+| D-1540 | **A seção "Referências" sai do documento.** No lugar dela, logo antes do aviso "A interpretação é da nutricionista e não substitui avaliação clínica.", uma linha só, em texto pequeno: "Referências completas no MetaNutri." | O dono rejeita PDF poluído; a lista, uma citação completa por indicador, ocupava meia página |
+| D-1541 | **A linha só sai quando o documento usa alguma fonte** (a gordura, um resultado ou a classificação do IMC). O plano sem medida (CB-1444) sai sem ela | Sem fonte usada, a linha apontaria para nada |
+| D-1542 | **A coluna "Fonte" sai da tabela "Resultados".** Ficam Indicador, Valor, Referência e Classificação; abaixo de 640 px, cada item fica em duas linhas (o nome e o valor; a referência e a classificação), sem a terceira linha, a da fonte | O mesmo: o PDF fica limpo |
+| D-1543 | **A nota do IMC em "Medidas básicas" fica só com a classificação** ("Sobrepeso", sem "· SISVAN, 2011") | O mesmo; sem a coluna "Fonte", ela seria a única fonte solta no papel fora de "Métodos" |
+| D-1544 | **"Métodos" fica como está:** o protocolo com a conversão e as fontes curtas das equações ("Dobras: Jackson & Pollock, 7 dobras, conversão de Siri (Jackson, Pollock e Ward, 1980; Siri, 1961). Adipômetro Lange."), o ponto da cintura, o lado e a origem do peso e da estatura. O rascunho do diagnóstico (D-1497) também fica, com as fontes curtas: é texto da nutricionista, que ela revisa e pode apagar | CFN 594/2017, art. 4º §1º: o diagnóstico vem "com indicação do protocolo utilizado" |
+| D-1545 | **As fontes continuam no motor, no código e nesta spec** (`src/domain/fontesAntropometria.ts`; `documentoDaAvaliacao` segue montando as citações completas sem repetir, que decidem a linha da D-1541), e **a tela do app não muda**: o "ⓘ" de cada linha do resultado abre a citação completa (D-1417) | Toda conta de nutrição tem fonte citada (regra do projeto); o que sai é só a lista no papel |
 
 ## 3. Critérios de aceite
 
@@ -401,9 +415,11 @@ era da junção com a `main`). Decididas no "apenas faça", pela fonte de cada p
   "Retorno · 4ª avaliação", "Presencial"), métodos (protocolo, conversão, adipômetro, ponto da cintura, lado, origem),
   medidas básicas com a classificação do IMC e a fonte, circunferências, dobras com "●" nas do protocolo e a soma,
   diâmetros, resultados com referência, classificação e fonte curta, comparação com a anterior e referências sem
-  repetir.
+  repetir. *Revista (D-1540 a D-1543):* o IMC sem a fonte, os resultados sem a coluna "Fonte" e, no lugar
+  das referências, a linha "Referências completas no MetaNutri."
 - **CA-2460** · Dado uma avaliação só com peso e estatura, então o documento sai sem circunferências, dobras, diâmetros
-  e comparação, e com paciente, métodos, medidas básicas, resultados, diagnóstico e referências.
+  e comparação, e com paciente, métodos, medidas básicas, resultados, diagnóstico e referências. *Revista (D-1540):* a linha
+  "Referências completas no MetaNutri." no lugar das referências.
 - **CA-2461** · Dado o diagnóstico vazio, quando "Usar o resumo das classificações" é tocado, então o campo recebe o
   rascunho (as classificações e as fontes), que fica gravado no plano; vazio, o papel mostra o espaço em linhas.
 - **CA-2462** · Dado a exportação bloqueada pelo CRN, então "Gerar documento" fica desligado com o motivo.
@@ -600,6 +616,26 @@ Os casos que provam as decisões D-1520 a D-1529.
 - **CB-1489** · **Duas avaliações no mesmo dia** (B6, D-1529): a lista "Avaliação de" mostra "Avaliação de 03/11/2026 ·
   1ª do dia" e "Avaliação de 03/11/2026 · 2ª do dia", a 2ª sendo a alterada por último; a de outro dia fica sem
   sufixo; o texto inteiro cabe de 360 a 412 px (CB-1452).
+
+
+### O documento sem a lista de referências (CB-1490 a CB-1495, 10/11/2026)
+
+Os casos que provam as decisões D-1540 a D-1545.
+
+- **CB-1490** · **Avaliação completa** (D-1540): o documento não tem o título "Referências" nem nenhuma citação completa
+  (nada de "Med Sci Sports Exerc 1980"); traz "Referências completas no MetaNutri." uma vez, antes do aviso da
+  interpretação e da assinatura.
+- **CB-1491** · **Plano sem medida** (D-1541, CB-1444): sem fonte usada, a linha "Referências completas no MetaNutri." não
+  sai.
+- **CB-1492** · **Tabela "Resultados"** (D-1542): os cabeçalhos são Indicador, Valor, Referência e Classificação, sem
+  "Fonte"; nenhuma linha traz a fonte curta ("SISVAN, 2011" não aparece no papel); em 390 px, a folha não rola de lado
+  (CA-2470).
+- **CB-1493** · **IMC em "Medidas básicas"** (D-1543): a nota é "Sobrepeso", sem a fonte.
+- **CB-1494** · **"Métodos" com o protocolo** (D-1544): a linha das dobras continua "Dobras: Jackson & Pollock, 7 dobras,
+  conversão de Siri (Jackson, Pollock e Ward, 1980; Siri, 1961). Adipômetro Lange."; o rascunho do diagnóstico continua
+  "IMC: Sobrepeso (26,58 kg/m²; SISVAN, 2011)." e, quando usado, sai no papel como ela deixou.
+- **CB-1495** · **A tela do app** (D-1545): o resultado da avaliação continua com o "ⓘ" ("Fonte: <indicador>") que abre a
+  citação completa; o domínio do documento continua com as citações completas, sem repetir.
 
 ## 5. O que fica para a Mor e para o dono
 
