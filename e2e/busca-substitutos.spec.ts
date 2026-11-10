@@ -125,6 +125,9 @@ test.describe('celular e tablet: a gaveta (D-1116, D-800, D-802)', () => {
       await page.getByRole('button', { name: `Buscar substitutos para ${ARROZ}` }).click()
       const gaveta = page.getByRole('dialog', { name: `Substitutos de ${ARROZ}` })
       await expect(gaveta).toBeVisible()
+      // Mede com a gaveta parada (revisão rodada 4, recomendação 1): no meio da subida, o deslocamento fracionário faz o
+      // navegador dizer 43,99997 px de uma altura de 44 px. O limite continua 44.
+      await gaveta.evaluate((el) => Promise.all(el.getAnimations({ subtree: true }).map((a) => a.finished)))
       const caixa = await gaveta.boundingBox()
       expect(caixa && caixa.x <= 1 && caixa.width >= largura - 2).toBe(true)
       await semVazar(gaveta)
