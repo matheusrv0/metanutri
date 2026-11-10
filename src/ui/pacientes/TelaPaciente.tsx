@@ -176,8 +176,9 @@ export function TelaPaciente({
     setFalhaAoExcluir(false)
     const doPaciente = (contextoDosLinks?.repositorio.listar() ?? []).filter((l) => pacienteDoAcompanhamento(l, casos) === paciente.id || l.pacienteId === paciente.id)
     for (const l of doPaciente) {
-      await apagarEmailsDoLink(clienteDosEmails, l.id)
-      const motivo = (await contextoDosLinks?.remover(l.id)) ?? null
+      // CB-1228: sem apagar os e-mails do link, o link fica (e a ficha também).
+      const apagados = await apagarEmailsDoLink(clienteDosEmails, l.id)
+      const motivo = apagados.ok ? ((await contextoDosLinks?.remover(l.id)) ?? null) : apagados.erro
       if (motivo !== null) {
         setExcluindo(false)
         setFalhaAoExcluir(true)
@@ -227,37 +228,6 @@ export function TelaPaciente({
           ) : null}
         </section>
 
-        <Card className="gap-3">
-          <CardHeader>
-            <CardTitle>Excluir paciente</CardTitle>
-            <CardDescription>
-              {link !== null
-                ? 'Os planos continuam salvos, mas perdem o vínculo com esta ficha. O link do paciente deixa de abrir.'
-                : 'Os planos continuam salvos, mas perdem o vínculo com esta ficha.'}
-            </CardDescription>
-          </CardHeader>
-          {falhaAoExcluir ? (
-            <p role="alert" className="text-sm text-errortext">
-              Não foi possível apagar o link do paciente. Confira a internet e tente de novo.
-            </p>
-          ) : null}
-          {confirmandoExclusao ? (
-            <div className="flex flex-wrap items-center gap-2">
-              <Button variant="destructive" loading={excluindo} onClick={() => void excluirPaciente()}>
-                <Trash aria-hidden="true" />
-                Excluir paciente
-              </Button>
-              <Button variant="ghost" onClick={() => setConfirmandoExclusao(false)}>
-                Cancelar
-              </Button>
-            </div>
-          ) : (
-            <Button variant="outline" className="self-start" onClick={() => setConfirmandoExclusao(true)}>
-              <Trash aria-hidden="true" />
-              Excluir paciente
-            </Button>
-          )}
-        </Card>
       </div>
 
       {/* CA-587: abaixo da tela larga, o histórico e o peso vêm antes dos cartões longos; "Excluir paciente" fica por último. */}
@@ -330,6 +300,42 @@ export function TelaPaciente({
           <CartaoEnviados emails={emailsDoLink.emails} proximo={proximo} />
         </div>
       ) : null}
+
+      {/* CA-587 (B6 da revisão r1): "Excluir paciente" é o último cartão abaixo da tela larga, depois dos e-mails do link;
+          na tela larga, fica no fim da coluna da ficha. */}
+      <div className="flex flex-col xl:col-start-1">
+        <Card className="gap-3">
+          <CardHeader>
+            <CardTitle>Excluir paciente</CardTitle>
+            <CardDescription>
+              {link !== null
+                ? 'Os planos continuam salvos, mas perdem o vínculo com esta ficha. O link do paciente deixa de abrir.'
+                : 'Os planos continuam salvos, mas perdem o vínculo com esta ficha.'}
+            </CardDescription>
+          </CardHeader>
+          {falhaAoExcluir ? (
+            <p role="alert" className="text-sm text-errortext">
+              Não foi possível apagar o link do paciente. Confira a internet e tente de novo.
+            </p>
+          ) : null}
+          {confirmandoExclusao ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <Button variant="destructive" loading={excluindo} onClick={() => void excluirPaciente()}>
+                <Trash aria-hidden="true" />
+                Excluir paciente
+              </Button>
+              <Button variant="ghost" onClick={() => setConfirmandoExclusao(false)}>
+                Cancelar
+              </Button>
+            </div>
+          ) : (
+            <Button variant="outline" className="self-start" onClick={() => setConfirmandoExclusao(true)}>
+              <Trash aria-hidden="true" />
+              Excluir paciente
+            </Button>
+          )}
+        </Card>
+      </div>
     </div>
   )
 }

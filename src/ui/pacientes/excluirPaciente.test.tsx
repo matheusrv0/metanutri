@@ -21,6 +21,32 @@ describe('CA-2284: excluir o paciente', () => {
     expect(links.listar()).toEqual([])
   })
 
+  it('CB-1228: a nuvem não apaga os e-mails do link: a ficha e o link ficam, e a tela avisa', async () => {
+    const { cliente } = emailsFalsos({ rpc: { emails_do_link: linhaDeEmails() }, rpcComErro: ['apagar_emails_do_link'] })
+    const falso = { ...cliente, rpc: (nome: string, p?: Record<string, unknown>) => (nome === 'apagar_emails_do_link' ? Promise.resolve({ data: null, error: { message: 'Failed to fetch' } }) : cliente.rpc(nome, p)) }
+    const { usuario, links, pacientes } = montarFichaComLink({ cliente: falso })
+    await usuario.click(screen.getByRole('button', { name: 'Excluir paciente' }))
+    await usuario.click(screen.getByRole('button', { name: 'Excluir paciente' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('Não foi possível apagar o link do paciente. Confira a internet e tente de novo.')
+    expect(pacientes.obter('p1')).not.toBeNull()
+    expect(links.listar()).toHaveLength(1)
+  })
+
+  it('DP-LP-30: com o banco ainda sem o 017, não há e-mail a apagar, e o paciente sai', async () => {
+    const { cliente } = emailsFalsos({ rpc: { emails_do_link: linhaDeEmails() }, rpcComErro: ['apagar_emails_do_link'] })
+    const { usuario, pacientes } = montarFichaComLink({ cliente })
+    await usuario.click(screen.getByRole('button', { name: 'Excluir paciente' }))
+    await usuario.click(screen.getByRole('button', { name: 'Excluir paciente' }))
+    await waitFor(() => expect(pacientes.obter('p1')).toBeNull())
+  })
+
+  it('CA-587: "Excluir paciente" é o último cartão da ficha, depois dos e-mails do link', () => {
+    const { cliente } = emailsFalsos({ rpc: { emails_do_link: linhaDeEmails() } })
+    montarFichaComLink({ cliente })
+    const titulos = screen.getAllByText(/^(Avisos por e-mail|Próximo e-mail|Enviados|Excluir paciente|Histórico de planos)$/, { selector: '[data-slot="card-title"], h2, h3, div' })
+    expect(titulos.at(-1)).toHaveTextContent('Excluir paciente')
+  })
+
   it('sem link, a confirmação continua a de antes', () => {
     montarFichaComLink({ link: null })
     expect(screen.getByText('Os planos continuam salvos, mas perdem o vínculo com esta ficha.')).toBeInTheDocument()

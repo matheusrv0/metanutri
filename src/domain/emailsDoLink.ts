@@ -311,9 +311,20 @@ export async function linksComAvisos(cliente: ClienteDosEmails | null): Promise<
 }
 
 /** DP-LP-26: excluir o paciente apaga o e-mail, os aceites e os envios do link antes de o link sair. */
+/**
+ * DP-LP-26, CA-2284 e CB-1228: apaga o e-mail, os aceites, as chaves e os envios do link. Sem servidor (o modo local) ou
+ * com o banco ainda sem o 017 (DP-LP-30), não há e-mail guardado, e vale como apagado; qualquer outra falha volta como
+ * falha, e a ficha não é excluída.
+ */
 export async function apagarEmailsDoLink(cliente: ClienteDosEmails | null, linkId: string): Promise<Resultado> {
-  const r = await chamarBanco(cliente, 'apagar_emails_do_link', { p_link: linkId })
-  return r.ok ? { ok: true } : r
+  if (cliente === null) return { ok: true }
+  try {
+    const { error } = await cliente.rpc('apagar_emails_do_link', { p_link: linkId })
+    if (!error) return { ok: true }
+    return /Could not find the function|PGRST202/.test(`${error.message} ${error.code ?? ''}`) ? { ok: true } : { ok: false, erro: EMAILS_INDISPONIVEIS }
+  } catch {
+    return { ok: false, erro: EMAILS_INDISPONIVEIS }
+  }
 }
 
 // ---------- A nutricionista: Configurações › E-mails ----------
