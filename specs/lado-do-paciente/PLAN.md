@@ -740,3 +740,27 @@ T45 a T57 em cima de T42 a T44. Rodada final, com as travas de sempre:
   os que passarem adiados (o lembrete, para o dia seguinte). É o que a D-1254 pede; o `TETO_CONTA_DIA` sobe sem código
   novo.
 - A Política (D-1250) continua **PARA O DONO APROVAR**; a versão dos textos fica `2026-11-03`.
+
+### 10.2 A validação da correção da revisão r2 (10/11/2026)
+
+T58 a T66 em cima de 578a6692. Rodada final, com as travas de sempre:
+- `npm run lint`: 0 erro (o aviso antigo de sempre). `npm run typecheck`: limpo. `npm run build`: limpo.
+- `npx vitest run --maxWorkers=4`: 7.469 de 7.469, em 408 arquivos.
+- e2e dos arquivos do paciente (`servidor-falso/lado-do-paciente`, `servidor-falso/marca-no-link`, `marca-no-link`,
+  `missoes`): 34 de 34. e2e completo, na configuração normal, com a `trava-e2e` e `--workers=2`: **504 de 504** (7,3 min).
+- `npm run test:csp` (com a `trava-csp`): 3 de 3.
+- `npm run test:seguranca` (com a `trava-ataques`): **358 de 358** em 11 arquivos, com a corrida nos dois sentidos
+  (duas transações no banco local).
+- As sondas das revisões: `sonda-trocar-endereco.mts` (r1) `furo1=false furo2=false furo3=false`;
+  `sonda-contornos-r2.mts` "nenhum furo" (parte F: a troca no meio do "Receber" responde 404 e a chave não nasce);
+  `sonda-nome-remetente.mts` sai "Ana Lima" em todos os casos de endereço web; `sonda-tempo-recuperar.mts` (r1) e
+  `sonda-tempo-r2.mts` sem diferença de tempo (pior 10 ms).
+
+**Divergências que ficam:**
+- O instruído para a Política era "até 7 dias"; o texto diz "por até 8 dias", porque a confirmação vence em 7 dias e a
+  limpeza (`limpar_emails_antigos`) roda uma vez por dia: o endereço pode ficar até um dia a mais.
+- O CA-464 (`seguranca-lote-3`) ainda tem, na spec dele, a frase de antes do Turnstile ("Nas telas de conta, …"). O
+  texto e o teste seguem o D-1259.
+- CA-2306: a resposta do e-mail bloqueado é igual no corpo, mas sai sem esperar o envio; a diferença de tempo é a de
+  um envio ao Resend. O "Receber" pede o token, e o tempo fixo (D-1249) é só da recuperação.
+- A Política (D-1250 e D-1259) continua **PARA O DONO APROVAR**; a versão dos textos fica `2026-11-03`.
