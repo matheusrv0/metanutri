@@ -217,11 +217,19 @@ describe('documentos legais', () => {
     )
   })
 
-  it('CA-464: a política diz, em "Onde os dados ficam", que o Cloudflare Turnstile recebe dados técnicos do navegador nas telas de conta', () => {
+  it('CA-464 e CA-2304: a política diz, em "Onde os dados ficam", que o Cloudflare Turnstile recebe dados técnicos do navegador nas telas de conta e em "Recuperar meu link"', () => {
     render(<TelaPrivacidade />)
     const lista = screen.getByRole('heading', { name: 'Onde os dados ficam' }).nextElementSibling
     expect(lista).toHaveTextContent(
-      'Nas telas de conta, o Cloudflare Turnstile recebe dados técnicos do navegador, como o endereço IP, para separar pessoas de robôs.',
+      'Nas telas de conta e em “Recuperar meu link”, o Cloudflare Turnstile recebe dados técnicos do navegador, como o endereço IP, para separar pessoas de robôs.',
+    )
+  })
+
+  it('CA-2304 (spec lado-do-paciente, D-1259): o e-mail informado no link, até ser confirmado, recebe só o pedido de confirmação e fica guardado até 8 dias', () => {
+    render(<TelaPrivacidade />)
+    const texto = document.body.textContent ?? ''
+    expect(texto).toContain(
+      'O e-mail que o paciente informa no link só passa a valer depois que ele toca em Confirmar no e-mail que recebe. Até lá, esse e-mail recebe só o pedido de confirmação e fica guardado com ele por até 8 dias.',
     )
   })
 

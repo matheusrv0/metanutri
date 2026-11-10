@@ -40,11 +40,12 @@ export function TelaPrivacidade() {
           O plano alimentar do paciente (refeições, quantidades, substitutos, orientações e receitas), quando o nutricionista ativa “Mostrar o plano
           alimentar no link”: para o paciente consultar o plano.
         </li>
-        {/* PARA O DONO APROVAR (spec lado-do-paciente, D-1250): o texto diz o que o código faz. */}
+        {/* PARA O DONO APROVAR (spec lado-do-paciente, D-1250 e D-1259): o texto diz o que o código faz. */}
         <li>
           O e-mail do paciente, quando o nutricionista o registra na ficha ou o próprio paciente o informa no link: para mandar o link do plano,
           os avisos que o paciente aceitou e os e-mails que o nutricionista envia pelo MetaNutri. O e-mail que o paciente informa no link só passa
-          a valer depois que ele toca em Confirmar no e-mail que recebe. Guardamos também o aceite (o aviso, a data e a hora e a versão do texto)
+          a valer depois que ele toca em Confirmar no e-mail que recebe. Até lá, esse e-mail recebe só o pedido de confirmação e fica guardado com
+          ele por até 8 dias. Guardamos também o aceite (o aviso, a data e a hora e a versão do texto)
           enquanto o link existir e por mais 6 meses depois que ele sai, e o histórico dos e-mails enviados (tipo, assunto, situação e data), por 6
           meses. O e-mail que volta (o endereço não existe) ou que é marcado como spam entra numa lista de bloqueio, que guarda só um resumo do
           endereço (hash), para não receber mais avisos. Quem sai de um aviso só deixa de recebê-lo.
@@ -82,7 +83,11 @@ export function TelaPrivacidade() {
           resumo da adesão), são enviados pelo Resend, sem imagem e sem rastreio de abertura ou de clique. O e-mail do paciente é usado só para
           isso: nunca para propaganda do MetaNutri e nunca em lista de contatos.
         </li>
-        <li>Nas telas de conta, o Cloudflare Turnstile recebe dados técnicos do navegador, como o endereço IP, para separar pessoas de robôs.</li>
+        {/* PARA O DONO APROVAR (spec lado-do-paciente, D-1259): "Recuperar meu link" também passa pelo Turnstile. */}
+        <li>
+          Nas telas de conta e em “Recuperar meu link”, o Cloudflare Turnstile recebe dados técnicos do navegador, como o endereço IP, para separar
+          pessoas de robôs.
+        </li>
         <li>
           O app do MetaNutri fica em app.metanutri.com.br e é entregue pela Cloudflare; o site público, em metanutri.com.br, é entregue pelo GitHub.
           Os dois recebem dados técnicos do navegador, como o endereço IP, para entregar as páginas.
