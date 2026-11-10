@@ -89,7 +89,42 @@ export interface ServidorFalso {
   readonly gravacoesDaMarca: Linha[]
   /** Enquanto verdadeiro, todo pedido ao Supabase cai como sem internet. */
   semRede: boolean
+  /**
+   * Spec antropometria-telas (F2): o armazenamento das fotos e dos anexos, pelo caminho no balde, com o tipo e os bytes
+   * que chegaram. Começa vazio e vale para as abas do mesmo navegador.
+   */
+  readonly arquivos: Map<string, ArquivoGuardado>
 }
+
+/** Um arquivo no armazenamento falso. */
+export interface ArquivoGuardado {
+  readonly tipo: string
+  readonly bytes: Buffer
+}
+
+/** O arquivo de um envio do supabase-js: o Blob vai num formulário (multipart), na parte sem nome. */
+function arquivoDoFormulario(corpo: Buffer, tipoDoPedido: string): ArquivoGuardado | null {
+  const limite = /boundary=(?:"([^"]+)"|([^;]+))/i.exec(tipoDoPedido)
+  const marca = limite?.[1] ?? limite?.[2]
+  if (!marca) return null
+  const separador = Buffer.from(`--${marca}`)
+  let inicio = corpo.indexOf(separador)
+  while (inicio >= 0) {
+    const proximo = corpo.indexOf(separador, inicio + separador.length)
+    if (proximo < 0) break
+    const parte = corpo.subarray(inicio + separador.length + 2, proximo - 2)
+    const fimDoCabecalho = parte.indexOf('\r\n\r\n')
+    const cabecalho = parte.subarray(0, fimDoCabecalho).toString('utf8')
+    if (/filename=/i.test(cabecalho)) {
+      const tipo = /content-type:\s*([^\r\n]+)/i.exec(cabecalho)?.[1]?.trim() ?? 'application/octet-stream'
+      return { tipo, bytes: Buffer.from(parte.subarray(fimDoCabecalho + 4)) }
+    }
+    inicio = proximo
+  }
+  return null
+}
+
+const BALDE_DAS_FOTOS = 'fotos-avaliacao'
 
 const json = (route: Route, corpo: unknown, status = 200) =>
   route.fulfill({ status, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify(corpo) })
@@ -106,7 +141,7 @@ interface LinhaDaCopia {
  * Sem guardar a cópia, cada conferência de 60 s achava a nuvem vazia e o app anotava a versão como nula, o que nunca
  * acontece com o Supabase depois do primeiro envio (correção do CA-1442).
  */
-const nuvens = new WeakMap<BrowserContext, { copia: LinhaDaCopia | null }>()
+const nuvens = new WeakMap<BrowserContext, { copia: LinhaDaCopia | null; arquivos: Map<string, ArquivoGuardado> }>()
 
 const corpoDoPedido = (valor: unknown): Record<string, unknown> => {
   const linha: unknown = Array.isArray(valor) ? valor[0] : valor
@@ -118,10 +153,10 @@ const corpoDoPedido = (valor: unknown): Record<string, unknown> => {
  * contexto, não só na página, para valer também na aba que o "Continuar" do site abre.
  */
 export async function ligarServidorFalso(pagina: Page, cenario: Cenario = {}): Promise<ServidorFalso> {
-  const servidor: ServidorFalso = { logouts: [], gravacoesDaCopia: [], gravacoesDaMarca: [], semRede: false }
   const contexto = pagina.context()
-  const nuvem = nuvens.get(contexto) ?? { copia: null }
+  const nuvem = nuvens.get(contexto) ?? { copia: null, arquivos: new Map<string, ArquivoGuardado>() }
   nuvens.set(contexto, nuvem)
+  const servidor: ServidorFalso = { logouts: [], gravacoesDaCopia: [], gravacoesDaMarca: [], semRede: false, arquivos: nuvem.arquivos }
   if (cenario.sessao) {
     await contexto.addInitScript(
       ([chave, valor]) => {
@@ -158,6 +193,38 @@ export async function ligarServidorFalso(pagina: Page, cenario: Cenario = {}): P
       return route.fulfill({ status: 204, headers: { 'access-control-allow-origin': '*' } })
     }
     if (caminho.startsWith('/auth/v1/')) return json(route, {})
+
+    // Spec antropometria-telas (F2): o balde das fotos, com o que o app usa (enviar, assinar, abrir, listar, apagar).
+    const doBalde = `/storage/v1/object/${BALDE_DAS_FOTOS}/`
+    const assinado = `/storage/v1/object/sign/${BALDE_DAS_FOTOS}/`
+    if (caminho.startsWith(doBalde) && pedido.method() === 'POST') {
+      const nome = decodeURIComponent(caminho.slice(doBalde.length))
+      const arquivo = arquivoDoFormulario(pedido.postDataBuffer() ?? Buffer.alloc(0), (await pedido.allHeaders())['content-type'] ?? '')
+      if (!arquivo) return json(route, { statusCode: '400', error: 'Bad Request', message: 'Sem arquivo' }, 400)
+      if (nuvem.arquivos.has(nome)) return json(route, { statusCode: '409', error: 'Duplicate', message: 'The resource already exists' }, 400)
+      nuvem.arquivos.set(nome, arquivo)
+      return json(route, { Key: `${BALDE_DAS_FOTOS}/${nome}`, Id: `id-${nuvem.arquivos.size}` })
+    }
+    if (caminho.startsWith(assinado) && pedido.method() === 'POST') {
+      const nome = decodeURIComponent(caminho.slice(assinado.length))
+      if (!nuvem.arquivos.has(nome)) return json(route, { statusCode: '404', error: 'not_found', message: 'Object not found' }, 400)
+      return json(route, { signedURL: `/object/sign/${BALDE_DAS_FOTOS}/${nome}?token=falso` })
+    }
+    if (caminho.startsWith(assinado) && pedido.method() === 'GET') {
+      const arquivo = nuvem.arquivos.get(decodeURIComponent(caminho.slice(assinado.length)))
+      if (!arquivo) return route.fulfill({ status: 400, headers: { 'access-control-allow-origin': '*' }, body: '' })
+      return route.fulfill({ status: 200, contentType: arquivo.tipo, headers: { 'access-control-allow-origin': '*', 'cache-control': 'max-age=0' }, body: arquivo.bytes })
+    }
+    if (caminho === `/storage/v1/object/list/${BALDE_DAS_FOTOS}`) {
+      const prefixo = String(corpoDoPedido(pedido.postDataJSON())['prefix'] ?? '')
+      const dentro = [...nuvem.arquivos.keys()].filter((nome) => nome.startsWith(`${prefixo}/`) && !nome.slice(prefixo.length + 1).includes('/'))
+      return json(route, dentro.map((nome, i) => ({ name: nome.slice(prefixo.length + 1), id: `id-${i}` })))
+    }
+    if (caminho === `/storage/v1/object/${BALDE_DAS_FOTOS}` && pedido.method() === 'DELETE') {
+      const nomes = corpoDoPedido(pedido.postDataJSON())['prefixes']
+      const apagados = (Array.isArray(nomes) ? nomes : []).filter((nome): nome is string => typeof nome === 'string' && nuvem.arquivos.delete(nome))
+      return json(route, apagados.map((nome) => ({ name: nome })))
+    }
 
     if (caminho === '/rest/v1/rpc/missoes_por_token') {
       if (cenario.link === 'sem-rede') return route.abort('internetdisconnected')
