@@ -215,6 +215,16 @@ describe('o teto por conta e o remetente limpo (D-1254)', () => {
     expect(nomeLimpoDoRemetente('Ana Lima · Nutricionista')).toBe('Ana Lima · Nutricionista')
     expect(nomeLimpoDoRemetente('Ana Lima - Nutrição Clínica')).toBe('Ana Lima - Nutrição Clínica')
   })
+
+  it('CA-2309: hífen, sublinhado ou sinal combinante junto do ponto também saem; os nomes de verdade ficam', () => {
+    // Os casos que sobraram na sonda da revisão r3 (sonda-nome-remetente-r3.mts). U+0338 é o traço que risca a letra.
+    for (const nome of ['Ana Lima golpe-.com', 'Ana Lima golpe_.com', 'Ana Lima golpe̸.com', 'Ana Lima golpe.̸com', 'Ana Lima golpé.com']) {
+      expect(nomeLimpoDoRemetente(nome), nome).toBe('Ana Lima')
+    }
+    for (const nome of ['Dra. Ana Lima', 'A.C. Lima', 'Ana Lima Ltda.', 'Nutri. Ana', 'Clínica Sá', 'Ana Lima - CRN 3', 'Ana Lima e.g. nutri']) {
+      expect(nomeLimpoDoRemetente(nome), nome).toBe(nome)
+    }
+  })
 })
 
 describe('"Trocar o endereço": o S4 (D-1215)', () => {

@@ -92,7 +92,9 @@ const PONTOS_DO_MEIO_COLADOS = /(?<=\S)[·•‧∙⋅・･]+(?=\S)/gu
  * cabeçalho, com até 60 caracteres. Uma conta não manda e-mail com um nome que leva a outro site. Vale a regra geral,
  * não uma lista de terminações: sai qualquer "palavra.palavra" com 2 ou mais letras depois do ponto, depois de o nome
  * passar pela forma de compatibilidade do Unicode (o ponto largo "．" e o "․" viram "."), perder os caracteres
- * invisíveis e ter o espaço antes de um ponto tirado ("golpe .com"). "Dra. Ana" (ponto e espaço) fica.
+ * invisíveis e ter o espaço antes de um ponto tirado ("golpe .com"). "Dra. Ana" (ponto e espaço) fica. D-1262 e
+ * CA-2309: antes do ponto também vale hífen, sublinhado ou um sinal combinante ("golpe-.com", "golpe_.com"), e depois
+ * dele, um sinal combinante.
  */
 export function nomeLimpoDoRemetente(nome: string): string {
   const normalizado = nome
@@ -106,7 +108,7 @@ export function nomeLimpoDoRemetente(nome: string): string {
     .replace(/\s+\.\s*(?=[\p{L}\p{N}])/gu, '.')
     .replace(/\S+@\S+/g, ' ')
     .replace(/\b(?:https?:\/\/|www\.)\S*/gi, ' ')
-    .replace(/\S*[\p{L}\p{N}]\.\p{L}{2,}\S*/gu, ' ')
+    .replace(/\S*[\p{L}\p{N}\p{M}_-]\.\p{M}*\p{L}{2,}\S*/gu, ' ')
     .replace(/\b\d{1,3}(?:\.\d{1,3}){3}\b\S*/g, ' ')
     .replace(/["'`<>\\;:,()[\]{}|]/g, ' ')
     .replace(/\s+/g, ' ')
