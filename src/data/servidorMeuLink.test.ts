@@ -316,6 +316,17 @@ describe('Receber meu link por e-mail (D-1221)', () => {
     expect(await pedir({ acao: 'receber', token: 'k7q2mx9pla3r', usarDaFicha: true, avisos: [] })).toEqual({ status: 422, corpo: { erro: CONFIRA_O_EMAIL } })
   })
 
+  it('CA-2306: o e-mail digitado que voltou responde como qualquer outro, nada sai e o pedido conta', async () => {
+    await comLink(estado)
+    estado.supressao.set(await hashDoEmail('voltou@gmail.com'), 'devolvido')
+    const comoOutro = (await pedir({ acao: 'receber', token: 'k7q2mx9pla3r', email: 'qualquer@gmail.com', avisos: ['semana'] })).corpo
+    const lotes = resend.lotes.length
+    expect(await pedir({ acao: 'receber', token: 'k7q2mx9pla3r', email: 'voltou@gmail.com', avisos: ['semana'] })).toEqual({ status: 200, corpo: { ...comoOutro, enviadoPara: 'v•••u@gmail.com' } })
+    expect(resend.lotes).toHaveLength(lotes)
+    expect([...estado.chaves.values()].filter((k) => k.email === 'voltou@gmail.com')).toEqual([])
+    expect(estado.limites.filter((l) => l.chave === 'link:link-juliana')).toHaveLength(2)
+  })
+
   it('CB-1216: Resend fora do ar: "Não foi possível enviar agora."', async () => {
     await comLink(estado)
     resend.modo = 'fora'

@@ -259,7 +259,11 @@ async function receber(corpo: Readonly<Record<string, unknown>>, deps: Dependenc
   // CA-2236: domínio sem servidor de e-mail é recusado na hora; a consulta que falha não recusa.
   if (dominio !== null && (await deps.temServidorDeEmail(dominio)) === false) return erro(CONFIRA_O_EMAIL, 422)
   const emailHash = await deps.hash(email)
-  if ((await deps.banco.suprimidos([emailHash])).get(emailHash) === 'devolvido') return erro(CONFIRA_O_EMAIL, 422)
+  if ((await deps.banco.suprimidos([emailHash])).get(emailHash) === 'devolvido') {
+    // D-1260 e CA-2306: o e-mail digitado que já voltou responde como qualquer outro (a resposta não revela a devolução),
+    // e nada sai. O que o link já tem continua com "Confira o e-mail.": é o do paciente, que precisa saber.
+    return usarDoLink ? erro(CONFIRA_O_EMAIL, 422) : { status: 200, corpo: { enviadoPara: mascararEmail(email), confirmar: true, confirmarEmail: true } }
+  }
 
   const ativos = new Set((await deps.banco.aceitesDoLink(link.id)).filter((a) => a.saiuEm === null && a.emailHash === emailHash).map((a) => a.tipo))
   const pedir = marcados.filter((t) => !ativos.has(t))
