@@ -5,12 +5,15 @@ import {
   fichaNaGaveta,
   itensDoQueAjustar,
   lacunasMarcadas,
+  lerMetaDaGaveta,
   lerRespostaDaFuncao,
+  metaNaTela,
   motivoDoAdequar,
   perguntasQueFaltam,
   refeicoesDaGaveta,
   responderNaFicha,
   SEM_CONEXAO_IA,
+  novaMetaManual,
   textoDaMeta,
   textoDoSono,
 } from './iaGaveta.ts'
@@ -178,5 +181,25 @@ describe('o motivo do "Sugerir ajustes" desligado (CA-2370 e CA-2412)', () => {
   it('CA-2412 (D-1362): sem nenhum ponto, pede o "Outro pedido", com aspas tipográficas', () => {
     expect(motivoDoAdequar([], new Set(), '  ')).toBe('Escreva em “Outro pedido” o que quer mudar.')
     expect(motivoDoAdequar([], new Set(), 'jantar leve')).toBeNull()
+  })
+})
+
+describe('a meta de energia da gaveta (CA-2413, D-1363)', () => {
+  it('lê com ou sem o separador de milhar, só de 500 a 6.000 kcal', () => {
+    expect(['2.681', '2681', '500', '6.000', '1800,4'].map(lerMetaDaGaveta)).toEqual([2681, 2681, 500, 6000, 1800])
+    expect(['', 'abc', '499', '6001', '1.800 kcal'].map(lerMetaDaGaveta)).toEqual([null, null, null, null, null])
+  })
+  it('mostra com o separador de milhar, como o resto da tela', () => {
+    expect(metaNaTela(2681.4)).toBe('2.681')
+    expect(metaNaTela(null)).toBe('')
+  })
+  it('a meta igual à calculada apaga a manual; a diferente vira a manual', () => {
+    expect(novaMetaManual(2681, 2681.4)).toBeNull()
+    expect(novaMetaManual(1800, 2681)).toBe(1800)
+    expect(novaMetaManual(1800, null)).toBe(1800)
+  })
+  it('a meta inválida avisa na linha do campo', () => {
+    expect(textoDaMeta(null, 2681)).toBe('Informe uma meta entre 500 e 6.000 kcal.')
+    expect(textoDaMeta(null, null)).toBe('Informe uma meta entre 500 e 6.000 kcal.')
   })
 })

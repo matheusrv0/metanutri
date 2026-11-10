@@ -19,6 +19,8 @@ interface PedidoDaIaProps {
   readonly meta: string
   readonly aoMudarMeta: (texto: string) => void
   readonly textoDaMeta: string
+  /** D-1363: a meta digitada não vale (a linha embaixo diz por quê). */
+  readonly metaInvalida?: boolean | undefined
   readonly perguntas: readonly PerguntaDaGaveta[]
   readonly respostas: RespostasDaGaveta
   readonly aoMudarResposta: (id: keyof RespostasDaGaveta, valor: string) => void
@@ -84,10 +86,16 @@ export function PedidoDaIa(p: PedidoDaIaProps) {
                 className="numeros w-24 text-right font-semibold"
                 value={p.meta}
                 onChange={(e) => p.aoMudarMeta(e.target.value)}
+                aria-invalid={p.metaInvalida ? true : undefined}
+                aria-describedby={p.textoDaMeta ? `${id}-meta-linha` : undefined}
               />
               kcal
             </span>
-            {p.textoDaMeta ? <span className="text-xs text-muted-foreground">{p.textoDaMeta}</span> : null}
+            {p.textoDaMeta ? (
+              <span id={`${id}-meta-linha`} className={p.metaInvalida ? 'text-xs font-medium text-foreground' : 'text-xs text-muted-foreground'}>
+                {p.textoDaMeta}
+              </span>
+            ) : null}
           </div>
         </div>
       </Bloco>

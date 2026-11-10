@@ -165,8 +165,24 @@ export function refeicoesDaGaveta(plano: Plano): readonly RefeicaoIa[] {
   return doPlano.length > 0 ? doPlano : REFEICOES_PADRAO.map((r) => ({ nome: r.nome, horario: r.horario }))
 }
 
-/** CA-2363: a linha embaixo da meta de energia. */
-export function textoDaMeta(meta: number, calculada: number | null): string {
+/** D-1363: a meta que a gaveta aceita, de 500 a 6.000 kcal (a mesma faixa da função, CA-2303). */
+export const META_INVALIDA = 'Informe uma meta entre 500 e 6.000 kcal.'
+
+/** D-1363: o texto do campo da meta, com ou sem o separador de milhar; fora da faixa ou sem número, nulo. */
+export function lerMetaDaGaveta(texto: string): number | null {
+  const n = Number(texto.trim().replace(/\./g, '').replace(',', '.'))
+  return texto.trim() !== '' && Number.isFinite(n) && n >= 500 && n <= 6000 ? Math.round(n) : null
+}
+
+/** D-1363: a meta no campo, com o separador de milhar ("2.681"), como o resto da tela. */
+export const metaNaTela = (kcal: number | null): string => (kcal === null || kcal <= 0 ? '' : numero(Math.round(kcal)))
+
+/** CA-2363 e D-1363: a meta manual do caso depois do pedido; a meta igual à calculada apaga a manual. */
+export const novaMetaManual = (meta: number, calculada: number | null): number | null => (calculada !== null && meta === Math.round(calculada) ? null : meta)
+
+/** CA-2363: a linha embaixo da meta de energia; com a meta inválida, o aviso (D-1363). */
+export function textoDaMeta(meta: number | null, calculada: number | null): string {
+  if (meta === null) return META_INVALIDA
   if (calculada === null) return ''
   if (Math.round(meta) === Math.round(calculada)) return 'Calculada pela ficha. A sugestão segue esta meta.'
   return `Calculada pela ficha: ${numero(Math.round(calculada))} kcal. A sugestão segue a sua.`

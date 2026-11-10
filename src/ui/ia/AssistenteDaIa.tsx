@@ -11,7 +11,10 @@ import {
   fichaNaGaveta,
   itensDoQueAjustar,
   lacunasMarcadas,
+  lerMetaDaGaveta,
+  metaNaTela,
   motivoDoAdequar,
+  novaMetaManual,
   perguntasQueFaltam,
   refeicoesDaGaveta,
   responderNaFicha,
@@ -87,16 +90,13 @@ interface AssistenteDaIaProps {
 /** CA-2373: o plano mudou depois do pedido do adequar. */
 const PLANO_MUDOU: Erro = { frase: 'O plano mudou enquanto a IA respondia. Gere de novo.', acao: 'tentar' }
 const SEM_REFEICAO = 'Deixe ao menos uma refeição.'
+const CORRIJA_A_META = 'Corrija a meta de energia.'
 const RASCUNHO = 'Sugestão da IA no plano, como rascunho.'
 
 const idNovo = () => globalThis.crypto.randomUUID()
 /** D-1356: o estado da gaveta é do caso e do paciente em que ela abriu. */
 const donoDo = (caso: Caso, paciente: Paciente | null): string => JSON.stringify([caso.id, paciente?.id ?? null])
 const temItens = (plano: Plano) => plano.refeicoes.some((r) => r.opcoes.principal.length > 0 || r.opcoes.substituto1.length > 0)
-const metaDoTexto = (texto: string): number | null => {
-  const n = Number(texto.replace(/\./g, '').replace(',', '.'))
-  return Number.isFinite(n) && n >= 500 && n <= 6000 ? Math.round(n) : null
-}
 
 interface Formulario {
   readonly perguntas: readonly PerguntaDaGaveta[]
@@ -186,7 +186,7 @@ export function AssistenteDaIa(p: AssistenteDaIaProps) {
     setForm({
       perguntas: paciente ? perguntasQueFaltam(paciente, caso) : [],
       respostas: {},
-      meta: String(Math.round(metaDeEnergia(caso) ?? calculada ?? 0) || ''),
+      meta: metaNaTela(metaDeEnergia(caso) ?? calculada),
       tiradas: new Set(),
       algoMais: '',
       outro: '',
@@ -232,7 +232,7 @@ export function AssistenteDaIa(p: AssistenteDaIaProps) {
   const refeicoesDoPlano = refeicoesDaGaveta(plano)
   const lacunas: (LacunasIa & { readonly adequacao: unknown }) | null =
     aberta === 'ajustar' && form
-      ? lacunasDoPlano(plano, { caso, metaKcal: metaDoTexto(form.meta) ?? calculada ?? 2000, buscar: buscarAlimento, alimentosParaSugerir: alimentosParaSugerir(), restricoes: p.restricoes })
+      ? lacunasDoPlano(plano, { caso, metaKcal: lerMetaDaGaveta(form.meta) ?? calculada ?? 2000, buscar: buscarAlimento, alimentosParaSugerir: alimentosParaSugerir(), restricoes: p.restricoes })
       : null
   const itensAjuste = lacunas ? itensDoQueAjustar(lacunas) : []
 
@@ -240,9 +240,15 @@ export function AssistenteDaIa(p: AssistenteDaIaProps) {
     if (!form || !aberta || motivoDaGaveta) return
     const atual = gravarTodas()
     if (!atual) return
-    const metaKcal = metaDoTexto(form.meta) ?? Math.round(calculada ?? 0)
-    // CA-2363: a meta mudada na gaveta vale para o plano (a meta manual do caso).
-    if (calculada !== null && metaKcal !== Math.round(calculada) && caso.energia.getManual !== metaKcal) p.aoAlterarCaso({ energia: { ...caso.energia, getManual: metaKcal } })
+    const digitada = lerMetaDaGaveta(form.meta)
+    // D-1363: a meta inválida não vai (o botão já está desligado; isto segura o Enter e o "Tentar de novo").
+    if (aberta === 'gerar' && digitada === null) return
+    const metaKcal = digitada ?? Math.round(calculada ?? 0)
+    // CA-2363 e D-1363: a meta mudada na gaveta vale para o plano (a meta manual do caso); a igual à calculada apaga a manual.
+    if (aberta === 'gerar') {
+      const manual = novaMetaManual(metaKcal, calculada)
+      if (caso.energia.getManual !== manual) p.aoAlterarCaso({ energia: { ...caso.energia, getManual: manual } })
+    }
     const refeicoes = aberta === 'gerar' ? refeicoesDoPlano.filter((_, i) => !form.tiradas.has(i)) : plano.refeicoes.map((r) => ({ nome: r.nome, horario: r.horario }))
     const corpo = montarPedidoIa({
       modo: aberta,
@@ -426,14 +432,16 @@ export function AssistenteDaIa(p: AssistenteDaIaProps) {
       rodape = <RodapeDaIa acoes={<Button disabled>{aberta === 'gerar' ? 'Sugerir plano' : 'Sugerir ajustes'}</Button>} contador={contador} />
     } else if (aberta === 'gerar') {
       const semRefeicao = form.tiradas.size >= refeicoesDoPlano.length
-      const motivo = motivoDaGaveta ?? (semRefeicao ? SEM_REFEICAO : null)
+      const metaDigitada = lerMetaDaGaveta(form.meta)
+      const motivo = motivoDaGaveta ?? (semRefeicao ? SEM_REFEICAO : metaDigitada === null ? CORRIJA_A_META : null)
       corpo = (
         <PedidoDaIa
           ficha={paciente ? fichaNaGaveta(caso, paciente, p.restricoes) : []}
           aoEditarNaFicha={p.aoEditarNaFicha}
           meta={form.meta}
           aoMudarMeta={(meta) => mudarForm({ meta })}
-          textoDaMeta={textoDaMeta(metaDoTexto(form.meta) ?? 0, calculada)}
+          textoDaMeta={textoDaMeta(metaDigitada, calculada)}
+          metaInvalida={metaDigitada === null}
           perguntas={form.perguntas}
           respostas={form.respostas}
           aoMudarResposta={(id, valor) => {

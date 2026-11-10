@@ -5,7 +5,7 @@ import { casoDaGestante, HOJE, pacienteDaGestante, planoDeAdulto, restricoesDoCa
 import { SEM_PACIENTE_IA } from '@/domain/iaPedido.ts'
 import type { Paciente } from '@/domain/pacientes.ts'
 import type { PerfilConta } from '@/domain/situacao.ts'
-import type { Plano } from '@/domain/tipos.ts'
+import type { Caso, Plano } from '@/domain/tipos.ts'
 import type { DependenciasDaSugestao } from '../estado/usarSugestaoIa.ts'
 import { TelaPlano } from '../plano/TelaPlano.tsx'
 import { AssistenteDaIa } from './AssistenteDaIa.tsx'
@@ -43,14 +43,25 @@ function dependencias(resposta: unknown = SUGESTAO, espera: Promise<void> = Prom
   }
 }
 
-function Tela({ deps, planoInicial, pacienteInicial }: { readonly deps: DependenciasDaSugestao; readonly planoInicial: Plano; readonly pacienteInicial: Paciente | null }) {
-  const [caso, setCaso] = useState(() => casoDaGestante())
+function Tela({
+  deps,
+  planoInicial,
+  pacienteInicial,
+  casoInicial = casoDaGestante(),
+}: {
+  readonly deps: DependenciasDaSugestao
+  readonly planoInicial: Plano
+  readonly pacienteInicial: Paciente | null
+  readonly casoInicial?: Caso
+}) {
+  const [caso, setCaso] = useState(casoInicial)
   const [plano, setPlano] = useState(planoInicial)
   const [paciente, setPaciente] = useState(pacienteInicial)
   return (
     <>
       <output data-testid="plano">{plano.refeicoes.map((r) => r.opcoes.principal.map((i) => i.alimentoId).join(',')).join('|')}</output>
       <output data-testid="origem">{JSON.stringify(caso.origemIa)}</output>
+      <output data-testid="metaManual">{JSON.stringify(caso.energia.getManual)}</output>
       <output data-testid="consentimento">{JSON.stringify(paciente?.consentimentoIa ?? null)}</output>
       <button type="button" onClick={() => setPlano((p) => ({ refeicoes: p.refeicoes.slice(1) }))}>
         mexer no plano
@@ -363,5 +374,42 @@ describe('AssistenteDaIa: o foco ao fechar (CA-2408, D-1359)', () => {
     await usuario.click(botao)
     await usuario.click(within(screen.getByRole('complementary', { name: 'Adequar com IA' })).getAllByRole('button', { name: 'Fechar' })[0] as HTMLElement)
     await waitFor(() => expect(document.activeElement).toBe(botao))
+  })
+})
+
+describe('AssistenteDaIa: a meta de energia da gaveta (CA-2413, D-1363)', () => {
+  const comManual = () => {
+    const caso = casoDaGestante()
+    return { ...caso, energia: { ...caso.energia, getManual: 1800 } }
+  }
+
+  it('CA-2413: a meta aparece com o separador de milhar; digitar a calculada apaga a meta manual antiga', async () => {
+    const usuario = userEvent.setup()
+    render(<Tela deps={dependencias()} planoInicial={planoDeAdulto()} pacienteInicial={pacienteDaGestante({ consentimentoIa: AUTORIZADA })} casoInicial={comManual()} />)
+    await usuario.click(screen.getByRole('button', { name: 'Sugerir plano com IA' }))
+    const campo = screen.getByRole('textbox', { name: 'Meta de energia do dia' })
+    expect(campo).toHaveValue('1.800')
+    const calculada = /Calculada pela ficha: ([\d.]+) kcal/.exec(document.body.textContent ?? '')?.[1] ?? ''
+    expect(calculada).toMatch(/^\d\.\d{3}$/)
+    await usuario.clear(campo)
+    await usuario.type(campo, calculada)
+    await usuario.click(screen.getByRole('button', { name: 'Sugerir plano' }))
+    expect(screen.getByTestId('metaManual').textContent).toBe('null')
+  })
+
+  it('CA-2413: a meta inválida avisa, marca o campo e desliga "Sugerir plano"', async () => {
+    const usuario = userEvent.setup()
+    const deps = dependencias()
+    montar(deps)
+    await usuario.click(screen.getByRole('button', { name: 'Sugerir plano com IA' }))
+    const campo = screen.getByRole('textbox', { name: 'Meta de energia do dia' })
+    await usuario.clear(campo)
+    await usuario.type(campo, '300')
+    expect(screen.getByText('Informe uma meta entre 500 e 6.000 kcal.')).toBeInTheDocument()
+    expect(campo).toHaveAttribute('aria-invalid', 'true')
+    expect(campo).toHaveAccessibleDescription('Informe uma meta entre 500 e 6.000 kcal.')
+    expect(screen.getByRole('button', { name: 'Sugerir plano' })).toBeDisabled()
+    expect(screen.getByText('Corrija a meta de energia.')).toBeInTheDocument()
+    expect(deps.chamar).not.toHaveBeenCalledWith('sugerir-plano', expect.objectContaining({ modo: 'gerar' }))
   })
 })
