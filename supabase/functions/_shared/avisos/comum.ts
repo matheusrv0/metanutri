@@ -137,6 +137,15 @@ export const ehChave = (valor: unknown): valor is string => typeof valor === 'st
 /** O token do link (12 a 64 letras minúsculas e números, como o 010). */
 export const ehToken = (valor: unknown): valor is string => typeof valor === 'string' && /^[a-z0-9]{12,64}$/.test(valor)
 
+/**
+ * D-1256 (DP-LP-42): o resumo do endereço do link, igual ao `hash_do_token` do 017: SHA-256 do token como está, em
+ * hexadecimal minúsculo. A chave do aceite o guarda, e o banco e a página conferem com o token de agora.
+ */
+export async function hashDoToken(token: string): Promise<string> {
+  const resumo = await globalThis.crypto.subtle.digest('SHA-256', new TextEncoder().encode(token))
+  return Array.from(new Uint8Array(resumo), (b) => b.toString(16).padStart(2, '0')).join('')
+}
+
 // ---------- Os dias ----------
 
 /** O começo do dia de Brasília (os limites "por dia" do paciente e da conta, CA-2237 e CA-2262). */

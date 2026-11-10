@@ -1,7 +1,7 @@
 // O banco e o Resend de mentira das funções de e-mail (spec lado-do-paciente): guardam tudo em memória, com as mesmas
 // regras do supabase/017 (a chave única do envio, um aceite ativo por link, tipo e endereço). Nada sai da máquina.
 import { hashDoEmail } from '../../supabase/functions/_shared/avisos/email.ts'
-import type { DependenciasComuns } from '../../supabase/functions/_shared/avisos/comum.ts'
+import { hashDoToken, type DependenciasComuns } from '../../supabase/functions/_shared/avisos/comum.ts'
 import type {
   AceiteDoBanco,
   BancoDosAvisos,
@@ -161,7 +161,16 @@ export function bancoFalso(inicio: Partial<Pick<EstadoFalso, 'chaveDaRodada'>> =
         const n = estado.nutris.get(id)
         if (n) estado.nutris.set(id, { ...n, resumoDaAdesao: ligado })
       }),
-    criarChave: (c) => ok(() => void estado.chaves.set(c.chave, { ...c, criadoEm: c.criadoEm.toISOString(), usadoEm: null, desfazer: null })),
+    // D-1256: como o gatilho do 017, a chave do aceite só nasce se o link ainda tem o endereço dela.
+    criarChave: async (c) => {
+      const link = c.tipo === 'aceite' && c.linkId !== null ? estado.links.get(c.linkId) : undefined
+      const confere = c.tipo !== 'aceite' || (link !== undefined && c.tokenHash === (await hashDoToken(link.token)))
+      return ok(() => {
+        if (!confere) return false
+        estado.chaves.set(c.chave, { ...c, criadoEm: c.criadoEm.toISOString(), usadoEm: null, desfazer: null })
+        return true
+      })
+    },
     chaveDeSair: (linkId, nutricionistaId, aviso, emailHash) =>
       ok(() => {
         const achada = [...estado.chaves.values()].find(
@@ -169,7 +178,7 @@ export function bancoFalso(inicio: Partial<Pick<EstadoFalso, 'chaveDaRodada'>> =
         )
         if (achada) return achada.chave
         const chave = `sair${aviso}${linkId ?? nutricionistaId}${emailHash}`.replace(/[^A-Za-z0-9]/g, '').padEnd(32, 'x').slice(0, 32)
-        estado.chaves.set(chave, { chave, linkId, nutricionistaId, tipo: 'sair', avisos: [aviso], emailHash, email: null, criadoEm: new Date().toISOString(), venceEm: null, usadoEm: null, desfazer: null })
+        estado.chaves.set(chave, { chave, linkId, nutricionistaId, tipo: 'sair', avisos: [aviso], emailHash, email: null, tokenHash: null, criadoEm: new Date().toISOString(), venceEm: null, usadoEm: null, desfazer: null })
         return chave
       }),
     lerChave: (chave) => ok(() => estado.chaves.get(chave) ?? null),

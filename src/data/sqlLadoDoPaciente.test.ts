@@ -305,3 +305,27 @@ describe('banco: a troca do endereço corta quem tinha o link (017, revisão r1,
     expect(funcao('create or replace function public.conferir_link_do_paciente()')).toContain('substituido_por is null and cortado_em is null')
   })
 })
+
+describe('banco: a confirmação presa ao endereço do link (017, revisão r2, D-1256)', () => {
+  it('CA-2300 (DP-LP-42): a chave do aceite guarda o resumo do endereço com que foi pedida, e a regra vale para toda chave nova', () => {
+    expect(sql).toContain('alter table public.chaves_de_aviso add column if not exists token_hash text;')
+    expect(sql).toContain('alter table public.chaves_de_aviso drop constraint if exists chaves_de_aviso_token_hash_formato;')
+    expect(sql).toContain("add constraint chaves_de_aviso_token_hash_formato check (token_hash is null or token_hash ~ '^[0-9a-f]{64}$');")
+    // `not valid`: o 017 roda de novo sem conferir as chaves velhas, e a regra vale para as novas.
+    expect(sql).toContain('alter table public.chaves_de_aviso drop constraint if exists chaves_de_aviso_aceite_com_endereco;')
+    expect(sql).toContain("add constraint chaves_de_aviso_aceite_com_endereco check (tipo <> 'aceite' or token_hash is not null) not valid;")
+  })
+
+  it('CA-2300 e CB-1232: o banco só grava a chave se o link ainda tem o endereço dela, esperando a troca que esteja no meio', () => {
+    const conferir = funcao('create or replace function public.conferir_chave_do_aceite()')
+    expect(conferir).toContain('security definer')
+    expect(conferir).toContain("if new.tipo <> 'aceite' then")
+    // O `for share` espera o `update` da troca; depois dele, a releitura vê o token novo.
+    expect(conferir).toMatch(/select a\.token into v_token\s+from public\.acompanhamentos a\s+where a\.id = new\.link_id and a\.cortado_em is null\s+for share;/)
+    expect(conferir).toContain('if v_token is null or new.token_hash is distinct from public.hash_do_token(v_token) then')
+    expect(conferir).toContain("raise exception 'O endereço do link mudou.' using errcode = 'P0001';")
+    expect(sql).toContain('revoke all on function public.conferir_chave_do_aceite() from public, anon, authenticated;')
+    expect(sql).toContain('drop trigger if exists conferir_chave_do_aceite on public.chaves_de_aviso;')
+    expect(sql).toContain('create trigger conferir_chave_do_aceite\n  before insert or update of token_hash, link_id, tipo on public.chaves_de_aviso')
+  })
+})

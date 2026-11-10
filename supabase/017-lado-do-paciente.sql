@@ -366,6 +366,13 @@ alter table public.chaves_de_aviso add constraint chaves_de_aviso_email_formato 
   or (tipo = 'aceite' and email_hash is not null and char_length(email) <= 254 and email = lower(email)
       and email ~ '^[^@[:space:]]+@[^@[:space:].]+(\.[^@[:space:].]+)+$')
 );
+-- D-1256 (DP-LP-42, revisão de 10/11): a chave do aceite guarda o resumo (SHA-256, `hash_do_token`) do endereço do link
+-- com que foi pedida. A regra entra `not valid`: vale para toda chave nova, e rodar de novo não confere as velhas.
+alter table public.chaves_de_aviso add column if not exists token_hash text;
+alter table public.chaves_de_aviso drop constraint if exists chaves_de_aviso_token_hash_formato;
+alter table public.chaves_de_aviso add constraint chaves_de_aviso_token_hash_formato check (token_hash is null or token_hash ~ '^[0-9a-f]{64}$');
+alter table public.chaves_de_aviso drop constraint if exists chaves_de_aviso_aceite_com_endereco;
+alter table public.chaves_de_aviso add constraint chaves_de_aviso_aceite_com_endereco check (tipo <> 'aceite' or token_hash is not null) not valid;
 create index if not exists chaves_de_aviso_por_link on public.chaves_de_aviso (link_id);
 create index if not exists chaves_de_aviso_por_conta on public.chaves_de_aviso (nutricionista_id);
 create index if not exists chaves_de_aviso_por_vencimento on public.chaves_de_aviso (vence_em);
@@ -479,6 +486,40 @@ drop trigger if exists trocar_o_endereco on public.acompanhamentos;
 create trigger trocar_o_endereco
   after update of token on public.acompanhamentos
   for each row execute function public.trocar_o_endereco();
+
+-- D-1256 e CB-1232 (revisão de 10/11): a chave do aceite só nasce se o link ainda tem o endereço com que ela foi pedida.
+-- O `for share` espera a troca que esteja no meio (o `update` do token segura a linha); depois dela, a releitura vê o
+-- token novo e a chave é recusada. Se a chave grava antes, é a troca que espera, e a limpeza dela a apaga (D-1248). Assim
+-- a confirmação pedida antes da troca nunca vale depois dela.
+create or replace function public.conferir_chave_do_aceite()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_token text;
+begin
+  if new.tipo <> 'aceite' then
+    return new;
+  end if;
+  select a.token into v_token
+    from public.acompanhamentos a
+   where a.id = new.link_id and a.cortado_em is null
+     for share;
+  if v_token is null or new.token_hash is distinct from public.hash_do_token(v_token) then
+    raise exception 'O endereço do link mudou.' using errcode = 'P0001';
+  end if;
+  return new;
+end;
+$$;
+
+revoke all on function public.conferir_chave_do_aceite() from public, anon, authenticated;
+
+drop trigger if exists conferir_chave_do_aceite on public.chaves_de_aviso;
+create trigger conferir_chave_do_aceite
+  before insert or update of token_hash, link_id, tipo on public.chaves_de_aviso
+  for each row execute function public.conferir_chave_do_aceite();
 
 
 -- ---------- Quem lê e quem escreve as tabelas novas ----------
@@ -1169,6 +1210,8 @@ commit;
 -- -- nove linhas, todas true
 -- select tgname from pg_trigger where tgrelid = 'public.acompanhamentos'::regclass and tgname in ('cuidar_do_link', 'trocar_o_endereco') order by 1;
 -- -- duas linhas (D-1246: a troca do endereço corta os endereços antigos)
+-- select tgname from pg_trigger where tgrelid = 'public.chaves_de_aviso'::regclass and tgname = 'conferir_chave_do_aceite';
+-- -- uma linha (D-1256: a confirmação só nasce com o endereço de agora do link)
 -- select has_table_privilege('anon', 'public.envios', 'select') as anon_le, has_table_privilege('authenticated', 'public.supressao', 'select') as logado_le_supressao;
 -- -- false, false
 -- select pg_get_function_result('public.missoes_por_token(text)'::regprocedure);

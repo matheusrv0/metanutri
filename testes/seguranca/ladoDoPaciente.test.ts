@@ -2,7 +2,8 @@
 // (CA-2226), o último acesso (CA-2239), os avisos no link (CA-2256, CA-2257), o agendamento (CA-2270), o Painel do dono
 // (CA-2281), a limpeza (CA-2285) e as portas fechadas das tabelas e das funções novas. Os ataques de uma conta à outra
 // nas tabelas novas estão em tabelas.test.ts (pela lista TABELAS_DA_CONTA), e a exclusão (CA-2284), em exclusao.test.ts.
-import { randomUUID } from 'node:crypto'
+import { spawn } from 'node:child_process'
+import { createHash, randomUUID } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { beforeAll, describe, expect, it } from 'vitest'
 import { hashDoEmail, mascararEmail } from '../../supabase/functions/_shared/avisos/email.ts'
@@ -20,6 +21,9 @@ const MES_MS = 30 * 24 * 60 * 60 * 1000
 const hojeEmBrasilia = (): string => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date())
 
 type Linha = Record<string, unknown>
+
+/** O resumo do endereço do link, como o `hash_do_token` do 017 (D-1256). */
+const resumoDoToken = (token: string): string => createHash('sha256').update(token, 'utf8').digest('hex')
 
 function sem(contexto: string, erro: { readonly message: string } | null): void {
   if (erro) throw new Error(`${contexto}: ${erro.message}`)
@@ -405,6 +409,7 @@ describe('"Trocar o endereço" corta quem tinha o link (revisão r1: CA-2289, CA
           tipo: 'aceite',
           avisos: ['lembrete'],
           email_hash: await hashDoEmail(doPaciente),
+          token_hash: resumoDoToken(fixo.token),
           vence_em: new Date(Date.now() + MES_MS).toISOString(),
         })
       ).error,
@@ -513,5 +518,82 @@ describe('"Trocar o endereço" corta quem tinha o link (revisão r1: CA-2289, CA
     sem('trocar', (await c.servico.from('acompanhamentos').update({ token: tokenNovo() }).eq('id', doServico)).error)
     expect((await linhaDoLink(daVitima.id))['cortado_em']).toBeNull()
     expect(await abrir(daVitima.token)).toMatchObject({ id: daVitima.id })
+  })
+})
+
+describe('a confirmação presa ao endereço do link (revisão r2: CA-2300, CB-1232)', () => {
+  const email = 'quem.pegou.r2.lp@gmail.com'
+  const tokenNovo = (): string => `lp${randomUUID().replace(/-/g, '').slice(0, 12)}`
+  const novaChave = (): string => randomUUID().replace(/-/g, '')
+  const esperar = (ms: number) => new Promise((resolver) => setTimeout(resolver, ms))
+  const confirmacao = async (link: { readonly id: string }, token: string | null, chave = novaChave()) => ({
+    chave,
+    link_id: link.id,
+    nutricionista_id: c.vitima.id,
+    tipo: 'aceite',
+    avisos: [],
+    email,
+    email_hash: await hashDoEmail(email),
+    ...(token === null ? {} : { token_hash: resumoDoToken(token) }),
+    vence_em: new Date(Date.now() + MES_MS).toISOString(),
+  })
+  const confirmacoesDo = async (link: { readonly id: string }) => (await c.servico.from('chaves_de_aviso').select('chave').eq('link_id', link.id).eq('tipo', 'aceite')).data
+
+  /** Uma transação do psql no banco local que corre junto com o teste (a outra ponta da corrida). */
+  function sqlAoMesmoTempo(sql: string): Promise<{ readonly ok: boolean; readonly erro: string }> {
+    const conteiner = process.env['ATAQUE_CONTEINER_DO_BANCO'] ?? ''
+    if (!/^supabase_db_[a-z0-9-]+$/.test(conteiner)) throw new Error(`RECUSADO: contêiner do banco local errado ("${conteiner}").`)
+    sqlNoBancoLocal('select 1;')
+    return new Promise((resolver) => {
+      const p = spawn('docker', ['exec', '-i', '-e', 'PGPASSWORD=postgres', conteiner, 'psql', '-h', '127.0.0.1', '-U', 'postgres', '-d', 'postgres', '-v', 'ON_ERROR_STOP=1', '-q', '-t', '-A', '-f', '-'])
+      let erro = ''
+      p.stderr.on('data', (d: Buffer) => (erro += d.toString()))
+      p.on('close', (codigo) => resolver({ ok: codigo === 0, erro }))
+      p.stdin.end(sql)
+    })
+  }
+
+  it('CA-2300: a confirmação sem o resumo do endereço, ou com o de um endereço de antes da troca, não nasce', async () => {
+    const link = await novoLink(c.vitima, 'paciente-r2-a')
+    const novo = tokenNovo()
+    sem('trocar o endereço', (await c.vitima.cliente.from('acompanhamentos').update({ token: novo }).eq('id', link.id)).error)
+    const deAntes = await c.servico.from('chaves_de_aviso').insert(await confirmacao(link, link.token))
+    recusadoCom(deAntes, ['P0001'])
+    expect(deAntes.error?.message).toBe('O endereço do link mudou.')
+    recusadoCom(await c.servico.from('chaves_de_aviso').insert(await confirmacao(link, null)), ['23514', 'P0001'])
+    expect(await confirmacoesDo(link)).toEqual([])
+    // Com o endereço de agora, nasce; e a de descadastro não precisa do resumo.
+    expect((await c.servico.from('chaves_de_aviso').insert(await confirmacao(link, novo))).error).toBeNull()
+    expect((await c.servico.from('chaves_de_aviso').insert({ chave: novaChave(), link_id: link.id, nutricionista_id: c.vitima.id, tipo: 'sair', avisos: ['semana'], email_hash: await hashDoEmail(email) })).error).toBeNull()
+  })
+
+  it('CA-2300 e CB-1232: a troca no meio (outra transação segura o link): a confirmação espera e é recusada', async () => {
+    const link = await novoLink(c.vitima, 'paciente-r2-b')
+    const troca = sqlAoMesmoTempo(['begin;', `update public.acompanhamentos set token = '${tokenNovo()}' where id = '${link.id}';`, 'select pg_sleep(2);', 'commit;'].join('\n'))
+    await esperar(700)
+    const inicio = Date.now()
+    const pedido = await c.servico.from('chaves_de_aviso').insert(await confirmacao(link, link.token))
+    expect(Date.now() - inicio).toBeGreaterThan(500)
+    recusadoCom(pedido, ['P0001'])
+    expect((await troca).ok).toBe(true)
+    expect(await confirmacoesDo(link)).toEqual([])
+  })
+
+  it('CB-1232: a confirmação gravando no meio (outra transação): a troca espera e a apaga', async () => {
+    const link = await novoLink(c.vitima, 'paciente-r2-c')
+    const k = await confirmacao(link, link.token)
+    const pedido = sqlAoMesmoTempo(
+      [
+        'begin;',
+        'insert into public.chaves_de_aviso (chave, link_id, nutricionista_id, tipo, avisos, email, email_hash, token_hash, vence_em)',
+        `  values ('${k.chave}', '${link.id}', '${c.vitima.id}', 'aceite', '{}', '${email}', '${k.email_hash}', '${resumoDoToken(link.token)}', now() + interval '7 days');`,
+        'select pg_sleep(2);',
+        'commit;',
+      ].join('\n'),
+    )
+    await esperar(700)
+    sem('trocar o endereço', (await c.vitima.cliente.from('acompanhamentos').update({ token: tokenNovo() }).eq('id', link.id)).error)
+    expect((await pedido).ok).toBe(true)
+    expect(await confirmacoesDo(link)).toEqual([])
   })
 })

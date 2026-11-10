@@ -5,7 +5,7 @@
 // o botão age, por POST ('confirmar', 'sair', 'parar-todos', 'desfazer'). O POST de um clique chega com `?c=<chave>` e o
 // corpo `List-Unsubscribe=One-Click`, e sai daquele aviso sem página (CA-2252). Cada chave mexe só no link dela
 // (CA-2255); a chave mexida à mão não existe e responde "Este endereço não vale." (404). Puro: o banco chega de fora.
-import { CHAVE_QUE_NAO_VALE, ehChave, erro, PEDIDO_INVALIDO, type DependenciasComuns } from './comum.ts'
+import { CHAVE_QUE_NAO_VALE, ehChave, erro, hashDoToken, PEDIDO_INVALIDO, type DependenciasComuns } from './comum.ts'
 import { mascararEmail } from './email.ts'
 import type { AceiteDoBanco, ChaveDeAviso, Desfazer, EmailDoLink, LinkDoBanco, RespostaDaFuncao } from './portas.ts'
 import { emBrasilia } from './regras.ts'
@@ -54,6 +54,9 @@ async function carregar(chave: string, deps: DependenciasComuns): Promise<Contex
   }
   const [link] = await deps.banco.linksPorIds([lida.linkId])
   if (!link) return null
+  // D-1256 e CA-2300: a confirmação ainda aberta só vale com o endereço de agora do link (a pedida antes de uma troca,
+  // ou sem o resumo do endereço, não vale).
+  if (lida.tipo === 'aceite' && lida.usadoEm === null && (lida.tokenHash === null || lida.tokenHash !== (await hashDoToken(link.token)))) return null
   const email = await deps.banco.emailDoLink(link.id)
   // D-1252 e CA-2297: a chave de descadastro só vale para o endereço de agora do link (a ficha corrigida invalida a do
   // endereço errado, que não descadastra nem desfaz nada).

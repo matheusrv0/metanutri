@@ -13,6 +13,7 @@ import {
   enviarServico,
   erro,
   gerarChave,
+  hashDoToken,
   inicioDoDiaDeBrasilia,
   LIMITE_DA_CONTA,
   NAO_ENVIOU,
@@ -94,12 +95,12 @@ export async function enviarLink(pedido: PedidoDeEnvio, deps: DependenciasComuns
   if (!(await deps.banco.anotarLimite(`conta:${pedido.conta}`, ENVIOS_POR_DIA_NA_CONTA, inicioDoDiaDeBrasilia(agora)))) return erro(LIMITE_DA_CONTA, 429)
 
   const convidar = acao === 'convite' || (acao === 'enviar' && !conviteRecente && naoAceitos.length > 0)
-  const item = await planoEnviado(link, nutri, linha, convidar ? naoAceitos : [], deps)
+  const { item, convidou } = await planoEnviado(link, nutri, linha, convidar ? naoAceitos : [], deps)
   const enviado = await enviarServico([item], deps)
   // D-1254 e CA-2299: a conta que chegou ao teto dela ouve a frase do limite da conta.
   if (enviado === 'conta') return erro(LIMITE_DA_CONTA, 429)
   if (enviado === 'fora') return erro(NAO_ENVIOU, 503)
-  if (convidar) await deps.banco.marcarConvite(link.id, agora)
+  if (convidou) await deps.banco.marcarConvite(link.id, agora)
   return { status: 200, corpo: { enviadoPara: mascararEmail(linha.email), agendadoPara: null } }
 }
 
@@ -116,14 +117,21 @@ async function agendar(link: LinkDoBanco, linha: EmailDoLink | null, avisar: boo
 }
 
 /** S2 (D-1224), com o bloco do convite quando há avisos para oferecer (CA-2243). */
-async function planoEnviado(link: LinkDoBanco, nutri: DadosDaNutricionista, linha: EmailDoLink, convite: readonly TipoDeAviso[], deps: DependenciasComuns): Promise<ItemDeServico> {
+async function planoEnviado(
+  link: LinkDoBanco,
+  nutri: DadosDaNutricionista,
+  linha: EmailDoLink,
+  convite: readonly TipoDeAviso[],
+  deps: DependenciasComuns,
+): Promise<{ readonly item: ItemDeServico; readonly convidou: boolean }> {
   const agora = deps.agora()
   const email = linha.email ?? ''
   const emailHash = linha.emailHash ?? ''
   let urlDoConvite: string | null = null
   if (convite.length > 0) {
     const chave = gerarChave(deps.aleatorio)
-    await deps.banco.criarChave({
+    // D-1256: a chave guarda o resumo do endereço do link; recusada (o endereço mudou agora), o S2 sai sem o convite.
+    const gravou = await deps.banco.criarChave({
       chave,
       linkId: link.id,
       nutricionistaId: link.nutricionistaId,
@@ -131,10 +139,11 @@ async function planoEnviado(link: LinkDoBanco, nutri: DadosDaNutricionista, linh
       avisos: convite,
       emailHash,
       email: null,
+      tokenHash: await hashDoToken(link.token),
       criadoEm: agora,
       venceEm: new Date(agora.getTime() + VALIDADE_DO_CONVITE_MS).toISOString(),
     })
-    urlDoConvite = urlDaPagina(deps.ambiente, chave)
+    if (gravou) urlDoConvite = urlDaPagina(deps.ambiente, chave)
   }
   const sair = (await deps.banco.chaveDeSair(link.id, link.nutricionistaId, 's2', emailHash)) ?? ''
   const montado = emailPlanoEnviado({
@@ -145,7 +154,7 @@ async function planoEnviado(link: LinkDoBanco, nutri: DadosDaNutricionista, linh
     convite: urlDoConvite ? { avisos: convite, url: urlDoConvite } : null,
     urlSair: urlDaPagina(deps.ambiente, sair),
   })
-  return {
+  const item: ItemDeServico = {
     email: {
       ...montado,
       nomeDoRemetente: nomeDoRemetente(nutri),
@@ -155,8 +164,9 @@ async function planoEnviado(link: LinkDoBanco, nutri: DadosDaNutricionista, linh
       cabecalhos: cabecalhosDeDescadastro(urlDeUmClique(deps.ambiente, sair)),
       tipo: 'S2',
     },
-    envios: [{ linkId: link.id, nutricionistaId: link.nutricionistaId, emailHash, contaNoTeto: true, extra: convite.length > 0 ? { convite } : null }],
+    envios: [{ linkId: link.id, nutricionistaId: link.nutricionistaId, emailHash, contaNoTeto: true, extra: urlDoConvite ? { convite } : null }],
   }
+  return { item, convidou: urlDoConvite !== null }
 }
 
 /**

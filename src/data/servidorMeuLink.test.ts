@@ -2,7 +2,7 @@
 // A função meu-link (spec lado-do-paciente, D-1220, D-1221, D-1226): recuperar o link, receber o link por e-mail e ligar
 // um aviso, com o banco e o Resend de mentira.
 import { beforeEach, describe, expect, it } from 'vitest'
-import { CHAVE_QUE_NAO_VALE, CONFIRA_O_EMAIL, LIMITE_DA_CONTA, NAO_ENVIOU, PEDIDOS_DEMAIS_NO_DIA } from '../../supabase/functions/_shared/avisos/comum.ts'
+import { CHAVE_QUE_NAO_VALE, CONFIRA_O_EMAIL, hashDoToken, LIMITE_DA_CONTA, LINK_QUE_NAO_ABRE, NAO_ENVIOU, PEDIDOS_DEMAIS_NO_DIA } from '../../supabase/functions/_shared/avisos/comum.ts'
 import { hashDoEmail } from '../../supabase/functions/_shared/avisos/email.ts'
 import { meuLink, TEMPO_DA_RECUPERACAO_MS, type DependenciasDoMeuLink } from '../../supabase/functions/_shared/avisos/meuLink.ts'
 import { TETOS_PADRAO } from '../../supabase/functions/_shared/avisos/tetos.ts'
@@ -340,5 +340,52 @@ describe('Ligar um aviso no link (CA-2256)', () => {
     expect((await pedir({ acao: 'ligar', token: 'k7q2mx9pla3r', tipo: 'tudo' })).status).toBe(400)
     expect((await pedir({ acao: 'apagar' })).status).toBe(400)
     expect((await meuLink({ metodo: 'GET', corpo: null, ip: null }, deps)).status).toBe(405)
+  })
+})
+
+describe('a confirmação presa ao endereço do link (D-1256)', () => {
+  /** A nutricionista troca o endereço do link (o que o gatilho do 017 faz com a linha). */
+  const trocarOEndereco = () => {
+    const link = estado.links.get('link-juliana')
+    if (link) estado.links.set(link.id, { ...link, token: 'novoendereco9' })
+  }
+
+  it('CA-2300 (DP-LP-42): a chave do aceite guarda o resumo do endereço com que foi pedida', async () => {
+    await comLink(estado)
+    await pedir({ acao: 'receber', token: 'k7q2mx9pla3r', email: 'pedro.novo@gmail.com', avisos: [] })
+    expect([...estado.chaves.values()][0]?.tokenHash).toBe(await hashDoToken('k7q2mx9pla3r'))
+    expect(await hashDoToken('k7q2mx9pla3r')).toMatch(/^[0-9a-f]{64}$/)
+  })
+
+  it('CA-2300 e CB-1232: a troca no meio do pedido (durante a consulta do domínio): a confirmação não nasce e nada sai', async () => {
+    await comLink(estado)
+    deps = {
+      ...deps,
+      temServidorDeEmail: async () => {
+        trocarOEndereco()
+        return true
+      },
+    }
+    expect(await pedir({ acao: 'receber', token: 'k7q2mx9pla3r', email: 'quem.pegou@gmail.com', avisos: [] })).toEqual({ status: 404, corpo: { erro: LINK_QUE_NAO_ABRE } })
+    expect(estado.chaves.size).toBe(0)
+    expect(resend.lotes).toHaveLength(0)
+  })
+
+  it('CA-2300: ligar um aviso com a troca no meio também não manda nada', async () => {
+    await comLink(estado)
+    const banco = deps.banco
+    deps = {
+      ...deps,
+      banco: {
+        ...banco,
+        aceitesDoLink: async (id) => {
+          trocarOEndereco()
+          return banco.aceitesDoLink(id)
+        },
+      },
+    }
+    expect(await pedir({ acao: 'ligar', token: 'k7q2mx9pla3r', tipo: 'lembrete' })).toEqual({ status: 404, corpo: { erro: LINK_QUE_NAO_ABRE } })
+    expect(estado.chaves.size).toBe(0)
+    expect(resend.lotes).toHaveLength(0)
   })
 })

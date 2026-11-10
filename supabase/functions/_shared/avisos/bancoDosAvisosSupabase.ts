@@ -31,7 +31,10 @@ const COLUNAS_DO_LINK = 'id, nutricionista_id, token, nome, criado_em, plano_em,
 const COLUNAS_DO_EMAIL = 'link_id, nutricionista_id, email, email_hash, origem, email_ficha, confirmado_em, oferta_plano, oferta_semana, oferta_lembrete, parou_tudo_em, convite_em'
 const COLUNAS_DO_ACEITE = 'id, link_id, nutricionista_id, tipo, email_hash, aceito_em, dia_da_semana, saiu_em, pausado_em'
 const COLUNAS_DO_ENVIO = 'link_id, nutricionista_id, tipo, email_hash, estado, resend_id, chave_unica, dia, extra, criado_em'
-const COLUNAS_DA_CHAVE = 'chave, link_id, nutricionista_id, tipo, avisos, email_hash, email, criado_em, vence_em, usado_em, desfazer'
+const COLUNAS_DA_CHAVE = 'chave, link_id, nutricionista_id, tipo, avisos, email_hash, email, token_hash, criado_em, vence_em, usado_em, desfazer'
+
+/** D-1256: a frase do gatilho `conferir_chave_do_aceite` do 017 (o link não tem mais o endereço da chave). */
+const ENDERECO_MUDOU = 'O endereço do link mudou.'
 
 type Linha = Readonly<Record<string, unknown>>
 
@@ -129,6 +132,7 @@ function paraChave(l: Linha): ChaveDeAviso {
     avisos: Array.isArray(l['avisos']) ? (l['avisos'] as AvisoDaChave[]) : [],
     emailHash: texto(l['email_hash']),
     email: texto(l['email']),
+    tokenHash: texto(l['token_hash']),
     criadoEm: String(l['criado_em']),
     venceEm: texto(l['vence_em']),
     usadoEm: texto(l['usado_em']),
@@ -286,20 +290,21 @@ export function criarBancoDosAvisos(cliente: SupabaseClient, aleatorio: (tamanho
     },
 
     async criarChave(c) {
-      dados(
-        await de('chaves_de_aviso').insert({
-          chave: c.chave,
-          link_id: c.linkId,
-          nutricionista_id: c.nutricionistaId,
-          tipo: c.tipo,
-          avisos: [...c.avisos],
-          email_hash: c.emailHash,
-          email: c.email,
-          criado_em: c.criadoEm.toISOString(),
-          vence_em: c.venceEm,
-        }),
-        'criar a chave',
-      )
+      const r = await de('chaves_de_aviso').insert({
+        chave: c.chave,
+        link_id: c.linkId,
+        nutricionista_id: c.nutricionistaId,
+        tipo: c.tipo,
+        avisos: [...c.avisos],
+        email_hash: c.emailHash,
+        email: c.email,
+        token_hash: c.tokenHash,
+        criado_em: c.criadoEm.toISOString(),
+        vence_em: c.venceEm,
+      })
+      if (r.error?.code === 'P0001' && r.error.message === ENDERECO_MUDOU) return false
+      dados(r, 'criar a chave')
+      return true
     },
     async chaveDeSair(linkId, nutricionistaId, aviso, emailHash) {
       const consulta = de('chaves_de_aviso').select('chave, avisos').eq('tipo', 'sair').eq('nutricionista_id', nutricionistaId).eq('email_hash', emailHash).contains('avisos', [aviso])

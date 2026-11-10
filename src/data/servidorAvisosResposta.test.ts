@@ -3,7 +3,7 @@
 // de um clique, com o banco de mentira.
 import { beforeEach, describe, expect, it } from 'vitest'
 import { responderAosAvisos, type PedidoDaResposta } from '../../supabase/functions/_shared/avisos/avisosResposta.ts'
-import { CHAVE_QUE_NAO_VALE, type DependenciasComuns } from '../../supabase/functions/_shared/avisos/comum.ts'
+import { CHAVE_QUE_NAO_VALE, hashDoToken, type DependenciasComuns } from '../../supabase/functions/_shared/avisos/comum.ts'
 import { hashDoEmail } from '../../supabase/functions/_shared/avisos/email.ts'
 import { acertarRelogio, ANA, bancoFalso, comLink, dependencias, resendFalso, type EstadoFalso } from './servidorAvisosFalsos.test-utils.ts'
 
@@ -32,6 +32,7 @@ async function comPedidoDeAceite(sobre: { readonly vence?: string; readonly avis
     avisos: sobre.avisos ?? ['semana', 'lembrete'],
     emailHash,
     email: null,
+    tokenHash: await hashDoToken(link.token),
     criadoEm: '2026-11-03T12:43:00.000Z',
     venceEm: sobre.vence ?? '2026-11-10T12:43:00.000Z',
     usadoEm: null,
@@ -131,6 +132,7 @@ describe('o e-mail digitado no link só vale confirmado (D-1247)', () => {
       avisos: sobre.avisos ?? [],
       emailHash: await hashDoEmail(email),
       email,
+      tokenHash: await hashDoToken(link.token),
       criadoEm: '2026-11-03T12:43:00.000Z',
       venceEm: '2026-11-10T12:43:00.000Z',
       usadoEm: null,
@@ -178,6 +180,25 @@ describe('o e-mail digitado no link só vale confirmado (D-1247)', () => {
     expect(estado.emails.get('link-juliana')?.email).toBe(segundo)
     await pedir({ acao: 'confirmar', chave: DO_EMAIL, avisos: [] })
     expect(estado.emails.get('link-juliana')?.email).toBe(NOVO)
+  })
+
+  it('CA-2300: a confirmação pedida com o endereço de antes da troca não vale, nem para ler nem para confirmar', async () => {
+    await comEmailPorConfirmar({ avisos: ['semana'] })
+    const link = estado.links.get('link-juliana')
+    if (link) estado.links.set(link.id, { ...link, token: 'novoendereco9' })
+    const naoVale = { status: 404, corpo: { erro: CHAVE_QUE_NAO_VALE } }
+    expect(await pedir({ acao: 'ler', chave: DO_EMAIL })).toEqual(naoVale)
+    expect(await pedir({ acao: 'confirmar', chave: DO_EMAIL, avisos: ['semana'] })).toEqual(naoVale)
+    expect(estado.emails.get('link-juliana')).toMatchObject({ email: 'juliana.martins@gmail.com', origem: 'ficha' })
+    expect(estado.aceites.filter((a) => a.tipo === 'semana')).toHaveLength(0)
+  })
+
+  it('CA-2300: a chave sem o resumo do endereço (de antes desta versão) também não vale', async () => {
+    await comEmailPorConfirmar()
+    const chave = estado.chaves.get(DO_EMAIL)
+    if (chave) estado.chaves.set(DO_EMAIL, { ...chave, tokenHash: null })
+    expect((await pedir({ acao: 'confirmar', chave: DO_EMAIL, avisos: [] })).status).toBe(404)
+    expect(estado.emails.get('link-juliana')?.email).toBe('juliana.martins@gmail.com')
   })
 
   it('a chave com o endereço mexido (o resumo não bate) não vale', async () => {

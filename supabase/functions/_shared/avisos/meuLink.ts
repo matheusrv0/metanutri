@@ -13,6 +13,7 @@ import {
   enviarServico,
   erro,
   gerarChave,
+  hashDoToken,
   inicioDoDiaDeBrasilia,
   LINK_QUE_NAO_ABRE,
   NAO_ENVIOU,
@@ -99,6 +100,8 @@ interface PedidoDeAceite {
 /**
  * O S3: a chave da página (vale 7 dias e uma vez, CB-1222) e o e-mail. Com `emailNovo`, é o e-mail que o paciente
  * digitou no link: a chave guarda o endereço, e o S3 é o "Confirme o seu e-mail" (D-1247), que vale sem aviso marcado.
+ * A chave guarda também o resumo do endereço do link aberto no começo do pedido (D-1256); nulo: o banco a recusou,
+ * porque a troca do endereço aconteceu no meio do pedido.
  */
 async function pedidoDeAceite(
   link: LinkDoBanco,
@@ -108,10 +111,10 @@ async function pedidoDeAceite(
   avisos: readonly TipoDeAviso[],
   emailNovo: boolean,
   deps: DependenciasComuns,
-): Promise<PedidoDeAceite> {
+): Promise<PedidoDeAceite | null> {
   const agora = deps.agora()
   const chave = gerarChave(deps.aleatorio)
-  await deps.banco.criarChave({
+  const gravou = await deps.banco.criarChave({
     chave,
     linkId: link.id,
     nutricionistaId: link.nutricionistaId,
@@ -119,9 +122,11 @@ async function pedidoDeAceite(
     avisos,
     emailHash,
     email: emailNovo ? email : null,
+    tokenHash: await hashDoToken(link.token),
     criadoEm: agora,
     venceEm: new Date(agora.getTime() + VALIDADE_DO_ACEITE_MS).toISOString(),
   })
+  if (!gravou) return null
   const dados = {
     primeiroNome: primeiroNomeDoLink(link),
     remetente: remetenteDoLink(nutri, link),
@@ -267,6 +272,8 @@ async function receber(corpo: Readonly<Record<string, unknown>>, deps: Dependenc
   const chaves: string[] = []
   if (!usarDoLink || pedir.length > 0) {
     const aceite = await pedidoDeAceite(link, nutri, email, emailHash, pedir, !usarDoLink, deps)
+    // D-1256 e CA-2300: o endereço foi trocado no meio do pedido; nada sai.
+    if (aceite === null) return erro(LINK_QUE_NAO_ABRE, 404)
     itens.push(aceite.item)
     chaves.push(aceite.chave)
   }
@@ -290,6 +297,7 @@ async function ligar(corpo: Readonly<Record<string, unknown>>, deps: Dependencia
   if (ativo) return { status: 200, corpo: { enviadoPara: mascararEmail(linha.email), confirmar: false, confirmarEmail: false } }
   if (!(await deps.banco.anotarLimite(chaveDoLimite(link), PEDIDOS_POR_DIA_NO_LINK, inicioDoDiaDeBrasilia(deps.agora())))) return erro(PEDIDOS_DEMAIS_NO_DIA, 429)
   const aceite = await pedidoDeAceite(link, nutri, linha.email, linha.emailHash, [tipo], false, deps)
+  if (aceite === null) return erro(LINK_QUE_NAO_ABRE, 404)
   if (!(await mandarPedido(link, [aceite.item], [aceite.chave], deps))) return erro(NAO_ENVIOU, 503)
   return { status: 200, corpo: { enviadoPara: mascararEmail(linha.email), confirmar: true, confirmarEmail: false } }
 }

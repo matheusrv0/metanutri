@@ -86,6 +86,11 @@ export interface ChaveDeAviso {
    * aceite). Nulo: a chave é do e-mail que o link já tem.
    */
   readonly email: string | null
+  /**
+   * D-1256 (DP-LP-42): o resumo (`hashDoToken`) do endereço do link com que a chave do aceite foi pedida. Nulo na de
+   * descadastro.
+   */
+  readonly tokenHash: string | null
   readonly criadoEm: string
   readonly venceEm: string | null
   readonly usadoEm: string | null
@@ -198,7 +203,11 @@ export interface BancoDosAvisos {
   definirResumoDaAdesao(nutricionistaId: string, ligado: boolean): Promise<void>
 
   // ---- As chaves das páginas ----
-  criarChave(chave: Omit<ChaveDeAviso, 'usadoEm' | 'desfazer' | 'criadoEm'> & { readonly criadoEm: Date }): Promise<void>
+  /**
+   * Grava a chave. Falso: o banco recusou a chave do aceite porque o link não tem mais o endereço dela (D-1256: a troca
+   * aconteceu no meio do pedido).
+   */
+  criarChave(chave: Omit<ChaveDeAviso, 'usadoEm' | 'desfazer' | 'criadoEm'> & { readonly criadoEm: Date }): Promise<boolean>
   /**
    * A chave de descadastro de um link, de um aviso e de um endereço (D-1252: presa ao resumo do e-mail para onde o aviso
    * vai; uma só, sem prazo). Nasce se faltar.

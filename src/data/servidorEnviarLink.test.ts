@@ -1,7 +1,7 @@
 // @vitest-environment node
 // A função enviar-link (spec lado-do-paciente): o S2, o convite, o S4 e o A1 agendado, pedidos pela nutricionista.
 import { beforeEach, describe, expect, it } from 'vitest'
-import { LIMITE_DA_CONTA, NAO_ENVIOU, nomeDoRemetente, nomeLimpoDoRemetente, type DependenciasComuns } from '../../supabase/functions/_shared/avisos/comum.ts'
+import { hashDoToken, LIMITE_DA_CONTA, NAO_ENVIOU, nomeDoRemetente, nomeLimpoDoRemetente, type DependenciasComuns } from '../../supabase/functions/_shared/avisos/comum.ts'
 import { hashDoEmail } from '../../supabase/functions/_shared/avisos/email.ts'
 import { EMAIL_DEVOLVIDO, enviarLink, SEM_EMAIL } from '../../supabase/functions/_shared/avisos/enviarLink.ts'
 import { acertarRelogio, ANA, bancoFalso, comLink, dependencias, envioAntigo, resendFalso, type EstadoFalso, type ResendFalso } from './servidorAvisosFalsos.test-utils.ts'
@@ -60,6 +60,18 @@ describe('"E-mail" no cartão do link: o S2 (D-1224)', () => {
     // O convite é um por mês: o S2 seguinte sai sem ele.
     await pedir('enviar')
     expect(resend.lotes[1]?.emails[0]?.texto).not.toContain('Quero receber os avisos')
+  })
+
+  it('CA-2300: a chave do convite guarda o resumo do endereço; recusada pelo banco (o endereço mudou), o S2 sai sem o convite', async () => {
+    await comJuliana({ aceites: ['semana'] })
+    await pedir('enviar')
+    expect([...estado.chaves.values()].find((c) => c.tipo === 'aceite')?.tokenHash).toBe(await hashDoToken('k7q2mx9pla3r'))
+    const banco = deps.banco
+    deps = { ...deps, banco: { ...banco, criarChave: async () => false } }
+    estado.emails.set(LINK, { ...(estado.emails.get(LINK) ?? ({} as never)), conviteEm: null })
+    expect((await pedir('enviar')).status).toBe(200)
+    expect(resend.lotes[1]?.emails[0]?.texto).not.toContain('Quero receber os avisos')
+    expect(estado.emails.get(LINK)?.conviteEm).toBeNull()
   })
 
   it('CA-2262: o trigésimo primeiro envio de serviço da conta no dia não sai', async () => {
