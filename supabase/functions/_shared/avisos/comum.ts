@@ -82,17 +82,32 @@ export function remetenteDoLink(nutri: DadosDaNutricionista, link: Pick<LinkDoBa
   }
 }
 
+/** Os pontos finais de outros alfabetos (o ideográfico, o árabe, o armênio, o etíope, o siríaco). */
+const PONTOS_DE_OUTROS_ALFABETOS = /[。｡۔։።܁܂]/g
+/** Os pontos do meio (·, •, ‧, ∙, ⋅, ・), que só viram ponto colados entre duas letras: "Ana · Nutri" fica. */
+const PONTOS_DO_MEIO_COLADOS = /(?<=\S)[·•‧∙⋅・･]+(?=\S)/gu
+
 /**
- * D-1254 e CA-2299: o nome do remetente sem endereço web, sem e-mail, sem aspas e sem os sinais de cabeçalho, com até 60
- * caracteres. Uma conta não manda e-mail com um nome que leva a outro site.
+ * D-1254, D-1257, CA-2299 e CA-2302: o nome do remetente sem endereço web, sem e-mail, sem aspas e sem os sinais de
+ * cabeçalho, com até 60 caracteres. Uma conta não manda e-mail com um nome que leva a outro site. Vale a regra geral,
+ * não uma lista de terminações: sai qualquer "palavra.palavra" com 2 ou mais letras depois do ponto, depois de o nome
+ * passar pela forma de compatibilidade do Unicode (o ponto largo "．" e o "․" viram "."), perder os caracteres
+ * invisíveis e ter o espaço antes de um ponto tirado ("golpe .com"). "Dra. Ana" (ponto e espaço) fica.
  */
 export function nomeLimpoDoRemetente(nome: string): string {
+  const normalizado = nome
+    .normalize('NFKC')
+    .replace(/\p{Cf}/gu, '')
+    .replace(PONTOS_DE_OUTROS_ALFABETOS, '.')
+    .replace(PONTOS_DO_MEIO_COLADOS, '.')
   // Os sinais de controle (a quebra de linha que abriria outro cabeçalho) viram espaço.
-  const semControle = Array.from(nome, (letra) => (letra.charCodeAt(0) < 32 || letra.charCodeAt(0) === 127 ? ' ' : letra)).join('')
+  const semControle = Array.from(normalizado, (letra) => (letra.charCodeAt(0) < 32 || letra.charCodeAt(0) === 127 ? ' ' : letra)).join('')
   return semControle
+    .replace(/\s+\.\s*(?=[\p{L}\p{N}])/gu, '.')
     .replace(/\S+@\S+/g, ' ')
     .replace(/\b(?:https?:\/\/|www\.)\S*/gi, ' ')
-    .replace(/\b[\p{L}\p{N}-]+(?:\.[\p{L}\p{N}-]+)*\.(?:com|net|org|br|io|app|me|info|site|online|xyz|link|co|biz|shop|store|top|club|ly|gl)\b\S*/giu, ' ')
+    .replace(/\S*[\p{L}\p{N}]\.\p{L}{2,}\S*/gu, ' ')
+    .replace(/\b\d{1,3}(?:\.\d{1,3}){3}\b\S*/g, ' ')
     .replace(/["'`<>\\;:,()[\]{}|]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()

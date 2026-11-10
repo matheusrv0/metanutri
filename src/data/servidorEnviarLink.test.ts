@@ -180,6 +180,41 @@ describe('o teto por conta e o remetente limpo (D-1254)', () => {
     expect(nomeDoRemetente({ ...ANA, nome: 'www.golpe.com' })).toBe('MetaNutri')
     expect(nomeDoRemetente({ ...ANA, nome: 'Ana Lima' })).toBe('Ana Lima via MetaNutri')
   })
+
+  it('CA-2302: nenhum endereço web passa, em forma nenhuma; o ponto de abreviação fica', () => {
+    // Os casos da sonda da revisão r2 (sonda-nome-remetente.mts) e outros jeitos de escrever o mesmo.
+    for (const nome of [
+      'Ana Lima www.golpe.com',
+      'Ana Lima golpe.com.br',
+      'Ana Lima pague-aqui.dev',
+      'Ana Lima golpe.pro',
+      'Ana Lima bit.do/x',
+      'Ana Lima golpe .com',
+      'Ana Lima golpe . com',
+      'Ana Lima golpe․com',
+      'Ana Lima golpe．com',
+      'Ana Lima golpe。com',
+      'Ana Lima golpe·com',
+      'Ana Lima golpe​.com',
+      'Ana Lima ＧＯＬＰＥ．ＣＯＭ',
+      'Ana Lima GOLPE.COM',
+      'Ana Lima t.me/golpe',
+      'Ana Lima wa.me/5511999999999',
+      'Ana Lima x.tk',
+      'Ana Lima golpe.ru',
+      'Ana Lima golpe.xn--p1ai',
+      'Ana Lima 203.0.113.9',
+    ]) {
+      expect(nomeLimpoDoRemetente(nome), nome).toBe('Ana Lima')
+    }
+    // Ponto seguido de espaço, iniciais e o ponto do fim continuam: não têm cara de endereço.
+    expect(nomeLimpoDoRemetente('Dra. Ana Lima')).toBe('Dra. Ana Lima')
+    expect(nomeLimpoDoRemetente('Ana C. Lima')).toBe('Ana C. Lima')
+    expect(nomeLimpoDoRemetente('A.C. Lima')).toBe('A.C. Lima')
+    expect(nomeLimpoDoRemetente('Ana Lima Nutrição Ltda.')).toBe('Ana Lima Nutrição Ltda.')
+    expect(nomeLimpoDoRemetente('Ana Lima · Nutricionista')).toBe('Ana Lima · Nutricionista')
+    expect(nomeLimpoDoRemetente('Ana Lima - Nutrição Clínica')).toBe('Ana Lima - Nutrição Clínica')
+  })
 })
 
 describe('"Trocar o endereço": o S4 (D-1215)', () => {
