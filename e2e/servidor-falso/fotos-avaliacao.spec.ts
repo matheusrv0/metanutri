@@ -141,7 +141,7 @@ for (const [nome, viewport, toque] of [
   test.describe(`fotos e anexos da avaliação (${nome})`, () => {
     test.use({ viewport, hasTouch: toque, isMobile: toque })
 
-    test('CA-2480, CA-2481, CA-2486, CA-2491, CB-1465 e CA-2485: autorizar, enviar sem EXIF, comparar, anexar e excluir', async ({ page }) => {
+    test('CA-2480, CA-2481, CA-2486, CA-2491, CB-1465, CB-1467 e CA-2485: autorizar, enviar sem EXIF, comparar, anexar e excluir', async ({ page }) => {
       const erros = await vigiarConsole(page)
       const servidor = await ligarServidorFalso(page, { sessao: true, perfil: PERFIL_NUTRICIONISTA, assinatura: assinaturaFalsa('ativa') })
       const id = await prepararDuasAvaliacoes(page, servidor)
@@ -187,6 +187,21 @@ for (const [nome, viewport, toque] of [
       await expect(cartao.getByRole('list', { name: 'Anexos' }).getByText('bioimpedancia-03-11-2026.pdf')).toBeVisible()
       expect([...servidor.arquivos.keys()].filter((c) => c.startsWith(`${CONTA}/${id}/anexos/`) && c.endsWith('.pdf'))).toHaveLength(1)
 
+      // CB-1467 e D-1530: a foto do celular escolhida como anexo, com GPS e aparelho no EXIF, entra como foto "Outra",
+      // redesenhada pelo <canvas>, sem o EXIF.
+      const fotosAntes = new Set([...servidor.arquivos.keys()].filter((c) => c.startsWith(`${CONTA}/${id}/fotos/`)))
+      await cartao.getByLabel('Adicionar arquivo').setInputFiles({ name: 'exame-em-casa.jpg', mimeType: 'image/jpeg', buffer: comExif(await silhueta(page, 'lado', '#7a8a8f')) })
+      await expect(cartao.getByText('2 de 5 fotos')).toBeVisible()
+      await expect(cartao.getByRole('list', { name: 'Fotos de hoje' }).getByText('Outra', { exact: true })).toBeVisible()
+      const anexada = [...servidor.arquivos.entries()].filter(([c]) => c.startsWith(`${CONTA}/${id}/fotos/`) && !fotosAntes.has(c))
+      expect(anexada).toHaveLength(1)
+      const [, comoFoto] = anexada[0] ?? ['', { tipo: '', bytes: Buffer.alloc(0) }]
+      expect(comoFoto.tipo).toBe('image/jpeg')
+      expect(comoFoto.bytes.includes(Buffer.from('Exif', 'latin1'))).toBe(false)
+      expect(comoFoto.bytes.includes(Buffer.from('GPS', 'latin1'))).toBe(false)
+      expect(comoFoto.bytes.includes(Buffer.from('iPhone', 'latin1'))).toBe(false)
+      expect([...servidor.arquivos.keys()].filter((c) => c.startsWith(`${CONTA}/${id}/anexos/`))).toHaveLength(1)
+
       // CA-2487: nada de compartilhar, baixar ou levar ao documento.
       await expect(cartao.getByRole('button', { name: /compartilh|baix|download|documento/i })).toHaveCount(0)
       await semRolagemLateral(page)
@@ -194,8 +209,8 @@ for (const [nome, viewport, toque] of [
       // CA-2485: excluir a foto tira o arquivo do armazenamento.
       await cartao.getByRole('button', { name: 'Excluir a foto de frente' }).click()
       await page.getByRole('alertdialog', { name: 'Excluir a foto de frente?' }).getByRole('button', { name: 'Excluir foto' }).click()
-      await expect(cartao.getByText('0 de 5 fotos')).toBeVisible()
-      expect([...servidor.arquivos.keys()].filter((c) => c.startsWith(`${CONTA}/${id}/fotos/`))).toEqual([])
+      await expect(cartao.getByText('1 de 5 fotos')).toBeVisible()
+      expect([...servidor.arquivos.keys()].filter((c) => c.startsWith(`${CONTA}/${id}/fotos/`))).toHaveLength(1)
 
       expect(erros, 'erro no console').toEqual([])
     })

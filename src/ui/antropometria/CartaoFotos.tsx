@@ -16,7 +16,7 @@ import {
   TETO_DA_AVALIACAO,
   textoDoUso,
   textosPeloSexo,
-  type EnvioDoArquivo,
+  type EnvioDoAnexo,
 } from '@/domain/fotosDaAvaliacao.ts'
 import type { AvaliacaoDoHistorico } from '@/domain/historicoAntropometrico.ts'
 import type { AnguloDaFoto, ArquivoDaAvaliacao, Caso, DadosDaAvaliacao, Sexo } from '@/domain/tipos.ts'
@@ -115,12 +115,13 @@ export function CartaoFotos({ bruto, sexo, atual, anterior, aoAlterar, agora }: 
   const anexosCheios = anexos.length >= ANEXOS_POR_AVALIACAO
   const usados = bytesUsados(avaliacao)
 
-  const receber = (resultado: EnvioDoArquivo, campo: 'fotos' | 'anexos', erro: (texto: string | null) => void) => {
+  const receber = (resultado: EnvioDoAnexo, erro: (texto: string | null) => void) => {
     if (resultado.tipo === 'erro') {
       erro(resultado.mensagem)
       return
     }
-    alterarAvaliacao((av) => ({ [campo]: [...(av[campo] ?? []), resultado.arquivo] }))
+    const { campo, arquivo } = resultado
+    alterarAvaliacao((av) => ({ [campo]: [...(av[campo] ?? []), arquivo] }))
   }
 
   const escolherFoto = async (evento: ChangeEvent<HTMLInputElement>) => {
@@ -137,7 +138,7 @@ export function CartaoFotos({ bruto, sexo, atual, anterior, aoAlterar, agora }: 
         armazenamento,
         desenhista,
       )
-      receber(resultado, 'fotos', setErroDaFoto)
+      receber(resultado.tipo === 'ok' ? { ...resultado, campo: 'fotos' } : resultado, setErroDaFoto)
       if (resultado.tipo === 'ok') escolherAngulo(null)
     } finally {
       setEnviando(null)
@@ -151,12 +152,14 @@ export function CartaoFotos({ bruto, sexo, atual, anterior, aoAlterar, agora }: 
     setErroDoAnexo(null)
     setEnviando('anexo')
     try {
-      const bytes = await lerBytes(arquivo, TETO_DA_AVALIACAO + 1)
+      // D-1530: a imagem anexada vira foto, e a foto vai até 20 MB antes de reduzir.
+      const bytes = await lerBytes(arquivo, FOTO_ENVIO_MAX_BYTES + 1)
       const resultado = await enviarAnexo(
-        { plano: bruto.id, nome: arquivo.name, bytes, arquivo, avaliacao: ultimo.current.bruto.avaliacao, agora: new Date(), gerarId: () => globalThis.crypto.randomUUID() },
+        { plano: bruto.id, nome: arquivo.name, sexo, bytes, arquivo, avaliacao: ultimo.current.bruto.avaliacao, agora: new Date(), gerarId: () => globalThis.crypto.randomUUID() },
         armazenamento,
+        desenhista,
       )
-      receber(resultado, 'anexos', setErroDoAnexo)
+      receber(resultado, setErroDoAnexo)
     } finally {
       setEnviando(null)
     }

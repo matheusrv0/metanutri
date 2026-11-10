@@ -249,32 +249,71 @@ describe('enviar a foto (D-1453, D-1505)', () => {
   })
 })
 
-describe('enviar o anexo (D-1452, D-1505, D-1511)', () => {
+describe('enviar o anexo (D-1452, D-1505, D-1511, D-1530)', () => {
   const entrada = (bytes: Uint8Array, p: Partial<Parameters<typeof enviarAnexo>[0]> = {}) => ({
     plano: PLANO,
     nome: 'exame.pdf',
     bytes,
     arquivo: new Blob([new Uint8Array(bytes)], { type: 'application/pdf' }),
     avaliacao: avaliacao(),
+    sexo: 'F' as const,
     agora,
     gerarId: () => ID,
     ...p,
   })
+  const autorizada = avaliacao({ fotosAutorizadasEm: '2026-11-03' })
 
-  it('CA-2482: o PDF sobe como PDF; o PNG chamado .pdf sobe como PNG, com a extensão do conteúdo', async () => {
+  it('CA-2482: o PDF sobe como PDF, sem abrir no desenhista e sem pedir a autorização', async () => {
     const { porta, enviados } = portaFalsa()
-    const r = await enviarAnexo(entrada(PDF), porta)
-    expect(r).toEqual({ tipo: 'ok', arquivo: { id: ID, nome: 'exame.pdf', caminho: `${CONTA}/${PLANO}/anexos/${ID}.pdf`, bytes: PDF.length, tipo: 'application/pdf', enviadoEm: agora.toISOString() } })
-    await enviarAnexo(entrada(png(10, 10), { nome: 'bioimpedancia.pdf' }), porta)
-    expect(enviados.map((e) => [e.caminho, e.tipo])).toEqual([
-      [`${CONTA}/${PLANO}/anexos/${ID}.pdf`, 'application/pdf'],
-      [`${CONTA}/${PLANO}/anexos/${ID}.png`, 'image/png'],
+    const { desenhista, pedidos } = desenhistaFalso()
+    const r = await enviarAnexo(entrada(PDF), porta, desenhista)
+    expect(r).toEqual({ tipo: 'ok', campo: 'anexos', arquivo: { id: ID, nome: 'exame.pdf', caminho: `${CONTA}/${PLANO}/anexos/${ID}.pdf`, bytes: PDF.length, tipo: 'application/pdf', enviadoEm: agora.toISOString() } })
+    expect(enviados.map((e) => [e.caminho, e.tipo])).toEqual([[`${CONTA}/${PLANO}/anexos/${ID}.pdf`, 'application/pdf']])
+    expect(pedidos).toEqual([])
+  })
+
+  it('CB-1467 e D-1530: a imagem anexada (o PNG chamado .pdf, o JPEG do celular) entra como foto "Outra", redesenhada em JPEG', async () => {
+    const { porta, enviados } = portaFalsa()
+    const { desenhista, pedidos } = desenhistaFalso(250_000)
+    const r = await enviarAnexo(entrada(png(10, 10), { nome: 'bioimpedancia.pdf', avaliacao: autorizada }), porta, desenhista)
+    expect(r).toEqual({
+      tipo: 'ok',
+      campo: 'fotos',
+      arquivo: { id: ID, angulo: 'outra', nome: 'Outra', caminho: `${CONTA}/${PLANO}/fotos/${ID}.jpg`, bytes: 250_000, tipo: 'image/jpeg', enviadoEm: agora.toISOString() },
+    })
+    await enviarAnexo(entrada(jpeg(4000, 3000), { nome: 'IMG_0001.jpg', avaliacao: autorizada }), porta, desenhista)
+    expect(pedidos).toEqual([
+      { largura: 1600, altura: 1200, qualidade: 0.85 },
+      { largura: 1600, altura: 1200, qualidade: 0.85 },
     ])
+    // O que sobe é o desenho (250.000 bytes), nunca o arquivo escolhido.
+    expect(enviados).toEqual([
+      { caminho: `${CONTA}/${PLANO}/fotos/${ID}.jpg`, tipo: 'image/jpeg', bytes: 250_000 },
+      { caminho: `${CONTA}/${PLANO}/fotos/${ID}.jpg`, tipo: 'image/jpeg', bytes: 250_000 },
+    ])
+  })
+
+  it('CB-1467 e D-1530: sem a autorização, a imagem anexada não sobe e a frase pede a marca (pelo sexo da ficha)', async () => {
+    const { porta, enviados } = portaFalsa()
+    const { desenhista, pedidos } = desenhistaFalso()
+    expect(await enviarAnexo(entrada(jpeg(1200, 1600)), porta, desenhista)).toEqual({ tipo: 'erro', mensagem: 'Marque a autorização da paciente para adicionar fotos.' })
+    expect(await enviarAnexo(entrada(png(10, 10), { sexo: 'M' }), porta, desenhista)).toEqual({ tipo: 'erro', mensagem: 'Marque a autorização do paciente para adicionar fotos.' })
+    expect(await enviarAnexo(entrada(png(10, 10), { sexo: null }), porta, desenhista)).toEqual({ tipo: 'erro', mensagem: 'Marque a autorização da pessoa para adicionar fotos.' })
+    expect(pedidos).toEqual([])
+    expect(enviados).toEqual([])
+  })
+
+  it('CB-1467 e D-1530: com 5 fotos, a imagem anexada não sobe: "Já há 5 fotos nesta avaliação."', async () => {
+    const { porta, enviados } = portaFalsa()
+    const cinco = Array.from({ length: 5 }, (_, i) => arquivo(1000, { id: String(i) }))
+    const r = await enviarAnexo(entrada(jpeg(1200, 1600), { avaliacao: avaliacao({ fotosAutorizadasEm: '2026-11-03', fotos: cinco }) }), porta, desenhistaFalso().desenhista)
+    expect(r).toEqual({ tipo: 'erro', mensagem: 'Já há 5 fotos nesta avaliação.' })
+    expect(enviados).toEqual([])
   })
 
   it('CA-2482: outro tipo: "Anexo em PDF, JPG ou PNG."', async () => {
     const { porta, enviados } = portaFalsa()
-    expect(await enviarAnexo(entrada(GIF), porta)).toEqual({ tipo: 'erro', mensagem: 'Anexo em PDF, JPG ou PNG.' })
+    expect(await enviarAnexo(entrada(GIF), porta, desenhistaFalso().desenhista)).toEqual({ tipo: 'erro', mensagem: 'Anexo em PDF, JPG ou PNG.' })
     expect(enviados).toEqual([])
   })
 
@@ -282,17 +321,18 @@ describe('enviar o anexo (D-1452, D-1505, D-1511)', () => {
     const { porta, enviados } = portaFalsa()
     const meio = new Uint8Array(0.5 * MEGA)
     meio.set(PDF)
-    const r = await enviarAnexo(entrada(meio, { avaliacao: avaliacao({ fotos: [arquivo(7.8 * MEGA)] }) }), porta)
+    const r = await enviarAnexo(entrada(meio, { avaliacao: avaliacao({ fotos: [arquivo(7.8 * MEGA)] }) }), porta, desenhistaFalso().desenhista)
     expect(r).toEqual({ tipo: 'erro', mensagem: 'Passa de 8 MB somando fotos e anexos.' })
     expect(enviados).toEqual([])
   })
 
   it('D-1511 e D-1505: com 10 anexos, nada sobe; recusado com 10 na pasta, "Já há 10 anexos nesta avaliação."; sem rede e sem sessão', async () => {
     const dez = Array.from({ length: 10 }, (_, i) => arquivo(10, { id: String(i), tipo: 'application/pdf' }))
-    expect(await enviarAnexo(entrada(PDF, { avaliacao: avaliacao({ anexos: dez }) }), portaFalsa().porta)).toEqual({ tipo: 'erro', mensagem: 'Já há 10 anexos nesta avaliação.' })
-    expect(await enviarAnexo(entrada(PDF), portaFalsa({ envio: 'recusado', contagem: 10 }).porta)).toEqual({ tipo: 'erro', mensagem: 'Já há 10 anexos nesta avaliação.' })
-    expect(await enviarAnexo(entrada(PDF), portaFalsa({ envio: 'recusado', contagem: 3 }).porta)).toEqual({ tipo: 'erro', mensagem: 'Entre de novo para enviar anexos.' })
-    expect(await enviarAnexo(entrada(PDF), portaFalsa({ envio: 'sem-rede' }).porta)).toEqual({ tipo: 'erro', mensagem: 'O anexo não subiu. Confira a internet e tente de novo.' })
+    const { desenhista } = desenhistaFalso()
+    expect(await enviarAnexo(entrada(PDF, { avaliacao: avaliacao({ anexos: dez }) }), portaFalsa().porta, desenhista)).toEqual({ tipo: 'erro', mensagem: 'Já há 10 anexos nesta avaliação.' })
+    expect(await enviarAnexo(entrada(PDF), portaFalsa({ envio: 'recusado', contagem: 10 }).porta, desenhista)).toEqual({ tipo: 'erro', mensagem: 'Já há 10 anexos nesta avaliação.' })
+    expect(await enviarAnexo(entrada(PDF), portaFalsa({ envio: 'recusado', contagem: 3 }).porta, desenhista)).toEqual({ tipo: 'erro', mensagem: 'Entre de novo para enviar anexos.' })
+    expect(await enviarAnexo(entrada(PDF), portaFalsa({ envio: 'sem-rede' }).porta, desenhista)).toEqual({ tipo: 'erro', mensagem: 'O anexo não subiu. Confira a internet e tente de novo.' })
   })
 })
 

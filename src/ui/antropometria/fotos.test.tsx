@@ -263,16 +263,50 @@ describe('Comparar fotos (CA-2486, CB-1412, CB-1466, D-1510)', () => {
 })
 
 describe('anexos e espaço (CA-2482, CA-2483, D-1511)', () => {
-  it('CA-2482: o PDF sobe como anexo; o PNG chamado .pdf sobe como PNG', async () => {
+  it('CA-2482: o PDF sobe como anexo', async () => {
     const f = falsos()
     const { usuario, gravado, cartao } = abrir({ porta: f.porta })
     await usuario.upload(campoDoAnexo(), arquivoDe(PDF, 'exame.pdf', 'application/pdf'))
     await vi.waitFor(() => expect(gravado()?.anexos).toHaveLength(1))
+    expect(f.enviados.map((e) => e.tipo)).toEqual(['application/pdf'])
+    expect(f.enviados[0]?.caminho).toMatch(/\/anexos\/[0-9a-f-]{36}\.pdf$/)
+    expect(within(cartao().getByRole('list', { name: 'Anexos' })).getByText('exame.pdf')).toBeInTheDocument()
+  })
+
+  it('CB-1467 e D-1530: a imagem anexada (o PNG chamado .pdf) entra como foto "Outra", em JPEG, e conta nas 5', async () => {
+    const f = falsos()
+    const { usuario, gravado, cartao } = abrir({ porta: f.porta, avaliacao: { fotosAutorizadasEm: '2026-11-03' } })
     await usuario.upload(campoDoAnexo(), arquivoDe(png(), 'bioimpedancia.pdf', 'application/pdf'))
-    await vi.waitFor(() => expect(gravado()?.anexos).toHaveLength(2))
-    expect(f.enviados.map((e) => e.tipo)).toEqual(['application/pdf', 'image/png'])
-    expect(f.enviados[1]?.caminho).toMatch(/\/anexos\/[0-9a-f-]{36}\.png$/)
-    expect(within(cartao().getByRole('list', { name: 'Anexos' })).getByText('bioimpedancia.pdf')).toBeInTheDocument()
+    await vi.waitFor(() => expect(gravado()?.fotos).toHaveLength(1))
+    expect(gravado()?.fotos?.[0]).toMatchObject({ angulo: 'outra', nome: 'Outra', tipo: 'image/jpeg', bytes: 300 * 1024 })
+    expect(gravado()?.anexos ?? []).toEqual([])
+    expect(f.enviados).toEqual([{ caminho: expect.stringMatching(/\/fotos\/[0-9a-f-]{36}\.jpg$/), tipo: 'image/jpeg' }])
+    expect(cartao().getByText('1 de 5 fotos')).toBeInTheDocument()
+    expect(within(cartao().getByRole('list', { name: 'Fotos de hoje' })).getByText('Outra')).toBeInTheDocument()
+    expect(cartao().queryByRole('list', { name: 'Anexos' })).not.toBeInTheDocument()
+  })
+
+  it('CB-1467 e D-1530: sem a autorização, a imagem anexada não sobe e a frase pede a marca', async () => {
+    const f = falsos()
+    const { usuario, gravado, cartao } = abrir({ porta: f.porta })
+    await usuario.upload(campoDoAnexo(), arquivoDe(jpeg(1200, 1600), 'IMG_0001.jpg', 'image/jpeg'))
+    expect(await cartao().findByRole('alert')).toHaveTextContent('Marque a autorização da paciente para adicionar fotos.')
+    expect(f.enviados).toEqual([])
+    expect(gravado()?.fotos ?? []).toEqual([])
+  })
+
+  it('CB-1467 e D-1530: com 5 fotos, a imagem anexada não sobe: "Já há 5 fotos nesta avaliação."', async () => {
+    const f = falsos()
+    const cinco = (['frente', 'lado', 'costas', 'outra', 'outra'] as const).map((a, i) => foto(`f${i}`, a, 'av', 200 * 1024))
+    const { usuario, cartao } = abrir({ porta: f.porta, avaliacao: { fotosAutorizadasEm: '2026-11-03', fotos: cinco } })
+    await usuario.upload(campoDoAnexo(), arquivoDe(jpeg(1200, 1600), 'IMG_0001.jpg', 'image/jpeg'))
+    expect(await cartao().findByRole('alert')).toHaveTextContent('Já há 5 fotos nesta avaliação.')
+    expect(f.enviados).toEqual([])
+  })
+
+  it('D-1530: a frase dos limites diz que a imagem anexada entra como foto', () => {
+    const { cartao } = abrir()
+    expect(cartao().getByText('Até 5 fotos por avaliação. Fotos e anexos somam até 8 MB. Fotos em JPG ou PNG; anexos em PDF. Imagem anexada entra como foto.')).toBeInTheDocument()
   })
 
   it('CA-2483: 7,8 MB usados e um anexo de 0,5 MB: "Passa de 8 MB somando fotos e anexos." e nada sobe', async () => {

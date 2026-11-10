@@ -47,7 +47,7 @@ export const FRASES = {
   abrirAnexo: 'Não foi possível abrir o anexo. Tente de novo.',
   semNuvem: 'Fotos e anexos ficam guardados na conta, na nuvem.',
   semOutra: 'Comparar fotos precisa de outra avaliação com foto.',
-  regras: 'Até 5 fotos por avaliação. Fotos e anexos somam até 8 MB. Fotos em JPG ou PNG; anexos em PDF, JPG ou PNG.',
+  regras: 'Até 5 fotos por avaliação. Fotos e anexos somam até 8 MB. Fotos em JPG ou PNG; anexos em PDF. Imagem anexada entra como foto.',
   dezDeDez: '10 de 10 anexos.',
 } as const
 
@@ -187,9 +187,11 @@ export interface EntradaDaFoto extends EntradaComum {
 export interface EntradaDoAnexo extends EntradaComum {
   /** O nome do arquivo escolhido: só para a tela (DP-AT-20). */
   readonly nome: string
+  /** O sexo da ficha, para a frase da autorização quando a imagem anexada vira foto (D-1508 e D-1530). */
+  readonly sexo: Sexo | null
 }
 
-const erro = (mensagem: string): EnvioDoArquivo => ({ tipo: 'erro', mensagem })
+const erro = (mensagem: string): { readonly tipo: 'erro'; readonly mensagem: string } => ({ tipo: 'erro', mensagem })
 
 /** D-1505: depois do envio, a frase de cada resposta do servidor (a recusa é lida pela pasta). */
 async function subir(
@@ -246,11 +248,25 @@ export async function enviarFoto(entrada: EntradaDaFoto, porta: ArmazenamentoDeF
   }
 }
 
-/** D-1452, D-1505 e D-1511: o anexo pelo conteúdo (PDF, JPEG ou PNG), sem passar do teto, com o tipo do conteúdo. */
-export async function enviarAnexo(entrada: EntradaDoAnexo, porta: ArmazenamentoDeFotos): Promise<EnvioDoArquivo> {
-  if ((entrada.avaliacao.anexos ?? []).length >= ANEXOS_POR_AVALIACAO) return erro(FRASES.dezAnexos)
+/** O resultado do anexo diz em que lista o arquivo entra: a imagem anexada vira foto (D-1530). */
+export type EnvioDoAnexo =
+  | { readonly tipo: 'ok'; readonly campo: 'fotos' | 'anexos'; readonly arquivo: ArquivoDaAvaliacao }
+  | { readonly tipo: 'erro'; readonly mensagem: string }
+
+/**
+ * D-1452, D-1505, D-1511 e D-1530: o anexo pelo conteúdo. O PDF sobe como anexo, sem passar do teto. O JPEG e o PNG são
+ * imagem como a foto e seguem o caminho dela: pedem a autorização, contam nas 5 fotos e são redesenhados sem os metadados
+ * da câmera (o GPS e o aparelho); entram entre as fotos, com o ângulo "Outra".
+ */
+export async function enviarAnexo(entrada: EntradaDoAnexo, porta: ArmazenamentoDeFotos, desenhista: DesenhistaDeFoto): Promise<EnvioDoAnexo> {
   const tipo = tipoDoAnexo(entrada.bytes)
   if (tipo === null) return erro(FRASES.formatoAnexo)
+  if (tipo !== 'application/pdf') {
+    if (entrada.avaliacao.fotosAutorizadasEm === null) return erro(textosPeloSexo(entrada.sexo).marque)
+    const foto = await enviarFoto({ ...entrada, angulo: 'outra' }, porta, desenhista)
+    return foto.tipo === 'ok' ? { tipo: 'ok', campo: 'fotos', arquivo: foto.arquivo } : foto
+  }
+  if ((entrada.avaliacao.anexos ?? []).length >= ANEXOS_POR_AVALIACAO) return erro(FRASES.dezAnexos)
   if (tetoPassa(bytesUsados(entrada.avaliacao), entrada.bytes.length)) return erro(FRASES.passaAnexo)
   const id = entrada.gerarId()
   // O tipo que vai ao servidor é o do conteúdo, nunca o que o navegador disse pelo nome.
@@ -265,7 +281,7 @@ export async function enviarAnexo(entrada: EntradaDoAnexo, porta: ArmazenamentoD
   )
   if (r.tipo === 'erro') return r
   const nome = entrada.nome.trim() || `Anexo.${EXTENSAO[tipo]}`
-  return { tipo: 'ok', arquivo: { id, nome, caminho: r.caminho, bytes: entrada.bytes.length, tipo, enviadoEm: entrada.agora.toISOString() } }
+  return { tipo: 'ok', campo: 'anexos', arquivo: { id, nome, caminho: r.caminho, bytes: entrada.bytes.length, tipo, enviadoEm: entrada.agora.toISOString() } }
 }
 
 // --- Comparar fotos (D-1455, D-1510) -----------------------------------------------------------------------------------
