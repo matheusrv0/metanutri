@@ -143,11 +143,40 @@ describe('CA-2488: outra conta e quem não tem conta não mexem na pasta da dona
 })
 
 describe('CA-2488: o servidor confere o arquivo e as contagens (D-1457, D-1504)', () => {
-  it('CA-2488: tipo fora de JPEG, PNG e PDF é recusado', async () => {
+  it('CA-2488: tipo fora de JPEG e PDF é recusado', async () => {
     const plano = 'plano-tipos'
     recusado(await enviar(c.atacante.cliente, caminhoDaFoto(c.atacante.id, plano), new Blob(['GIF89a'], { type: 'image/gif' })))
     recusado(await enviar(c.atacante.cliente, caminhoDoAnexo(c.atacante.id, plano), new Blob(['<html>'], { type: 'text/html' })))
-    expect((await enviar(c.atacante.cliente, caminhoDoAnexo(c.atacante.id, plano, 'png'), new Blob([new Uint8Array([0x89, 0x50])], { type: 'image/png' }))).error).toBeNull()
+    expect(nomesNoBanco(`${c.atacante.id}/${plano}`)).toEqual([])
+  })
+
+  it('CB-1473 e D-1535: o tipo dito tem de ser o do caminho, exato: JPEG em fotos/, PDF em anexos/; o PNG não entra mais', async () => {
+    const plano = 'plano-tipo-trocado'
+    const id = c.atacante.id
+    const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47])
+    const html = new TextEncoder().encode('<html><script>document.title="x"</script></html>')
+    // Os bytes crus, com o tipo no cabeçalho do pedido como o atacante escrever (o Blob poria o tipo em minúsculas).
+    const tentativas: readonly (readonly [string, Uint8Array, string])[] = [
+      // O PNG, em qualquer pasta (D-1530: a imagem anexada vira foto, em JPEG).
+      [caminhoDoAnexo(id, plano, 'png'), png, 'image/png'],
+      [caminhoDaFoto(id, plano), png, 'image/png'],
+      // A imagem em anexos/ (o caminho só aceita .pdf).
+      [caminhoDoAnexo(id, plano, 'jpg'), html, 'image/jpeg'],
+      // O tipo dito com maiúsculas ou com parâmetro.
+      [caminhoDaFoto(id, plano), html, 'IMAGE/JPEG'],
+      [caminhoDaFoto(id, plano), html, 'image/jpeg; charset=utf-8'],
+      [caminhoDoAnexo(id, plano), html, 'APPLICATION/PDF'],
+      // O tipo de uma pasta no caminho da outra.
+      [caminhoDoAnexo(id, plano), html, 'image/jpeg'],
+      [caminhoDaFoto(id, plano), html, 'application/pdf'],
+    ]
+    for (const [caminho, bytes, tipo] of tentativas) {
+      recusado(await balde(c.atacante.cliente).upload(caminho, bytes, { contentType: tipo, upsert: false }))
+    }
+    expect(nomesNoBanco(`${id}/${plano}`)).toEqual([])
+    // O certo continua passando.
+    expect((await enviar(c.atacante.cliente, caminhoDaFoto(id, plano))).error).toBeNull()
+    expect((await enviar(c.atacante.cliente, caminhoDoAnexo(id, plano), pdf())).error).toBeNull()
   })
 
   it('CA-2488: arquivo acima de 8 MB é recusado', async () => {

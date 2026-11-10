@@ -6,10 +6,10 @@
 -- fotos." ao enviar (a política não existe) e o resto continua igual.
 --
 -- O que faz: um balde PRIVADO, "fotos-avaliacao", para as fotos e os anexos da avaliação. Cada arquivo mora em
--- <conta>/<plano>/fotos/<id>.jpg ou <conta>/<plano>/anexos/<id>.<pdf|jpg|png>. Cada conta envia, lê e apaga só na
+-- <conta>/<plano>/fotos/<id>.jpg ou <conta>/<plano>/anexos/<id>.pdf. Cada conta envia, lê e apaga só na
 -- própria pasta; ninguém lista a pasta de outra; quem não tem conta não faz nada. Ninguém troca nem move arquivo.
--- O servidor também confere: o tipo (JPEG, PNG ou PDF), até 8 MB por arquivo, até 5 fotos e 10 anexos por plano e até
--- 2.000 arquivos por conta.
+-- O servidor também confere: o tipo (JPEG nas fotos, PDF nos anexos, D-1535), até 8 MB por arquivo, até 5 fotos e
+-- 10 anexos por plano e até 2.000 arquivos por conta.
 -- O gatilho, que roda na gravação já com o tamanho, soma também os bytes: até 8 MB por plano (fotos e anexos) e até
 -- 500 MB por conta (D-1531).
 --
@@ -23,9 +23,10 @@ begin;
 
 -- ---------- O balde (D-1457) ----------
 
--- Privado; 8 MB por arquivo (8 × 1024 × 1024, D-1506); só os três tipos. Rodar de novo repõe isso, se alguém mudou.
+-- Privado; 8 MB por arquivo (8 × 1024 × 1024, D-1506); só JPEG e PDF (a imagem anexada vira foto, em JPEG, D-1530).
+-- Rodar de novo repõe isso, se alguém mudou.
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-values ('fotos-avaliacao', 'fotos-avaliacao', false, 8388608, array['image/jpeg', 'image/png', 'application/pdf'])
+values ('fotos-avaliacao', 'fotos-avaliacao', false, 8388608, array['image/jpeg', 'application/pdf'])
 on conflict (id) do update
   set public = false, file_size_limit = excluded.file_size_limit, allowed_mime_types = excluded.allowed_mime_types;
 
@@ -54,8 +55,8 @@ begin
   if v_conta is null or p_nome is null then
     return false;
   end if;
-  -- <conta>/<plano>/fotos/<uuid>.jpg ou <conta>/<plano>/anexos/<uuid>.<pdf|jpg|png> (DP-AT-20); nada além disso.
-  if p_nome !~ ('^' || v_conta || '/[A-Za-z0-9_-]{1,64}/(fotos/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.jpg|anexos/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(pdf|jpg|png))$') then
+  -- <conta>/<plano>/fotos/<uuid>.jpg ou <conta>/<plano>/anexos/<uuid>.pdf (DP-AT-20 e D-1535); nada além disso.
+  if p_nome !~ ('^' || v_conta || '/[A-Za-z0-9_-]{1,64}/(fotos/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.jpg|anexos/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.pdf)$') then
     return false;
   end if;
   v_plano := split_part(p_nome, '/', 2);
@@ -125,6 +126,8 @@ declare
   v_pasta text := split_part(new.name, '/', 1) || '/' || split_part(new.name, '/', 2) || '/' || split_part(new.name, '/', 3) || '/';
   v_limite integer := case split_part(new.name, '/', 3) when 'fotos' then 5 else 10 end;
   v_tamanho bigint := case when new.metadata->>'size' ~ '^[0-9]{1,15}$' then (new.metadata->>'size')::bigint else 0 end;
+  v_mime text := new.metadata->>'mimetype';
+  v_mime_do_caminho text := case split_part(new.name, '/', 3) when 'fotos' then 'image/jpeg' else 'application/pdf' end;
   v_na_conta integer;
   v_no_plano integer;
   v_bytes_na_conta bigint;
@@ -147,6 +150,11 @@ begin
    where o.bucket_id = 'fotos-avaliacao' and starts_with(o.name, v_plano) and o.name <> new.name;
   if v_na_conta >= 2000 or v_no_plano >= v_limite then
     raise exception 'Limite de arquivos da avaliação.' using errcode = 'check_violation';
+  end if;
+  -- D-1535: o armazenamento não lê o conteúdo; o tipo dito tem de ser o do caminho, exato (sem maiúsculas nem
+  -- parâmetro). A linha de teste de antes do envio vem sem o tipo e não é conferida aqui.
+  if v_mime is not null and v_mime is distinct from v_mime_do_caminho then
+    raise exception 'Tipo do arquivo da avaliação.' using errcode = 'check_violation';
   end if;
   -- 8 MB = 8.388.608 bytes por plano; 500 MB = 524.288.000 bytes por conta (D-1506 e D-1531).
   if v_bytes_no_plano + v_tamanho > 8388608 or v_bytes_na_conta + v_tamanho > 524288000 then
@@ -178,7 +186,7 @@ commit;
 
 -- Conferência depois de rodar (copie para uma consulta nova):
 -- select id, public, file_size_limit, allowed_mime_types from storage.buckets where id = 'fotos-avaliacao';
--- -- uma linha: fotos-avaliacao, false, 8388608, {image/jpeg,image/png,application/pdf}
+-- -- uma linha: fotos-avaliacao, false, 8388608, {image/jpeg,application/pdf}
 -- select policyname, cmd from pg_policies where schemaname = 'storage' and tablename = 'objects' and policyname like 'fotos da avaliacao:%' order by policyname;
 -- -- três linhas: dono apaga (DELETE), dono envia (INSERT), dono le (SELECT)
 -- select has_function_privilege('anon', 'public.pode_enviar_arquivo_da_avaliacao(text)', 'execute') as anon_chama, p.prosecdef as definer

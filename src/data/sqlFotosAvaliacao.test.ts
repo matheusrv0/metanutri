@@ -30,12 +30,11 @@ describe('banco: as fotos e os anexos da avaliação (018, spec antropometria-te
     }
   })
 
-  it('D-1457: o balde é privado, até 8 MB por arquivo, só JPEG, PNG e PDF, e a nova rodada repõe isso', () => {
+  it('D-1457 e D-1535: o balde é privado, até 8 MB por arquivo, só JPEG e PDF, e a nova rodada repõe isso', () => {
     expect(BALDE_DAS_FOTOS).toBe('fotos-avaliacao')
     expect(TETO_DA_AVALIACAO).toBe(8388608)
-    expect(semComentarios).toContain(
-      "values ('fotos-avaliacao', 'fotos-avaliacao', false, 8388608, array['image/jpeg', 'image/png', 'application/pdf'])",
-    )
+    expect(semComentarios).toContain("values ('fotos-avaliacao', 'fotos-avaliacao', false, 8388608, array['image/jpeg', 'application/pdf'])")
+    expect(semComentarios).not.toContain("'image/png'")
     expect(semComentarios).toContain('on conflict (id) do update\n  set public = false, file_size_limit = excluded.file_size_limit, allowed_mime_types = excluded.allowed_mime_types;')
   })
 
@@ -63,7 +62,8 @@ describe('banco: as fotos e os anexos da avaliação (018, spec antropometria-te
     expect(corpo).toContain('v_conta text := auth.uid()::text;')
     expect(corpo).toContain('if v_conta is null or p_nome is null then')
     const uuid = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
-    expect(corpo).toContain(`'^' || v_conta || '/[A-Za-z0-9_-]{1,64}/(fotos/${uuid}\\.jpg|anexos/${uuid}\\.(pdf|jpg|png))$'`)
+    // D-1530 e D-1535: a imagem anexada vira foto; em anexos/, só PDF.
+    expect(corpo).toContain(`'^' || v_conta || '/[A-Za-z0-9_-]{1,64}/(fotos/${uuid}\\.jpg|anexos/${uuid}\\.pdf)$'`)
     expect(corpo).toContain('if v_na_conta >= 2000 then')
     expect(corpo).toContain(`when 'fotos' then ${FOTOS_POR_AVALIACAO}`)
     expect(corpo).toContain(`else ${ANEXOS_POR_AVALIACAO}`)
@@ -104,6 +104,16 @@ describe('banco: as fotos e os anexos da avaliação (018, spec antropometria-te
     expect(trava).toBeLessThan(gatilho.indexOf('sum('))
     // O teto de 8 MB conta fotos e anexos juntos: a soma é da pasta do plano, não da subpasta.
     expect(gatilho).not.toMatch(/sum\([^;]*v_pasta/)
+  })
+
+  it('CB-1473 e D-1535: com o tipo na linha, o gatilho exige image/jpeg em fotos/ e application/pdf em anexos/, exatos', () => {
+    const gatilho = semComentarios.split('create or replace function public.limite_de_arquivos_da_avaliacao()')[1]?.split('$$;')[0] ?? ''
+    expect(gatilho).toContain("v_mime text := new.metadata->>'mimetype';")
+    expect(gatilho).toContain("v_mime_do_caminho text := case split_part(new.name, '/', 3) when 'fotos' then 'image/jpeg' else 'application/pdf' end;")
+    expect(gatilho).toContain('if v_mime is not null and v_mime is distinct from v_mime_do_caminho then')
+    expect(gatilho).toContain("raise exception 'Tipo do arquivo da avaliação.' using errcode = 'check_violation';")
+    // Sem lower() nem like: "IMAGE/JPEG" e "image/jpeg; charset=utf-8" não passam.
+    expect(gatilho).not.toMatch(/lower\(|ilike/)
   })
 
   it('D-1531: o cabeçalho e o aviso dizem o que o servidor soma e o que fica de fora sem o gatilho', () => {
