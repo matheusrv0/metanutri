@@ -248,6 +248,16 @@ sondas do revisor ficam fora do repositório e não mudam: provam o defeito, e o
 - **R5** · `diaLocal(new Date(atualizadoEm))` no lugar do `slice(0, 10)`; o "Ver exemplo" com `diaLocal()`.
 - **R6** · `rotuloDaAvaliacao` no domínio: o sufixo "· Nª do dia" só quando o dia se repete, contado da alterada antes.
 
+### D1 · O documento sem a lista de referências (10/11/2026)
+
+Uma tarefa, um commit, em TDD (D-1540 a D-1545, CB-1490 a CB-1495).
+
+- **D1** · `documento.test.tsx` e `documentoDaAvaliacao.test.ts` primeiro (CB-1490 a CB-1495). Depois: em
+  `FolhaAvaliacao.tsx`, a seção "Referências" vira a linha "Referências completas no MetaNutri." (só com
+  `referencias.length > 0`) e a coluna "Fonte" sai da grade de "Resultados" (quatro colunas); em
+  `documentoDaAvaliacao.ts`, a nota do IMC fica sem a fonte curta. `referencias`, "Métodos", o rascunho e a tela não
+  mudam. `DialogoDocumentoAvaliacao.tsx` não precisa mudar.
+
 ### T27 · F3 (bloqueada)
 
 Quando a infraestrutura do Resend do `lado-do-paciente` entrar: a função que gera o link com prazo de 7 dias, o envio pelo
