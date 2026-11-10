@@ -158,7 +158,7 @@ LEIA-ME (DP-AT-9). Na tela, um componente por arquivo, em `src/ui/antropometria/
 | R11 | Revisão r1 da F2, M2: os bytes no servidor e na recusa | `supabase/018-fotos-avaliacao.sql` (o gatilho), `src/data/sqlFotosAvaliacao.test.ts`, `testes/seguranca/fotos.test.ts`, `src/domain/fotosDaAvaliacao.ts` (a porta `listar`, DP-AT-21), `armazenamentoDeFotos.ts`, `e2e/apoio/servidorFalso.ts` (a lista com o tamanho) (+ testes e falsos) | CB-1468, D-1531 | R10 |
 | R12 | Revisão r1 da F2, B1: "Excluir" da foto com 44 px | `ListaDeFotos.tsx` (+ teste; e2e em 390 px) | CB-1469, D-1532 | T25 |
 | R13 | Revisão r1 da F2, B2: setas no seletor segmentado | `design-system/componentes/navigation/SeletorSegmentado.tsx` (+ `estilo.test.tsx`) | CB-1470, D-1533 | — |
-| R14 | Revisão r1 da F2, B5: nome neutro do anexo, com a data | `src/domain/fotosDaAvaliacao.ts`, `ListaDeAnexos.tsx` (+ testes; e2e) | CB-1474, D-1536 | R10 |
+| R14 | Revisão r1 da F2, B5: nome neutro do anexo, com a data | `src/domain/fotosDaAvaliacao.ts`, `src/domain/tipos.ts` (o comentário do `nome`), `ListaDeAnexos.tsx` (+ testes; e2e) | CB-1474, D-1536 | R10 |
 | R15 | Revisão r1 da F2, B3: a exclusão espera o armazenamento; o arquivo solto volta à lista | `src/domain/fotosDaAvaliacao.ts` (`religarSoltos`), `CartaoFotos.tsx`, `armazenamentoDeFotos.ts`, `src/ui/casos/TelaCasos.tsx`, `src/ui/pacientes/TelaPaciente.tsx` (+ testes) | CB-1471, CB-1472, D-1534 | R11, R14 |
 | R16 | Revisão r1 da F2, B4: o tipo no servidor | `supabase/018-fotos-avaliacao.sql` (o caminho, o balde e o gatilho), `src/data/sqlFotosAvaliacao.test.ts`, `testes/seguranca/fotos.test.ts` | CB-1473, D-1535 | R11 |
 | R17 | Revisão r1 da F2, B7: "Comparar fotos" sem `aria-pressed` | `CartaoFotos.tsx` (+ teste) | CB-1475, D-1538 | T25 |
@@ -345,6 +345,10 @@ enorme, avaliação vazia, 350 kg e dobra de 90 mm, duas avaliações no mesmo d
 gestante e diagnóstico longo, em 360, 390 e 1440 px. Os achados viraram CB-1454 e CB-1455. Falta a F2 (T21 a T25) e a
 T26.
 
+**Correções da revisão r1 da F2 (10/11/2026, ramo `antropometria-fotos`):** R10 a R17 feitas, um commit cada, depois
+do commit `docs` das decisões (D-1530 a D-1538). O R14 também corrigiu o comentário do `nome` em `src/domain/tipos.ts`
+(o anexo leva o nome neutro), e o R15 ganhou o teste da porta (`src/ui/antropometria/armazenamentoDeFotos.test.ts`).
+
 **Correções da revisão r2 e F2 (10/11/2026, ramo `antropometria-fotos`):** R7 a R9 e T21 a T25 feitas, um commit cada
 (mais a correção do gatilho do 018, que o ataque de 8 envios juntos mostrou). Falta o "Enviar por e-mail" (T27, F3,
 bloqueada).
@@ -386,3 +390,12 @@ em `fotos.test.tsx`; CB-1413 a CB-1416 em `fotosDaAvaliacao.test.ts` e `fotos.te
 `testes/seguranca/fotos.test.ts`, 8 envios juntos); CB-1463: o fundo branco do <canvas> (`reduzirFoto.ts`), sem teste
 automático (o jsdom não desenha; o e2e usa JPEG); CB-1464 em `fotosDaAvaliacao.test.ts` e `pacientes.test.tsx`; CB-1465
 no e2e; CB-1466 em `fotosDaAvaliacao.test.ts` e `fotos.test.tsx`.
+
+Revisão r1 da F2: CB-1467 em `fotosDaAvaliacao.test.ts`, `fotos.test.tsx` e o e2e (a foto do celular, com GPS e aparelho
+no EXIF, escolhida como anexo, sobe sem o EXIF); CB-1468 em `fotosDaAvaliacao.test.ts` (a recusa pelo tamanho),
+`src/data/sqlFotosAvaliacao.test.ts` e `testes/seguranca/fotos.test.ts` (três arquivos de 3 MB juntos, 8 MB exatos, a
+conta com 500 MB); CB-1469 em `fotos.test.tsx` e o e2e (390 px); CB-1470 em `design-system/componentes/estilo.test.tsx`;
+CB-1471 em `src/ui/casos/TelaCasos.test.tsx`, `pacientes.test.tsx` e `armazenamentoDeFotos.test.ts`; CB-1472 em
+`fotosDaAvaliacao.test.ts` e `fotos.test.tsx`; CB-1473 em `sqlFotosAvaliacao.test.ts` e `testes/seguranca/fotos.test.ts`;
+CB-1474 em `fotosDaAvaliacao.test.ts`, `fotos.test.tsx` e o e2e; CB-1475 em `fotos.test.tsx`. D-1537 (o cache) é texto, sem
+teste.
