@@ -197,3 +197,20 @@ Riscos e decisões para o dono revisar:
   pergunta sozinho (a resposta da gaveta fica na ficha do mesmo jeito).
 - **DP-IA-12.** No adequar, a mudança barrada mostra o motivo da conferência ("Alergia: amendoim"), sem o "Barrada pela
   ficha." do protótipo: a conferência também barra pela regra prescritível e pela base, que não são da ficha.
+
+### 9.1 Andamento da P2 (10/11/2026)
+
+Feito, um commit por tarefa: T26 e T27 (antes), T28 a T37. O que mudou em relação à tabela acima, ao implementar:
+
+- **T30.** `usarSugestaoIa.ts` chama a função com o próprio `functions.invoke` (sem o `chamar` de `usarAssinatura.ts`): os
+  testes que trocam `usarAssinatura.ts` por um de mentira não precisam saber da IA.
+- **T33 e T34.** `iaGaveta.ts` também guarda o `ModoDaGaveta`, o título de cada modo e o texto do "Vai para …"
+  (`textosDoVaiPara`), que a tela do plano e a gaveta usam.
+- **T35.** O download do termo (`baixarTermoDeIa`) mora em `src/ui/exportar/baixar.ts`, ao lado do `baixarBlob`; a ficha
+  (`TelaPaciente`) e a gaveta usam o mesmo.
+- **T36.** A frase de apoio de IA vai no fim do documento (depois da assinatura), não num rodapé de página; o link guarda
+  `apoioDeIa` ("plano" ou "estagio") só no plano com a marca, e a cópia de antes fica igual.
+- **Correção depois do T36.** A releitura da resposta no navegador deixa o id que ele não conhece para a conferência 1,
+  que o mostra em "Retirados pela conferência" com "Alimento fora da base" (CB-1308, CA-2380).
+- **T37.** O e2e fica em `e2e/servidor-falso/ia.spec.ts` (o projeto com a conta falsa), e o cenário `ia` entra no
+  `Cenario` do servidor falso, com a cópia da conta já na nuvem (`copia`).
