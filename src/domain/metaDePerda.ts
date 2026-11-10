@@ -2,7 +2,7 @@
 // % de gordura em pontos (25 = 25%), energia em kcal/dia. Sugestão para a nutricionista; nada vai sozinho ao paciente.
 import { calcularImc } from './antropometria.ts'
 import { FONTES, PROPOSTA_DO_APP, type Fonte } from './fontesAntropometria.ts'
-import { gorduraDoCaso, type OpcoesDaGordura } from './indicadoresDeGordura.ts'
+import { gorduraDoCaso, origemDoPercentual, type OpcoesDaGordura, type OrigemDoPercentual } from './indicadoresDeGordura.ts'
 import { idadeValida, medidaValida, naPrecisao } from './linhaDoResultado.ts'
 import { prioridadeDoCaso } from './prioridadeClinica.ts'
 import type { Caso } from './tipos.ts'
@@ -48,6 +48,8 @@ export interface MetaDePerda {
   /** Gasto total − déficit, nunca abaixo de 800 kcal/dia (R4.5c). */
   readonly energiaSugeridaKcal: { readonly min: number; readonly max: number } | null
   readonly fonte: Fonte
+  /** De onde veio o % atual do peso-alvo; sem gordura alvo (ou sem %), `null` (spec antropometria-telas, D-1422). */
+  readonly origemDoPercentual: OrigemDoPercentual | null
   readonly avisos: readonly string[]
 }
 export type ResultadoDaMeta = MetaDePerda | { readonly mostra: false; readonly motivo: string }
@@ -75,7 +77,9 @@ export function metaDePerda(caso: Caso, entrada: EntradaDaMeta = {}): ResultadoD
   const prioridade = prioridadeDoCaso(caso)
   if (peso === null || estatura === null || prioridade === null) return { mostra: false, motivo: 'A meta de perda precisa do peso e da estatura.' }
   if (prioridade.riscoNutricional) {
-    return { mostra: false, motivo: 'Risco nutricional (IMC baixo pelo GLIM ou panturrilha baixa no idoso): a prioridade é preservar ou recuperar a massa magra, não perder peso.' }
+    // Spec antropometria-telas, D-1527: "na idosa" ou "no idoso", pelo sexo (a prioridade só sai com sexo).
+    const quem = caso.sexo === 'F' ? 'na idosa' : 'no idoso'
+    return { mostra: false, motivo: `Risco nutricional (IMC baixo pelo GLIM ou panturrilha baixa ${quem}): a prioridade é preservar ou recuperar a massa magra, não perder peso.` }
   }
   if (prioridade.nivel === 0 && caso.objetivo !== 'emagrecer') return null
 
@@ -130,6 +134,8 @@ export function metaDePerda(caso: Caso, entrada: EntradaDaMeta = {}): ResultadoD
     deficitKcal,
     energiaSugeridaKcal,
     fonte: FONTES.metaDePerda,
-    avisos,
+    origemDoPercentual: alvo !== null ? origemDoPercentual(gordura) : null,
+    // D-1423: com gordura alvo, os avisos do % (inclusive o da D-1042) vêm depois dos da meta.
+    avisos: alvo !== null && gordura !== null ? [...avisos, ...gordura.avisos] : avisos,
   }
 }

@@ -6,6 +6,7 @@ import { modoDeQuantidade } from './caso.ts'
 import { medidasDoAlimento } from './busca.ts'
 import { lerMedidaDoItem, medidaNaLinha } from './medidaDoItem.ts'
 import { nomeParaPaciente } from './nomeParaPaciente.ts'
+import { lerOpcoesDoItem, MAXIMO_DE_OPCOES_DO_ITEM } from './opcoesDoItem.ts'
 import { quantidadeNaFolha } from './quantidadeNaFolha.ts'
 import {
   ehItemDeReceita,
@@ -41,6 +42,11 @@ export interface ItemDaDieta {
   readonly aproximada?: true
   /** Só no alimento que não está na base (alimento próprio) medido em ml (D-378); o da base, "Meu plano" sabe sozinho. */
   readonly unidade?: 'ml'
+  /**
+   * As opções do item, que o paciente lê com "ou" (spec busca-substitutos, D-1115). Só existe no item que tem opção: a
+   * cópia de um plano sem opção fica igual à de antes, e o link enviado não aparece como mudado.
+   */
+  readonly ou?: readonly ItemDaDieta[]
 }
 
 export interface RefeicaoDaDieta {
@@ -124,7 +130,25 @@ function alimentoDaDieta(alimentoId: number, gramas: number, buscar: BuscarAlime
  * (D-297 da conduta-da-nutricionista).
  */
 function itemDaDieta(item: ItemPlano, buscar: BuscarAlimento, modo: ModoQuantidade): ItemDaDieta {
-  if (!ehItemDeReceita(item)) return alimentoDaDieta(item.alimentoId, item.gramas, buscar, modo, item.medida)
+  if (!ehItemDeReceita(item)) {
+    // D-1115 (spec busca-substitutos): as opções do item vão junto; a do alimento excluído fica de fora (CB-1102).
+    const ou = lerOpcoesDoItem(item).flatMap((o): ItemDaDieta[] => {
+      if (buscar(o.alimentoId) !== undefined) return [alimentoDaDieta(o.alimentoId, o.gramas, buscar, modo, o.medida)]
+      // D-1122 e CB-1110: a opção da base ampliada sem a base vai pela cópia do nome, em gramas.
+      if (!o.copia) return []
+      const q = quantidadeNaFolha(o.alimentoId, o.gramas, modo, o.medida)
+      return [
+        {
+          medida: q.medida,
+          gramas: o.gramas,
+          alimento: o.copia.paciente,
+          ...(lerMedidaDoItem(o.medida) !== undefined ? { escolhida: true as const } : {}),
+          ...(o.copia.unidade === 'ml' ? { unidade: 'ml' as const } : {}),
+        },
+      ]
+    })
+    return { ...alimentoDaDieta(item.alimentoId, item.gramas, buscar, modo, item.medida), ...(ou.length > 0 ? { ou } : {}) }
+  }
   const receita = receitaDoItem(item)
   const medida = modo === 'gramas' || !receita ? null : textoDaPorcao(receita, item.gramas)
   return { medida, gramas: item.gramas, alimento: nomeDaReceita(receita), receita: true }
@@ -215,7 +239,7 @@ export function temDieta(dieta: DietaDoLink | null): dieta is DietaDoLink {
 
 const objeto = (v: unknown): Record<string, unknown> | null => (typeof v === 'object' && v !== null && !Array.isArray(v) ? (v as Record<string, unknown>) : null)
 
-function lerItem(v: unknown): ItemDaDieta | null {
+function lerItemSemOpcoes(v: unknown): ItemDaDieta | null {
   const o = objeto(v)
   if (!o) return null
   const { medida, gramas, alimento } = o
@@ -232,6 +256,18 @@ function lerItem(v: unknown): ItemDaDieta | null {
     ...(o['aproximada'] === true ? { aproximada: true as const } : {}),
     ...(o['unidade'] === 'ml' ? { unidade: 'ml' as const } : {}),
   }
+}
+
+/** O item e, quando há, as opções dele (D-1115): no máximo 2, sem opção dentro de opção; o estragado fica de fora. */
+function lerItem(v: unknown): ItemDaDieta | null {
+  const item = lerItemSemOpcoes(v)
+  const bruto = objeto(v)?.['ou']
+  if (!item || !Array.isArray(bruto)) return item
+  const ou = bruto
+    .map(lerItemSemOpcoes)
+    .filter((i): i is ItemDaDieta => i !== null)
+    .slice(0, MAXIMO_DE_OPCOES_DO_ITEM)
+  return ou.length > 0 ? { ...item, ou } : item
 }
 
 function lerRefeicao(v: unknown): RefeicaoDaDieta | null {

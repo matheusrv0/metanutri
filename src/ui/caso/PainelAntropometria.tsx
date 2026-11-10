@@ -4,6 +4,7 @@ import { formatarNumero } from '@/export/copiar-tabela.ts'
 import { Alert } from '@ds/componentes/display/alert.tsx'
 import { Fontes, type ItemFonte } from '@ds/componentes/display/Fontes.tsx'
 import { Card, CardTitle } from '@ds/componentes/display/card.tsx'
+import { Button } from '@ds/componentes/forms/button.tsx'
 
 interface LinhaProps {
   readonly rotulo: string
@@ -34,8 +35,14 @@ function Linha({ rotulo, valor, classe, detalhe }: LinhaProps) {
   )
 }
 
+interface PainelAntropometriaProps {
+  readonly resultado: ResultadoAntropometria
+  /** A avaliação completa deste plano (spec antropometria-telas, D-1437, CA-2406). */
+  readonly aoAbrirAvaliacao?: (() => void) | undefined
+}
+
 /** Avaliação antropométrica do caso (CA-02 a CA-05), sempre com a fonte de cada referência. */
-export function PainelAntropometria({ resultado }: { readonly resultado: ResultadoAntropometria }) {
+export function PainelAntropometria({ resultado, aoAbrirAvaliacao }: PainelAntropometriaProps) {
   const { imc, imcIdade, estaturaIdade, gestacao, cintura, panturrilha, avisos } = resultado
   const temResultado = imc ?? imcIdade ?? estaturaIdade ?? gestacao ?? cintura ?? panturrilha
 
@@ -113,6 +120,12 @@ export function PainelAntropometria({ resultado }: { readonly resultado: Resulta
 
         {panturrilha ? <Linha rotulo="Circunferência da panturrilha" valor={panturrilha.classe} detalhe={panturrilha.nota} /> : null}
       </div>
+
+      {aoAbrirAvaliacao ? (
+        <Button variant="lightprimary" size="sm" className="self-start" onClick={aoAbrirAvaliacao}>
+          Abrir a avaliação completa
+        </Button>
+      ) : null}
 
       {fontes.length > 0 ? <Fontes itens={fontes} className="border-t border-border pt-3" /> : null}
     </Card>

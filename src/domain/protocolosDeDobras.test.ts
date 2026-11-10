@@ -6,6 +6,7 @@ import {
   brozek,
   calcularProtocolo,
   converterDensidade,
+  dobrasUsadas,
   lohman,
   siri,
   type IdProtocolo,
@@ -672,5 +673,28 @@ describe('Jackson, Pollock e Ward: % fora da amostra (spec antropometria-complet
     const homem = jp3('M', 200)
     expect(naPrecisao(homem.gorduraPct, 1)).toBe(44.8)
     expect(homem.avisos.join(' ')).not.toMatch(/% calculado/)
+  })
+})
+
+describe('as dobras que entram na conta (spec antropometria-telas, D-1521; revisão r1, B4)', () => {
+  it('CB-1481: Jackson & Pollock 3 na mulher marca a suprailíaca da axilar anterior; sem ela, a de linha não informada que a conta usa', () => {
+    expect(dobrasUsadas('jackson-pollock-3', 'F', dobras({}))).toEqual(['tricipital', 'suprailiacaAnt', 'coxa'])
+    expect(dobrasUsadas('jackson-pollock-3', 'F', dobras({ suprailiaca: 18 }))).toEqual(['tricipital', 'suprailiaca', 'coxa'])
+    expect(dobrasUsadas('jackson-pollock-3', 'F', dobras({ suprailiaca: 18, suprailiacaAnt: 20 }))).toEqual(['tricipital', 'suprailiacaAnt', 'coxa'])
+    // Só a da outra linha: a conta usa a média (com o aviso de resultado deslocado), e é ela que fica marcada.
+    expect(dobrasUsadas('jackson-pollock-3', 'F', dobras({ suprailiacaMed: 17 }))).toEqual(['tricipital', 'suprailiacaMed', 'coxa'])
+    expect(dobrasUsadas('jackson-pollock-3', 'M', dobras({ suprailiaca: 18 }))).toEqual(['peitoral', 'abdominal', 'coxa'])
+  })
+
+  it('CB-1482: Faulkner e Guedes, sem linha registrada: a de linha não informada com valor, senão a média; só a anterior, a anterior', () => {
+    expect(dobrasUsadas('faulkner-4', 'F', dobras({}))).toEqual(['tricipital', 'subescapular', 'suprailiacaMed', 'abdominal'])
+    expect(dobrasUsadas('faulkner-4', 'M', dobras({ suprailiaca: 14 }))).toEqual(['tricipital', 'subescapular', 'suprailiaca', 'abdominal'])
+    expect(dobrasUsadas('faulkner-4', 'M', dobras({ suprailiacaAnt: 14 }))).toEqual(['tricipital', 'subescapular', 'suprailiacaAnt', 'abdominal'])
+    expect(dobrasUsadas('guedes', 'F', dobras({}))).toEqual(['subescapular', 'suprailiacaMed', 'coxa'])
+  })
+
+  it('sem sexo ou com um protocolo desconhecido, nenhuma', () => {
+    expect(dobrasUsadas('jackson-pollock-3', null, dobras({ tricipital: 10 }))).toEqual([])
+    expect(dobrasUsadas('protocolo-do-futuro' as IdProtocolo, 'F', dobras({}))).toEqual([])
   })
 })

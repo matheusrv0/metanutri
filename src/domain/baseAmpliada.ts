@@ -2,6 +2,7 @@
 // em português. O arquivo grande chega sob demanda pela interface (D-710); aqui ele vira `Alimento`. A citação e as
 // contagens moram no arquivo pequeno, que o site também lê.
 import fonte from '../data/base-ampliada-fonte.json'
+import { lerOpcoesDoItem } from './opcoesDoItem.ts'
 import { receitaDoItem } from './receitaNoPlano.ts'
 import { OPCOES, type Alimento, type ChaveNutrienteAlimento, type IdAlergenico, type Plano } from './tipos.ts'
 
@@ -104,13 +105,18 @@ export function decodificarBaseAmpliada(arquivo: ArquivoBaseAmpliada): readonly 
 }
 
 /**
- * D-711: o plano tem alimento da base ampliada (no item, num substituto ou num ingrediente de receita), e por isso
- * precisa dela carregada para abrir.
+ * D-711: o plano tem alimento da base ampliada (no item, num substituto, num ingrediente de receita ou numa opção do item,
+ * spec busca-substitutos, D-1122), e por isso precisa dela carregada para abrir.
  */
 export function planoUsaBaseAmpliada(plano: Plano): boolean {
   return plano.refeicoes.some((r) =>
     OPCOES.some((o) =>
-      r.opcoes[o].some((item) => ehDaBaseAmpliada(item.alimentoId) || (receitaDoItem(item)?.ingredientes.some((i) => ehDaBaseAmpliada(i.alimentoId)) ?? false)),
+      r.opcoes[o].some(
+        (item) =>
+          ehDaBaseAmpliada(item.alimentoId) ||
+          (receitaDoItem(item)?.ingredientes.some((i) => ehDaBaseAmpliada(i.alimentoId)) ?? false) ||
+          lerOpcoesDoItem(item).some((opcao) => ehDaBaseAmpliada(opcao.alimentoId)),
+      ),
     ),
   )
 }

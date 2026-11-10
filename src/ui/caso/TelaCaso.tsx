@@ -39,6 +39,8 @@ interface TelaCasoProps {
   /** D-356 e CA-1071: o que a anamnese diz da atividade e da hidratação. */
   readonly sugestaoNivel?: SugestaoDeNivel | null | undefined
   readonly lembreteAgua?: string | null | undefined
+  /** Abre a avaliação antropométrica completa deste plano (spec antropometria-telas, D-1437). */
+  readonly aoAbrirAvaliacao?: (() => void) | undefined
 }
 
 /**
@@ -59,6 +61,7 @@ export function TelaCaso({
   pesoAnterior,
   sugestaoNivel,
   lembreteAgua,
+  aoAbrirAvaliacao,
 }: TelaCasoProps) {
   const validacao = useMemo(() => validarCaso(caso), [caso])
   const antropometria = useMemo(() => avaliarAntropometria(caso), [caso])
@@ -102,6 +105,7 @@ export function TelaCaso({
           idadeAssentada={idadeAssentada}
           pesoAnterior={pesoAnterior}
           sugestaoNivel={sugestaoNivel}
+          aoAbrirAvaliacao={aoAbrirAvaliacao}
         />
 
         <CartaoDocumento
@@ -127,7 +131,7 @@ export function TelaCaso({
             </Button>
           </Card>
         ) : (
-          <PainelAntropometria resultado={antropometria} />
+          <PainelAntropometria resultado={antropometria} aoAbrirAvaliacao={aoAbrirAvaliacao} />
         )}
         {lateral}
       </div>

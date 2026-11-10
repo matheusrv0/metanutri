@@ -48,6 +48,16 @@ export interface GorduraDoCaso {
   readonly dobrasRecusadas: RecusaDoProtocolo | null
 }
 
+/** De onde veio o % de gordura que uma sugestão usou (spec antropometria-telas, D-1422). */
+export interface OrigemDoPercentual {
+  readonly origem: GorduraDoCaso['origem']
+  /** O mesmo `metodo` de `GorduraDoCaso`: "Jackson & Pollock, 7 dobras" ou "Bioimpedância (InBody 270)". */
+  readonly metodo: string
+}
+
+/** D-1422: a origem do % usado; sem %, `null`. */
+export const origemDoPercentual = (g: GorduraDoCaso | null): OrigemDoPercentual | null => (g === null ? null : { origem: g.origem, metodo: g.metodo })
+
 /** D-1042: a bioimpedância no lugar das dobras que o protocolo recusou. */
 export const avisoDaBioimpedanciaNoLugar = (recusa: RecusaDoProtocolo): string => `As dobras não calcularam (${recusa.causa}): usado o % da bioimpedância.`
 

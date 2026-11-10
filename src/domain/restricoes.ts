@@ -3,6 +3,7 @@
 // livre vale pelo pedaço do nome, como antes, e a linha que nomeia um grupo liga o grupo.
 import { idsDaRestricao, TERMOS_POR_RESTRICAO, ULTIMO_ID_DA_BASE, type IdRestricaoDaBase } from './restricoesDaBase.ts'
 import { nomeParaPaciente } from './nomeParaPaciente.ts'
+import { lerOpcoesDoItem } from './opcoesDoItem.ts'
 import { nomeDaReceita, receitaDoItem } from './receitaNoPlano.ts'
 import { OPCOES, type AlergenicosDoRotulo, type BuscarAlimento, type CondicaoFisiologica, type IdAlergenico, type ItemPlano, type Plano } from './tipos.ts'
 
@@ -420,19 +421,28 @@ export function restricaoDoItem(item: ItemPlano, buscar: BuscarAlimento, restric
  */
 export function avisosParaImprimir(plano: Plano, buscar: BuscarAlimento, restricoes: RestricoesDoPaciente): readonly string[] {
   const avisos: string[] = []
+  const avisar = (nome: string, aviso: string) => {
+    // O cuidado da fase não vem da ficha: a frase diz o cuidado.
+    const doCuidado = (restricoes.cuidados ?? []).some((c) => c.aviso === aviso)
+    const frase = doCuidado
+      ? `Este plano tem ${nome}. ${aviso} Confira antes de imprimir.`
+      : `Este plano tem ${nome}, e a ficha diz ${aviso}. Confira antes de imprimir.`
+    if (!avisos.includes(frase)) avisos.push(frase)
+  }
   for (const refeicao of plano.refeicoes) {
     for (const opcao of OPCOES) {
       for (const item of refeicao.opcoes[opcao]) {
         const aviso = restricaoDoItem(item, buscar, restricoes)
-        if (aviso === null) continue
-        const receita = receitaDoItem(item)
-        const nome = receita ? nomeDaReceita(receita) : nomeParaPaciente(buscar(item.alimentoId))
-        // O cuidado da fase não vem da ficha: a frase diz o cuidado.
-        const doCuidado = (restricoes.cuidados ?? []).some((c) => c.aviso === aviso)
-        const frase = doCuidado
-          ? `Este plano tem ${nome}. ${aviso} Confira antes de imprimir.`
-          : `Este plano tem ${nome}, e a ficha diz ${aviso}. Confira antes de imprimir.`
-        if (!avisos.includes(frase)) avisos.push(frase)
+        if (aviso !== null) {
+          const receita = receitaDoItem(item)
+          avisar(receita ? nomeDaReceita(receita) : nomeParaPaciente(buscar(item.alimentoId)), aviso)
+        }
+        // Spec busca-substitutos, CA-2125: a opção do item também vai para o paciente.
+        for (const o of lerOpcoesDoItem(item)) {
+          const alimento = buscar(o.alimentoId)
+          const doAlimento = alimento ? restricaoDoAlimento(alimento, restricoes) : null
+          if (alimento && doAlimento) avisar(nomeParaPaciente(alimento), doAlimento)
+        }
       }
     }
   }

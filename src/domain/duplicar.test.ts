@@ -60,6 +60,24 @@ const COMPLETO: Partial<Caso> = {
     alturaDoJoelhoCm: 52,
     semienvergaduraCm: 86,
   },
+  // Spec antropometria-telas (D-1436): todo campo da avaliação preenchido.
+  avaliacao: {
+    origemPesoEstatura: 'aferidas',
+    modalidade: 'presencial',
+    adipometro: 'lange',
+    maturacao: 'pubere',
+    grupoDoEstudo: 'branco',
+    perfil: 'ativo',
+    imcAlvo: 23,
+    gorduraAlvoPct: 18,
+    baseDaProteina: 'peso-ajustado',
+    doencaRenalGrave: false,
+    diagnostico: 'Sobrepeso pelo IMC.',
+    observacoesDaMedida: 'Em jejum de 3 horas.',
+    fotosAutorizadasEm: '2026-05-12',
+    fotos: [{ id: 'f1', angulo: 'frente', nome: 'Frente', caminho: 'conta/antigo/fotos/f1.jpg', bytes: 900_000, tipo: 'image/jpeg', enviadoEm: '2026-05-12T10:00:00.000Z' }],
+    anexos: [{ id: 'a1', nome: 'bioimpedancia.pdf', caminho: 'conta/antigo/anexos/a1.pdf', bytes: 400_000, tipo: 'application/pdf', enviadoEm: '2026-05-12T10:05:00.000Z' }],
+  },
   composicao: {
     protocolo: 'faulkner-4',
     dobras: {
@@ -191,6 +209,11 @@ describe('medidas do dia na duplicação (spec ficha-unica, D-367)', () => {
       'medidasCorporais.coxaProximalDireitaCm',
       'medidasCorporais.coxaProximalEsquerdaCm',
       'medidasCorporais.panturrilhaEsquerdaCm',
+      // Spec antropometria-telas (D-1436): da avaliação, a origem, a maturação, o diagnóstico e as observações.
+      'avaliacao.origemPesoEstatura',
+      'avaliacao.maturacao',
+      'avaliacao.diagnostico',
+      'avaliacao.observacoesDaMedida',
       'composicao.dobras.tricipital',
       'composicao.dobras.subescapular',
       'composicao.dobras.suprailiaca',
@@ -217,6 +240,8 @@ describe('medidas do dia na duplicação (spec ficha-unica, D-367)', () => {
       'medidasCorporais.semienvergaduraCm',
     ])
     expect(caminhos('novo')).toEqual(['id', 'nome', 'dataConsulta'])
+    // Spec antropometria-telas (D-1436): os arquivos nunca vão na cópia.
+    expect(caminhos('arquivo do dia')).toEqual(['avaliacao.fotos', 'avaliacao.anexos'])
   })
 
   it('CA-1096: no retorno de um paciente adulto, toda medida do dia vem vazia', () => {
@@ -310,7 +335,8 @@ describe('medidas do dia na duplicação (spec ficha-unica, D-367)', () => {
     const original = registro({ ...COMPLETO, pacienteId: null, idadeAnos: 12 })
     const copia = duplicarCaso(original, contador('copia'), { hoje: '2026-11-03' })
 
-    const semOsNovos = (caso: Caso): Caso => ({ ...caso, id: '', nome: '', dataConsulta: null })
+    // Spec antropometria-telas (D-1436): menos os arquivos, que nunca vão na cópia.
+    const semOsNovos = (caso: Caso): Caso => ({ ...caso, id: '', nome: '', dataConsulta: null, avaliacao: { ...caso.avaliacao, fotos: null, anexos: null } })
     expect(semOsNovos(copia.caso)).toEqual(semOsNovos(original.caso))
     expect(copia.caso.estaturaCm).toBe(170)
   })
@@ -320,5 +346,60 @@ describe('medidas do dia na duplicação (spec ficha-unica, D-367)', () => {
     const antes = structuredClone(original.caso)
     duplicarCaso(original, contador('copia'), { hoje: '2026-11-03', nascimento: '2014-05-01' })
     expect(original.caso).toEqual(antes)
+  })
+})
+
+describe('a avaliação na duplicação (spec antropometria-telas, CA-2466 e CA-2467)', () => {
+  it('CA-2466: cada campo da avaliação tem a sua classe na lista do D-367', () => {
+    expect(conferirClassificacao(criarCasoVazio('x').avaliacao, NA_DUPLICACAO.avaliacao, 'avaliacao.')).toEqual([])
+    expect(NA_DUPLICACAO.avaliacao).toEqual({
+      origemPesoEstatura: 'medida do dia',
+      modalidade: 'copiado',
+      adipometro: 'copiado',
+      maturacao: 'medida do dia',
+      grupoDoEstudo: 'copiado',
+      perfil: 'copiado',
+      imcAlvo: 'copiado',
+      gorduraAlvoPct: 'copiado',
+      baseDaProteina: 'copiado',
+      doencaRenalGrave: 'copiado',
+      diagnostico: 'medida do dia',
+      observacoesDaMedida: 'medida do dia',
+      fotosAutorizadasEm: 'copiado',
+      fotos: 'arquivo do dia',
+      anexos: 'arquivo do dia',
+    })
+  })
+
+  it('CA-2467: no retorno, o que é do dia vem vazio e o resto da avaliação vai igual', () => {
+    const original = registro(COMPLETO)
+    const { avaliacao } = duplicarCaso(original, contador('copia'), { hoje: '2026-11-03', nascimento: '1991-03-20' }).caso
+    expect(avaliacao).toEqual({
+      origemPesoEstatura: null,
+      modalidade: 'presencial',
+      adipometro: 'lange',
+      maturacao: null,
+      grupoDoEstudo: 'branco',
+      perfil: 'ativo',
+      imcAlvo: 23,
+      gorduraAlvoPct: 18,
+      baseDaProteina: 'peso-ajustado',
+      doencaRenalGrave: false,
+      diagnostico: null,
+      observacoesDaMedida: null,
+      fotosAutorizadasEm: '2026-05-12',
+      fotos: null,
+      anexos: null,
+    })
+  })
+
+  it('CA-2467: o plano sem paciente leva a avaliação, menos as fotos e os anexos', () => {
+    const original = registro({ ...COMPLETO, pacienteId: null })
+    const { avaliacao } = duplicarCaso(original, contador('copia'), { hoje: '2026-11-03' }).caso
+    expect(avaliacao.diagnostico).toBe('Sobrepeso pelo IMC.')
+    expect(avaliacao.origemPesoEstatura).toBe('aferidas')
+    expect(avaliacao.fotos).toBeNull()
+    expect(avaliacao.anexos).toBeNull()
+    expect(original.caso.avaliacao.fotos).toHaveLength(1)
   })
 })

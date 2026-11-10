@@ -3,30 +3,41 @@ import { useState, type ReactNode } from 'react'
 import { copiaParaOPlano, RECEITAS_NA_REFEICAO } from '@/domain/receitas.ts'
 import {
   adicionarItem,
+  adicionarOpcaoAoItem,
   adicionarReceita,
   adicionarRefeicao,
   atualizarGramas,
+  devolverItem,
   escolherMedida,
   mudarHorario,
   removerItem,
   removerRefeicao,
   renomearRefeicao,
+  substituirItem,
+  tirarOpcaoDoItem,
   type GerarId,
 } from '@/domain/plano.ts'
+import { textoDaPorcao, type PorcaoDoSubstituto } from '@/domain/buscaDeSubstitutos.ts'
 import { tipoDaRefeicao } from '@/domain/sugestoes.ts'
 import type { MedidaCaseira } from '@/domain/busca.ts'
 import { unidadeDo } from '@/domain/liquido.ts'
 import { MEUS_ALIMENTOS_NOVOS, PRIMEIRO_ID_PRODUTO } from '@/domain/produtos.ts'
 import { buscarAlimento } from '@/domain/tabelas.ts'
-import type { ModoQuantidade, OpcaoId, Plano } from '@/domain/tipos.ts'
+import { totaisDeItens } from '@/domain/totais.ts'
+import type { ItemPlano, ModoQuantidade, OpcaoId, Plano } from '@/domain/tipos.ts'
+import { formatarNumero } from '@/export/copiar-tabela.ts'
+import { cn } from '@/lib/utils'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { DialogoNovaMedida } from '../alimentos/DialogoNovaMedida.tsx'
 import { useMedidasProprias } from '../estado/usarMedidasProprias.ts'
+import { useMediaQuery } from '../estado/usarMediaQuery.ts'
 import { useMeusAlimentos } from '../estado/usarMeusAlimentos.ts'
 import { useSugestoes } from '../estado/usarSugestoes.ts'
 import { DialogoModelos } from '../modelos/DialogoModelos.tsx'
+import { AvisoDeTroca } from './AvisoDeTroca.tsx'
 import { CartaoRefeicao } from './CartaoRefeicao.tsx'
 import { ModoDasQuantidades } from './ModoDasQuantidades.tsx'
+import { PainelSubstitutos } from './PainelSubstitutos.tsx'
 
 interface TelaPlanoProps {
   readonly plano: Plano
@@ -51,6 +62,23 @@ interface TelaPlanoProps {
 
 const idPadrao: GerarId = () => globalThis.crypto.randomUUID()
 
+/** A partir daqui, o painel de substitutos fica ao lado das refeições (o `xl` da área de trabalho, D-1116). */
+const LARGO = '(min-width: 1280px)'
+
+/** O item com o painel de substitutos aberto. */
+interface ItemDoPainel {
+  readonly refeicaoId: string
+  readonly itemId: string
+}
+
+/** A última troca, para o "Desfazer" (spec busca-substitutos, D-1113). */
+interface TrocaFeita {
+  readonly refeicaoId: string
+  /** O item como era antes da troca, com as opções. */
+  readonly antes: ItemPlano
+  readonly texto: string
+}
+
 /** Etapa 2: refeições do dia com entrada rápida de alimentos (CA-12 a CA-21). */
 export function TelaPlano({
   plano,
@@ -66,6 +94,9 @@ export function TelaPlano({
   vaiPara,
 }: TelaPlanoProps) {
   const [modelosAbertos, setModelosAbertos] = useState(false)
+  const [painel, setPainel] = useState<ItemDoPainel | null>(null)
+  const [troca, setTroca] = useState<TrocaFeita | null>(null)
+  const largo = useMediaQuery(LARGO)
   const sugestoes = useSugestoes()
   // D-387 (spec alimentos-e-gramaturas): "+ Nova medida…" na linha, gravada como medida própria da conta. O alimento
   // próprio guarda a medida no cadastro dele com o formulário novo ligado (publicação 2, D-383); a que foi para a chave
@@ -92,70 +123,139 @@ export function TelaPlano({
       return erro instanceof Error ? erro.message : 'Não foi possível salvar a medida. Tente de novo.'
     }
   }
-  return (
-    <div className="flex flex-col gap-4">
-      {/* D-376: a escolha de como o paciente lê fica no topo da etapa, onde as quantidades são montadas. */}
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        {modo && aoMudarModo ? <ModoDasQuantidades modo={modo} aoMudar={aoMudarModo} /> : <span />}
-        {(ferramentas ?? ((m: ReactNode) => m))(
-          <Button variant="outline" size="sm" onClick={() => setModelosAbertos(true)}>
-            <LayoutTemplate aria-hidden="true" />
-            Modelos de plano
-          </Button>,
-        )}
-      </div>
+  // CB-1104: o item que saiu do plano fecha o painel; o que mudou de gramas segue com a lista dos gramas novos.
+  const refeicaoDoPainel = painel ? plano.refeicoes.find((r) => r.id === painel.refeicaoId) : undefined
+  const itemDoPainel = painel ? refeicaoDoPainel?.opcoes.principal.find((i) => i.id === painel.itemId) : undefined
+  const alimentoDoPainel = itemDoPainel ? buscarAlimento(itemDoPainel.alimentoId) : undefined
+  const painelAberto = refeicaoDoPainel !== undefined && itemDoPainel !== undefined && alimentoDoPainel !== undefined
 
-      {topo}
+  const devolverFoco = (itemId: string) => {
+    // Ao lado não há foco preso: ao fechar, o foco volta ao botão do item (a gaveta faz isso sozinha).
+    if (largo) globalThis.document?.querySelector<HTMLElement>(`[data-substitutos-de="${itemId}"]`)?.focus()
+  }
+  const fecharPainel = () => {
+    if (painel) devolverFoco(painel.itemId)
+    setPainel(null)
+  }
+  const alternarPainel = (refeicaoId: string, item: ItemPlano) => {
+    // D-1113: abrir o painel de novo tira o aviso da última troca.
+    setTroca(null)
+    setPainel((atual) => (atual?.itemId === item.id ? null : { refeicaoId, itemId: item.id }))
+  }
+  const substituir = (escolha: PorcaoDoSubstituto) => {
+    if (!refeicaoDoPainel || !itemDoPainel || !alimentoDoPainel) return
+    const novo = substituirItem(plano, refeicaoDoPainel.id, itemDoPainel.id, { alimentoId: escolha.alimento.id, gramas: escolha.gramas, medida: escolha.medida })
+    const itens = novo.refeicoes.find((r) => r.id === refeicaoDoPainel.id)?.opcoes.principal ?? []
+    const kcal = totaisDeItens(itens, buscarAlimento).nutrientes.energia_kcal.total
+    setTroca({
+      refeicaoId: refeicaoDoPainel.id,
+      antes: itemDoPainel,
+      texto: `${alimentoDoPainel.descricao.trim()} trocado por ${escolha.alimento.descricao.trim()}, ${textoDaPorcao(escolha)}. ${refeicaoDoPainel.nome} passou a somar ${formatarNumero(kcal, 0)} kcal.`,
+    })
+    setPainel(null)
+    aoAlterarPlano(novo)
+    // O botão que tinha o foco sumiu com o painel: o foco volta ao "⇄" do item trocado, que guarda o mesmo id.
+    const itemId = itemDoPainel.id
+    globalThis.requestAnimationFrame?.(() => devolverFoco(itemId))
+  }
+  const desfazer = () => {
+    if (!troca) return
+    const devolvido = devolverItem(plano, troca.refeicaoId, troca.antes)
+    setTroca(null)
+    // CB-1108: o item que saiu do plano depois da troca não volta, e o painel não reabre.
+    if (devolvido === plano) return
+    aoAlterarPlano(devolvido)
+    setPainel({ refeicaoId: troca.refeicaoId, itemId: troca.antes.id })
+  }
 
-      {plano.refeicoes.map((refeicao, indice) => {
-        const tipo = tipoDaRefeicao(refeicao.nome, refeicao.horario)
-        return (
-          <CartaoRefeicao
-            key={refeicao.id}
-            refeicao={refeicao}
-            tipo={tipo}
-            sugestoes={sugestoes.listas[tipo]}
-            aoSalvarSugestoes={(lista) => sugestoes.salvar(tipo, lista)}
-            aoRenomear={(nome) => aoAlterarPlano(renomearRefeicao(plano, refeicao.id, nome))}
-            aoMudarHorario={(horario) => aoAlterarPlano(mudarHorario(plano, refeicao.id, horario))}
-            aoRemover={() => aoAlterarPlano(removerRefeicao(plano, refeicao.id))}
-            aoAdicionarItem={(opcao, alimentoId, gramas, medida) => aoAlterarPlano(adicionarItem(plano, refeicao.id, opcao, { alimentoId, gramas, medida }, gerarId))}
-            // Spec receitas-com-calculo, D-273: o plano guarda uma cópia da receita. Desligado na publicação 1 (D-274a).
-            aoAdicionarReceita={
-              receitasNaRefeicao
-                ? (opcao, receita, gramas) => aoAlterarPlano(adicionarReceita(plano, refeicao.id, opcao, { receita: copiaParaOPlano(receita), gramas }, gerarId))
-                : undefined
-            }
-            aoMudarGramas={(opcao, itemId, gramas) => aoAlterarPlano(atualizarGramas(plano, refeicao.id, opcao, itemId, gramas))}
-            aoRemoverItem={(opcao, itemId) => aoAlterarPlano(removerItem(plano, refeicao.id, opcao, itemId))}
-            aoMudarMedida={(opcao, itemId, medida) => aoAlterarPlano(escolherMedida(plano, refeicao.id, opcao, itemId, medida))}
-            modo={modo ?? 'medida-caseira'}
-            aoCriarMedida={criarMedida}
-            vaiPara={vaiPara ? (opcao, item) => vaiPara(indice, opcao, item) : undefined}
-            {...(extraDaOpcao ? { extraDaOpcao: (opcao: OpcaoId) => extraDaOpcao(refeicao.id, opcao) } : {})}
-          />
-        )
-      })}
-
-      <Button
-        variant="lightprimary"
-        className="self-start"
-        onClick={() => aoAlterarPlano(adicionarRefeicao(plano, { nome: 'Nova refeição', horario: '10:00' }, gerarId))}
-      >
-        <Plus aria-hidden="true" />
-        Adicionar refeição
-      </Button>
-
-      <DialogoModelos aberto={modelosAbertos} plano={plano} aoUsar={aoAlterarPlano} aoFechar={() => setModelosAbertos(false)} />
-      <DialogoNovaMedida
-        alimento={alimentoDaMedida}
-        unidade={unidadeDo(alimentoDaMedida ?? undefined)}
-        nomeInicial={novaMedida?.nome ?? ''}
-        // D-505: o alimento próprio guarda a medida no cadastro dele (publicação 2), e a frase diz isso.
-        noCadastroDoAlimento={novaMedida !== null && novaMedida.alimentoId >= PRIMEIRO_ID_PRODUTO && MEUS_ALIMENTOS_NOVOS}
-        aoSalvar={salvarMedida}
-        aoFechar={() => setNovaMedida(null)}
+  const painelDeSubstitutos =
+    painelAberto && refeicaoDoPainel && itemDoPainel && alimentoDoPainel ? (
+      <PainelSubstitutos
+        item={itemDoPainel}
+        alimento={alimentoDoPainel}
+        refeicao={refeicaoDoPainel.nome}
+        aoLado={largo}
+        aoAdicionarOpcao={(escolha) =>
+          aoAlterarPlano(adicionarOpcaoAoItem(plano, refeicaoDoPainel.id, itemDoPainel.id, { alimentoId: escolha.alimento.id, gramas: escolha.gramas, medida: escolha.medida }))
+        }
+        aoSubstituir={substituir}
+        aoFechar={fecharPainel}
       />
+    ) : null
+
+  return (
+    // D-1116: com o painel aberto em tela larga, o plano ocupa as duas colunas da área de trabalho e põe o painel no lugar
+    // da coluna do Resumo do dia, que desce enquanto ele está aberto.
+    <div className={cn('flex flex-col gap-4', painelAberto && largo && 'xl:col-span-2 xl:grid xl:grid-cols-[minmax(0,1fr)_25rem] xl:items-start xl:gap-6')}>
+      <div className="flex min-w-0 flex-col gap-4">
+        {/* D-376: a escolha de como o paciente lê fica no topo da etapa, onde as quantidades são montadas. */}
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          {modo && aoMudarModo ? <ModoDasQuantidades modo={modo} aoMudar={aoMudarModo} /> : <span />}
+          {(ferramentas ?? ((m: ReactNode) => m))(
+            <Button variant="outline" size="sm" onClick={() => setModelosAbertos(true)}>
+              <LayoutTemplate aria-hidden="true" />
+              Modelos de plano
+            </Button>,
+          )}
+        </div>
+
+        {topo}
+
+        {plano.refeicoes.map((refeicao, indice) => {
+          const tipo = tipoDaRefeicao(refeicao.nome, refeicao.horario)
+          return (
+            <CartaoRefeicao
+              key={refeicao.id}
+              refeicao={refeicao}
+              tipo={tipo}
+              sugestoes={sugestoes.listas[tipo]}
+              aoSalvarSugestoes={(lista) => sugestoes.salvar(tipo, lista)}
+              aoRenomear={(nome) => aoAlterarPlano(renomearRefeicao(plano, refeicao.id, nome))}
+              aoMudarHorario={(horario) => aoAlterarPlano(mudarHorario(plano, refeicao.id, horario))}
+              aoRemover={() => aoAlterarPlano(removerRefeicao(plano, refeicao.id))}
+              aoAdicionarItem={(opcao, alimentoId, gramas, medida) => aoAlterarPlano(adicionarItem(plano, refeicao.id, opcao, { alimentoId, gramas, medida }, gerarId))}
+              // Spec receitas-com-calculo, D-273: o plano guarda uma cópia da receita. Desligado na publicação 1 (D-274a).
+              aoAdicionarReceita={
+                receitasNaRefeicao
+                  ? (opcao, receita, gramas) => aoAlterarPlano(adicionarReceita(plano, refeicao.id, opcao, { receita: copiaParaOPlano(receita), gramas }, gerarId))
+                  : undefined
+              }
+              aoMudarGramas={(opcao, itemId, gramas) => aoAlterarPlano(atualizarGramas(plano, refeicao.id, opcao, itemId, gramas))}
+              aoRemoverItem={(opcao, itemId) => aoAlterarPlano(removerItem(plano, refeicao.id, opcao, itemId))}
+              aoMudarMedida={(opcao, itemId, medida) => aoAlterarPlano(escolherMedida(plano, refeicao.id, opcao, itemId, medida))}
+              modo={modo ?? 'medida-caseira'}
+              aoCriarMedida={criarMedida}
+              vaiPara={vaiPara ? (opcao, item) => vaiPara(indice, opcao, item) : undefined}
+              {...(extraDaOpcao ? { extraDaOpcao: (opcao: OpcaoId) => extraDaOpcao(refeicao.id, opcao) } : {})}
+              aoBuscarSubstitutos={(item) => alternarPainel(refeicao.id, item)}
+              itemAtivoId={painelAberto && painel?.refeicaoId === refeicao.id ? painel.itemId : null}
+              aoTirarOpcao={(itemId, indice) => aoAlterarPlano(tirarOpcaoDoItem(plano, refeicao.id, itemId, indice))}
+              aviso={troca?.refeicaoId === refeicao.id ? <AvisoDeTroca texto={troca.texto} aoDesfazer={desfazer} /> : null}
+            />
+          )
+        })}
+
+        <Button
+          variant="lightprimary"
+          className="self-start"
+          onClick={() => aoAlterarPlano(adicionarRefeicao(plano, { nome: 'Nova refeição', horario: '10:00' }, gerarId))}
+        >
+          <Plus aria-hidden="true" />
+          Adicionar refeição
+        </Button>
+
+        <DialogoModelos aberto={modelosAbertos} plano={plano} aoUsar={aoAlterarPlano} aoFechar={() => setModelosAbertos(false)} />
+        <DialogoNovaMedida
+          alimento={alimentoDaMedida}
+          unidade={unidadeDo(alimentoDaMedida ?? undefined)}
+          nomeInicial={novaMedida?.nome ?? ''}
+          // D-505: o alimento próprio guarda a medida no cadastro dele (publicação 2), e a frase diz isso.
+          noCadastroDoAlimento={novaMedida !== null && novaMedida.alimentoId >= PRIMEIRO_ID_PRODUTO && MEUS_ALIMENTOS_NOVOS}
+          aoSalvar={salvarMedida}
+          aoFechar={() => setNovaMedida(null)}
+        />
+      </div>
+      {painelDeSubstitutos}
     </div>
   )
 }

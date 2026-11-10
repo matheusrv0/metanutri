@@ -1,7 +1,9 @@
 import { PROTOCOLOS, calcularComposicao, completarBioimpedancia, type ProtocoloDobras } from '@/domain/composicao.ts'
+import { dobrasUsadas, protocoloPorId, type DobraCutanea } from '@/domain/protocolosDeDobras.ts'
 import type { Caso } from '@/domain/tipos.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
 import { Fontes } from '@ds/componentes/display/Fontes.tsx'
+import { Button } from '@ds/componentes/forms/button.tsx'
 import { CampoNumero } from '@ds/componentes/forms/CampoNumero.tsx'
 import { CampoTexto } from '@ds/componentes/forms/CampoTexto.tsx'
 import { GrupoOpcoes } from '@ds/componentes/forms/GrupoOpcoes.tsx'
@@ -11,25 +13,38 @@ interface CamposComposicaoProps {
   readonly aoAlterar: (mudanca: Partial<Caso>) => void
   /** As dobras valem para a pessoa (spec ficha-unica, D-458); sem elas, só a bioimpedância. */
   readonly comDobras?: boolean | undefined
+  /** Abre a avaliação completa (spec antropometria-telas, D-1437). */
+  readonly aoAbrirAvaliacao?: (() => void) | undefined
 }
 
-const NOME_DOBRA: Record<string, string> = {
+/** Os nomes da avaliação completa: a suprailíaca leva a linha, para as duas telas mostrarem o mesmo campo (D-1520). */
+const NOME_DOBRA: Readonly<Partial<Record<DobraCutanea, string>>> = {
   tricipital: 'Tricipital',
   subescapular: 'Subescapular',
-  suprailiaca: 'Supra-ilíaca',
+  suprailiaca: 'Suprailíaca · linha não informada',
+  suprailiacaAnt: 'Suprailíaca · axilar anterior',
+  suprailiacaMed: 'Suprailíaca · axilar média',
   abdominal: 'Abdominal',
   peitoral: 'Peitoral',
   coxa: 'Coxa',
 }
 
+const SUPRAILIACAS: readonly DobraCutanea[] = ['suprailiaca', 'suprailiacaAnt', 'suprailiacaMed']
+
 /** Dobras cutâneas e bioimpedância, com o resultado e a fonte da equação usada. Mora dentro de um Recolhivel. */
-export function CamposComposicao({ caso, aoAlterar, comDobras = true }: CamposComposicaoProps) {
+export function CamposComposicao({ caso, aoAlterar, comDobras = true, aoAbrirAvaliacao }: CamposComposicaoProps) {
   const { composicao } = caso
-  const protocolo = PROTOCOLOS.find((p) => p.id === composicao.protocolo) ?? PROTOCOLOS[0]
-  const usadas = caso.sexo && protocolo ? protocolo.necessarias(caso.sexo) : []
+  // O protocolo gravado pode ser um dos 8 do motor (spec antropometria-telas, D-1434); a etapa 1 conhece os 2 de hoje.
+  const deHoje = PROTOCOLOS.find((p) => p.id === composicao.protocolo)
+  const protocolo = deHoje ?? PROTOCOLOS[0]
+  // D-1520 e D-1521 (spec antropometria-telas): as dobras que entram na conta são as que a avaliação completa marca. A
+  // suprailíaca da etapa 1 é a dela (em JP 3 na mulher, a da axilar anterior); sem uso no protocolo, a de linha não informada.
+  const usadas = deHoje ? dobrasUsadas(deHoje.id, caso.sexo, composicao.dobras) : []
+  const suprailiaca = usadas.find((d) => SUPRAILIACAS.includes(d)) ?? 'suprailiaca'
+  const campos: readonly DobraCutanea[] = ['tricipital', 'subescapular', suprailiaca, 'abdominal', 'peitoral', 'coxa']
 
   const resultado = calcularComposicao({
-    protocolo: composicao.protocolo,
+    protocolo: protocolo?.id ?? 'jackson-pollock-3',
     sexo: caso.sexo,
     idadeAnos: caso.idadeAnos,
     pesoKg: caso.pesoKg,
@@ -51,12 +66,28 @@ export function CamposComposicao({ caso, aoAlterar, comDobras = true }: CamposCo
           <GrupoOpcoes<ProtocoloDobras>
             rotulo="Protocolo de dobras"
             opcoes={PROTOCOLOS.map((p) => ({ valor: p.id, rotulo: p.nome }))}
-            valor={composicao.protocolo}
+            valor={deHoje?.id ?? null}
             aoEscolher={(protocoloNovo) => aoAlterar({ composicao: { ...composicao, protocolo: protocoloNovo } })}
           />
 
+          {/* D-1437 (spec antropometria-telas): o protocolo que só a avaliação completa desenha não sai aqui pela metade. */}
+          {deHoje ? null : (
+            <div className="flex flex-col items-start gap-2">
+              <p className="text-sm text-foreground">{`Protocolo da avaliação completa: ${protocoloPorId(composicao.protocolo)?.nome ?? 'desconhecido nesta versão do app'}`}</p>
+              {aoAbrirAvaliacao ? (
+                <Button variant="lightprimary" size="sm" onClick={aoAbrirAvaliacao}>
+                  Abrir a avaliação completa
+                </Button>
+              ) : null}
+            </div>
+          )}
+        </>
+      ) : null}
+
+      {comDobras && deHoje ? (
+        <>
           <div className="grid gap-4 sm:grid-cols-3">
-            {(Object.keys(NOME_DOBRA) as (keyof typeof composicao.dobras)[]).map((chave) => (
+            {campos.map((chave) => (
               <CampoNumero
                 key={chave}
                 rotulo={NOME_DOBRA[chave] ?? chave}

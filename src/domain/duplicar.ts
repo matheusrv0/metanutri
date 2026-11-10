@@ -1,8 +1,9 @@
 // Duplicar plano: o retorno do paciente começa do plano anterior, não do zero.
+import { diaLocal } from './acompanhamento.ts'
 import { IDADE_ADULTO } from './antropometria.ts'
 import { clonarPlano } from './modelos.ts'
 import { idadeNaData } from './pacientes.ts'
-import type { Caso, ComposicaoCorporal, MedidasCorporais, Plano } from './tipos.ts'
+import type { Caso, ComposicaoCorporal, DadosDaAvaliacao, MedidasCorporais, Plano } from './tipos.ts'
 
 export interface OpcoesDuplicar {
   /** Data da nova consulta no formato AAAA-MM-DD; `null` deixa o campo em branco. */
@@ -29,18 +30,21 @@ export function nomeDaCopia(nome: string): string {
  * - `novo`: a cópia ganha o seu (id, nome com "(cópia)" e a data da consulta nova);
  * - `medida do dia`: medida tirada na consulta; no retorno de um paciente, vem vazia;
  * - `medida do dia abaixo de 20 anos`: a estatura e os comprimentos e diâmetros ósseos, que só vão para quem já é
- *   adulto na data nova.
+ *   adulto na data nova;
+ * - `arquivo do dia`: as fotos e os anexos da avaliação, que nunca vão na cópia, com ou sem paciente: o arquivo é da
+ *   avaliação de origem (spec antropometria-telas, D-1436).
  */
-export type NaDuplicacao = 'copiado' | 'novo' | 'medida do dia' | 'medida do dia abaixo de 20 anos'
+export type NaDuplicacao = 'copiado' | 'novo' | 'medida do dia' | 'medida do dia abaixo de 20 anos' | 'arquivo do dia'
 
-/** Só campo que aceita vazio (`null`) pode ser medida do dia: a cópia o deixa `null`. */
-type ClasseDoCampo<V> = null extends V ? NaDuplicacao : Exclude<NaDuplicacao, 'medida do dia' | 'medida do dia abaixo de 20 anos'>
+/** Só campo que aceita vazio (`null`) pode ser medida do dia ou arquivo do dia: a cópia o deixa `null`. */
+type ClasseDoCampo<V> = null extends V ? NaDuplicacao : Exclude<NaDuplicacao, 'medida do dia' | 'medida do dia abaixo de 20 anos' | 'arquivo do dia'>
 
 type Classificacao<T> = { readonly [K in keyof T]-?: ClasseDoCampo<T[K]> }
 
 /** Todo campo do plano, um por um: campo novo em `Caso` ou na composição corporal não compila sem entrar aqui. */
-export type ClassificacaoDoPlano = Omit<Classificacao<Caso>, 'composicao' | 'medidasCorporais'> & {
+export type ClassificacaoDoPlano = Omit<Classificacao<Caso>, 'composicao' | 'medidasCorporais' | 'avaliacao'> & {
   readonly medidasCorporais: Classificacao<MedidasCorporais>
+  readonly avaliacao: Classificacao<DadosDaAvaliacao>
   readonly composicao: Omit<Classificacao<ComposicaoCorporal>, 'dobras' | 'bioimpedancia'> & {
     readonly dobras: Classificacao<ComposicaoCorporal['dobras']>
     readonly bioimpedancia: Classificacao<ComposicaoCorporal['bioimpedancia']>
@@ -93,6 +97,25 @@ export const NA_DUPLICACAO: ClassificacaoDoPlano = {
     alturaDoJoelhoCm: 'medida do dia abaixo de 20 anos',
     semienvergaduraCm: 'medida do dia abaixo de 20 anos',
   },
+  // Spec antropometria-telas (D-1436): a origem, a maturação, o diagnóstico e as observações são do dia; o instrumento,
+  // as escolhas da nutricionista e a autorização de fotos vão iguais; as fotos e os anexos nunca vão.
+  avaliacao: {
+    origemPesoEstatura: 'medida do dia',
+    modalidade: 'copiado',
+    adipometro: 'copiado',
+    maturacao: 'medida do dia',
+    grupoDoEstudo: 'copiado',
+    perfil: 'copiado',
+    imcAlvo: 'copiado',
+    gorduraAlvoPct: 'copiado',
+    baseDaProteina: 'copiado',
+    doencaRenalGrave: 'copiado',
+    diagnostico: 'medida do dia',
+    observacoesDaMedida: 'medida do dia',
+    fotosAutorizadasEm: 'copiado',
+    fotos: 'arquivo do dia',
+    anexos: 'arquivo do dia',
+  },
   composicao: {
     // Preferências: comparar consultas pede o mesmo protocolo e o mesmo aparelho.
     protocolo: 'copiado',
@@ -141,14 +164,17 @@ export const NA_DUPLICACAO: ClassificacaoDoPlano = {
 
 type Ramo = { readonly [chave: string]: NaDuplicacao | Ramo }
 
-/** A cópia do valor com as medidas do dia vazias, descendo onde a lista desce. O original não muda. */
-function semAsMedidas(valor: object, ramo: Ramo, adulto: boolean): object {
+/**
+ * A cópia do valor com as medidas do dia vazias, descendo onde a lista desce. O original não muda. `soArquivos`: o plano
+ * sem paciente, que leva as medidas e perde só os arquivos (D-1436).
+ */
+function semAsMedidas(valor: object, ramo: Ramo, adulto: boolean, soArquivos: boolean): object {
   const copia: Record<string, unknown> = { ...valor }
   for (const [chave, classe] of Object.entries(ramo)) {
     const atual = copia[chave]
     if (typeof classe !== 'string') {
-      if (atual !== null && typeof atual === 'object') copia[chave] = semAsMedidas(atual, classe, adulto)
-    } else if (classe === 'medida do dia' || (classe === 'medida do dia abaixo de 20 anos' && !adulto)) {
+      if (atual !== null && typeof atual === 'object') copia[chave] = semAsMedidas(atual, classe, adulto, soArquivos)
+    } else if (classe === 'arquivo do dia' || (!soArquivos && (classe === 'medida do dia' || (classe === 'medida do dia abaixo de 20 anos' && !adulto)))) {
       copia[chave] = null
     }
   }
@@ -175,12 +201,14 @@ export function duplicarCaso(
   gerarId: () => string,
   opcoes: OpcoesDuplicar = {},
 ): { readonly caso: Caso; readonly plano: Plano } {
-  const hojeDeVerdade = new Date().toISOString().slice(0, 10)
+  // CB-1448: o dia de quem usa, não o do UTC.
+  const hojeDeVerdade = diaLocal()
   const hoje = opcoes.hoje === undefined ? hojeDeVerdade : opcoes.hoje
   const original = registro.caso
   const adulto = adultoNaData(original, opcoes.nascimento ?? null, hoje ?? hojeDeVerdade)
-  // A classificação só põe `null` em campo que aceita `null` (ClasseDoCampo): o resultado continua um Caso.
-  const medido = original.pacienteId === null ? original : (semAsMedidas(original, NA_DUPLICACAO, adulto) as Caso)
+  // A classificação só põe `null` em campo que aceita `null` (ClasseDoCampo): o resultado continua um Caso. Sem paciente,
+  // só os arquivos saem (CB-356; D-1436).
+  const medido = semAsMedidas(original, NA_DUPLICACAO, adulto, original.pacienteId === null) as Caso
   return {
     caso: {
       ...medido,

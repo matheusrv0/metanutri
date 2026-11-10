@@ -102,9 +102,28 @@ describe('proteína pelo objetivo (spec antropometria-completa, CA-2062 a CA-206
     expect(r.gDia?.min).toBeCloseTo(2.3 * 68, 10)
   })
 
-  it('CA-2062: menor de 18 anos, gestante e lactante → não vem', () => {
+  it('CA-2062: menor de 18 anos e gestante → não vem', () => {
     expect(proteinaPorObjetivo(caso({ idadeAnos: 17, objetivo: 'ganhar' }), { perfil: 'ativo' })).toBeNull()
-    expect(proteinaPorObjetivo(caso({ sexo: 'F', idadeAnos: 30, condicao: { tipo: 'lactante', mesesPosParto: 3 } }), { perfil: 'ativo' })).toBeNull()
+    expect(proteinaPorObjetivo(caso({ sexo: 'F', idadeAnos: 30, condicao: { tipo: 'gestante', semanasGestacao: 20, pesoPreGestacionalKg: 60 } }), { perfil: 'ativo' })).toBeNull()
+  })
+
+  it('CB-1449: lactante adulta → sem faixa, com o motivo do motor (como a meta de perda)', () => {
+    const r = proteinaPorObjetivo(caso({ sexo: 'F', idadeAnos: 30, objetivo: 'manter', condicao: { tipo: 'lactante', mesesPosParto: 3 } }), { perfil: 'ativo' })
+    expect(r).toEqual({ calculou: false, motivo: 'Nenhuma fonte conferida trata da proteína na lactação.', falta: [] })
+  })
+
+  it('CB-1450: IMC ≥ 30 na base "Peso ideal": a proteína usa o IMC-alvo digitado (IMC-alvo × estatura² × g/kg)', () => {
+    const obeso = caso({ pesoKg: 100, estaturaCm: 170, objetivo: 'emagrecer' })
+    const digitado = proteinaPorObjetivo(obeso, { perfil: 'sedentario', base: 'peso-ideal', imcAlvo: 23 })
+    if (!digitado?.calculou) throw new Error('sem sugestão')
+    const ideal = 23 * 1.7 ** 2
+    expect(digitado.bases.find((b) => b.base === 'peso-ideal')?.pesoKg).toBeCloseTo(ideal, 10)
+    expect(digitado.gDia?.min).toBeCloseTo(1.2 * ideal, 10)
+    expect(digitado.gDia?.max).toBeCloseTo(1.5 * ideal, 10)
+    // Apagado (null), volta ao padrão da compleição média: IMC 21,75 (D-1409, D-1463).
+    const padrao = proteinaPorObjetivo(obeso, { perfil: 'sedentario', base: 'peso-ideal', imcAlvo: null })
+    if (!padrao?.calculou) throw new Error('sem sugestão')
+    expect(padrao.gDia?.min).toBeCloseTo(1.2 * 21.75 * 1.7 ** 2, 10)
   })
 
   it('CA-2063: "emagrecer" com IMC ≥ 30 → 1,2–1,5 g/kg, as três bases sem g/dia até a escolha', () => {
@@ -192,5 +211,19 @@ describe('o "magro" de Helms é proposta do app (spec antropometria-completa, ro
     if (!r?.calculou) throw new Error('sem sugestão')
     expect(r.fonte.curta).toBe(FONTES.issn2017.curta)
     expect(r.evidencia).toBe('limitada')
+  })
+})
+
+describe('o texto pelo sexo da pessoa (spec antropometria-telas, D-1527; revisão r1, B2)', () => {
+  it('CB-1487: numa atleta, "se a atleta é magra" e "para esta atleta"; num atleta, "o atleta é magro" e "este atleta"', () => {
+    const semPercentual = proteinaPorObjetivo(caso({ sexo: 'F', objetivo: 'emagrecer' }), { perfil: 'atleta' })
+    expect(semPercentual?.calculou && semPercentual.avisos.join(' ')).toMatch(/não dá para saber se a atleta é magra/)
+    const naoMagra = proteinaPorObjetivo(caso({ sexo: 'F', objetivo: 'emagrecer' }, { gorduraPct: 40 }), { perfil: 'atleta' })
+    expect(naoMagra?.calculou && naoMagra.avisos.join(' ')).toMatch(/para esta atleta, vale a ISSN/)
+    const homem = proteinaPorObjetivo(caso({ objetivo: 'emagrecer' }, { gorduraPct: 30 }), { perfil: 'atleta' })
+    expect(homem?.calculou && homem.avisos.join(' ')).toMatch(/para este atleta, vale a ISSN/)
+    expect(proteinaPorObjetivo(caso({ objetivo: 'emagrecer' }), { perfil: 'atleta' })?.calculou && 'ok').toBe('ok')
+    const semSexo = proteinaPorObjetivo(caso({ sexo: null, objetivo: 'emagrecer' }), { perfil: 'atleta' })
+    if (semSexo?.calculou) expect(semSexo.avisos.join(' ')).toMatch(/se a pessoa é magra/)
   })
 })

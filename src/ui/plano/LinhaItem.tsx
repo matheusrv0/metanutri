@@ -1,4 +1,4 @@
-import { ArrowLeftRight, TriangleAlert, X } from 'lucide-react'
+import { ArrowRightLeft, TriangleAlert, X } from 'lucide-react'
 import type { MedidaCaseira } from '@/domain/busca.ts'
 import { explicarCompletude } from '@/domain/completude.ts'
 import { linhaDaFolha } from '@/domain/folhaDieta.ts'
@@ -17,14 +17,19 @@ import { CampoNumero } from '@ds/componentes/forms/CampoNumero.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { MarcaSemDado } from '../adequacao/MarcaSemDado.tsx'
 import { useRestricoesDoPlano } from '../estado/contextoRestricoes.ts'
+import { OpcoesDoItem } from './OpcoesDoItem.tsx'
 import { SeletorDeMedida } from './SeletorDeMedida.tsx'
 
 interface LinhaItemProps {
   readonly item: ItemPlano
   readonly aoMudarGramas: (gramas: number) => void
   readonly aoRemover: () => void
-  /** Abre a calculadora de substituto; só existe no Principal (CA-41). */
-  readonly aoSubstituir?: (() => void) | undefined
+  /** Abre o painel de substitutos; só existe no Principal (spec busca-substitutos, D-1100). */
+  readonly aoBuscarSubstitutos?: (() => void) | undefined
+  /** O painel de substitutos está aberto neste item: a linha fica destacada e o botão, pressionado (D-1116). */
+  readonly ativo?: boolean | undefined
+  /** "Tirar" a opção do item (D-1114); sem ele, as opções aparecem sem o botão. */
+  readonly aoTirarOpcao?: ((indice: number) => void) | undefined
   /**
    * Com ele, a linha edita quantidade + medida = gramas e mostra o que o paciente lê (spec alimentos-e-gramaturas, G2 e
    * G3). Sem ele (ingrediente de receita), só os gramas e a medida automática, como antes.
@@ -37,6 +42,9 @@ interface LinhaItemProps {
   /** Spec assistente-ia, CA-2371: para onde a mudança aceita do adequar leva o item ("Vai para 50 g"). */
   readonly vaiPara?: string | null | undefined
 }
+
+/** A linha do item com o painel de substitutos aberto (D-1116): o fundo da linha de lista, sem mexer no alinhamento. */
+const LINHA_ATIVA = '-mx-2 rounded-xl bg-surfacerow px-2'
 
 /**
  * A energia da receita pelos ingredientes; sem nenhum dado de energia, `null` (travessão, nunca zero). `semDado` conta os
@@ -52,7 +60,18 @@ function energiaDaReceita(item: ItemPlano): { readonly kcal: number | null; read
  * dela e "Receita · 1 unidade" embaixo, e não tem substituto. Spec alimentos-e-gramaturas (G2, G3, G5): quantidade +
  * medida = gramas, ligados, e "O paciente lê" no modo do plano.
  */
-export function LinhaItem({ item, aoMudarGramas, aoRemover, aoSubstituir, aoMudarMedida, modo = 'medida-caseira', aoCriarMedida, vaiPara = null }: LinhaItemProps) {
+export function LinhaItem({
+  item,
+  aoMudarGramas,
+  aoRemover,
+  aoBuscarSubstitutos,
+  ativo = false,
+  aoTirarOpcao,
+  aoMudarMedida,
+  modo = 'medida-caseira',
+  aoCriarMedida,
+  vaiPara = null,
+}: LinhaItemProps) {
   const deReceita = ehItemDeReceita(item)
   const receita = receitaDoItem(item)
   const alimento = deReceita ? undefined : buscarAlimento(item.alimentoId)
@@ -63,7 +82,7 @@ export function LinhaItem({ item, aoMudarGramas, aoRemover, aoSubstituir, aoMuda
   // A tabela não traz energia deste alimento: mostra travessão, nunca zero (princípio do produto).
   const daReceita = deReceita ? energiaDaReceita(item) : null
   const kcal = daReceita ? daReceita.kcal : porCem === null ? null : (porCem * item.gramas) / 100
-  const substituir = deReceita || !alimento ? undefined : aoSubstituir
+  const buscarSubstitutos = deReceita || !alimento ? undefined : aoBuscarSubstitutos
   // Spec ficha-unica, D-353: o alimento (ou um ingrediente da receita) que bate com a restrição do paciente avisa.
   const restricao = restricaoDoItem(item, buscarAlimento, useRestricoesDoPlano())
   const avisoDeRestricao = restricao ? (
@@ -109,13 +128,23 @@ export function LinhaItem({ item, aoMudarGramas, aoRemover, aoSubstituir, aoMuda
 
   const acoes = (
     <div className="flex shrink-0 items-center">
-      {/* Sem o alimento, não há o que comparar para um substituto equivalente; a receita também não tem (CA-873). */}
-      {substituir ? (
-        <Button variant="ghost" size="iconsm" onClick={substituir} aria-label={`Substituir ${descricao}`}>
-          <ArrowLeftRight aria-hidden="true" />
+      {/* Sem o alimento, não há o que comparar para um substituto equivalente; a receita também não tem (CA-873, CA-2100). */}
+      {buscarSubstitutos ? (
+        <Button
+          variant="ghost"
+          size="iconsm"
+          onClick={buscarSubstitutos}
+          aria-label={`Buscar substitutos para ${descricao}`}
+          aria-pressed={ativo}
+          title="Buscar substitutos"
+          data-substitutos-de={item.id}
+          className={cn(ativo && 'bg-primary text-primary-foreground hover:bg-primaryemphasis hover:text-primary-foreground')}
+        >
+          <ArrowRightLeft aria-hidden="true" />
         </Button>
       ) : null}
-      <Button variant="ghost" size="iconsm" onClick={aoRemover} aria-label={`Remover ${descricao}`}>
+      {/* D-1128: o endereço do foco quando a última opção sai de um item sem o "⇄" (o alimento excluído). */}
+      <Button variant="ghost" size="iconsm" onClick={aoRemover} aria-label={`Remover ${descricao}`} data-remover-de={item.id}>
         <X aria-hidden="true" />
       </Button>
     </div>
@@ -141,7 +170,7 @@ export function LinhaItem({ item, aoMudarGramas, aoRemover, aoSubstituir, aoMuda
       : (naLinha?.texto ?? null)
     return (
       // No celular o nome fica numa linha só e os controles descem; no desktop tudo na mesma linha.
-      <li className={cn('flex flex-col gap-1 border-b border-border py-2 last:border-0 sm:flex-row sm:items-center sm:gap-3', vaiPara && 'bg-surfacerow')}>
+      <li className={cn('flex flex-col gap-1 border-b border-border py-2 last:border-0 sm:flex-row sm:items-center sm:gap-3', vaiPara && 'bg-surfacerow', ativo && LINHA_ATIVA)}>
         <div className="min-w-0 sm:flex-1">
           <p className="break-words text-sm text-foreground" title={incompleto ? `${descricao} — ${incompleto}` : descricao}>
             {descricao}
@@ -153,6 +182,8 @@ export function LinhaItem({ item, aoMudarGramas, aoRemover, aoSubstituir, aoMuda
           {/* D-248, revisão de 20/10/2026: a folha e o link deixam o item excluído de fora; a nutricionista fica sabendo aqui. */}
           {/* CB-317 (integracao-rodada-1910): a receita sem o que comer também fica de fora. */}
           {temOQueComer ? null : <p className="text-xs text-warningtext">Não aparece no plano impresso nem no link do paciente.</p>}
+          {/* Spec busca-substitutos, D-1114: as opções do item, embaixo dele. */}
+          <OpcoesDoItem item={item} descricao={descricao} aoTirar={aoTirarOpcao} />
         </div>
         <div className="flex items-center gap-2 sm:gap-3">
           {campoGramas}
@@ -170,7 +201,7 @@ export function LinhaItem({ item, aoMudarGramas, aoRemover, aoSubstituir, aoMuda
 
   return (
     // G2: o nome; quantidade + medida = gramas; o que o paciente lê. No celular, as três linhas; nada passa de 360 px.
-    <li className={cn('flex flex-col gap-2 border-b border-border py-3 last:border-0', vaiPara && '-mx-2 rounded-md bg-surfacerow px-2')}>
+    <li className={cn('flex flex-col gap-2 border-b border-border py-3 last:border-0', vaiPara && '-mx-2 rounded-md bg-surfacerow px-2', ativo && LINHA_ATIVA)}>
       <div className="flex items-start gap-2">
         {/* D-481 (correção C): o nome quebra linha; "Ovo, de galinha, inteiro…" não dizia se era cozido ou frito. */}
         <p className="min-w-0 flex-1 break-words pt-0.5 text-sm font-medium text-foreground" title={incompleto ? `${descricao} — ${incompleto}` : descricao}>
@@ -254,6 +285,8 @@ export function LinhaItem({ item, aoMudarGramas, aoRemover, aoSubstituir, aoMuda
         </p>
       ) : null}
       {medidasDoAlimento.length === 0 ? <p className="text-xs text-muted-foreground">Sem medida caseira cadastrada.{criar ? ' Crie a sua.' : ''}</p> : null}
+      {/* Spec busca-substitutos, D-1114: as opções do item, embaixo dele. */}
+      <OpcoesDoItem item={item} descricao={descricao} aoTirar={aoTirarOpcao} />
     </li>
   )
 }

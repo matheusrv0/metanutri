@@ -33,6 +33,17 @@ function Itens({ itens, modo }: { readonly itens: readonly ItemDaDieta[]; readon
           <li key={`${i}-${item.alimento}`} className="flex flex-col text-base leading-snug">
             <Quantidade quantidade={paciente.quantidade} />
             <span className="text-foreground [overflow-wrap:anywhere]">{paciente.nome}</span>
+            {/* Spec busca-substitutos, D-1115: as opções do item, com "ou", logo abaixo dele. */}
+            {(item.ou ?? []).map((opcao, n) => {
+              const daOpcao = paraOPaciente(opcao, modo)
+              return (
+                <span key={`${n}-${opcao.alimento}`} className="mt-1.5 flex flex-col border-l border-border pl-3">
+                  <span className="text-sm font-semibold text-muted-foreground">ou</span>
+                  <Quantidade quantidade={daOpcao.quantidade} />
+                  <span className="text-foreground [overflow-wrap:anywhere]">{daOpcao.nome}</span>
+                </span>
+              )
+            })}
           </li>
         )
       })}

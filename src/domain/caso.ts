@@ -1,5 +1,5 @@
 // Criação e validação do caso (SPEC CA-01, CB-01, CB-02, CB-02a, CB-02b, CB-03, CB-12).
-import type { Caso, ComposicaoCorporal, MedidasCorporais, ModoQuantidade, OrigemIa } from './tipos.ts'
+import type { Caso, ComposicaoCorporal, DadosDaAvaliacao, MedidasCorporais, ModoQuantidade, OrigemIa } from './tipos.ts'
 
 export type CampoCaso = keyof Caso
 
@@ -52,6 +52,25 @@ export const MEDIDAS_CORPORAIS_VAZIAS: MedidasCorporais = {
   semienvergaduraCm: null,
 }
 
+/** O que a tela da avaliação guarda, tudo vazio (spec antropometria-telas, CA-2464). */
+export const AVALIACAO_VAZIA: DadosDaAvaliacao = {
+  origemPesoEstatura: null,
+  modalidade: null,
+  adipometro: null,
+  maturacao: null,
+  grupoDoEstudo: null,
+  perfil: null,
+  imcAlvo: null,
+  gorduraAlvoPct: null,
+  baseDaProteina: null,
+  doencaRenalGrave: null,
+  diagnostico: null,
+  observacoesDaMedida: null,
+  fotosAutorizadasEm: null,
+  fotos: null,
+  anexos: null,
+}
+
 const DOBRAS_VAZIAS: ComposicaoCorporal['dobras'] = {
   tricipital: null,
   subescapular: null,
@@ -87,6 +106,7 @@ export function criarCasoVazio(id: string): Caso {
     circunferenciaCinturaCm: null,
     circunferenciaPanturrilhaCm: null,
     medidasCorporais: MEDIDAS_CORPORAIS_VAZIAS,
+    avaliacao: AVALIACAO_VAZIA,
     condicao: { tipo: 'nenhuma' },
     modo: 'completo',
     metaEnergiaKcal: null,
@@ -124,7 +144,8 @@ const grupoGravado = (valor: unknown): Readonly<Record<string, unknown>> =>
 
 /**
  * O plano gravado por uma versão anterior, completo (spec antropometria-completa, CA-2001): todo campo que ele não tem
- * vem do plano vazio, também dentro da composição, das dobras e das medidas corporais. Nenhum valor gravado muda, nem o
+ * vem do plano vazio, também dentro da composição, das dobras, das medidas corporais e da avaliação (spec
+ * antropometria-telas, CA-2464). Nenhum valor gravado muda, nem o
  * de uma versão mais nova que esta não conhece (CB-1008).
  */
 export function completarCasoLido(lido: Caso): Caso {
@@ -140,6 +161,8 @@ export function completarCasoLido(lido: Caso): Caso {
       dobras: { ...vazio.composicao.dobras, ...(grupoGravado(composicao['dobras']) as Partial<ComposicaoCorporal['dobras']>) },
     },
     medidasCorporais: { ...MEDIDAS_CORPORAIS_VAZIAS, ...(grupoGravado(lido.medidasCorporais) as Partial<MedidasCorporais>) },
+    // Spec antropometria-telas (CA-2464): o grupo da avaliação, completado como as medidas.
+    avaliacao: { ...AVALIACAO_VAZIA, ...(grupoGravado(lido.avaliacao) as Partial<DadosDaAvaliacao>) },
     origemIa: lerOrigemIa(lido.origemIa),
   }
 }
@@ -172,6 +195,47 @@ export function lerNumero(texto: string): number | null {
 }
 
 const fora = (valor: number, faixa: { readonly min: number; readonly max: number }) => valor < faixa.min || valor > faixa.max
+
+/** As medidas que a etapa 1 confere pela faixa (CB-02); a avaliação completa confere as mesmas (spec antropometria-telas, D-1522). */
+export type MedidaComFaixa = 'pesoKg' | 'estaturaCm' | 'circunferenciaCinturaCm' | 'circunferenciaPanturrilhaCm'
+
+const NOME_DA_MEDIDA: Readonly<Record<MedidaComFaixa, readonly [nome: string, unidade: string]>> = {
+  pesoKg: ['Peso', 'kg'],
+  estaturaCm: ['Estatura', 'cm'],
+  circunferenciaCinturaCm: ['Circunferência da cintura', 'cm'],
+  circunferenciaPanturrilhaCm: ['Circunferência da panturrilha', 'cm'],
+}
+
+/** A frase de `validarCaso` para o valor fora da faixa ("Peso deve estar entre 5 e 350 kg."); dentro dela, `null`. */
+export function erroDaFaixa(campo: MedidaComFaixa, valor: number): string | null {
+  const faixa = FAIXAS[campo]
+  if (!fora(valor, faixa)) return null
+  const [nome, unidade] = NOME_DA_MEDIDA[campo]
+  return `${nome} deve estar entre ${faixa.min} e ${faixa.max} ${unidade}.`
+}
+
+const naFaixa = (campo: MedidaComFaixa, valor: number | null): number | null => (valor === null || erroDaFaixa(campo, valor) !== null ? null : valor)
+
+/**
+ * O plano com o que está fora da faixa da etapa 1 deixado vazio (spec antropometria-telas, D-1523): é o que a avaliação
+ * completa, o Histórico e o documento calculam e imprimem. A panturrilha esquerda usa a faixa da direita (D-1522). O
+ * plano gravado não muda: a etapa 1 continua mostrando o número com o aviso.
+ */
+export function casoNasFaixas(caso: Caso): Caso {
+  const pesoKg = naFaixa('pesoKg', caso.pesoKg)
+  const estaturaCm = naFaixa('estaturaCm', caso.estaturaCm)
+  const circunferenciaCinturaCm = naFaixa('circunferenciaCinturaCm', caso.circunferenciaCinturaCm)
+  const circunferenciaPanturrilhaCm = naFaixa('circunferenciaPanturrilhaCm', caso.circunferenciaPanturrilhaCm)
+  const panturrilhaEsquerdaCm = naFaixa('circunferenciaPanturrilhaCm', caso.medidasCorporais.panturrilhaEsquerdaCm)
+  const igual =
+    pesoKg === caso.pesoKg &&
+    estaturaCm === caso.estaturaCm &&
+    circunferenciaCinturaCm === caso.circunferenciaCinturaCm &&
+    circunferenciaPanturrilhaCm === caso.circunferenciaPanturrilhaCm &&
+    panturrilhaEsquerdaCm === caso.medidasCorporais.panturrilhaEsquerdaCm
+  if (igual) return caso
+  return { ...caso, pesoKg, estaturaCm, circunferenciaCinturaCm, circunferenciaPanturrilhaCm, medidasCorporais: { ...caso.medidasCorporais, panturrilhaEsquerdaCm } }
+}
 
 /** Cada campo que falta, com o artigo, como a frase da tela pede (spec ficha-unica, D-461). */
 const CAMPO_COM_ARTIGO: Readonly<Partial<Record<CampoCaso, string>>> = { sexo: 'o sexo', idadeAnos: 'a idade', pesoKg: 'o peso', estaturaCm: 'a estatura' }
@@ -216,22 +280,22 @@ export function validarCaso(caso: Caso): ResultadoValidacao {
   if (caso.pesoKg === null) {
     // No modo rápido peso é opcional; no completo, sem ele não há cálculo.
     if (caso.modo === 'completo') faltando.push('pesoKg')
-  } else if (fora(caso.pesoKg, FAIXAS.pesoKg)) {
-    erros.pesoKg = `Peso deve estar entre ${FAIXAS.pesoKg.min} e ${FAIXAS.pesoKg.max} kg.`
+  } else {
+    const erro = erroDaFaixa('pesoKg', caso.pesoKg)
+    if (erro !== null) erros.pesoKg = erro
   }
 
   if (caso.estaturaCm === null) {
     if (caso.modo === 'completo') faltando.push('estaturaCm')
-  } else if (fora(caso.estaturaCm, FAIXAS.estaturaCm)) {
-    erros.estaturaCm = `Estatura deve estar entre ${FAIXAS.estaturaCm.min} e ${FAIXAS.estaturaCm.max} cm.`
+  } else {
+    const erro = erroDaFaixa('estaturaCm', caso.estaturaCm)
+    if (erro !== null) erros.estaturaCm = erro
   }
 
-  if (caso.circunferenciaCinturaCm !== null && fora(caso.circunferenciaCinturaCm, FAIXAS.circunferenciaCinturaCm)) {
-    erros.circunferenciaCinturaCm = `Circunferência da cintura deve estar entre ${FAIXAS.circunferenciaCinturaCm.min} e ${FAIXAS.circunferenciaCinturaCm.max} cm.`
-  }
-  if (caso.circunferenciaPanturrilhaCm !== null && fora(caso.circunferenciaPanturrilhaCm, FAIXAS.circunferenciaPanturrilhaCm)) {
-    erros.circunferenciaPanturrilhaCm = `Circunferência da panturrilha deve estar entre ${FAIXAS.circunferenciaPanturrilhaCm.min} e ${FAIXAS.circunferenciaPanturrilhaCm.max} cm.`
-  }
+  const erroDaCintura = caso.circunferenciaCinturaCm === null ? null : erroDaFaixa('circunferenciaCinturaCm', caso.circunferenciaCinturaCm)
+  if (erroDaCintura !== null) erros.circunferenciaCinturaCm = erroDaCintura
+  const erroDaPanturrilha = caso.circunferenciaPanturrilhaCm === null ? null : erroDaFaixa('circunferenciaPanturrilhaCm', caso.circunferenciaPanturrilhaCm)
+  if (erroDaPanturrilha !== null) erros.circunferenciaPanturrilhaCm = erroDaPanturrilha
 
   const { condicao } = caso
   if (condicao.tipo !== 'nenhuma') {

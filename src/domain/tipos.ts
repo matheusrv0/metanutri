@@ -1,4 +1,8 @@
 // Tipos centrais do domínio do planejador (SPEC planejador-metanutri).
+// Só tipos: os de baixo vêm do motor da antropometria, que importa os daqui (import de tipo, sem ciclo em execução).
+import type { BaseDoPeso } from './pesoDeReferencia.ts'
+import type { PerfilDeAtividade } from './pontoDePartida.ts'
+import type { GrupoDoEstudo, IdProtocolo, MaturacaoSexual } from './protocolosDeDobras.ts'
 
 export type Sexo = 'M' | 'F'
 
@@ -67,8 +71,11 @@ export type ModoPlano = 'rapido' | 'completo'
 
 /** Medidas de composição corporal deste atendimento. */
 export interface ComposicaoCorporal {
-  /** Só os dois protocolos da tela de hoje; a tela nova amplia para `IdProtocolo` (spec antropometria-completa, D-1007). */
-  readonly protocolo: 'jackson-pollock-3' | 'faulkner-4'
+  /**
+   * Os 8 protocolos do motor (spec antropometria-telas, D-1434, fecha a D-1007). O id de uma versão mais nova fica
+   * gravado como veio e o motor o recusa como desconhecido (CB-1009).
+   */
+  readonly protocolo: IdProtocolo
   /** Dobras cutâneas em mm. As 4 últimas entraram com a antropometria completa (spec antropometria-completa, D-1002). */
   readonly dobras: {
     readonly tricipital: number | null
@@ -135,6 +142,62 @@ export interface MedidasCorporais {
   readonly semienvergaduraCm: number | null
 }
 
+/** De onde vêm o peso e a estatura da avaliação (spec antropometria-telas, D-1407; CFN 594, pesquisa 7.2). */
+export type OrigemDasMedidas = 'aferidas' | 'informadas' | 'estimadas'
+
+/** Presencial ou por telenutrição (CFN 760/2023; pesquisa 7.3, bloco 3). */
+export type ModalidadeDaAvaliacao = 'presencial' | 'telenutricao'
+
+export type Adipometro = 'lange' | 'harpenden' | 'outro'
+
+export type AnguloDaFoto = 'frente' | 'lado' | 'costas' | 'outra'
+
+/** Uma foto ou um anexo da avaliação, guardado no balde privado `fotos-avaliacao` (spec antropometria-telas, D-1457). */
+export interface ArquivoDaAvaliacao {
+  readonly id: string
+  /** Só na foto. */
+  readonly angulo?: AnguloDaFoto
+  /** O nome que a tela mostra (no anexo, o nome do arquivo enviado; nunca entra no caminho, DP-AT-20). */
+  readonly nome: string
+  /** `<conta>/<plano>/fotos/<id>.jpg` ou `<conta>/<plano>/anexos/<id>.<ext>`. */
+  readonly caminho: string
+  readonly bytes: number
+  readonly tipo: 'image/jpeg' | 'image/png' | 'application/pdf'
+  /** Data e hora do envio, ISO. */
+  readonly enviadoEm: string
+}
+
+/**
+ * O que a tela "Avaliação antropométrica" guarda além das medidas (spec antropometria-telas, D-1435). Tudo nasce `null`;
+ * o plano gravado antes desta versão abre com o grupo vazio (`completarCasoLido`).
+ */
+export interface DadosDaAvaliacao {
+  readonly origemPesoEstatura: OrigemDasMedidas | null
+  readonly modalidade: ModalidadeDaAvaliacao | null
+  readonly adipometro: Adipometro | null
+  /** Slaughter, tríceps e subescapular, no menino com soma até 35 mm (D-1012). */
+  readonly maturacao: MaturacaoSexual | null
+  readonly grupoDoEstudo: GrupoDoEstudo | null
+  /** O perfil do "Ponto de partida" (D-1031 e D-1032). */
+  readonly perfil: PerfilDeAtividade | null
+  /** O IMC-alvo digitado no peso ideal (D-1027); `null` usa o padrão. */
+  readonly imcAlvo: number | null
+  /** O % de gordura alvo da meta de perda (D-1034); sem padrão. */
+  readonly gorduraAlvoPct: number | null
+  /** A base da proteína escolhida com IMC de 30 ou mais (R4.3a). */
+  readonly baseDaProteina: BaseDoPeso | null
+  /** TFGe abaixo de 30 sem diálise, perguntada só com doença renal na ficha (D-1420). */
+  readonly doencaRenalGrave: boolean | null
+  /** O diagnóstico nutricional escrito pela nutricionista (D-1432; CFN 594, art. 4º §1º). */
+  readonly diagnostico: string | null
+  /** As condições da medida (jejum, edema, horário), para o documento. */
+  readonly observacoesDaMedida: string | null
+  /** O dia (AAAA-MM-DD) em que a autorização de fotos foi marcada; `null` = sem autorização (D-1450). */
+  readonly fotosAutorizadasEm: string | null
+  readonly fotos: readonly ArquivoDaAvaliacao[] | null
+  readonly anexos: readonly ArquivoDaAvaliacao[] | null
+}
+
 /** Dados e medidas (CA-01). Campos numéricos ficam `null` enquanto não preenchidos. */
 export interface Caso {
   readonly id: string
@@ -158,6 +221,8 @@ export interface Caso {
   /** A panturrilha direita (spec antropometria-completa, D-1003); a esquerda fica em `medidasCorporais`. */
   readonly circunferenciaPanturrilhaCm: number | null
   readonly medidasCorporais: MedidasCorporais
+  /** A avaliação antropométrica completa (spec antropometria-telas, D-1435). */
+  readonly avaliacao: DadosDaAvaliacao
   readonly condicao: CondicaoFisiologica
   readonly modo: ModoPlano
   /** Meta de energia digitada no modo rápido, em kcal. */
@@ -259,6 +324,33 @@ export interface ItemPlano {
   readonly medida?: MedidaDoItem | null
   /** Só no item de receita: a cópia dela (spec receitas-com-calculo). */
   readonly receita?: ReceitaDoPlano
+  /**
+   * As opções deste alimento, até 2, escolhidas na busca de substitutos (spec busca-substitutos, D-1114): o paciente lê
+   * "ou" embaixo do item. Plano gravado antes não tem o campo. Lido sempre por `lerOpcoesDoItem`.
+   */
+  readonly opcoesDoItem?: readonly OpcaoDoItem[]
+}
+
+/** Uma opção do item: outro alimento na porção equivalente (spec busca-substitutos, D-1114). */
+export interface OpcaoDoItem {
+  readonly alimentoId: number
+  readonly gramas: number
+  /** A medida da porção (D-379); `null` = só gramas; sem o campo, a automática. */
+  readonly medida?: MedidaDoItem | null
+  /**
+   * Só na opção da base ampliada (D-1122): o nome copiado ao entrar no plano. A base chega sob demanda; sem ela, a folha,
+   * o link e o Word mostram a opção por aqui, em gramas, em vez de deixá-la de fora.
+   */
+  readonly copia?: CopiaDoAlimento
+}
+
+/** O nome do alimento copiado na opção (D-1122). */
+export interface CopiaDoAlimento {
+  /** O nome da base ("Macarrão, trigo, cozido"), o do planejador e do Word. */
+  readonly descricao: string
+  /** O nome para o paciente, o da folha e do link. */
+  readonly paciente: string
+  readonly unidade?: 'ml'
 }
 
 export interface Refeicao {
