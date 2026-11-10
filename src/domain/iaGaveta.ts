@@ -27,6 +27,9 @@ import { REFEICOES_PADRAO } from './plano.ts'
 import type { RestricoesDoPaciente } from './restricoes.ts'
 import type { Caso, Plano } from './tipos.ts'
 
+/** AAAA-MM-DD em DD/MM/AAAA. */
+export const diaNaTela = (dia: string): string => dia.split('-').reverse().join('/')
+
 /** CB-1315: a frase de sem conexão do app (a mesma da conta). */
 export const SEM_CONEXAO_IA = MENSAGEM_ERRO['falha-rede']
 
