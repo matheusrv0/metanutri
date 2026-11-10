@@ -40,7 +40,7 @@ export function GavetaIa({ titulo, lugar, aoFechar, corpo, rodape }: GavetaIaPro
   return (
     <aside
       aria-labelledby={idTitulo}
-      className={cn('flex min-w-0 flex-col rounded-xl border border-bordersubtle bg-card', lugar === 'lado' && 'sticky top-4 max-h-[calc(100dvh-2rem)] self-start')}
+      className={cn('flex min-w-0 flex-col rounded-xl border border-bordersubtle bg-card', lugar === 'lado' && 'self-start')}
     >
       <div className="flex items-center justify-between gap-3 border-b border-bordersubtle py-2 pl-5 pr-2">
         <h2 id={idTitulo} className="text-base font-bold text-heading">
@@ -50,7 +50,8 @@ export function GavetaIa({ titulo, lugar, aoFechar, corpo, rodape }: GavetaIaPro
           <X aria-hidden="true" />
         </Button>
       </div>
-      <div className={cn('px-5', lugar === 'lado' && 'min-h-0 flex-1 overflow-y-auto')}>{corpo}</div>
+      <div className="px-5">{corpo}</div>
+      {/* Como no protótipo: o rodapé fica preso ao pé da tela enquanto a gaveta passa por ela, e a ação não some. */}
       <div className={cn('rounded-b-xl border-t border-bordersubtle bg-card px-5 pb-4 pt-3', lugar === 'lado' && 'sticky bottom-0')}>{rodape}</div>
     </aside>
   )
