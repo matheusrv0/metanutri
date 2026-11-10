@@ -239,6 +239,29 @@ As decisões D-1256 a D-1260 da SPEC (seção 1.9), no código:
   `receber`, o e-mail digitado na supressão por devolução responde como enviado e não manda nada (o usado da ficha
   continua com "Confira o e-mail."); o `TabsTrigger` do seletor de opção fica `h-11` em toda largura.
 
+### 2.3 A correção da revisão r3 (10/11/2026)
+
+As decisões D-1261 a D-1263 da SPEC (seção 1.10), no código:
+
+- **DP-LP-47** · **O "Confirmar" num passo só do banco** (D-1261). O 017 ganha
+  `confirmar_email_do_paciente(p_chave, p_avisos, p_dia_da_semana, p_ofertas_padrao, p_agora) returns text`, só para a
+  chave de serviço. Na ordem: lê o `link_id` da chave; segura o link com `for share` (sem `cortado_em`); relê a chave
+  com `for update` e recusa (`'nao-vale'`) a que sumiu, não é de aceite, venceu ou cujo `token_hash` não é o
+  `hash_do_token` do token de agora; a usada responde `'usada'`. Na chave com `email`, cria a linha de
+  `emails_dos_links` se faltar (com as ofertas padrão) e grava o endereço, a origem "paciente" e a data (o mesmo
+  endereço que o link já tem só ganha a data); na chave sem `email`, a linha do link segura com `for update` tem que ter
+  o mesmo `email_hash` (CA-2257). Depois, os aceites de `p_avisos` (`on conflict … do nothing`, o índice parcial), o
+  "parar todos" desfeito e a data da confirmação quando há aviso, e a chave usada; responde `'confirmado'`. O link vem
+  sempre antes da chave, como na troca e no gatilho `conferir_chave_do_aceite`: sem deadlock. No código, a porta
+  `gravarEmailDoPaciente` passa a ser esse passo (recebe a chave, os avisos, o dia da semana, a oferta padrão e a hora e
+  devolve o resultado); `marcarConfirmado` sai da porta. Em `avisos-resposta`, `confirmar` confere o que já conferia,
+  chama só a porta e responde "Este endereço não vale." (404) no `'nao-vale'`; o S1 sai só no `'confirmado'`.
+  **Decisão:** o nome `gravarEmailDoPaciente` fica, porque a sonda `sonda-r3.mts` da revisão injeta a troca nele (G1).
+- **DP-LP-48** · **O remetente** (D-1262): em `nomeLimpoDoRemetente`, a regra da "palavra.palavra" passa a
+  `\S*[\p{L}\p{N}\p{M}_-]\.\p{M}*\p{L}{2,}\S*`.
+- **DP-LP-49** · **A Política** (D-1263): duas frases do item do e-mail do paciente mudam (seção 8). A versão dos textos
+  continua `2026-11-03`.
+
 ## 3. O contrato (banco, funções e tipos)
 
 ### 3.1 `supabase/017-lado-do-paciente.sql` (uma transação, pode rodar de novo)
@@ -278,6 +301,7 @@ mudam) e `a1_para timestamptz` (o A1 agendado). Índice por `substituido_por`.
 | `hash_do_email(text)` | interna | SHA-256 hexadecimal do endereço normalizado |
 | `anotar_limite(p_chave, p_limite, p_desde) returns boolean` | service_role | conta e anota num passo (como `anotar_chamada_da_cobranca`) |
 | `conferir_chave_dos_avisos(p_chave)` | service_role | a chave do cofre `metanutri_chave_dos_avisos` |
+| `confirmar_email_do_paciente(p_chave, p_avisos, p_dia_da_semana, p_ofertas_padrao, p_agora) returns text` | service_role | o "Confirmar" numa transação: `'confirmado'`, `'usada'` ou `'nao-vale'` (DP-LP-47) |
 | `pedir_avisos(p_vez)` | agendamento | `net.http_post` à função `avisos` com a chave no cabeçalho `x-chave-dos-avisos` e `{"vez": …}` |
 | `limpar_emails_antigos(p_agora)` | service_role, agendamento | envios com mais de 6 meses, chaves vencidas, limites com mais de 2 dias, aceites sem link com mais de 6 meses (CA-2285) |
 
@@ -464,6 +488,11 @@ dependência está entre colchetes.
 | T65 | `fix(avisos)`: "Receber" não revela o e-mail bloqueado (DP-LP-46) | T62 |
 | T66 | `fix(link)`: o seletor de opção com 44 px em toda largura (DP-LP-46) | — |
 | T67 | `docs`: a validação da correção r2 | todas |
+| T68 | `docs`: as decisões da revisão r3 (D-1261 a D-1263, DP-LP-47 a DP-LP-49) | — |
+| T69 | `fix(avisos)`: o "Confirmar" num passo só do banco (DP-LP-47) | T68 |
+| T70 | `fix(avisos)`: o remetente sem hífen, sublinhado nem sinal combinante junto do ponto (DP-LP-48) | T68 |
+| T71 | `fix(lgpd)`: a Política diz o resumo do histórico e o que o bloqueio impede (DP-LP-49, PARA O DONO APROVAR) | T68 |
+| T72 | `docs`: a validação da correção r3 | todas |
 
 ## 6. Matriz CA/CB × teste
 
@@ -547,6 +576,9 @@ Todo teste leva o ID no nome. "Dono" é conferência que só ele faz (seção 9)
 | CA-2305 | `src/ui/estado/usarConta.test.ts` |
 | CA-2306 | `servidorMeuLink.test.ts` |
 | CA-2307 | `e2e/servidor-falso/lado-do-paciente.spec.ts` (1440 px) |
+| CA-2308, CB-1232 | `src/data/sqlLadoDoPaciente.test.ts` (texto); `servidorAvisosResposta.test.ts`; `testes/seguranca/ladoDoPaciente.test.ts` (as duas ordens no banco local, com duas transações); `testes/seguranca/avisos.test.ts`; as partes G1, G2 e G3 da sonda `sonda-r3.mts` da revisão |
+| CA-2309 | `servidorEnviarLink.test.ts`; a sonda `sonda-nome-remetente-r3.mts` da revisão |
+| CA-2310 | `src/ui/publico/legal.test.tsx` |
 | CA-2299 | `servidorAvisosTetos.test.ts`, `servidorEnviarLink.test.ts` (o teto e o remetente limpo), `servidorAvisosRodada.test.ts`, `servidorMeuLink.test.ts`; `testes/seguranca/avisos.test.ts` |
 | CA-587 (B6), CB-1228 | `src/ui/pacientes/excluirPaciente.test.tsx` |
 | D-1255 (B10) | `src/domain/conta.test.ts` |
@@ -582,9 +614,11 @@ Todo teste leva o ID no nome. "Dono" é conferência que só ele faz (seção 9)
 >   o paciente informa no link só passa a valer depois que ele toca em Confirmar no e-mail que recebe. Até lá, esse
 >   e-mail recebe só o pedido de confirmação e fica guardado com ele por até 8 dias. Guardamos também o
 >   aceite (o aviso, a data e a hora e a versão do texto) enquanto o link existir e por mais 6 meses depois que ele sai, e
->   o histórico dos e-mails enviados (tipo, assunto, situação e data), por 6 meses. O e-mail que volta (o endereço não
->   existe) ou que é marcado como spam entra numa lista de bloqueio, que guarda só um resumo do endereço (hash), para não
->   receber mais avisos. Quem sai de um aviso só deixa de recebê-lo.
+>   o histórico dos e-mails enviados (tipo, assunto, situação, data e um resumo do endereço, o hash), por 6 meses,
+>   inclusive dos enviados a um e-mail que não foi confirmado. O e-mail que volta (o endereço não existe) ou que é
+>   marcado como spam entra numa lista de bloqueio, que guarda só um resumo do endereço (hash). O que volta não recebe
+>   mais nenhum e-mail do MetaNutri; o marcado como spam não recebe mais avisos nem os e-mails do nutricionista, só o
+>   que o próprio paciente pedir no link. Quem sai de um aviso só deixa de recebê-lo.
 > - Em "Recuperar meu link", um resumo (hash) do e-mail e do endereço de internet de quem pede, por 2 dias: para limitar
 >   os pedidos e evitar abuso.
 
@@ -592,7 +626,9 @@ Todo teste leva o ID no nome. "Dono" é conferência que só ele faz (seção 9)
 de bloqueio e guardava o aceite só "enquanto o link existir". **PARA O DONO APROVAR.** A versão dos textos continua
 `2026-11-03`: a de 03/11 nunca foi publicada.) (Revisão r2, D-1259: a frase "Até lá, esse e-mail recebe só o pedido
 de confirmação e fica guardado com ele por até 8 dias." entrou, e o item do Turnstile, abaixo, passou a falar de
-"Recuperar meu link". **PARA O DONO APROVAR.**)
+"Recuperar meu link". **PARA O DONO APROVAR.**) (Revisão r3, D-1263, correção de precisão: o histórico passou a citar o
+resumo do endereço e o e-mail não confirmado, e a frase da lista de bloqueio, que dizia "para não receber mais avisos",
+passou a dizer o que o e-mail que volta e o marcado como spam deixam de receber. **PARA O DONO APROVAR.**)
 > - O dia em que o paciente abriu o link (só a data, sem a hora): para o nutricionista saber se o paciente está abrindo o
 >   plano.
 

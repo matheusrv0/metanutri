@@ -6,6 +6,8 @@ ficam escritas. O plano é `./PLAN.md` (DP-LP-1 em diante); as mudanças que ele
 o DP de origem. A revisão independente de 04/11/2026 (r1) trouxe as decisões da seção 1.8 (D-1246 a D-1255), os
 critérios da seção 2.7 (CA-2289 a CA-2299) e os casos CB-1228 a CB-1231. A revisão de 10/11/2026 (r2) trouxe as
 decisões da seção 1.9 (D-1256 a D-1260), os critérios da seção 2.8 (CA-2300 a CA-2307) e os casos CB-1232 e CB-1233.
+A revisão nº 3 (10/11/2026, r3) trouxe as decisões da seção 1.10 (D-1261 a D-1263) e os critérios da seção 2.9
+(CA-2308 a CA-2310).
 
 **Pedido do dono (03/11/2026):** "vamos melhorar a visualização da tela que o paciente vê no link que o nutri manda,
 vamos continuar por ali e manter a ideia do link, vamos melhorar os avisos, por email, se o paciente deixar de abrir ou
@@ -164,6 +166,18 @@ receber o endereço novo depois da troca) e três baixos. As decisões abaixo va
 | D-1259 | **A Política cobre o Turnstile da recuperação e o e-mail por confirmar** (B-r2-2, B-r2-3). "Nas telas de conta e em 'Recuperar meu link'" o Turnstile recebe o IP; o e-mail informado no link, até ser confirmado, recebe só o pedido de confirmação e fica guardado com ele por até 8 dias (a confirmação vale 7; a limpeza é diária). O texto completo está no PLAN, seção 8, e volta para o dono aprovar | A Política diz o que o código faz (D-1250) |
 | D-1260 | **Três ajustes leves da r2.** A sessão que acaba por tempo também apaga os planos lembrados neste navegador (como o "Sair", D-1253). "Receber" com um e-mail digitado que está na lista de bloqueio responde como os outros e não manda nada, e o pedido conta nos 3 do dia. O seletor "Opção 1…" do Plano tem 44 px em toda largura | Num computador de clínica, a sessão costuma acabar por tempo. A resposta não revela que um endereço já voltou. O contrato visual pede 44 px em todo alvo |
 
+### 1.10 A revisão de 10/11/2026 (r3)
+
+A revisão independente nº 3 aprovou o ramo e deixou um achado baixo (B-r3-1: a outra ordem da corrida da troca, no
+"Confirmar") e duas recomendações leves de texto e do remetente, corrigidos antes de publicar porque mexem no 017, que
+ainda não rodou. As decisões abaixo valem por cima das de antes.
+
+| # | Decisão | Motivo |
+|---|---|---|
+| D-1261 | **O "Confirmar" é um passo só do banco** (B-r3-1; completa o D-1256). Numa transação só, o banco: segura o link (a troca do endereço que vier junto espera); confere que a chave existe, ainda não foi usada, não venceu e foi pedida com o endereço de agora do link (e, na chave do e-mail que o link já tem, que esse e-mail ainda é o do link); marca a chave como usada; e só então grava o e-mail e os aceites. Se a troca veio antes, o "Confirmar" responde "Este endereço não vale." e nada muda; se veio depois, a limpeza da troca encontra o e-mail já gravado e devolve o link ao e-mail da ficha (D-1248). Dois "Confirmar" da mesma chave ao mesmo tempo aceitam uma vez só (CB-1222) | A conferência era feita fora do banco, com o link lido antes: a troca que caía entre a leitura e a gravação deixava o e-mail de quem pegou o link valendo depois da limpeza, e "Recuperar meu link" entregava a ele o endereço novo. O CB-1232 diz que as duas nunca valem juntas |
+| D-1262 | **O remetente sem "golpe-.com", "golpe_.com" nem sinal combinante junto do ponto** (leve 3 da r3; completa o D-1257). A "palavra.palavra" que sai também vale com hífen, sublinhado ou um sinal combinante (como o traço que risca a letra, U+0338) antes do ponto, e com o sinal combinante logo depois dele. "Dra. Ana Lima", "A.C. Lima", "Ltda." e "Nutri. Ana" ficam inteiros | Não são domínios válidos, mas o nome do remetente não deve ter nada com cara de endereço |
+| D-1263 | **A Política diz o que o histórico e a lista de bloqueio fazem** (leves 1 e 2 da r3; corrige a descrição do D-1243 e do D-1250). O histórico dos e-mails enviados guarda também o resumo (*hash*) do endereço, por 6 meses, inclusive dos enviados a um e-mail que não foi confirmado. Na lista de bloqueio, o e-mail que volta não recebe mais nenhum e-mail do MetaNutri; o marcado como spam não recebe mais avisos nem os e-mails do nutricionista, só o que o próprio paciente pedir no link (o link do plano, a confirmação do e-mail e a recuperação). O texto volta para o dono aprovar, como correção de precisão | A Política diz o que o código faz (D-1250). Ela dizia "fica guardado por até 8 dias" sem citar o resumo de 6 meses, e "para não receber mais avisos", quando o e-mail que volta deixa de receber todos |
+
 ## 2. Critérios de aceite
 
 ### 2.1 A tela do link
@@ -298,6 +312,12 @@ receber o endereço novo depois da troca) e três baixos. As decisões abaixo va
 - **CA-2306** · Dado "Receber meu link por e-mail" com um e-mail digitado que está na lista de bloqueio por devolução, então a resposta é a mesma de um e-mail qualquer ("Enviamos um e-mail para…"), nada sai e o pedido conta nos 3 do dia (D-1260).
 - **CA-2307** · Dado a tela de 1440 px com o mouse, então o seletor "Opção 1", "Opção 2", "Opção 3" do Plano tem 44 px de altura (D-1260).
 
+### 2.9 A revisão de 10/11/2026 (r3)
+
+- **CA-2308** · Dado uma confirmação de e-mail aberta e a página já lida, quando a nutricionista troca o endereço antes de o "Confirmar" gravar (ou enquanto a troca segura o link), então o "Confirmar" responde "Este endereço não vale.", o e-mail do link continua o da ficha, nenhum aceite nasce e "Recuperar meu link" com o e-mail digitado não manda nada; quando o "Confirmar" grava antes da troca, então a troca espera, devolve o link ao e-mail da ficha e encerra os aceites do outro endereço (D-1261, CB-1232).
+- **CA-2309** · Dado o nome do Perfil com "golpe-.com", "golpe_.com" ou um sinal combinante junto do ponto ("golpe̸.com"), então o remetente e o corpo do e-mail saem sem eles; e "Dra. Ana Lima", "A.C. Lima", "Ana Lima Ltda." e "Nutri. Ana" saem inteiros (D-1262).
+- **CA-2310** · Dado a Política, então ela diz que o histórico dos e-mails enviados guarda um resumo (hash) do endereço por 6 meses, inclusive dos enviados a um e-mail que não foi confirmado; que o e-mail que volta não recebe mais nenhum e-mail do MetaNutri; e que o marcado como spam não recebe mais avisos nem os e-mails do nutricionista, só o que o próprio paciente pedir no link (D-1263).
+
 ## 3. Casos de borda
 
 - **CB-1200** · **Paciente com duas nutricionistas:** cada link é lembrado à parte (CA-2227); o S1 da recuperação traz os dois; os avisos são por link, e um descadastro não mexe no outro.
@@ -332,7 +352,7 @@ receber o endereço novo depois da troca) e três baixos. As decisões abaixo va
 - **CB-1229** · **Dois e-mails digitados no mesmo link, os dois por confirmar:** vale o último que for confirmado; a confirmação do outro continua valendo até ser usada, vencer (7 dias) ou o endereço ser trocado (D-1247, D-1248).
 - **CB-1230** · **Trocar o endereço sem e-mail na ficha:** o link fica sem e-mail, o diálogo não tem a caixa do S4 e sugere o WhatsApp (D-1248).
 - **CB-1231** · **O endereço trocado duas vezes:** os dois endereços de antes mostram "Este link foi trocado." (D-1246).
-- **CB-1232** · **A troca do endereço no meio de um pedido do paciente:** se a confirmação foi gravada antes da troca, a troca a apaga (D-1248); se a troca veio antes, a confirmação não nasce e nada sai (D-1256). As duas nunca valem juntas.
+- **CB-1232** · **A troca do endereço no meio de um pedido do paciente:** se a confirmação foi gravada antes da troca, a troca a apaga (D-1248); se a troca veio antes, a confirmação não nasce e nada sai (D-1256). No "Confirmar", vale o mesmo nas duas ordens (D-1261). As duas nunca valem juntas.
 - **CB-1233** · **O "Confirmar" com o Resend fora ou o teto cheio:** o e-mail passa a valer no link e o S1 não sai; o paciente pede de novo pelo "Receber" (agora com o e-mail mascarado) ou por "Recuperar meu link" (D-1258).
 
 ## 4. Fora de escopo
