@@ -131,7 +131,7 @@ LEIA-ME (DP-AT-9). Na tela, um componente por arquivo, em `src/ui/antropometria/
 | T22 | SQL 018 e ataques | `supabase/018-fotos-avaliacao.sql`, `src/data/sqlFotosAvaliacao.test.ts`, `testes/seguranca/fotos.test.ts`, `preparo.ts`, `tabelas.test.ts` | CA-2488 | T21 |
 | T23 | Exclusão das fotos | `supabase/functions/_shared/exclusaoSupabase.ts`, `excluirConta.ts` (comentário), `src/data/servidorExcluirLigacao.test.ts`, `testes/seguranca/exclusao.test.ts`, `src/ui/antropometria/armazenamentoDeFotos.ts` (a porta e o contexto), `src/ui/casos/TelaCasos.tsx` (o plano), `src/ui/pacientes/TelaPaciente.tsx` (o paciente, D-1503) (+ testes) | CA-2489, CB-1464 | T22 |
 | T24 | CSP | `src/seguranca/csp.ts`, `csp.test.ts` | CA-2491 | T2 |
-| T25 | Fotos e anexos: a tela | `CartaoFotos.tsx`, `ListaDeFotos.tsx`, `QuadroDaFoto.tsx`, `CompararFotos.tsx`, `ListaDeAnexos.tsx`, `armazenamentoDeFotos.ts`, `reduzirFoto.ts`, `VistaAvaliacao.tsx` e `TelaAntropometria.tsx` (o cartão no lugar do protótipo), `e2e/apoio/servidorFalso.ts` (o armazenamento falso) e `e2e/servidor-falso/fotos-avaliacao.spec.ts` (+ testes) | CA-2480 a CA-2487, CA-2490, CB-1413 a CB-1416, CB-1463, CB-1465, CB-1466, D-1503 a D-1513 | T21 a T24 |
+| T25 | Fotos e anexos: a tela | `CartaoFotos.tsx`, `ListaDeFotos.tsx`, `QuadroDaFoto.tsx`, `CompararFotos.tsx`, `ListaDeAnexos.tsx`, `DialogoExcluirArquivo.tsx`, `armazenamentoDeFotos.ts`, `reduzirFoto.ts`, `VistaAvaliacao.tsx` e `TelaAntropometria.tsx` (o cartão no lugar do protótipo), `e2e/apoio/servidorFalso.ts` (o armazenamento falso) e `e2e/servidor-falso/fotos-avaliacao.spec.ts` (+ testes) | CA-2480 a CA-2487, CA-2490, CB-1413 a CB-1416, CB-1463, CB-1465, CB-1466, D-1503 a D-1513 | T21 a T24 |
 | R1 | Revisão r1, M1 e B4: a suprailíaca da etapa 1 e a marcada | `src/domain/protocolosDeDobras.ts` (`dobrasUsadas`), `composicao.ts`, `documentoDaAvaliacao.ts`, `src/ui/caso/CamposComposicao.tsx`, `src/ui/antropometria/textosDaAvaliacao.ts` (+ testes) | CB-1480 a CB-1482, D-1520, D-1521 | T20 |
 | R2 | Revisão r1, M2 e B3: as faixas da etapa 1 na tela nova, zero e negativo | `src/domain/caso.ts` (`erroDaFaixa`, `casoNasFaixas`), `historicoAntropometrico.ts`, `CampoMedida.tsx`, `CartaoPesoEstatura.tsx`, `CartaoCircunferencias.tsx`, `LinhaDeMedida.tsx`, `PainelEstimar.tsx`, `TelaAntropometria.tsx` (+ testes) | CB-1483 a CB-1485, D-1522 a D-1525 | T20 |
 | R3 | Revisão r1, B1: a primeira e a atual no Histórico do celular | `TabelaAvaliacoes.tsx` (+ teste; e2e em 390 px) | CB-1486, D-1526 | T20 |
@@ -239,7 +239,8 @@ balde, políticas e contagem; ataques no Supabase local. Exclusão na função e
   (`DesenhistaDeFoto`) são interfaces do domínio; o envio (`enviarFoto`, `enviarAnexo`) decide a frase de cada recusa
   (D-1505) com uma porta falsa no teste.
 - **T22** · O balde `fotos-avaliacao` (privado, 8 MB, JPEG, PNG e PDF), a função `pode_enviar_arquivo_da_avaliacao`
-  (`security definer`, D-1504) e as três políticas (enviar, ler, apagar); sem política de alteração. Teste de texto em
+  (`security definer`, D-1504), as três políticas (enviar, ler, apagar), sem política de alteração, e o gatilho
+  `limite_de_arquivos_da_avaliacao` (antes de gravar, trava a pasta da conta e conta de novo). Teste de texto em
   `src/data/sqlFotosAvaliacao.test.ts` e ataques em `testes/seguranca/fotos.test.ts` (a conta B, o anônimo, o tipo, o
   tamanho, a 6ª foto, o 11º anexo, o caminho fora do formato, duas abas ao mesmo tempo).
 - **T23** · `apagarArquivos` da `excluir-conta` passa pelos dois baldes. O plano excluído em "Planos" e o paciente
