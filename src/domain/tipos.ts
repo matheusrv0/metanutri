@@ -188,6 +188,18 @@ export interface Caso {
   readonly metodoAgua: 'ml-kg' | 'ml-kcal'
   /** A meta de água digitada pela nutricionista, em litros; `null` usa a calculada (CA-1093). */
   readonly aguaLitros: number | null
+  /**
+   * O plano recebeu uma sugestão da IA (spec assistente-ia, D-1308 e D-1352): o dia e o modelo. Liga a linha de apoio de
+   * IA no documento (D-1322); editar o plano não a tira. `null` no plano feito sem a IA.
+   */
+  readonly origemIa: OrigemIa | null
+}
+
+/** D-1352: quando e com que modelo a sugestão da IA entrou no plano. */
+export interface OrigemIa {
+  /** AAAA-MM-DD. */
+  readonly em: string
+  readonly modelo: string
 }
 
 /**

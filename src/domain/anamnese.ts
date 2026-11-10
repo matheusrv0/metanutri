@@ -110,6 +110,8 @@ export const ROTEIRO_PADRAO: RoteiroAnamnese = {
       p('nao-gosta', 'Alimentos de que não gosta'),
       p('vontades', 'Vontade de doce ou salgado'),
       p('refeicoes-onde', 'Quem prepara as refeições e onde come'),
+      // Spec assistente-ia, CA-2379: o que a IA precisa para não sugerir o que não cabe no bolso.
+      p('orcamento', 'Orçamento para a alimentação'),
     ],
     infancia: [
       p('aleitamento', 'Aleitamento materno'),
@@ -175,6 +177,8 @@ const ESCOLHAS: ReadonlyMap<string, readonly string[]> = new Map([
   ['menstruacao', ['Regular', 'Irregular', 'Não menstrua', 'Menopausa']],
   ['fluxo-intenso', ['Sim', 'Não']],
   ['atividade-pratica', ['Sim', 'Não']],
+  // Spec assistente-ia, CA-2379 e D-1351.
+  ['orcamento', ['Econômico', 'Intermediário', 'Sem restrição']],
   // A escala de Bristol, com o número e o nome, como a da urina (seção 2).
   [
     'fezes',

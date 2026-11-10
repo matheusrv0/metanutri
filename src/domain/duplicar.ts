@@ -135,6 +135,8 @@ export const NA_DUPLICACAO: ClassificacaoDoPlano = {
   observacoes: 'copiado',
   // Sem uso desde o D-346; continua gravado.
   objetivo: 'copiado',
+  // Spec assistente-ia, D-1352: a cópia leva os alimentos que a IA sugeriu, e o documento continua dizendo isso.
+  origemIa: 'copiado',
 }
 
 type Ramo = { readonly [chave: string]: NaDuplicacao | Ramo }

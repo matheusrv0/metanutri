@@ -60,6 +60,29 @@ export interface Paciente {
   // ---- Importar pacientes por planilha (spec importar-pacientes, D-912) ----
   /** A importação de onde a ficha veio; `null` na ficha cadastrada à mão. O nome do arquivo não é guardado. */
   readonly importacao: ImportacaoDoPaciente | null
+  // ---- Assistente de IA (spec assistente-ia, D-1304) ----
+  /** A autorização do paciente para o uso de IA no plano: o dia e a versão do termo; `null` sem autorização (ou revogada). */
+  readonly consentimentoIa: ConsentimentoIa | null
+}
+
+/** D-1304: a versão do termo de autorização (seção 7 da spec assistente-ia). */
+export const VERSAO_DO_CONSENTIMENTO_IA = 'ia-1'
+
+export interface ConsentimentoIa {
+  /** AAAA-MM-DD: o dia em que a nutricionista registrou a autorização. */
+  readonly em: string
+  readonly versao: string
+}
+
+/** D-1304: a autorização registrada hoje (`dia`, AAAA-MM-DD). */
+export const autorizacaoDeIa = (dia: string): ConsentimentoIa => ({ em: dia, versao: VERSAO_DO_CONSENTIMENTO_IA })
+
+/** A autorização guardada; estragada (sem o dia AAAA-MM-DD) vira nula, e a função da IA também não a aceita (D-1347). */
+export function lerConsentimentoIa(valor: unknown): ConsentimentoIa | null {
+  if (typeof valor !== 'object' || valor === null) return null
+  const o = valor as Record<string, unknown>
+  const em = o['em']
+  return typeof em === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(em) ? { em, versao: typeof o['versao'] === 'string' ? o['versao'] : VERSAO_DO_CONSENTIMENTO_IA } : null
 }
 
 /** D-912: o código da importação e a hora dela. O "Desfazer" (D-913) apaga os que vieram juntos e não mudaram. */
@@ -115,8 +138,10 @@ export function criarPacienteVazio(id: string, agora: string): Paciente {
     doencas: [],
     consumoMensal: CONSUMO_VAZIO,
     examesRecentes: [],
-    // O da importação vem por último, pelo mesmo motivo (spec importar-pacientes, DP-IP-28).
+    // O da importação vem depois, pelo mesmo motivo (spec importar-pacientes, DP-IP-28).
     importacao: null,
+    // A autorização da IA vem por último, pelo mesmo motivo (spec assistente-ia, D-1304).
+    consentimentoIa: null,
   }
 }
 
@@ -233,6 +258,7 @@ export function criarRepositorioPacientes(armazenamento: Armazenamento | null, o
       consumoMensal: lerConsumo(completo.consumoMensal),
       examesRecentes: normalizarExamesRecentes(completo.examesRecentes),
       importacao: lerImportacao(completo.importacao),
+      consentimentoIa: lerConsentimentoIa(completo.consentimentoIa),
     }
   }
 

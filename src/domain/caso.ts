@@ -1,5 +1,5 @@
 // Criação e validação do caso (SPEC CA-01, CB-01, CB-02, CB-02a, CB-02b, CB-03, CB-12).
-import type { Caso, ComposicaoCorporal, MedidasCorporais, ModoQuantidade } from './tipos.ts'
+import type { Caso, ComposicaoCorporal, MedidasCorporais, ModoQuantidade, OrigemIa } from './tipos.ts'
 
 export type CampoCaso = keyof Caso
 
@@ -105,7 +105,17 @@ export function criarCasoVazio(id: string): Caso {
     linhaDaAgua: null,
     metodoAgua: 'ml-kg',
     aguaLitros: null,
+    origemIa: null,
   }
+}
+
+/** D-1352: a marca da IA guardada; estragada, ou de antes desta versão, vira nula. */
+export function lerOrigemIa(valor: unknown): OrigemIa | null {
+  if (typeof valor !== 'object' || valor === null) return null
+  const o = valor as Record<string, unknown>
+  const em = o['em']
+  const modelo = o['modelo']
+  return typeof em === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(em) && typeof modelo === 'string' && modelo.length <= 64 ? { em, modelo } : null
 }
 
 /** O objeto gravado, ou `{}` quando o plano antigo não tem o grupo. */
@@ -130,6 +140,7 @@ export function completarCasoLido(lido: Caso): Caso {
       dobras: { ...vazio.composicao.dobras, ...(grupoGravado(composicao['dobras']) as Partial<ComposicaoCorporal['dobras']>) },
     },
     medidasCorporais: { ...MEDIDAS_CORPORAIS_VAZIAS, ...(grupoGravado(lido.medidasCorporais) as Partial<MedidasCorporais>) },
+    origemIa: lerOrigemIa(lido.origemIa),
   }
 }
 
