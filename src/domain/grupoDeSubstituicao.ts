@@ -20,8 +20,16 @@ const nomeLimpo = (a: Alimento): string => a.descricao.trim().replace(/\s+/g, ' 
  */
 const CEREAL_OU_TUBERCULO = /^(Arroz|Macarrão|Polenta|Cuscuz|Batata|Mandioca|Cará|Inhame|Quinoa|Milho, verde|Trigo para quibe)/i
 const TUBERCULO = /^(Batata|Mandioca|Cará|Inhame)/i
+/**
+ * D-1138: a farinha de mandioca, crua (a farinha d'água) ou torrada, se come sem cozinhar e está no grupo do arroz, do pão
+ * e da mandioca da lista de equivalentes (Philippi et al., Rev. Nutr. 1999;12(1):65-80). A TACO a põe entre as verduras.
+ */
+const FARINHA_DE_MANDIOCA = /^Farinha, de mandioca, (crua|torrada)$/i
+/** No grupo do amido, o cru que vai ao fogo; a farinha de mandioca já está pronta (D-1138). */
+const cruNoPrato = (a: Alimento): boolean => ehCru(a) && !FARINHA_DE_MANDIOCA.test(nomeLimpo(a))
 const ehAmido = (a: Alimento): boolean =>
   papelDe(a) === 'acompanhamento' ||
+  FARINHA_DE_MANDIOCA.test(nomeLimpo(a)) ||
   (CEREAL_OU_TUBERCULO.test(nomeLimpo(a)) && (a.preparo === 'cozido' || (a.preparo === 'assado' && TUBERCULO.test(nomeLimpo(a)))))
 
 /** Amendoim, paçoca e pé-de-moleque são leguminosa na tabela e oleaginosa no prato. */
@@ -95,7 +103,7 @@ function mesmaFormaDoOvo(base: Alimento, a: Alimento): boolean {
 
 /**
  * "Só do mesmo grupo": o mesmo grupo e a mesma forma das trocas da folha. A forma do ovo (acima); verdura cozida só por
- * verdura cozida; no acompanhamento, pronto por pronto e cru por cru (CA-658); fruta inteira só por fruta inteira, e no
+ * verdura cozida; no acompanhamento, pronto por pronto e cru por cru (CA-658; a farinha de mandioca é pronta, D-1138); fruta inteira só por fruta inteira, e no
  * lugar do suco ou da polpa entra qualquer fruta (D-1131).
  */
 export function noMesmoGrupo(base: Alimento): (a: Alimento) => boolean {
@@ -107,6 +115,6 @@ export function noMesmoGrupo(base: Alimento): (a: Alimento) => boolean {
     grupoDeSubstituicao(a).id === grupo &&
     mesmaFormaDoOvo(base, a) &&
     (!verduraCozida || !ehCru(a)) &&
-    (!acompanhamento || ehCru(a) === ehCru(base)) &&
+    (!acompanhamento || cruNoPrato(a) === cruNoPrato(base)) &&
     (!frutaInteira || !ehSucoOuPolpaDeFruta(a))
 }

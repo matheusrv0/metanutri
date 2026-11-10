@@ -476,6 +476,16 @@ describe('D-1130 e D-1134 (rodada 3): o mesmo alimento, em toda a lista', () => 
     expect(tofu, 'o tofu continua com o tremoço').toContain('Tremoço, em conserva')
   })
 
+  it('CA-2152 (D-1138): a farinha de mandioca, na vista padrão, tem substitutos prontos do grupo, e não a outra farinha', () => {
+    for (const [nome, gramas] of [['Farinha, de mandioca, torrada', 20], ['Farinha, de mandioca, crua', 30]] as const) {
+      const n = nomesDaVista(nome, gramas)
+      expect(grupoDeSubstituicao(porNome(nome)).nome).toBe('cereais, tubérculos e raízes')
+      expect(n.some((x) => /^Arroz,/.test(x)) && n.some((x) => /^Mandioca,/.test(x)) && n.some((x) => /^Cuscuz,/.test(x)), `${nome}: ${n.join(' | ')}`).toBe(true)
+      expect(n.filter((x) => /^Farinha, de mandioca/.test(x))).toEqual([])
+      expect(n.every((x) => grupoDeSubstituicao(porNome(x)).id === 'amido')).toBe(true)
+    }
+  })
+
   it('CA-2147: em toda busca, nenhum candidato é o mesmo alimento do item nem o de outro candidato', () => {
     const erros = new Map<string, string>()
     const bases = [...ALIMENTOS, ...alimentosParaSugerir().filter((a) => a.id > 100_000)]

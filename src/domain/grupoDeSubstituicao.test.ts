@@ -61,6 +61,31 @@ describe('D-1108: o grupo de substituição', () => {
     expect(grupo(129)).toBe('amido')
   })
 
+  it('CA-2152 (D-1138): a farinha de mandioca, crua e torrada, é do amido e troca com o pronto, não com o cru', () => {
+    const farinhas = ['Farinha, de mandioca, crua', 'Farinha, de mandioca, torrada'].map((nome) => {
+      const a = alimentosParaSugerir().find((x) => x.descricao.trim() === nome)
+      if (!a) throw new Error(nome)
+      return a
+    })
+    for (const f of farinhas) {
+      expect(grupoDeSubstituicao(f), f.descricao).toEqual({ id: 'amido', nome: 'cereais, tubérculos e raízes' })
+      const doGrupo = noMesmoGrupo(f)
+      // Arroz cozido e mandioca cozida (prontos) entram; arroz cru e mandioca crua, não.
+      expect(doGrupo(porId(3)), `${f.descricao} × arroz cozido`).toBe(true)
+      expect(doGrupo(porId(91)), `${f.descricao} × mandioca cozida`).toBe(true)
+      for (const cru of alimentosParaSugerir().filter((a) => /^(Arroz, tipo 1|Mandioca), cru/.test(a.descricao.trim()))) {
+        expect(doGrupo(cru), `${f.descricao} × ${cru.descricao}`).toBe(false)
+      }
+    }
+    // E no lugar do arroz cozido, a farinha pronta entra.
+    expect(noMesmoGrupo(porId(3))(farinhas[1] as Alimento)).toBe(true)
+    // A farinha de puba e a de milho continuam fora do amido.
+    for (const nome of ['Farinha, de puba', 'Farinha, de milho, amarela']) {
+      const a = alimentosParaSugerir().find((x) => x.descricao.trim() === nome)
+      if (a) expect(grupoDeSubstituicao(a).id, nome).not.toBe('amido')
+    }
+  })
+
   it('fora dos grupos, o grupo da tabela em minúsculas', () => {
     expect(grupoDeSubstituicao(porId(260))).toEqual({ id: 'Gorduras e óleos', nome: 'gorduras e óleos' })
   })
