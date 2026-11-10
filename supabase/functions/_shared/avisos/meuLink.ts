@@ -1,6 +1,6 @@
 // A função `meu-link` (spec lado-do-paciente, D-1220, D-1221, D-1226): o que o paciente pede sem conta.
-//   - 'recuperar': "Recuperar meu link", com a verificação contra robôs. A resposta é sempre a mesma (CA-2233, CA-2234);
-//     com cadastro, o S1 leva um link por nutricionista, e sai como "MetaNutri" (D-1225).
+//   - 'recuperar': "Recuperar meu link", com a verificação contra robôs. A resposta é sempre a mesma, no mesmo tempo
+//     (CA-2233, CA-2234, D-1249); com cadastro, o S1 leva um link por nutricionista, e sai como "MetaNutri" (D-1225).
 //   - 'receber': "Receber meu link por e-mail", de dentro do link (o token é a chave): o S1 na hora e, com avisos
 //     marcados, o S3 do aceite (CA-2235, CA-2240); o e-mail digitado só vale no link depois de confirmado (D-1247).
 //     Até 3 pedidos por dia por link (CA-2237).
@@ -39,7 +39,19 @@ import { ehTipoDeAviso, TIPOS_DE_AVISO, type TipoDeAviso } from './tipos.ts'
 
 const HORA_MS = 60 * 60 * 1000
 
+/** D-1249: "Recuperar meu link" responde sempre 3 segundos depois do pedido, com cadastro ou sem. */
+export const TEMPO_DA_RECUPERACAO_MS = 3_000
+
+const esperarDeVerdade = (ms: number): Promise<void> => new Promise((resolver) => setTimeout(resolver, ms))
+
 export interface DependenciasDoMeuLink extends DependenciasComuns {
+  /** A espera da resposta da recuperação (D-1249); por padrão, o relógio de verdade. */
+  readonly esperar?: (ms: number) => Promise<void>
+  /**
+   * O trabalho da recuperação que pode passar da resposta (o `EdgeRuntime.waitUntil` das Edge Functions): a função não
+   * termina antes dele. Sem isto, o trabalho só corre junto.
+   */
+  readonly emSegundoPlano?: (trabalho: Promise<unknown>) => void
   /** DP-LP-19: o token do Turnstile confere, com a ação `recuperar-link`. */
   readonly turnstile: (token: string | null, ip: string | null) => Promise<boolean>
   /** DP-LP-17: o domínio recebe e-mail (nulo: não deu para saber, e não recusa). */
@@ -63,7 +75,7 @@ export async function meuLink(pedido: PedidoDoMeuLink, deps: DependenciasDoMeuLi
   if (pedido.metodo !== 'POST') return erro('Use POST.', 405)
   const corpo = objeto(pedido.corpo)
   const acao = corpo['acao']
-  if (acao === 'recuperar') return recuperar(corpo, pedido.ip, deps)
+  if (acao === 'recuperar') return recuperarNoTempo(corpo, pedido.ip, deps)
   if (acao === 'receber') return receber(corpo, deps)
   if (acao === 'ligar') return ligar(corpo, deps)
   return erro(PEDIDO_INVALIDO, 400)
@@ -153,16 +165,28 @@ function linkDoPlano(link: LinkDoBanco, nutri: DadosDaNutricionista, email: stri
 }
 
 /**
+ * D-1249 e CA-2294: a resposta não espera o trabalho. Ela sai sempre `TEMPO_DA_RECUPERACAO_MS` depois do pedido, com
+ * cadastro ou sem, mesmo com o Resend lento; o trabalho corre junto e, se passar disso, termina depois (em segundo
+ * plano). O trabalho nunca rejeita: a falha vira registro.
+ */
+async function recuperarNoTempo(corpo: Readonly<Record<string, unknown>>, ip: string | null, deps: DependenciasDoMeuLink): Promise<RespostaDaFuncao> {
+  const trabalho = recuperar(corpo, ip, deps).catch(() => deps.log('A recuperação falhou no meio.'))
+  deps.emSegundoPlano?.(trabalho)
+  await (deps.esperar ?? esperarDeVerdade)(TEMPO_DA_RECUPERACAO_MS)
+  return RESPOSTA_IGUAL
+}
+
+/**
  * D-1220, CA-2233 e CA-2234. Nada aqui muda a resposta: e-mail sem cadastro, verificação que não confere, pedido demais
  * na hora (por e-mail ou por endereço de internet), endereço devolvido ou Resend fora, tudo responde `{ ok: true }`.
  */
-async function recuperar(corpo: Readonly<Record<string, unknown>>, ip: string | null, deps: DependenciasDoMeuLink): Promise<RespostaDaFuncao> {
+async function recuperar(corpo: Readonly<Record<string, unknown>>, ip: string | null, deps: DependenciasDoMeuLink): Promise<void> {
   const email = typeof corpo['email'] === 'string' ? normalizarEmail(corpo['email']) : ''
-  if (!emailValido(email)) return RESPOSTA_IGUAL
+  if (!emailValido(email)) return
   const token = typeof corpo['turnstile'] === 'string' ? corpo['turnstile'] : null
   if (!(await deps.turnstile(token, ip))) {
     deps.log('Recuperação sem a verificação contra robôs.')
-    return RESPOSTA_IGUAL
+    return
   }
   const agora = deps.agora()
   const desde = new Date(agora.getTime() - HORA_MS)
@@ -170,14 +194,14 @@ async function recuperar(corpo: Readonly<Record<string, unknown>>, ip: string | 
   // As duas contas andam juntas: o pedido barrado por uma não passa pela outra.
   const cabeNoEmail = await deps.banco.anotarLimite(`rec-email:${emailHash}`, RECUPERACOES_POR_HORA, desde)
   const cabeNoIp = ip === null ? true : await deps.banco.anotarLimite(`rec-ip:${await deps.hash(`ip:${ip}`)}`, RECUPERACOES_POR_HORA, desde)
-  if (!cabeNoEmail || !cabeNoIp) return RESPOSTA_IGUAL
+  if (!cabeNoEmail || !cabeNoIp) return
 
   // D-1247: só o e-mail da ficha ou o confirmado pelo paciente recupera o link.
   const linhas = (await deps.banco.emailsPorHash(emailHash)).filter((l) => l.email === email && emailQueVale(l))
-  if (linhas.length === 0) return RESPOSTA_IGUAL
-  if ((await deps.banco.suprimidos([emailHash])).get(emailHash) === 'devolvido') return RESPOSTA_IGUAL
+  if (linhas.length === 0) return
+  if ((await deps.banco.suprimidos([emailHash])).get(emailHash) === 'devolvido') return
   const links = (await deps.banco.linksPorIds(linhas.map((l) => l.linkId))).filter((l) => l.substituidoPor === null)
-  if (links.length === 0) return RESPOSTA_IGUAL
+  if (links.length === 0) return
 
   const nutris = new Map<string, DadosDaNutricionista>()
   for (const link of links) {
@@ -186,7 +210,7 @@ async function recuperar(corpo: Readonly<Record<string, unknown>>, ip: string | 
     if (nutri) nutris.set(link.nutricionistaId, nutri)
   }
   const comNutri = links.filter((l) => nutris.has(l.nutricionistaId))
-  if (comNutri.length === 0) return RESPOSTA_IGUAL
+  if (comNutri.length === 0) return
   // CB-1210: o casal com um e-mail na mesma conta: a linha leva o primeiro nome de cada um.
   const contas = comNutri.map((l) => l.nutricionistaId)
   const planos: PlanoDoEmail[] = comNutri.map((link) => {
@@ -202,7 +226,6 @@ async function recuperar(corpo: Readonly<Record<string, unknown>>, ip: string | 
     envios: comNutri.map((link, i) => ({ linkId: link.id, nutricionistaId: link.nutricionistaId, emailHash, contaNoTeto: i === 0, extra: { recuperacao: true } })),
   }
   if ((await enviarServico([item], deps)) === 'fora') deps.log('A recuperação não saiu agora.')
-  return RESPOSTA_IGUAL
 }
 
 /** Os avisos pedidos no corpo, só os conhecidos. */

@@ -4,7 +4,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { CHAVE_QUE_NAO_VALE, CONFIRA_O_EMAIL, LIMITE_DA_CONTA, NAO_ENVIOU, PEDIDOS_DEMAIS_NO_DIA } from '../../supabase/functions/_shared/avisos/comum.ts'
 import { hashDoEmail } from '../../supabase/functions/_shared/avisos/email.ts'
-import { meuLink, type DependenciasDoMeuLink } from '../../supabase/functions/_shared/avisos/meuLink.ts'
+import { meuLink, TEMPO_DA_RECUPERACAO_MS, type DependenciasDoMeuLink } from '../../supabase/functions/_shared/avisos/meuLink.ts'
 import { TETOS_PADRAO } from '../../supabase/functions/_shared/avisos/tetos.ts'
 import * as doApp from '../domain/emailsDoLink.ts'
 import { acertarRelogio, ANA, bancoFalso, comLink, dependencias, linkDe, resendFalso, type EstadoFalso, type ResendFalso } from './servidorAvisosFalsos.test-utils.ts'
@@ -22,7 +22,15 @@ beforeEach(() => {
   resend = resendFalso()
   turnstileOk = true
   dominioRecebe = true
-  deps = { ...dependencias(falso.banco, resend), turnstile: async () => turnstileOk, temServidorDeEmail: async () => dominioRecebe }
+  // D-1249: a espera da recuperação aguarda o trabalho dela, para os testes verem o que saiu.
+  let trabalho: Promise<unknown> = Promise.resolve()
+  deps = {
+    ...dependencias(falso.banco, resend),
+    turnstile: async () => turnstileOk,
+    temServidorDeEmail: async () => dominioRecebe,
+    emSegundoPlano: (t) => void (trabalho = t),
+    esperar: async () => void (await trabalho),
+  }
 })
 
 const pedir = (corpo: Record<string, unknown>, ip: string | null = '200.1.2.3') => meuLink({ metodo: 'POST', corpo, ip }, deps)
@@ -94,6 +102,40 @@ describe('Recuperar meu link (D-1220)', () => {
     if (linha) estado.emails.set('link-juliana', { ...linha, parouTudoEm: '2026-11-01T10:00:00Z' })
     await pedir({ acao: 'recuperar', email: 'juliana.martins@gmail.com', turnstile: 'tok' })
     expect(resend.lotes).toHaveLength(1)
+  })
+
+  it('CA-2294: com cadastro e sem, a resposta sai depois dos mesmos 3 segundos, sem esperar o envio', async () => {
+    await comLink(estado)
+    const esperas: number[] = []
+    const segundoPlano: Promise<unknown>[] = []
+    let soltarResend = (): void => undefined
+    const resendLento = new Promise<void>((resolver) => {
+      soltarResend = resolver
+    })
+    deps = {
+      ...deps,
+      enviar: async (emails, idem) => {
+        await resendLento
+        return resend.enviar(emails, idem)
+      },
+      esperar: async (ms) => void esperas.push(ms),
+      emSegundoPlano: (t) => void segundoPlano.push(t),
+    }
+    expect(await pedir({ acao: 'recuperar', email: 'juliana.martins@gmail.com', turnstile: 'tok' })).toEqual({ status: 200, corpo: { ok: true } })
+    expect(await pedir({ acao: 'recuperar', email: 'ninguem@gmail.com', turnstile: 'tok' })).toEqual({ status: 200, corpo: { ok: true } })
+    expect(esperas).toEqual([TEMPO_DA_RECUPERACAO_MS, TEMPO_DA_RECUPERACAO_MS])
+    expect(TEMPO_DA_RECUPERACAO_MS).toBe(3000)
+    // A resposta saiu com o Resend ainda parado; o trabalho termina em segundo plano.
+    expect(resend.lotes).toHaveLength(0)
+    soltarResend()
+    await Promise.all(segundoPlano)
+    expect(resend.lotes).toHaveLength(1)
+  })
+
+  it('CA-2294: o banco fora no meio da recuperação não muda a resposta', async () => {
+    await comLink(estado)
+    estado.falhar = true
+    expect(await pedir({ acao: 'recuperar', email: 'juliana.martins@gmail.com', turnstile: 'tok' })).toEqual({ status: 200, corpo: { ok: true } })
   })
 
   it('CB-1216: Resend fora do ar na recuperação: a resposta continua a mesma, e o envio não fica gravado', async () => {

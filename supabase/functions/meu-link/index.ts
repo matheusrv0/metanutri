@@ -13,6 +13,9 @@ import { turnstileConfere } from '../_shared/avisos/turnstile.ts'
 import { cabecalhosPara, responder } from '../_shared/cobranca.ts'
 import { lerCorpo, PEDIDO_GRANDE_DEMAIS } from '../_shared/corpo.ts'
 
+/** O recurso de tarefa em segundo plano das Edge Functions (D-1249): o trabalho da recuperação que passa da resposta. */
+const edge = (globalThis as { readonly EdgeRuntime?: { readonly waitUntil?: (trabalho: Promise<unknown>) => void } }).EdgeRuntime
+
 Deno.serve(async (req: Request) => {
   const origem = req.headers.get('Origin')
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cabecalhosPara(origem) })
@@ -33,6 +36,7 @@ Deno.serve(async (req: Request) => {
         ...comuns,
         turnstile: (token, ip) => turnstileConfere({ buscar, segredo: ler('TURNSTILE_SECRET_KEY')?.trim() || null, token, ip }),
         temServidorDeEmail: (dominio) => temServidorDeEmail(dominio, buscar),
+        ...(edge?.waitUntil ? { emSegundoPlano: (trabalho: Promise<unknown>) => edge.waitUntil?.(trabalho) } : {}),
       },
     )
     return responder(resposta.corpo, resposta.status, origem)

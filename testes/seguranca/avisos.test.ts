@@ -81,7 +81,15 @@ function dependencias(agora: Date = new Date()): DependenciasComuns {
 
 /** A verificação contra robôs e o DNS de mentira: só o token certo passa; um domínio não recebe e-mail. */
 function dependenciasDoMeuLink(agora: Date = new Date()): DependenciasDoMeuLink {
-  return { ...dependencias(agora), turnstile: async (token) => token === 'turnstile-certo', temServidorDeEmail: async (dominio) => dominio !== 'semservidor.com.br' }
+  // D-1249: no lugar dos 3 segundos, a recuperação espera o trabalho dela (o tempo fixo tem teste em servidorMeuLink).
+  let trabalho: Promise<unknown> = Promise.resolve()
+  return {
+    ...dependencias(agora),
+    turnstile: async (token) => token === 'turnstile-certo',
+    temServidorDeEmail: async (dominio) => dominio !== 'semservidor.com.br',
+    emSegundoPlano: (t) => void (trabalho = t),
+    esperar: async () => void (await trabalho),
+  }
 }
 
 let chaveDoCofre = ''
