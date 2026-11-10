@@ -5,9 +5,11 @@ import { resumoDaAdesao } from '@/domain/adesaoNoRetorno.ts'
 import type { AssinaturaDoPlano } from '@/domain/assinaturaDoPlano.ts'
 import { dataDaAvaliacao } from '@/domain/avaliacoesDoPaciente.ts'
 import { perfilDaFicha } from '@/domain/fichaNoPlano.ts'
+import { apagarArquivosDoPlano, semArquivos, temArquivos } from '@/domain/fotosDaAvaliacao.ts'
 import type { Paciente } from '@/domain/pacientes.ts'
 import { ultimoLinkPorPaciente } from '@/domain/retorno.ts'
 import type { ModoPlano } from '@/domain/tipos.ts'
+import { useArmazenamentoDeFotos } from '../antropometria/armazenamentoDeFotos.ts'
 import { formatarAlteracao } from '../casos/formatarAlteracao.ts'
 import { EscolherModo } from '../caso/EscolherModo.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
@@ -57,7 +59,8 @@ export function TelaPaciente({
   aoAbrirAntropometria,
 }: TelaPacienteProps) {
   const { repositorio, atualizar } = usePacientes()
-  const { casos, repositorio: repoCasos, atualizar: atualizarCasos } = useCasos()
+  const { casos, repositorio: repoCasos, atualizar: atualizarCasos, salvar: salvarCaso } = useCasos()
+  const fotos = useArmazenamentoDeFotos()
   const acompanhamentos = useAcompanhamentosOpcional()?.acompanhamentos ?? null
   const [confirmandoExclusao, setConfirmandoExclusao] = useState(false)
   const idConduta = useId()
@@ -130,13 +133,22 @@ export function TelaPaciente({
         <Card className="gap-3">
           <CardHeader>
             <CardTitle>Excluir paciente</CardTitle>
-            <CardDescription>Os planos continuam salvos, mas perdem o vínculo com esta ficha.</CardDescription>
+            <CardDescription>Os planos continuam salvos, mas perdem o vínculo com esta ficha. As fotos e os anexos das avaliações são apagados.</CardDescription>
           </CardHeader>
           {confirmandoExclusao ? (
             <div className="flex flex-wrap items-center gap-2">
               <Button
                 variant="destructive"
                 onClick={() => {
+                  // D-1503 (spec antropometria-telas): sem paciente, o cartão das fotos não aparece; elas saem da lista
+                  // e do balde (por melhor esforço: o que não sair agora sai com a exclusão da conta).
+                  for (const resumo of planos) {
+                    const registro = repoCasos.obter(resumo.id)
+                    if (registro && temArquivos(registro.caso.avaliacao)) {
+                      salvarCaso({ caso: { ...registro.caso, avaliacao: semArquivos(registro.caso.avaliacao) }, plano: registro.plano })
+                    }
+                    if (fotos) void apagarArquivosDoPlano(fotos, resumo.id)
+                  }
                   repositorio.excluir(paciente.id)
                   atualizar()
                   aoVoltar()

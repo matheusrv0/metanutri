@@ -333,3 +333,19 @@ export function comparacaoDeFotos(anterior: AvaliacaoDoHistorico, atual: Avaliac
   })
   return { quadros: [quadro(anterior, angulo), quadro(atual, angulo)], diferencas }
 }
+
+// --- A exclusão (D-1458, D-1503) ---------------------------------------------------------------------------------------
+
+/** D-1458 e DP-AT-14: apaga a pasta do plano no balde (melhor esforço); sem sessão, não apaga nada. */
+export async function apagarArquivosDoPlano(porta: ArmazenamentoDeFotos, plano: string): Promise<boolean> {
+  const conta = await porta.conta()
+  if (conta === null) return false
+  return porta.apagarPasta(pastaDoPlano(conta, plano))
+}
+
+/** A avaliação tem foto, anexo ou a autorização marcada. */
+export const temArquivos = (avaliacao: DadosDaAvaliacao): boolean =>
+  (avaliacao.fotos?.length ?? 0) + (avaliacao.anexos?.length ?? 0) > 0 || avaliacao.fotosAutorizadasEm !== null
+
+/** D-1503: a avaliação do paciente excluído fica sem fotos, sem anexos e sem a data da autorização. */
+export const semArquivos = (avaliacao: DadosDaAvaliacao): DadosDaAvaliacao => ({ ...avaliacao, fotosAutorizadasEm: null, fotos: null, anexos: null })

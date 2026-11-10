@@ -6,12 +6,13 @@
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2.117.2'
 import { horaDaSenha, type PortaDaExclusao, type QuemPedeAExclusao } from './excluirConta.ts'
 
-const BALDE = 'comprovantes'
+/** Os comprovantes de matrícula e as fotos e anexos da avaliação (spec antropometria-telas, D-1458 e CA-2489). */
+const BALDES = ['comprovantes', 'fotos-avaliacao'] as const
 const PAGINA = 100
 
 const mensagemDe = (erro: unknown): string => (erro instanceof Error ? erro.message : String(erro))
 
-/** O balde dos comprovantes, só com o que a exclusão usa. */
+/** Um balde, só com o que a exclusão usa. */
 type Balde = ReturnType<SupabaseClient['storage']['from']>
 
 /**
@@ -22,7 +23,11 @@ type Balde = ReturnType<SupabaseClient['storage']['from']>
 async function listarArquivos(balde: Balde, pasta: string, achados: string[]): Promise<string | null> {
   for (let desde = 0; ; desde += PAGINA) {
     const { data, error } = await balde.list(pasta, { limit: PAGINA, offset: desde })
-    if (error) return error.message
+    if (error) {
+      // R-AT-1 (spec antropometria-telas): sem o 018 rodado, o balde das fotos ainda não existe; não há o que apagar.
+      if (/bucket not found/i.test(error.message)) return null
+      return error.message
+    }
     const itens = data ?? []
     for (const item of itens) {
       const caminho = `${pasta}/${item.name}`
@@ -65,13 +70,15 @@ export function criarPortaDaExclusao(cliente: SupabaseClient): PortaDaExclusao {
     },
     async apagarArquivos(conta) {
       try {
-        const balde = cliente.storage.from(BALDE)
-        const arquivos: string[] = []
-        const naoListou = await listarArquivos(balde, conta, arquivos)
-        if (naoListou) return naoListou
-        for (let i = 0; i < arquivos.length; i += PAGINA) {
-          const { error } = await balde.remove(arquivos.slice(i, i + PAGINA))
-          if (error) return error.message
+        for (const nome of BALDES) {
+          const balde = cliente.storage.from(nome)
+          const arquivos: string[] = []
+          const naoListou = await listarArquivos(balde, conta, arquivos)
+          if (naoListou) return naoListou
+          for (let i = 0; i < arquivos.length; i += PAGINA) {
+            const { error } = await balde.remove(arquivos.slice(i, i + PAGINA))
+            if (error) return error.message
+          }
         }
         return null
       } catch (erro) {

@@ -5,6 +5,8 @@ import { criarRepositorio, type Armazenamento } from '@/domain/persistencia.ts'
 import { ProvedorCasos } from '../estado/ProvedorCasos.tsx'
 import { ProvedorPacientes } from '../estado/ProvedorPacientes.tsx'
 import { casaRestricao } from '@/domain/restricoes.ts'
+import type { ArmazenamentoDeFotos } from '@/domain/fotosDaAvaliacao.ts'
+import { ContextoArmazenamentoDeFotos } from '../antropometria/armazenamentoDeFotos.ts'
 import { TelaPaciente } from './TelaPaciente.tsx'
 import { TelaPacientes } from './TelaPacientes.tsx'
 
@@ -184,6 +186,46 @@ describe('Pacientes', () => {
     const grafico = screen.getByRole('img', { name: 'Evolução do peso ao longo dos planos' })
     expect(within(grafico).getByText('03/11')).toBeInTheDocument()
     expect(within(grafico).queryByText('04/11')).not.toBeInTheDocument()
+  })
+
+  it('CB-1464 (spec antropometria-telas, D-1503): excluir o paciente apaga as fotos e os anexos das avaliações; os planos ficam', async () => {
+    const armazenamento = new MemoriaFalsa()
+    const pacientes = criarRepositorioPacientes(armazenamento, { agora: relogio(), gerarId: () => 'p1' })
+    pacientes.criar('Maria')
+    const casos = criarRepositorio(armazenamento, { agora: relogio() })
+    const comFotos = casos.criar('Maria, 1ª')
+    const foto = { id: 'f1', angulo: 'frente' as const, nome: 'Frente', caminho: 'conta-1/x/fotos/f1.jpg', bytes: 1000, tipo: 'image/jpeg' as const, enviadoEm: '2026-11-03T12:00:00.000Z' }
+    casos.salvar({ ...comFotos, caso: { ...comFotos.caso, pacienteId: 'p1', avaliacao: { ...comFotos.caso.avaliacao, fotosAutorizadasEm: '2026-11-03', fotos: [foto], diagnostico: 'Sobrepeso.' } } })
+    const semFotos = casos.criar('Maria, 2ª')
+    casos.salvar({ ...semFotos, caso: { ...semFotos.caso, pacienteId: 'p1' } })
+    const deOutro = casos.criar('João')
+    const pastas: string[] = []
+    const fotos: ArmazenamentoDeFotos = {
+      conta: async () => 'conta-1',
+      enviar: async () => 'ok',
+      contar: async () => 0,
+      assinar: async () => null,
+      apagar: async () => true,
+      apagarPasta: async (pasta) => (pastas.push(pasta), true),
+    }
+    render(
+      <ContextoArmazenamentoDeFotos.Provider value={fotos}>
+        <ProvedorCasos repositorio={casos}>
+          <ProvedorPacientes repositorio={pacientes}>
+            <TelaPaciente pacienteId="p1" aoAbrirPlano={vi.fn()} aoNovoPlano={vi.fn()} aoVoltar={vi.fn()} />
+          </ProvedorPacientes>
+        </ProvedorCasos>
+      </ContextoArmazenamentoDeFotos.Provider>,
+    )
+    expect(screen.getByText('Os planos continuam salvos, mas perdem o vínculo com esta ficha. As fotos e os anexos das avaliações são apagados.')).toBeInTheDocument()
+    const usuario = userEvent.setup()
+    await usuario.click(screen.getByRole('button', { name: 'Excluir paciente' }))
+    await usuario.click(screen.getByRole('button', { name: 'Excluir paciente' }))
+    expect(pacientes.obter('p1')).toBeNull()
+    expect(casos.obter(comFotos.caso.id)?.caso.avaliacao).toMatchObject({ fotosAutorizadasEm: null, fotos: null, anexos: null, diagnostico: 'Sobrepeso.' })
+    expect(casos.listar()).toHaveLength(3)
+    await vi.waitFor(() => expect([...pastas].sort()).toEqual([`conta-1/${comFotos.caso.id}`, `conta-1/${semFotos.caso.id}`].sort()))
+    expect(pastas).not.toContain(`conta-1/${deOutro.caso.id}`)
   })
 
   it('DP-26 (spec dados-na-nuvem): o paciente que não existe mais pode ter sido excluído em outra aba ou em outro aparelho', () => {

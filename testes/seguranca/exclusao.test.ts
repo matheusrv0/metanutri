@@ -2,7 +2,7 @@
 // CB-259). O núcleo da função excluir-conta roda com o banco e a porta de verdade (supabase-js com a chave de serviço
 // local); só a operadora de pagamento é de mentira: o Mercado Pago nunca é chamado daqui.
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { randomBytes } from 'node:crypto'
+import { randomBytes, randomUUID } from 'node:crypto'
 import { beforeAll, describe, expect, it, vi } from 'vitest'
 import { EM_ANDAMENTO } from '../../supabase/functions/_shared/assinar.ts'
 import { criarBanco } from '../../supabase/functions/_shared/bancoSupabase.ts'
@@ -81,17 +81,21 @@ async function fotoDaConta(c: Cenario, id: string): Promise<string> {
   return JSON.stringify(foto)
 }
 
-/** Os caminhos de todos os arquivos da pasta da conta, com as subpastas. */
-async function arquivosDa(c: Cenario, pasta: string): Promise<string[]> {
-  const r = await c.servico.storage.from(BALDE).list(pasta, { limit: 1000 })
+/** Os caminhos de todos os arquivos da pasta da conta, com as subpastas (no balde dos comprovantes, se não disser outro). */
+async function arquivosDa(c: Cenario, pasta: string, balde: string = BALDE): Promise<string[]> {
+  const r = await c.servico.storage.from(balde).list(pasta, { limit: 1000 })
   if (r.error) throw new Error(`listar ${pasta}: ${r.error.message}`)
   const achados: string[] = []
   for (const item of r.data ?? []) {
     if (item.id) achados.push(`${pasta}/${item.name}`)
-    else achados.push(...(await arquivosDa(c, `${pasta}/${item.name}`)))
+    else achados.push(...(await arquivosDa(c, `${pasta}/${item.name}`, balde)))
   }
   return achados.sort()
 }
+
+/** Spec antropometria-telas (D-1457): o balde das fotos e dos anexos da avaliação. */
+const BALDE_DAS_FOTOS = 'fotos-avaliacao'
+const jpegDeTeste = (texto: string): Blob => new Blob([new Uint8Array([0xff, 0xd8, 0xff, 0xe0]), new TextEncoder().encode(texto), new Uint8Array([0xff, 0xd9])], { type: 'image/jpeg' })
 
 async function loginExiste(c: Cenario, id: string): Promise<boolean> {
   const r = await c.servico.auth.admin.getUserById(id)
@@ -147,6 +151,7 @@ describe('CA-812 a CA-820: a conta com tudo é excluída, e só ela', () => {
   let avisosAntes: string
   let historicoAntes: LinhaDoHistorico[]
   let arquivosAntes: string[]
+  let fotosAntes: string[]
   let jwt: string
   const operadora = operadoraFalsa()
   const valorUnico = 710_000 + Math.floor(Math.random() * 9_000)
@@ -159,6 +164,15 @@ describe('CA-812 a CA-820: a conta com tudo é excluída, e só ela', () => {
     if (dieta.error) throw new Error(dieta.error.message)
     const sub = await c.vitima.cliente.storage.from(BALDE).upload(`${c.vitima.id}/pasta/terceiro.pdf`, arquivoPdf('terceiro'), { contentType: 'application/pdf' })
     if (sub.error) throw new Error(sub.error.message)
+    // CA-2489: uma foto e um anexo da avaliação, pelo próprio login, como o app envia.
+    for (const [caminho, arquivo] of [
+      [`${c.vitima.id}/plano-1/fotos/${randomUUID()}.jpg`, jpegDeTeste(c.marcador)],
+      [`${c.vitima.id}/plano-1/anexos/${randomUUID()}.pdf`, arquivoPdf('exame')],
+    ] as const) {
+      const r = await c.vitima.cliente.storage.from(BALDE_DAS_FOTOS).upload(caminho, arquivo, { contentType: arquivo.type })
+      if (r.error) throw new Error(`enviar ${caminho}: ${r.error.message}`)
+    }
+    fotosAntes = await arquivosDa(c, c.vitima.id, BALDE_DAS_FOTOS)
     // Um valor só deste teste: com as datas arredondadas para o dia (L2), é por ele que o histórico é reencontrado.
     const valor = await c.servico.from('assinaturas').update({ valor_centavos: valorUnico }).eq('nutricionista_id', c.vitima.id)
     if (valor.error) throw new Error(valor.error.message)
@@ -199,6 +213,11 @@ describe('CA-812 a CA-820: a conta com tudo é excluída, e só ela', () => {
 
   it('CA-812 e CB-259: nenhum comprovante sobra na pasta da conta, nem na subpasta', async () => {
     expect(await arquivosDa(c, c.vitima.id)).toEqual([])
+  })
+
+  it('CA-2489 (spec antropometria-telas): a pasta da conta no balde das fotos fica vazia; a da outra conta não muda', async () => {
+    expect(fotosAntes).toHaveLength(2)
+    expect(await arquivosDa(c, c.vitima.id, BALDE_DAS_FOTOS)).toEqual([])
   })
 
   it('CA-812: o login não existe mais, e a senha antiga não entra', async () => {

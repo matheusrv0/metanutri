@@ -2,6 +2,7 @@
 import { criarCasoVazio } from './caso.ts'
 import {
   anguloInicial,
+  apagarArquivosDoPlano,
   anguloSugerido,
   anteriorComFoto,
   bytesUsados,
@@ -14,6 +15,8 @@ import {
   FRASES,
   ladosDaCopia,
   MEGA,
+  semArquivos,
+  temArquivos,
   tetoPassa,
   textoDoTamanho,
   textoDoUso,
@@ -339,5 +342,26 @@ describe('Comparar fotos (D-1455, D-1510)', () => {
     const c = comparacaoDeFotos(semPeso, novembro, 'frente')
     expect(c.quadros[0]?.detalhe).toBe('Frente')
     expect(c.diferencas).toEqual([])
+  })
+})
+
+describe('a exclusão (D-1458, D-1503)', () => {
+  it('CA-2489: apagar os arquivos do plano apaga a pasta <conta>/<plano>; sem sessão, nada', async () => {
+    const pastas: string[] = []
+    const { porta } = portaFalsa()
+    const comPasta: ArmazenamentoDeFotos = { ...porta, apagarPasta: async (pasta) => (pastas.push(pasta), true) }
+    expect(await apagarArquivosDoPlano(comPasta, PLANO)).toBe(true)
+    expect(pastas).toEqual([`${CONTA}/${PLANO}`])
+    expect(await apagarArquivosDoPlano({ ...comPasta, conta: async () => null }, PLANO)).toBe(false)
+    expect(pastas).toHaveLength(1)
+  })
+
+  it('CB-1464: a avaliação do paciente excluído fica sem fotos, sem anexos e sem a data da autorização', () => {
+    const cheia = avaliacao({ fotosAutorizadasEm: '2026-11-03', fotos: [arquivo(10)], anexos: [arquivo(10, { tipo: 'application/pdf' })], diagnostico: 'Sobrepeso.' })
+    expect(temArquivos(cheia)).toBe(true)
+    const limpa = semArquivos(cheia)
+    expect(limpa).toMatchObject({ fotosAutorizadasEm: null, fotos: null, anexos: null, diagnostico: 'Sobrepeso.' })
+    expect(temArquivos(limpa)).toBe(false)
+    expect(temArquivos(avaliacao({ fotosAutorizadasEm: '2026-11-03' }))).toBe(true)
   })
 })

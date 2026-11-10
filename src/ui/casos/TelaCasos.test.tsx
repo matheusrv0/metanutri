@@ -2,6 +2,8 @@ import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { criarRepositorioPacientes } from '@/domain/pacientes.ts'
 import { criarRepositorio, type Armazenamento } from '@/domain/persistencia.ts'
+import type { ArmazenamentoDeFotos } from '@/domain/fotosDaAvaliacao.ts'
+import { ContextoArmazenamentoDeFotos } from '../antropometria/armazenamentoDeFotos.ts'
 import { ContextoNuvem, type ValorNuvem } from '../estado/contextoNuvem.ts'
 import { ProvedorCasos } from '../estado/ProvedorCasos.tsx'
 import { ProvedorPacientes } from '../estado/ProvedorPacientes.tsx'
@@ -133,6 +135,32 @@ describe('Tela Planos', () => {
     await usuario.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Excluir plano' }))
     expect(cartoes().map((li) => within(li).getByRole('heading').textContent)).toEqual(['João'])
     expect(repositorio.listar()).toHaveLength(1)
+  })
+
+  it('CA-2489 (spec antropometria-telas, D-1458): excluir o plano apaga a pasta dele no balde das fotos', async () => {
+    const repositorio = criarRepositorio(new MemoriaFalsa(), { agora: relogio() })
+    const maria = repositorio.criar('Maria')
+    const pastas: string[] = []
+    const fotos: ArmazenamentoDeFotos = {
+      conta: async () => 'conta-1',
+      enviar: async () => 'ok',
+      contar: async () => 0,
+      assinar: async () => null,
+      apagar: async () => true,
+      apagarPasta: async (pasta) => (pastas.push(pasta), true),
+    }
+    render(
+      <ContextoArmazenamentoDeFotos.Provider value={fotos}>
+        <ProvedorCasos repositorio={repositorio}>
+          <TelaCasos aoAbrir={vi.fn()} aoNovoCaso={vi.fn()} />
+        </ProvedorCasos>
+      </ContextoArmazenamentoDeFotos.Provider>,
+    )
+    const usuario = userEvent.setup()
+    await usuario.click((await acoesDo(usuario, 'Maria')).getByRole('menuitem', { name: 'Excluir' }))
+    await usuario.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Excluir plano' }))
+    expect(repositorio.listar()).toHaveLength(0)
+    await vi.waitFor(() => expect(pastas).toEqual([`conta-1/${maria.caso.id}`]))
   })
 
   it('CB-09: avisa quando o navegador não guarda os casos', () => {

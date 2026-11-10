@@ -7,7 +7,8 @@
 //      reserva do pagamento e da troca de cartão, CB-253), até o fim do pedido;
 //   2. cancela a assinatura paga pelo mesmo caminho do "Cancelar assinatura" (gerenciarAssinatura). Se não der, para
 //      aqui, sem apagar nada;
-//   3. apaga os comprovantes de matrícula do armazenamento;
+//   3. apaga os comprovantes de matrícula e as fotos e anexos da avaliação do armazenamento (spec antropometria-telas,
+//      D-1458);
 //   4. apaga o login. O banco apaga junto, no mesmo passo, todas as linhas da conta e guarda o que o D-253 manda
 //      (supabase/013-exclusao-de-conta.sql).
 // Antes do passo 4, a conta funciona com todos os dados (no máximo, sem os arquivos dos comprovantes). Pedir de novo
@@ -53,7 +54,7 @@ export interface PortaDaExclusao {
   soltarReserva(conta: string): Promise<string | null>
   /** A conta é de administrador? Sem conseguir saber, rejeita. */
   ehAdmin(conta: string): Promise<boolean>
-  /** Apaga os arquivos da pasta da conta em `comprovantes`. Nulo quando não sobrou nenhum; senão, a mensagem da falha. */
+  /** Apaga os arquivos da pasta da conta em `comprovantes` e em `fotos-avaliacao`. Nulo quando não sobrou nenhum; senão, a mensagem da falha. */
   apagarArquivos(conta: string): Promise<string | null>
   /** Apaga o login. Nulo quando ele não existe mais (inclusive se já não existia); senão, a mensagem da falha. */
   apagarLogin(conta: string): Promise<string | null>

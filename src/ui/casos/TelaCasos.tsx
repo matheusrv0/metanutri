@@ -1,6 +1,8 @@
 import { CircleCheck, FolderOpen, Info, Plus, Search, TriangleAlert, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
+import { apagarArquivosDoPlano } from '@/domain/fotosDaAvaliacao.ts'
 import type { ModoPlano } from '@/domain/tipos.ts'
+import { useArmazenamentoDeFotos } from '../antropometria/armazenamentoDeFotos.ts'
 import { EscolherModo } from '../caso/EscolherModo.tsx'
 import { Alert } from '@ds/componentes/display/alert.tsx'
 import { CampoTexto } from '@ds/componentes/forms/CampoTexto.tsx'
@@ -28,6 +30,7 @@ const paraBusca = (texto: string) => texto.normalize('NFD').replace(/\p{Diacriti
 export function TelaCasos({ aoAbrir, aoNovoCaso }: TelaCasosProps) {
   const { casos, repositorio, atualizar, avisoArmazenamento, mudouEmOutraAba, dispensarAvisoOutraAba } = useCasos()
   const pacientes = usePacientesOpcional()
+  const fotos = useArmazenamentoDeFotos()
   const [acao, setAcao] = useState<Acao | null>(null)
   const [mensagem, setMensagem] = useState<string | null>(null)
   const [busca, setBusca] = useState('')
@@ -62,6 +65,9 @@ export function TelaCasos({ aoAbrir, aoNovoCaso }: TelaCasosProps) {
   const excluir = () => {
     if (acao?.tipo !== 'excluir') return
     repositorio.excluir(acao.id)
+    // D-1458 e DP-AT-14 (spec antropometria-telas): a pasta do plano sai do balde das fotos, por melhor esforço; o que
+    // não sair agora sai com a exclusão da conta.
+    if (fotos) void apagarArquivosDoPlano(fotos, acao.id)
     atualizar()
     setMensagem(`Plano “${acao.nome}” excluído.`)
     fechar()

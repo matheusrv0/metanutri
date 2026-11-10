@@ -86,11 +86,16 @@ describe('excluir-conta: o lado de verdade (exclusaoSupabase.ts)', () => {
     expect(ehAdmin).toContain('if (error) throw new Error(')
   })
 
-  it('CB-259: os comprovantes saem da pasta da conta, lida em páginas de 100, com as subpastas', () => {
-    expect(ladoDeVerdade).toContain("const BALDE = 'comprovantes'")
+  it('CB-259 e CA-2489: os comprovantes e as fotos da avaliação saem da pasta da conta, lida em páginas de 100, com as subpastas', () => {
+    expect(ladoDeVerdade).toContain("const BALDES = ['comprovantes', 'fotos-avaliacao'] as const")
+    expect(ladoDeVerdade).toContain('for (const nome of BALDES)')
     expect(ladoDeVerdade).toContain('const PAGINA = 100')
     expect(ladoDeVerdade).toContain('.list(pasta, { limit: PAGINA, offset: desde })')
     expect(ladoDeVerdade).toContain('.remove(')
+  })
+
+  it('CA-2489 (R-AT-1): sem o 018 rodado, o balde das fotos não existe e a exclusão segue com os comprovantes', () => {
+    expect(ladoDeVerdade).toContain('if (/bucket not found/i.test(error.message)) return null')
   })
 
   it('CB-253 (L4): reserva a conta em assinando_agora (a vencida sai pela data), conta já reservada é "ocupada", e solta no fim', () => {
