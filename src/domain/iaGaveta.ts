@@ -22,10 +22,13 @@ import { MENSAGEM_ERRO } from './conta.ts'
 import { DOENCAS } from './doencas.ts'
 import { categoriaDoFator } from './energia.ts'
 import { atividadeDoFator } from './iaPedido.ts'
+import type { MudancaConferida } from './iaMudancas.ts'
+import { unidadeDo } from './liquido.ts'
+import { nomeParaPaciente } from './nomeParaPaciente.ts'
 import type { Paciente } from './pacientes.ts'
 import { REFEICOES_PADRAO } from './plano.ts'
 import type { RestricoesDoPaciente } from './restricoes.ts'
-import type { Caso, Plano } from './tipos.ts'
+import type { BuscarAlimento, Caso, Plano } from './tipos.ts'
 
 /** AAAA-MM-DD em DD/MM/AAAA. */
 export const diaNaTela = (dia: string): string => dia.split('-').reverse().join('/')
@@ -261,4 +264,32 @@ export function lerRespostaDaFuncao(dados: unknown, contexto: ContextoDaResposta
   const conferida = conferirResposta(JSON.stringify(dados['resposta']), contexto)
   if (!conferida.ok) return null
   return { resposta: conferida.resposta, uso, foraDaBase: fora + conferida.foraDaBase, modelo }
+}
+
+// ---------- "Vai para …" (D-1309, CA-2371) ----------
+
+/** A chave do item do plano: refeição, opção e número do item, como no pedido. */
+export const chaveDoItem = (refeicao: number, opcao: 'principal' | 'opcao2', item: number): string => `${refeicao}:${opcao}:${item}`
+
+/**
+ * No plano à esquerda, o item que muda mostra para onde vai: "Vai para 50 g", "Vai para Mamão Papaia, 170 g" ou "Sai do
+ * plano". Só as mudanças aceitas e não barradas; a adição não tem item.
+ */
+export function textosDoVaiPara(mudancas: readonly MudancaConferida[], recusadas: ReadonlySet<number>, buscar: BuscarAlimento): ReadonlyMap<string, string> {
+  const textos = new Map<string, string>()
+  mudancas.forEach((c, i) => {
+    const m = c.mudanca
+    if (recusadas.has(i) || c.barrada !== null || m.item === null || m.tipo === 'adicionar') return
+    const unidade = (id: number) => unidadeDo(buscar(id))
+    const texto =
+      m.tipo === 'remover'
+        ? 'Sai do plano'
+        : c.para === null
+          ? null
+          : m.tipo === 'gramas'
+            ? `Vai para ${numero(c.para.gramas)} ${unidade(c.para.alimentoId)}`
+            : `Vai para ${nomeParaPaciente(buscar(c.para.alimentoId))}, ${numero(c.para.gramas)} ${unidade(c.para.alimentoId)}`
+    if (texto) textos.set(chaveDoItem(m.refeicao, m.opcao, m.item), texto)
+  })
+  return textos
 }
