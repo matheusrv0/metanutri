@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { useState } from 'react'
 import { AnelProgresso } from '@ds/componentes/display/AnelProgresso.tsx'
 import { CartaoNumero } from '@ds/componentes/display/CartaoNumero.tsx'
 import { LinhaLista } from '@ds/componentes/display/LinhaLista.tsx'
@@ -67,6 +68,75 @@ describe('SeletorSegmentado', () => {
     expect(screen.getByRole('radio', { name: 'Mensal' })).toHaveAttribute('aria-checked', 'true')
     await userEvent.setup().click(screen.getByRole('radio', { name: 'Anual' }))
     expect(aoEscolher).toHaveBeenCalledWith('anual')
+  })
+
+  // Spec antropometria-telas, D-1533 e CB-1470 (revisão r1 da F2, B2): o padrão Radio Group do WAI-ARIA APG.
+  function Controlado({ inicial }: { readonly inicial: 'frente' | 'lado' | 'costas' | 'nenhum' }) {
+    const [valor, setValor] = useState(inicial)
+    return (
+      <>
+        <button type="button">Antes</button>
+        <SeletorSegmentado
+          rotulo="Ângulo"
+          opcoes={[
+            { valor: 'frente', rotulo: 'Frente' },
+            { valor: 'lado', rotulo: 'Lado' },
+            { valor: 'costas', rotulo: 'Costas' },
+          ]}
+          valor={valor}
+          aoEscolher={setValor}
+        />
+        <button type="button">Depois</button>
+      </>
+    )
+  }
+
+  it('CB-1470: o Tab para uma vez só, na opção marcada, e o próximo Tab sai do grupo', async () => {
+    const usuario = userEvent.setup()
+    render(<Controlado inicial="lado" />)
+    await usuario.click(screen.getByRole('button', { name: 'Antes' }))
+    await usuario.tab()
+    expect(screen.getByRole('radio', { name: 'Lado' })).toHaveFocus()
+    await usuario.tab()
+    expect(screen.getByRole('button', { name: 'Depois' })).toHaveFocus()
+    await usuario.tab({ shift: true })
+    expect(screen.getByRole('radio', { name: 'Lado' })).toHaveFocus()
+    expect(screen.getByRole('radio', { name: 'Frente' })).toHaveAttribute('tabindex', '-1')
+    expect(screen.getByRole('radio', { name: 'Costas' })).toHaveAttribute('tabindex', '-1')
+  })
+
+  it('CB-1470: as setas passam à vizinha, dando a volta, e já escolhem; Home e End vão às pontas', async () => {
+    const usuario = userEvent.setup()
+    render(<Controlado inicial="frente" />)
+    await usuario.click(screen.getByRole('radio', { name: 'Frente' }))
+    const marcada = () => screen.getAllByRole('radio').find((r) => r.getAttribute('aria-checked') === 'true')?.textContent
+    await usuario.keyboard('{ArrowRight}')
+    expect(screen.getByRole('radio', { name: 'Lado' })).toHaveFocus()
+    expect(marcada()).toBe('Lado')
+    await usuario.keyboard('{ArrowDown}')
+    expect(marcada()).toBe('Costas')
+    await usuario.keyboard('{ArrowRight}')
+    expect(screen.getByRole('radio', { name: 'Frente' })).toHaveFocus()
+    expect(marcada()).toBe('Frente')
+    await usuario.keyboard('{ArrowLeft}')
+    expect(marcada()).toBe('Costas')
+    await usuario.keyboard('{ArrowUp}')
+    expect(marcada()).toBe('Lado')
+    await usuario.keyboard('{Home}')
+    expect(screen.getByRole('radio', { name: 'Frente' })).toHaveFocus()
+    expect(marcada()).toBe('Frente')
+    await usuario.keyboard('{End}')
+    expect(screen.getByRole('radio', { name: 'Costas' })).toHaveFocus()
+    expect(marcada()).toBe('Costas')
+    expect(screen.getByRole('radio', { name: 'Costas' })).toHaveAttribute('tabindex', '0')
+  })
+
+  it('CB-1470: sem nenhuma opção marcada, o Tab para na primeira', async () => {
+    const usuario = userEvent.setup()
+    render(<Controlado inicial="nenhum" />)
+    await usuario.click(screen.getByRole('button', { name: 'Antes' }))
+    await usuario.tab()
+    expect(screen.getByRole('radio', { name: 'Frente' })).toHaveFocus()
   })
 })
 
