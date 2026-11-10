@@ -133,7 +133,7 @@ async function planoEnviado(link: LinkDoBanco, nutri: DadosDaNutricionista, linh
     })
     urlDoConvite = urlDaPagina(deps.ambiente, chave)
   }
-  const sair = (await deps.banco.chaveDeSair(link.id, link.nutricionistaId, 's2')) ?? ''
+  const sair = (await deps.banco.chaveDeSair(link.id, link.nutricionistaId, 's2', emailHash)) ?? ''
   const montado = emailPlanoEnviado({
     primeiroNome: primeiroNomeDoLink(link),
     remetente: remetenteDoLink(nutri, link),

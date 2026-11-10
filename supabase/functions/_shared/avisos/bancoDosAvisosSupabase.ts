@@ -287,13 +287,13 @@ export function criarBancoDosAvisos(cliente: SupabaseClient, aleatorio: (tamanho
         'criar a chave',
       )
     },
-    async chaveDeSair(linkId, nutricionistaId, aviso) {
-      const consulta = de('chaves_de_aviso').select('chave, avisos').eq('tipo', 'sair').eq('nutricionista_id', nutricionistaId).contains('avisos', [aviso])
+    async chaveDeSair(linkId, nutricionistaId, aviso, emailHash) {
+      const consulta = de('chaves_de_aviso').select('chave, avisos').eq('tipo', 'sair').eq('nutricionista_id', nutricionistaId).eq('email_hash', emailHash).contains('avisos', [aviso])
       const achadas = linhas(dados(await (linkId === null ? consulta.is('link_id', null) : consulta.eq('link_id', linkId)), 'chave de descadastro'))
       const achada = achadas.find((l) => Array.isArray(l['avisos']) && l['avisos'].length === 1)
       if (achada) return String(achada['chave'])
       const chave = gerarChave(aleatorio)
-      dados(await de('chaves_de_aviso').insert({ chave, link_id: linkId, nutricionista_id: nutricionistaId, tipo: 'sair', avisos: [aviso] }), 'criar a chave de descadastro')
+      dados(await de('chaves_de_aviso').insert({ chave, link_id: linkId, nutricionista_id: nutricionistaId, tipo: 'sair', avisos: [aviso], email_hash: emailHash }), 'criar a chave de descadastro')
       return chave
     },
     async lerChave(chave) {

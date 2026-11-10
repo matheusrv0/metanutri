@@ -199,8 +199,11 @@ export interface BancoDosAvisos {
 
   // ---- As chaves das páginas ----
   criarChave(chave: Omit<ChaveDeAviso, 'usadoEm' | 'desfazer' | 'criadoEm'> & { readonly criadoEm: Date }): Promise<void>
-  /** A chave de descadastro de um link e de um aviso (uma só, sem prazo); com `criar`, ela nasce se faltar. */
-  chaveDeSair(linkId: string | null, nutricionistaId: string, aviso: AvisoDaChave): Promise<string | null>
+  /**
+   * A chave de descadastro de um link, de um aviso e de um endereço (D-1252: presa ao resumo do e-mail para onde o aviso
+   * vai; uma só, sem prazo). Nasce se faltar.
+   */
+  chaveDeSair(linkId: string | null, nutricionistaId: string, aviso: AvisoDaChave, emailHash: string): Promise<string | null>
   lerChave(chave: string): Promise<ChaveDeAviso | null>
   /** A chave de um pedido que não saiu (D-1247: o pedido que falhou não muda nada). */
   apagarChave(chave: string): Promise<void>

@@ -42,7 +42,9 @@ async function comPedidoDeAceite(sobre: { readonly vence?: string; readonly avis
 
 /** A chave de descadastro do aviso no link. */
 const chaveDeSair = async (aviso: 'plano' | 'semana' | 'lembrete' | 's2' | 'n1', linkId: string | null = 'link-juliana') => {
-  const chave = await deps.banco.chaveDeSair(linkId, ANA.id, aviso)
+  // O descadastro vai para o e-mail de agora do link (D-1252); o N1, para o da conta.
+  const emailHash = (linkId === null ? null : estado.emails.get(linkId)?.emailHash) ?? (await hashDoEmail(ANA.emailDaConta ?? ''))
+  const chave = await deps.banco.chaveDeSair(linkId, ANA.id, aviso, emailHash)
   if (chave === null) throw new Error('sem chave')
   return chave
 }
@@ -184,6 +186,34 @@ describe('o e-mail digitado no link só vale confirmado (D-1247)', () => {
     if (chave) estado.chaves.set(DO_EMAIL, { ...chave, email: 'outro@gmail.com' })
     expect((await pedir({ acao: 'confirmar', chave: DO_EMAIL, avisos: [] })).status).toBe(404)
     expect(estado.emails.get('link-juliana')?.email).toBe('juliana.martins@gmail.com')
+  })
+})
+
+describe('a chave de descadastro é presa ao endereço (D-1252)', () => {
+  it('CA-2297: com o e-mail da ficha corrigido, a chave do endereço errado não descadastra, não para tudo nem desfaz', async () => {
+    await comLink(estado, { email: 'juliana.errado@gmail.com', aceites: ['semana'] })
+    const doErrado = await chaveDeSair('semana')
+    const doS2 = await chaveDeSair('s2')
+    // A ficha corrigida: o link passa a ter o e-mail certo (e o aceite dele).
+    const linha = estado.emails.get('link-juliana')
+    const certo = await hashDoEmail('juliana.martins@gmail.com')
+    if (linha) estado.emails.set('link-juliana', { ...linha, email: 'juliana.martins@gmail.com', emailHash: certo, emailFicha: 'juliana.martins@gmail.com' })
+    estado.aceites.push({ id: 999, linkId: 'link-juliana', nutricionistaId: ANA.id, tipo: 'semana', emailHash: certo, aceitoEm: '2026-11-04T12:00:00.000Z', diaDaSemana: 3, saiuEm: null, pausadoEm: null })
+    const antes = JSON.stringify(estado.aceites)
+    for (const acao of ['ler', 'sair', 'parar-todos', 'desfazer']) expect(await pedir({ acao, chave: doErrado }), acao).toEqual({ status: 404, corpo: { erro: CHAVE_QUE_NAO_VALE } })
+    expect(await pedir({}, { umClique: true, chaveDaUrl: doS2 })).toEqual({ status: 404, corpo: { erro: CHAVE_QUE_NAO_VALE } })
+    expect(JSON.stringify(estado.aceites)).toBe(antes)
+    expect(estado.emails.get('link-juliana')?.parouTudoEm).toBeNull()
+    // A chave do endereço de agora vale.
+    expect((await pedir({ acao: 'sair', chave: await chaveDeSair('semana') })).status).toBe(200)
+  })
+
+  it('D-1252: cada endereço tem a sua chave', async () => {
+    await comLink(estado)
+    const a = await deps.banco.chaveDeSair('link-juliana', ANA.id, 'semana', 'a'.repeat(64))
+    const b = await deps.banco.chaveDeSair('link-juliana', ANA.id, 'semana', 'b'.repeat(64))
+    expect(a).not.toBe(b)
+    expect(await deps.banco.chaveDeSair('link-juliana', ANA.id, 'semana', 'a'.repeat(64))).toBe(a)
   })
 })
 

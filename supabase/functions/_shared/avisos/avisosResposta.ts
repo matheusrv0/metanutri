@@ -54,10 +54,14 @@ async function carregar(chave: string, deps: DependenciasComuns): Promise<Contex
   }
   const [link] = await deps.banco.linksPorIds([lida.linkId])
   if (!link) return null
+  const email = await deps.banco.emailDoLink(link.id)
+  // D-1252 e CA-2297: a chave de descadastro só vale para o endereço de agora do link (a ficha corrigida invalida a do
+  // endereço errado, que não descadastra nem desfaz nada).
+  if (lida.tipo === 'sair' && (lida.emailHash === null || lida.emailHash !== email?.emailHash)) return null
   return {
     chave: lida,
     link,
-    email: await deps.banco.emailDoLink(link.id),
+    email,
     aceites: await deps.banco.aceitesDoLink(link.id),
     nutricionista: nutri.nome.trim() || 'Sua nutricionista',
     resumoDaAdesao: nutri.resumoDaAdesao,

@@ -162,12 +162,14 @@ export function bancoFalso(inicio: Partial<Pick<EstadoFalso, 'chaveDaRodada'>> =
         if (n) estado.nutris.set(id, { ...n, resumoDaAdesao: ligado })
       }),
     criarChave: (c) => ok(() => void estado.chaves.set(c.chave, { ...c, criadoEm: c.criadoEm.toISOString(), usadoEm: null, desfazer: null })),
-    chaveDeSair: (linkId, nutricionistaId, aviso) =>
+    chaveDeSair: (linkId, nutricionistaId, aviso, emailHash) =>
       ok(() => {
-        const achada = [...estado.chaves.values()].find((c) => c.tipo === 'sair' && c.linkId === linkId && c.nutricionistaId === nutricionistaId && c.avisos[0] === aviso)
+        const achada = [...estado.chaves.values()].find(
+          (c) => c.tipo === 'sair' && c.linkId === linkId && c.nutricionistaId === nutricionistaId && c.avisos[0] === aviso && c.emailHash === emailHash,
+        )
         if (achada) return achada.chave
-        const chave = `sair${aviso}${linkId ?? nutricionistaId}`.replace(/[^A-Za-z0-9]/g, '').padEnd(32, 'x').slice(0, 32)
-        estado.chaves.set(chave, { chave, linkId, nutricionistaId, tipo: 'sair', avisos: [aviso], emailHash: null, email: null, criadoEm: new Date().toISOString(), venceEm: null, usadoEm: null, desfazer: null })
+        const chave = `sair${aviso}${linkId ?? nutricionistaId}${emailHash}`.replace(/[^A-Za-z0-9]/g, '').padEnd(32, 'x').slice(0, 32)
+        estado.chaves.set(chave, { chave, linkId, nutricionistaId, tipo: 'sair', avisos: [aviso], emailHash, email: null, criadoEm: new Date().toISOString(), venceEm: null, usadoEm: null, desfazer: null })
         return chave
       }),
     lerChave: (chave) => ok(() => estado.chaves.get(chave) ?? null),

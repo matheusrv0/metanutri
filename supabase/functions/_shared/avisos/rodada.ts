@@ -230,7 +230,8 @@ async function mandar(
   if (daVez.length === 0) return 0
   const emails = []
   for (const c of daVez) {
-    const sair = (await deps.banco.chaveDeSair(c.linkId, c.nutricionistaId, c.aviso)) ?? ''
+    // D-1252: a chave de descadastro é presa ao endereço para onde este e-mail vai.
+    const sair = (await deps.banco.chaveDeSair(c.linkId, c.nutricionistaId, c.aviso, c.emailHash)) ?? ''
     const montado = c.montar(urlDaPagina(deps.ambiente, sair))
     emails.push({
       ...montado,
