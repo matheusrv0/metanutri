@@ -221,11 +221,49 @@ describe('Pacientes', () => {
     const usuario = userEvent.setup()
     await usuario.click(screen.getByRole('button', { name: 'Excluir paciente' }))
     await usuario.click(screen.getByRole('button', { name: 'Excluir paciente' }))
-    expect(pacientes.obter('p1')).toBeNull()
+    await vi.waitFor(() => expect(pacientes.obter('p1')).toBeNull())
     expect(casos.obter(comFotos.caso.id)?.caso.avaliacao).toMatchObject({ fotosAutorizadasEm: null, fotos: null, anexos: null, diagnostico: 'Sobrepeso.' })
     expect(casos.listar()).toHaveLength(3)
-    await vi.waitFor(() => expect([...pastas].sort()).toEqual([`conta-1/${comFotos.caso.id}`, `conta-1/${semFotos.caso.id}`].sort()))
+    expect([...pastas].sort()).toEqual([`conta-1/${comFotos.caso.id}`, `conta-1/${semFotos.caso.id}`].sort())
     expect(pastas).not.toContain(`conta-1/${deOutro.caso.id}`)
+  })
+
+  it('CB-1471 (spec antropometria-telas, D-1534): o armazenamento não apagou uma das pastas: a ficha fica, o aviso diz, e o plano que saiu perde a lista', async () => {
+    const armazenamento = new MemoriaFalsa()
+    const pacientes = criarRepositorioPacientes(armazenamento, { agora: relogio(), gerarId: () => 'p1' })
+    pacientes.criar('Maria')
+    const casos = criarRepositorio(armazenamento, { agora: relogio() })
+    const foto = (plano: string) => ({ id: 'f1', angulo: 'frente' as const, nome: 'Frente', caminho: `conta-1/${plano}/fotos/f1.jpg`, bytes: 1000, tipo: 'image/jpeg' as const, enviadoEm: '2026-11-03T12:00:00.000Z' })
+    const saiu = casos.criar('Maria, 1ª')
+    casos.salvar({ ...saiu, caso: { ...saiu.caso, pacienteId: 'p1', avaliacao: { ...saiu.caso.avaliacao, fotosAutorizadasEm: '2026-11-03', fotos: [foto(saiu.caso.id)] } } })
+    const ficou = casos.criar('Maria, 2ª')
+    casos.salvar({ ...ficou, caso: { ...ficou.caso, pacienteId: 'p1', avaliacao: { ...ficou.caso.avaliacao, fotosAutorizadasEm: '2026-11-03', fotos: [foto(ficou.caso.id)] } } })
+    const fotos: ArmazenamentoDeFotos = {
+      conta: async () => 'conta-1',
+      enviar: async () => 'ok',
+      listar: async () => [],
+      assinar: async () => null,
+      apagar: async () => true,
+      apagarPasta: async (pasta) => pasta !== `conta-1/${ficou.caso.id}`,
+    }
+    const aoVoltar = vi.fn()
+    render(
+      <ContextoArmazenamentoDeFotos.Provider value={fotos}>
+        <ProvedorCasos repositorio={casos}>
+          <ProvedorPacientes repositorio={pacientes}>
+            <TelaPaciente pacienteId="p1" aoAbrirPlano={vi.fn()} aoNovoPlano={vi.fn()} aoVoltar={aoVoltar} />
+          </ProvedorPacientes>
+        </ProvedorCasos>
+      </ContextoArmazenamentoDeFotos.Provider>,
+    )
+    const usuario = userEvent.setup()
+    await usuario.click(screen.getByRole('button', { name: 'Excluir paciente' }))
+    await usuario.click(screen.getByRole('button', { name: 'Excluir paciente' }))
+    expect(await screen.findByText('Não foi possível apagar as fotos e os anexos das avaliações. A ficha continua. Confira a internet e tente de novo.')).toBeInTheDocument()
+    expect(pacientes.obter('p1')).not.toBeNull()
+    expect(aoVoltar).not.toHaveBeenCalled()
+    expect(casos.obter(saiu.caso.id)?.caso.avaliacao.fotos).toBeNull()
+    expect(casos.obter(ficou.caso.id)?.caso.avaliacao.fotos).toHaveLength(1)
   })
 
   it('DP-26 (spec dados-na-nuvem): o paciente que não existe mais pode ter sido excluído em outra aba ou em outro aparelho', () => {

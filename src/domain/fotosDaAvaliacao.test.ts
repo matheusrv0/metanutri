@@ -23,6 +23,9 @@ import {
   textosPeloSexo,
   tipoDoAnexo,
   proximoNomeDeAnexo,
+  lerPastaDoPlano,
+  religarSoltos,
+  comArquivo,
   type ArmazenamentoDeFotos,
   type ArquivoNoArmazenamento,
   type DesenhistaDeFoto,
@@ -410,6 +413,53 @@ describe('Comparar fotos (D-1455, D-1510)', () => {
     const c = comparacaoDeFotos(semPeso, novembro, 'frente')
     expect(c.quadros[0]?.detalhe).toBe('Frente')
     expect(c.diferencas).toEqual([])
+  })
+})
+
+describe('o arquivo solto na pasta (D-1534)', () => {
+  const lido = (caminho: string, bytes = 1000, criadoEm: string | null = '2026-11-03T12:30:00.000Z') => ({ caminho: `${CONTA}/${PLANO}/${caminho}`, bytes, criadoEm })
+
+  it('CB-1472: a foto e o PDF que estão na pasta e não na lista voltam: a foto como "Outra", o PDF com o nome neutro e a data', () => {
+    const naLista = arquivo(1000, { id: 'f1', angulo: 'frente', caminho: `${CONTA}/${PLANO}/fotos/f1.jpg` })
+    const anexoNaLista = arquivo(10, { id: 'a1', nome: 'anexo-1.pdf', tipo: 'application/pdf', caminho: `${CONTA}/${PLANO}/anexos/a1.pdf` })
+    const av = avaliacao({ fotos: [naLista], anexos: [anexoNaLista] })
+    const mudanca = religarSoltos(av, [lido('fotos/f1.jpg'), lido('fotos/f2.jpg', 2000), lido('anexos/a1.pdf'), lido('anexos/a2.pdf', 3000, null)], agora)
+    expect(mudanca).toEqual({
+      fotos: [naLista, { id: 'f2', angulo: 'outra', nome: 'Outra', caminho: `${CONTA}/${PLANO}/fotos/f2.jpg`, bytes: 2000, tipo: 'image/jpeg', enviadoEm: '2026-11-03T12:30:00.000Z' }],
+      anexos: [anexoNaLista, { id: 'a2', nome: 'anexo-2.pdf', caminho: `${CONTA}/${PLANO}/anexos/a2.pdf`, bytes: 3000, tipo: 'application/pdf', enviadoEm: agora.toISOString() }],
+    })
+  })
+
+  it('D-1534: com a pasta igual à lista, ou vazia, nada muda; o que não tem o formato do caminho fica de fora', () => {
+    const naLista = arquivo(1000, { id: 'f1', caminho: `${CONTA}/${PLANO}/fotos/f1.jpg` })
+    expect(religarSoltos(avaliacao({ fotos: [naLista] }), [lido('fotos/f1.jpg')], agora)).toBeNull()
+    expect(religarSoltos(avaliacao(), [], agora)).toBeNull()
+    expect(religarSoltos(avaliacao(), [lido('fotos/x.png'), lido('anexos/y.exe'), lido('outra/z.jpg')], agora)).toBeNull()
+  })
+
+  it('D-1534: dois anexos soltos ganham nomes em sequência, pela data do envio', () => {
+    const mudanca = religarSoltos(avaliacao(), [lido('anexos/b.pdf', 10, '2026-11-03T13:00:00.000Z'), lido('anexos/a.pdf', 10, '2026-11-03T12:00:00.000Z')], agora)
+    expect(mudanca?.anexos?.map((a) => [a.id, a.nome])).toEqual([
+      ['a', 'anexo-1.pdf'],
+      ['b', 'anexo-2.pdf'],
+    ])
+  })
+
+  it('D-1534: a resposta do envio substitui o item do mesmo caminho (o que a leitura da pasta devolveu antes)', () => {
+    const solto = arquivo(1000, { id: 'f2', angulo: 'outra', nome: 'Outra', caminho: `${CONTA}/${PLANO}/fotos/f2.jpg` })
+    const doEnvio = arquivo(1000, { id: 'f2', angulo: 'lado', nome: 'Lado', caminho: `${CONTA}/${PLANO}/fotos/f2.jpg` })
+    const outra = arquivo(1000, { id: 'f1', caminho: `${CONTA}/${PLANO}/fotos/f1.jpg` })
+    expect(comArquivo([outra, solto], doEnvio)).toEqual([outra, doEnvio])
+    expect(comArquivo(null, doEnvio)).toEqual([doEnvio])
+  })
+
+  it('D-1534: a pasta lida é a <conta>/<plano>; sem sessão, nada', async () => {
+    const pastas: string[] = []
+    const { porta } = portaFalsa()
+    const lendo: ArmazenamentoDeFotos = { ...porta, listar: async (pasta) => (pastas.push(pasta), []) }
+    expect(await lerPastaDoPlano(lendo, PLANO)).toEqual([])
+    expect(pastas).toEqual([`${CONTA}/${PLANO}`])
+    expect(await lerPastaDoPlano({ ...lendo, conta: async () => null }, PLANO)).toBeNull()
   })
 })
 

@@ -1,4 +1,4 @@
-import { CircleCheck, FolderOpen, Info, Plus, Search, TriangleAlert, X } from 'lucide-react'
+import { CircleAlert, CircleCheck, FolderOpen, Info, Plus, Search, TriangleAlert, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { apagarArquivosDoPlano } from '@/domain/fotosDaAvaliacao.ts'
 import type { ModoPlano } from '@/domain/tipos.ts'
@@ -33,6 +33,7 @@ export function TelaCasos({ aoAbrir, aoNovoCaso }: TelaCasosProps) {
   const fotos = useArmazenamentoDeFotos()
   const [acao, setAcao] = useState<Acao | null>(null)
   const [mensagem, setMensagem] = useState<string | null>(null)
+  const [erroDaExclusao, setErroDaExclusao] = useState<string | null>(null)
   const [busca, setBusca] = useState('')
 
   // M-007 (spec ajustes-mobile): o paciente de cada plano, para o cartão e para a busca.
@@ -62,15 +63,21 @@ export function TelaCasos({ aoAbrir, aoNovoCaso }: TelaCasosProps) {
     setMensagem(`Cópia criada: “${copia.caso.nome}”.`)
   }
 
-  const excluir = () => {
+  const excluir = async () => {
     if (acao?.tipo !== 'excluir') return
-    repositorio.excluir(acao.id)
-    // D-1458 e DP-AT-14 (spec antropometria-telas): a pasta do plano sai do balde das fotos, por melhor esforço; o que
-    // não sair agora sai com a exclusão da conta.
-    if (fotos) void apagarArquivosDoPlano(fotos, acao.id)
-    atualizar()
-    setMensagem(`Plano “${acao.nome}” excluído.`)
+    const { id, nome } = acao
     fechar()
+    setMensagem(null)
+    setErroDaExclusao(null)
+    // D-1458 e D-1534 (spec antropometria-telas): a pasta do plano sai antes do balde das fotos; se não sair, o plano fica,
+    // para a foto não ficar guardada sem ninguém ver.
+    if (fotos && !(await apagarArquivosDoPlano(fotos, id))) {
+      setErroDaExclusao(`Não foi possível excluir “${nome}”: as fotos e os anexos não saíram. Confira a internet e tente de novo.`)
+      return
+    }
+    repositorio.excluir(id)
+    atualizar()
+    setMensagem(`Plano “${nome}” excluído.`)
   }
 
   return (
@@ -87,6 +94,16 @@ export function TelaCasos({ aoAbrir, aoNovoCaso }: TelaCasosProps) {
           <Info aria-hidden="true" />
           <p className="flex-1">A lista foi atualizada com mudanças feitas em outra aba do navegador.</p>
           <button type="button" onClick={dispensarAvisoOutraAba} aria-label="Fechar aviso" className="rounded-sm p-0.5 hover:bg-card/60">
+            <X className="size-4" aria-hidden="true" />
+          </button>
+        </Alert>
+      ) : null}
+
+      {erroDaExclusao ? (
+        <Alert variant="error">
+          <CircleAlert aria-hidden="true" />
+          <p className="flex-1">{erroDaExclusao}</p>
+          <button type="button" onClick={() => setErroDaExclusao(null)} aria-label="Fechar aviso" className="rounded-sm p-0.5 hover:bg-card/60">
             <X className="size-4" aria-hidden="true" />
           </button>
         </Alert>
@@ -154,7 +171,7 @@ export function TelaCasos({ aoAbrir, aoNovoCaso }: TelaCasosProps) {
       )}
 
       <DialogoRenomear nomeAtual={acao?.tipo === 'renomear' ? acao.nome : null} aoConfirmar={renomear} aoFechar={fechar} />
-      <DialogoExcluir nome={acao?.tipo === 'excluir' ? acao.nome : null} aoConfirmar={excluir} aoFechar={fechar} />
+      <DialogoExcluir nome={acao?.tipo === 'excluir' ? acao.nome : null} aoConfirmar={() => void excluir()} aoFechar={fechar} />
     </div>
   )
 }

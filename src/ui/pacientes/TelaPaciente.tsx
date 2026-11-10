@@ -63,6 +63,8 @@ export function TelaPaciente({
   const fotos = useArmazenamentoDeFotos()
   const acompanhamentos = useAcompanhamentosOpcional()?.acompanhamentos ?? null
   const [confirmandoExclusao, setConfirmandoExclusao] = useState(false)
+  const [excluindo, setExcluindo] = useState(false)
+  const [erroDaExclusao, setErroDaExclusao] = useState<string | null>(null)
   const idConduta = useId()
 
   const paciente = repositorio.obter(pacienteId)
@@ -112,6 +114,32 @@ export function TelaPaciente({
     atualizar()
   }
 
+  // D-1503 e D-1534 (spec antropometria-telas): sem paciente, o cartão das fotos não aparece. A pasta de cada avaliação
+  // sai antes do balde, e o plano cuja pasta saiu perde a lista; se alguma não sair, a ficha fica e o aviso diz.
+  const excluirPaciente = async () => {
+    setExcluindo(true)
+    setErroDaExclusao(null)
+    let falhou = false
+    for (const resumo of planos) {
+      if (fotos && !(await apagarArquivosDoPlano(fotos, resumo.id))) {
+        falhou = true
+        continue
+      }
+      const registro = repoCasos.obter(resumo.id)
+      if (registro && temArquivos(registro.caso.avaliacao)) {
+        salvarCaso({ caso: { ...registro.caso, avaliacao: semArquivos(registro.caso.avaliacao) }, plano: registro.plano })
+      }
+    }
+    setExcluindo(false)
+    if (falhou) {
+      setErroDaExclusao('Não foi possível apagar as fotos e os anexos das avaliações. A ficha continua. Confira a internet e tente de novo.')
+      return
+    }
+    repositorio.excluir(paciente.id)
+    atualizar()
+    aoVoltar()
+  }
+
   const perfil = perfilDaFicha(paciente, hoje, planos.length > 0)
 
   const ficha = (
@@ -137,29 +165,18 @@ export function TelaPaciente({
           </CardHeader>
           {confirmandoExclusao ? (
             <div className="flex flex-wrap items-center gap-2">
-              <Button
-                variant="destructive"
-                onClick={() => {
-                  // D-1503 (spec antropometria-telas): sem paciente, o cartão das fotos não aparece; elas saem da lista
-                  // e do balde (por melhor esforço: o que não sair agora sai com a exclusão da conta).
-                  for (const resumo of planos) {
-                    const registro = repoCasos.obter(resumo.id)
-                    if (registro && temArquivos(registro.caso.avaliacao)) {
-                      salvarCaso({ caso: { ...registro.caso, avaliacao: semArquivos(registro.caso.avaliacao) }, plano: registro.plano })
-                    }
-                    if (fotos) void apagarArquivosDoPlano(fotos, resumo.id)
-                  }
-                  repositorio.excluir(paciente.id)
-                  atualizar()
-                  aoVoltar()
-                }}
-              >
+              <Button variant="destructive" disabled={excluindo} onClick={() => void excluirPaciente()}>
                 <Trash aria-hidden="true" />
                 Excluir paciente
               </Button>
               <Button variant="ghost" onClick={() => setConfirmandoExclusao(false)}>
                 Cancelar
               </Button>
+              {erroDaExclusao ? (
+                <p role="alert" className="w-full text-sm text-errortext">
+                  {erroDaExclusao}
+                </p>
+              ) : null}
             </div>
           ) : (
             <Button variant="outline" className="self-start" onClick={() => setConfirmandoExclusao(true)}>

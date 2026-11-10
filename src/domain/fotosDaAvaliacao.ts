@@ -392,12 +392,65 @@ export function comparacaoDeFotos(anterior: AvaliacaoDoHistorico, atual: Avaliac
 
 // --- A exclusão (D-1458, D-1503) ---------------------------------------------------------------------------------------
 
-/** D-1458 e DP-AT-14: apaga a pasta do plano no balde (melhor esforço); sem sessão, não apaga nada. */
+/**
+ * D-1458, DP-AT-14 e D-1534: apaga a pasta do plano no balde; verdadeiro quando ela ficou vazia. Quem chama espera a
+ * resposta e, com falso, não exclui o plano nem a ficha. Sem sessão, não apaga nada.
+ */
 export async function apagarArquivosDoPlano(porta: ArmazenamentoDeFotos, plano: string): Promise<boolean> {
   const conta = await porta.conta()
   if (conta === null) return false
   return porta.apagarPasta(pastaDoPlano(conta, plano))
 }
+
+// --- O arquivo solto (D-1534) ------------------------------------------------------------------------------------------
+
+/** D-1534: o que a pasta do plano tem no armazenamento; nula sem sessão ou sem conseguir ler. */
+export async function lerPastaDoPlano(porta: ArmazenamentoDeFotos, plano: string): Promise<readonly ArquivoNoArmazenamento[] | null> {
+  const conta = await porta.conta()
+  if (conta === null) return null
+  return porta.listar(pastaDoPlano(conta, plano)).catch(() => null)
+}
+
+/** `.../fotos/<id>.jpg` ou `.../anexos/<id>.pdf`: o que o servidor aceita desde a D-1535. */
+const CAMINHO_SOLTO = /\/(fotos\/([^/]+)\.jpg|anexos\/([^/]+)\.pdf)$/
+
+/**
+ * D-1534: devolve à lista o arquivo que está na pasta e não está nela (o envio que subiu e cuja lista se perdeu): a foto
+ * como "Outra", o anexo com o nome neutro (D-1536), na ordem do envio, com a data dele (sem data, a de agora). Nada solto:
+ * nulo.
+ */
+export function religarSoltos(
+  avaliacao: DadosDaAvaliacao,
+  lidos: readonly ArquivoNoArmazenamento[],
+  agora: Date,
+): Pick<DadosDaAvaliacao, 'fotos' | 'anexos'> | null {
+  const fotos = [...(avaliacao.fotos ?? [])]
+  const anexos = [...(avaliacao.anexos ?? [])]
+  const conhecidos = new Set([...fotos, ...anexos].map((a) => a.caminho))
+  const soltos = lidos
+    .filter((l) => !conhecidos.has(l.caminho))
+    .sort((a, b) => (a.criadoEm ?? '').localeCompare(b.criadoEm ?? '') || a.caminho.localeCompare(b.caminho))
+  let religados = 0
+  for (const solto of soltos) {
+    const partes = CAMINHO_SOLTO.exec(solto.caminho)
+    if (!partes) continue
+    const bytes = Number.isFinite(solto.bytes) && solto.bytes > 0 ? solto.bytes : 0
+    const enviadoEm = solto.criadoEm ?? agora.toISOString()
+    const idDaFoto = partes[2]
+    const idDoAnexo = partes[3]
+    if (idDaFoto) fotos.push({ id: idDaFoto, angulo: 'outra', nome: NOME_DO_ANGULO.outra, caminho: solto.caminho, bytes, tipo: 'image/jpeg', enviadoEm })
+    else if (idDoAnexo) anexos.push({ id: idDoAnexo, nome: proximoNomeDeAnexo(anexos), caminho: solto.caminho, bytes, tipo: 'application/pdf', enviadoEm })
+    else continue
+    religados++
+  }
+  return religados === 0 ? null : { fotos, anexos }
+}
+
+/** D-1534: a lista com o arquivo do envio no fim, sem repetir o caminho (a leitura da pasta pode ter chegado antes). */
+export const comArquivo = (lista: readonly ArquivoDaAvaliacao[] | null, arquivo: ArquivoDaAvaliacao): readonly ArquivoDaAvaliacao[] => [
+  ...(lista ?? []).filter((a) => a.caminho !== arquivo.caminho),
+  arquivo,
+]
 
 /** A avaliação tem foto, anexo ou a autorização marcada. */
 export const temArquivos = (avaliacao: DadosDaAvaliacao): boolean =>

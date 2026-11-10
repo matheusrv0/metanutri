@@ -22,11 +22,15 @@ const tamanhoDe = (metadados: unknown): number => {
 
 export function criarArmazenamentoDeFotos(cliente: SupabaseClient): ArmazenamentoDeFotos {
   const balde = () => cliente.storage.from(BALDE_DAS_FOTOS)
-  /** DP-AT-21: os arquivos de `fotos/` e de `anexos/` da pasta do plano; nula quando uma das leituras falhou. */
+  /**
+   * DP-AT-21: os arquivos de `fotos/` e de `anexos/` da pasta do plano; nula quando uma das leituras falhou. O balde que
+   * ainda não existe (o 018 não rodou) não tem arquivo nenhum (D-1534): sem isso, nenhum plano sairia antes do 018.
+   */
   const listar = async (pasta: string): Promise<ArquivoNoArmazenamento[] | null> => {
     const lidos: ArquivoNoArmazenamento[] = []
     for (const sub of SUBPASTAS) {
       const { data, error } = await balde().list(`${pasta}/${sub}`, { limit: 100 })
+      if (error && /bucket not found/i.test(error.message)) continue
       if (error) return null
       for (const item of data ?? []) {
         // Sem `id`, é uma subpasta, não um arquivo.

@@ -7,12 +7,15 @@ import {
   ANGULOS,
   anguloSugerido,
   bytesUsados,
+  comArquivo,
   enviarAnexo,
   enviarFoto,
   FOTO_ENVIO_MAX_BYTES,
   FOTOS_POR_AVALIACAO,
   FRASES,
+  lerPastaDoPlano,
   NOME_DO_ANGULO,
+  religarSoltos,
   TETO_DA_AVALIACAO,
   textoDoUso,
   textosPeloSexo,
@@ -87,6 +90,24 @@ export function CartaoFotos({ bruto, sexo, atual, anterior, aoAlterar, agora }: 
     alterar({ avaliacao: { ...plano.avaliacao, ...mudar(plano.avaliacao) } })
   }
 
+  // D-1534: ao abrir, o arquivo que está na pasta do plano e não na lista (o envio cuja lista se perdeu) volta para a
+  // lista, para aparecer e poder sair; senão ocuparia a vaga escondido. Aplica no plano como ele está quando a leitura
+  // chega, e só se ainda for o mesmo plano.
+  const planoId = bruto.id
+  useEffect(() => {
+    if (armazenamento === null) return
+    let vivo = true
+    void lerPastaDoPlano(armazenamento, planoId).then((lidos) => {
+      const { bruto: plano, aoAlterar: alterar } = ultimo.current
+      if (!vivo || lidos === null || plano.id !== planoId) return
+      const religados = religarSoltos(plano.avaliacao, lidos, new Date())
+      if (religados) alterar({ avaliacao: { ...plano.avaliacao, ...religados } })
+    })
+    return () => {
+      vivo = false
+    }
+  }, [armazenamento, planoId])
+
   const avaliacao = bruto.avaliacao
   const fotos = avaliacao.fotos ?? []
   const anexos = avaliacao.anexos ?? []
@@ -121,7 +142,7 @@ export function CartaoFotos({ bruto, sexo, atual, anterior, aoAlterar, agora }: 
       return
     }
     const { campo, arquivo } = resultado
-    alterarAvaliacao((av) => ({ [campo]: [...(av[campo] ?? []), arquivo] }))
+    alterarAvaliacao((av) => ({ [campo]: comArquivo(av[campo], arquivo) }))
   }
 
   const escolherFoto = async (evento: ChangeEvent<HTMLInputElement>) => {

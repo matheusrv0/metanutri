@@ -137,7 +137,8 @@ describe('Tela Planos', () => {
     expect(repositorio.listar()).toHaveLength(1)
   })
 
-  it('CA-2489 (spec antropometria-telas, D-1458): excluir o plano apaga a pasta dele no balde das fotos', async () => {
+  /** Monta "Planos" com o balde das fotos falso; `apagou` é a resposta do armazenamento. */
+  function comFotos(apagou: boolean) {
     const repositorio = criarRepositorio(new MemoriaFalsa(), { agora: relogio() })
     const maria = repositorio.criar('Maria')
     const pastas: string[] = []
@@ -147,7 +148,7 @@ describe('Tela Planos', () => {
       listar: async () => [],
       assinar: async () => null,
       apagar: async () => true,
-      apagarPasta: async (pasta) => (pastas.push(pasta), true),
+      apagarPasta: async (pasta) => (pastas.push(pasta), apagou),
     }
     render(
       <ContextoArmazenamentoDeFotos.Provider value={fotos}>
@@ -156,11 +157,28 @@ describe('Tela Planos', () => {
         </ProvedorCasos>
       </ContextoArmazenamentoDeFotos.Provider>,
     )
+    return { repositorio, maria, pastas }
+  }
+
+  it('CA-2489 (spec antropometria-telas, D-1458 e D-1534): excluir o plano apaga antes a pasta dele no balde das fotos', async () => {
+    const { repositorio, maria, pastas } = comFotos(true)
     const usuario = userEvent.setup()
     await usuario.click((await acoesDo(usuario, 'Maria')).getByRole('menuitem', { name: 'Excluir' }))
     await usuario.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Excluir plano' }))
-    expect(repositorio.listar()).toHaveLength(0)
-    await vi.waitFor(() => expect(pastas).toEqual([`conta-1/${maria.caso.id}`]))
+    await vi.waitFor(() => expect(repositorio.listar()).toHaveLength(0))
+    expect(pastas).toEqual([`conta-1/${maria.caso.id}`])
+    expect(screen.getByText('Plano “Maria” excluído.')).toBeInTheDocument()
+  })
+
+  it('CB-1471 (spec antropometria-telas, D-1534): o armazenamento não apagou: o plano fica e o aviso diz', async () => {
+    const { repositorio, pastas } = comFotos(false)
+    const usuario = userEvent.setup()
+    await usuario.click((await acoesDo(usuario, 'Maria')).getByRole('menuitem', { name: 'Excluir' }))
+    await usuario.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Excluir plano' }))
+    expect(await screen.findByText('Não foi possível excluir “Maria”: as fotos e os anexos não saíram. Confira a internet e tente de novo.')).toBeInTheDocument()
+    expect(pastas).toHaveLength(1)
+    expect(repositorio.listar()).toHaveLength(1)
+    expect(screen.queryByText('Plano “Maria” excluído.')).not.toBeInTheDocument()
   })
 
   it('CB-09: avisa quando o navegador não guarda os casos', () => {

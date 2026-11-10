@@ -33,7 +33,10 @@ interface Falsos {
   readonly assinados: string[]
 }
 
-/** `contagem`: quantas fotos a pasta do plano tem; `pasta`: o que a leitura da pasta devolve (vale mais que a contagem). */
+/**
+ * `contagem`: quantas fotos a pasta do plano tem depois do primeiro envio (outra aba enviou enquanto a tela estava
+ * aberta); `pasta`: o que a leitura da pasta devolve desde a abertura (vale mais que a contagem).
+ */
 function falsos(p: { envio?: ResultadoDoEnvio; contagem?: number; pasta?: readonly ArquivoNoArmazenamento[] | null; apagar?: boolean } = {}): Falsos {
   const enviados: { caminho: string; tipo: string }[] = []
   const apagados: string[][] = []
@@ -45,7 +48,9 @@ function falsos(p: { envio?: ResultadoDoEnvio; contagem?: number; pasta?: readon
       return p.envio ?? 'ok'
     },
     listar: async (pasta) =>
-      p.pasta !== undefined ? p.pasta : Array.from({ length: p.contagem ?? 0 }, (_, i) => ({ caminho: `${pasta}/fotos/${i}.jpg`, bytes: 1000, criadoEm: null })),
+      p.pasta !== undefined
+        ? p.pasta
+        : Array.from({ length: enviados.length > 0 ? (p.contagem ?? 0) : 0 }, (_, i) => ({ caminho: `${pasta}/fotos/${i}.jpg`, bytes: 1000, criadoEm: null })),
     assinar: async (caminho) => {
       assinados.push(caminho)
       return `https://falso.supabase.co/assinada/${caminho}?vez=${assinados.length}`
@@ -360,6 +365,35 @@ describe('anexos e espaço (CA-2482, CA-2483, D-1511)', () => {
     } finally {
       abrirAba.mockRestore()
     }
+  })
+})
+
+describe('o arquivo solto (CB-1472, D-1534)', () => {
+  it('CB-1472: ao abrir, a foto e o PDF que estão na pasta e não na lista voltam: a foto como "Outra", o PDF como "anexo-N.pdf"', async () => {
+    const pasta = [
+      { caminho: `${CONTA}/av/fotos/f1.jpg`, bytes: 200 * 1024, criadoEm: '2026-11-03T12:00:00.000Z' },
+      { caminho: `${CONTA}/av/fotos/solta.jpg`, bytes: 250 * 1024, criadoEm: '2026-11-03T12:10:00.000Z' },
+      { caminho: `${CONTA}/av/anexos/solto.pdf`, bytes: 90 * 1024, criadoEm: '2026-11-03T12:20:00.000Z' },
+    ]
+    const { gravado, cartao } = abrir({ porta: falsos({ pasta }).porta, avaliacao: { fotosAutorizadasEm: '2026-11-03', fotos: [foto('f1', 'frente', 'av', 200 * 1024)] } })
+    await vi.waitFor(() => expect(gravado()?.fotos).toHaveLength(2))
+    expect(gravado()?.fotos?.[1]).toMatchObject({ id: 'solta', angulo: 'outra', caminho: `${CONTA}/av/fotos/solta.jpg`, bytes: 250 * 1024 })
+    expect(gravado()?.anexos).toEqual([
+      { id: 'solto', nome: 'anexo-1.pdf', caminho: `${CONTA}/av/anexos/solto.pdf`, bytes: 90 * 1024, tipo: 'application/pdf', enviadoEm: '2026-11-03T12:20:00.000Z' },
+    ])
+    expect(await cartao().findByText('2 de 5 fotos')).toBeInTheDocument()
+    expect(within(cartao().getByRole('list', { name: 'Anexos' })).getByText('anexo-1.pdf')).toBeInTheDocument()
+    expect(cartao().getByRole('button', { name: 'Excluir a foto de outra' })).toBeInTheDocument()
+  })
+
+  it('D-1534: sem nada solto (ou sem conseguir ler a pasta), a lista fica como está', async () => {
+    const lidas: string[] = []
+    const f = falsos({ pasta: null })
+    const porta: ArmazenamentoDeFotos = { ...f.porta, listar: async (pasta) => (lidas.push(pasta), null) }
+    const { gravado } = abrir({ porta, avaliacao: { fotosAutorizadasEm: '2026-11-03', fotos: [foto('f1', 'frente')] } })
+    await vi.waitFor(() => expect(lidas).toEqual([`${CONTA}/av`]))
+    expect(gravado()?.fotos?.map((x) => x.id)).toEqual(['f1'])
+    expect(gravado()?.anexos ?? []).toEqual([])
   })
 })
 
