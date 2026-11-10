@@ -196,10 +196,28 @@ describe('adicionar foto (CA-2481 a CA-2484, D-1509)', () => {
     expect(await cartao().findByRole('alert')).toHaveTextContent('Já há 5 fotos nesta avaliação.')
   })
 
-  it('CB-1415: recusada sem estar cheia: "Entre de novo para enviar fotos."', async () => {
-    const { usuario, cartao } = abrir({ porta: falsos({ envio: 'recusado', contagem: 1 }).porta, avaliacao: { fotosAutorizadasEm: '2026-11-03' } })
+  it('CB-1415 e D-1547: a sessão vencida (401 ou 403): "Entre de novo para enviar fotos."', async () => {
+    const { usuario, cartao } = abrir({ porta: falsos({ envio: 'sessao' }).porta, avaliacao: { fotosAutorizadasEm: '2026-11-03' } })
     await usuario.upload(campoDaFoto(), arquivoDe(jpeg(1200, 1600), 'foto.jpg', 'image/jpeg'))
     expect(await cartao().findByRole('alert')).toHaveTextContent('Entre de novo para enviar fotos.')
+  })
+
+  it('CB-1497 e D-1547: recusada sem estar cheia: a frase genérica, sem mandar entrar de novo', async () => {
+    const { usuario, gravado, cartao } = abrir({ porta: falsos({ envio: 'recusado', contagem: 1 }).porta, avaliacao: { fotosAutorizadasEm: '2026-11-03' } })
+    await usuario.upload(campoDaFoto(), arquivoDe(jpeg(1200, 1600), 'foto.jpg', 'image/jpeg'))
+    expect(await cartao().findByRole('alert')).toHaveTextContent('Não foi possível enviar agora. Tente de novo.')
+    expect(cartao().queryByText(/Entre de novo/)).not.toBeInTheDocument()
+    expect(gravado()?.fotos ?? []).toEqual([])
+  })
+
+  it('CB-1496 e D-1547: a conta cheia: "O espaço de fotos da conta acabou.", na foto e no anexo', async () => {
+    const { usuario, gravado, cartao } = abrir({ porta: falsos({ envio: 'conta-cheia' }).porta, avaliacao: { fotosAutorizadasEm: '2026-11-03' } })
+    await usuario.upload(campoDaFoto(), arquivoDe(jpeg(1200, 1600), 'foto.jpg', 'image/jpeg'))
+    expect(await cartao().findByRole('alert')).toHaveTextContent('O espaço de fotos da conta acabou.')
+    await usuario.upload(campoDoAnexo(), arquivoDe(PDF, 'exame.pdf', 'application/pdf'))
+    await vi.waitFor(() => expect(cartao().getAllByRole('alert').map((a) => a.textContent)).toEqual(['O espaço de fotos da conta acabou.', 'O espaço de fotos da conta acabou.']))
+    expect(gravado()?.fotos ?? []).toEqual([])
+    expect(gravado()?.anexos ?? []).toEqual([])
   })
 })
 

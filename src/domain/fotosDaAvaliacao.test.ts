@@ -245,12 +245,30 @@ describe('enviar a foto (D-1453, D-1505)', () => {
     expect(await enviarFoto(entrada(), porta, desenhistaFalso().desenhista)).toEqual({ tipo: 'erro', mensagem: 'A foto não subiu. Confira a internet e tente de novo.' })
   })
 
-  it('CB-1415: recusado sem as 5 fotos na pasta, ou sem sessão: "Entre de novo para enviar fotos."', async () => {
-    expect(await enviarFoto(entrada(), portaFalsa({ envio: 'recusado', pasta: naPasta(2, 'fotos') }).porta, desenhistaFalso().desenhista)).toEqual({ tipo: 'erro', mensagem: 'Entre de novo para enviar fotos.' })
-    expect(await enviarFoto(entrada(), portaFalsa({ envio: 'recusado', pasta: null }).porta, desenhistaFalso().desenhista)).toEqual({ tipo: 'erro', mensagem: 'Entre de novo para enviar fotos.' })
+  it('CB-1415 e D-1547: só a sessão vencida (sem conta no aparelho, ou 401/403 do servidor) diz "Entre de novo para enviar fotos."', async () => {
     const semConta = portaFalsa({ conta: null })
     expect(await enviarFoto(entrada(), semConta.porta, desenhistaFalso().desenhista)).toEqual({ tipo: 'erro', mensagem: 'Entre de novo para enviar fotos.' })
     expect(semConta.enviados).toEqual([])
+    expect(await enviarFoto(entrada(), portaFalsa({ envio: 'sessao', pasta: naPasta(5, 'fotos') }).porta, desenhistaFalso().desenhista)).toEqual({ tipo: 'erro', mensagem: 'Entre de novo para enviar fotos.' })
+  })
+
+  it('CB-1497 e D-1547: recusado sem a pasta cheia e sem passar de 8 MB, ou sem ler a pasta: a frase genérica, sem "Entre de novo"', async () => {
+    expect(await enviarFoto(entrada(), portaFalsa({ envio: 'recusado', pasta: naPasta(2, 'fotos') }).porta, desenhistaFalso().desenhista)).toEqual({ tipo: 'erro', mensagem: 'Não foi possível enviar agora. Tente de novo.' })
+    expect(await enviarFoto(entrada(), portaFalsa({ envio: 'recusado', pasta: null }).porta, desenhistaFalso().desenhista)).toEqual({ tipo: 'erro', mensagem: 'Não foi possível enviar agora. Tente de novo.' })
+  })
+
+  it('CB-1496 e D-1547: a conta cheia (o código 53100): "O espaço de fotos da conta acabou.", sem ler a pasta', async () => {
+    const lidas: string[] = []
+    const { porta } = portaFalsa({ envio: 'conta-cheia', pasta: naPasta(5, 'fotos') })
+    const lendo: ArmazenamentoDeFotos = {
+      ...porta,
+      listar: async (pasta) => {
+        lidas.push(pasta)
+        return porta.listar(pasta)
+      },
+    }
+    expect(await enviarFoto(entrada(), lendo, desenhistaFalso().desenhista)).toEqual({ tipo: 'erro', mensagem: 'O espaço de fotos da conta acabou.' })
+    expect(lidas).toEqual([])
   })
 
   it('CB-1468 e D-1531: recusado com a pasta do plano somando mais de 8 MB com a foto nova: a frase do teto', async () => {
@@ -258,7 +276,7 @@ describe('enviar a foto (D-1453, D-1505)', () => {
     const pasta = naPasta(2, 'anexos', 3.9 * MEGA)
     expect(await enviarFoto(entrada(), portaFalsa({ envio: 'recusado', pasta }).porta, desenhistaFalso(300_000).desenhista)).toEqual({ tipo: 'erro', mensagem: 'Passa de 8 MB somando fotos e anexos. Reduza a foto.' })
     // A mesma pasta com a foto de 100.000 bytes cabe: a recusa não foi pelo tamanho.
-    expect(await enviarFoto(entrada(), portaFalsa({ envio: 'recusado', pasta }).porta, desenhistaFalso(100_000).desenhista)).toEqual({ tipo: 'erro', mensagem: 'Entre de novo para enviar fotos.' })
+    expect(await enviarFoto(entrada(), portaFalsa({ envio: 'recusado', pasta }).porta, desenhistaFalso(100_000).desenhista)).toEqual({ tipo: 'erro', mensagem: 'Não foi possível enviar agora. Tente de novo.' })
   })
 
   it('CB-1416: recusado com 5 fotos na pasta (outra aba): "Já há 5 fotos nesta avaliação."', async () => {
@@ -360,7 +378,11 @@ describe('enviar o anexo (D-1452, D-1505, D-1511, D-1530)', () => {
     const { desenhista } = desenhistaFalso()
     expect(await enviarAnexo(entrada(PDF, { avaliacao: avaliacao({ anexos: dez }) }), portaFalsa().porta, desenhista)).toEqual({ tipo: 'erro', mensagem: 'Já há 10 anexos nesta avaliação.' })
     expect(await enviarAnexo(entrada(PDF), portaFalsa({ envio: 'recusado', pasta: naPasta(10, 'anexos') }).porta, desenhista)).toEqual({ tipo: 'erro', mensagem: 'Já há 10 anexos nesta avaliação.' })
-    expect(await enviarAnexo(entrada(PDF), portaFalsa({ envio: 'recusado', pasta: naPasta(3, 'anexos') }).porta, desenhista)).toEqual({ tipo: 'erro', mensagem: 'Entre de novo para enviar anexos.' })
+    // CB-1497 e D-1547: sem a pasta cheia, a frase genérica; só a sessão vencida diz "Entre de novo".
+    expect(await enviarAnexo(entrada(PDF), portaFalsa({ envio: 'recusado', pasta: naPasta(3, 'anexos') }).porta, desenhista)).toEqual({ tipo: 'erro', mensagem: 'Não foi possível enviar agora. Tente de novo.' })
+    expect(await enviarAnexo(entrada(PDF), portaFalsa({ envio: 'sessao' }).porta, desenhista)).toEqual({ tipo: 'erro', mensagem: 'Entre de novo para enviar anexos.' })
+    // CB-1496: a conta cheia, também no anexo.
+    expect(await enviarAnexo(entrada(PDF), portaFalsa({ envio: 'conta-cheia' }).porta, desenhista)).toEqual({ tipo: 'erro', mensagem: 'O espaço de fotos da conta acabou.' })
     expect(await enviarAnexo(entrada(PDF), portaFalsa({ envio: 'sem-rede' }).porta, desenhista)).toEqual({ tipo: 'erro', mensagem: 'O anexo não subiu. Confira a internet e tente de novo.' })
     // CB-1468 e D-1531: a pasta com 8 MB (outra aba) e o anexo novo: a frase do teto.
     expect(await enviarAnexo(entrada(PDF), portaFalsa({ envio: 'recusado', pasta: naPasta(2, 'fotos', 4 * MEGA) }).porta, desenhista)).toEqual({ tipo: 'erro', mensagem: 'Passa de 8 MB somando fotos e anexos.' })

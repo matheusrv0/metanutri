@@ -5,11 +5,34 @@
 // A tela recebe a porta por contexto: o teste de componente passa uma falsa, e o app usa esta, criada uma vez.
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { createContext, useContext } from 'react'
-import { BALDE_DAS_FOTOS, VALIDADE_DA_URL_S, type ArmazenamentoDeFotos, type ArquivoNoArmazenamento } from '@/domain/fotosDaAvaliacao.ts'
+import { BALDE_DAS_FOTOS, VALIDADE_DA_URL_S, type ArmazenamentoDeFotos, type ArquivoNoArmazenamento, type ResultadoDoEnvio } from '@/domain/fotosDaAvaliacao.ts'
 import { obterSupabase } from '../estado/supabase.ts'
 
 /** O servidor respondeu (recusou) quando o erro traz o status HTTP; sem ele, o pedido nem chegou (sem internet). */
-const respondeu = (erro: unknown): boolean => typeof erro === 'object' && erro !== null && 'status' in erro && typeof erro.status === 'number'
+const respondeu = (erro: unknown): erro is { readonly status: number } =>
+  typeof erro === 'object' && erro !== null && 'status' in erro && typeof erro.status === 'number'
+
+/** Um campo de texto do erro (`statusCode`, `code`, `message`); sem ele, vazio. */
+const textoDo = (erro: object, campo: 'statusCode' | 'code' | 'message'): string => {
+  const valor: unknown = Reflect.get(erro, campo)
+  return typeof valor === 'string' ? valor : ''
+}
+
+/** D-1546: o gatilho do 018 recusa a conta cheia com o código 53100, e o armazenamento o põe na mensagem. */
+const CONTA_CHEIA = /\bcode: 53100\b/
+
+/**
+ * D-1547: o que a recusa do armazenamento quer dizer. O supabase-js entrega o status HTTP (`status`), o do corpo
+ * (`statusCode`) e o código do armazenamento (`code`); a recusa da política vem com 400 e `statusCode` "403", e o token
+ * vencido, com `InvalidJWT`.
+ */
+function recusaDoArmazenamento(erro: unknown): Exclude<ResultadoDoEnvio, 'ok'> {
+  if (!respondeu(erro)) return 'sem-rede'
+  if (CONTA_CHEIA.test(textoDo(erro, 'message'))) return 'conta-cheia'
+  const statusCode = textoDo(erro, 'statusCode')
+  if (erro.status === 401 || erro.status === 403 || statusCode === '401' || statusCode === '403' || textoDo(erro, 'code') === 'InvalidJWT') return 'sessao'
+  return 'recusado'
+}
 
 /** As duas subpastas de um plano (DP-AT-20): a lista do armazenamento não entra em subpasta sozinha. */
 const SUBPASTAS = ['fotos', 'anexos'] as const
@@ -54,8 +77,7 @@ export function criarArmazenamentoDeFotos(cliente: SupabaseClient): Armazenament
         const corpo = arquivo.type === tipo ? arquivo : arquivo.slice(0, arquivo.size, tipo)
         // D-1513: o arquivo sai do servidor com "max-age=0": o navegador não guarda a foto entre uma visita e outra.
         const { error } = await balde().upload(caminho, corpo, { contentType: tipo, upsert: false, cacheControl: '0' })
-        if (!error) return 'ok'
-        return respondeu(error) ? 'recusado' : 'sem-rede'
+        return error ? recusaDoArmazenamento(error) : 'ok'
       } catch {
         return 'sem-rede'
       }

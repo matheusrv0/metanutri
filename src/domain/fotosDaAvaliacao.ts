@@ -30,7 +30,7 @@ export const VALIDADE_DA_URL_S = 600
 /** D-1457: o balde privado. */
 export const BALDE_DAS_FOTOS = 'fotos-avaliacao'
 
-/** As frases fixas (D-1452, D-1453, D-1505, D-1507, CA-2485, CB-1413 a CB-1416). */
+/** As frases fixas (D-1452, D-1453, D-1505, D-1507, D-1547, CA-2485, CB-1413 a CB-1416, CB-1496, CB-1497). */
 export const FRASES = {
   formatoFoto: 'Use JPG ou PNG.',
   formatoAnexo: 'Anexo em PDF, JPG ou PNG.',
@@ -42,6 +42,8 @@ export const FRASES = {
   dezAnexos: 'Já há 10 anexos nesta avaliação.',
   sessaoFoto: 'Entre de novo para enviar fotos.',
   sessaoAnexo: 'Entre de novo para enviar anexos.',
+  contaCheia: 'O espaço de fotos da conta acabou.',
+  recusa: 'Não foi possível enviar agora. Tente de novo.',
   redeFoto: 'A foto não subiu. Confira a internet e tente de novo.',
   redeAnexo: 'O anexo não subiu. Confira a internet e tente de novo.',
   excluir: 'Não foi possível excluir. Tente de novo.',
@@ -136,8 +138,12 @@ export function textosPeloSexo(sexo: Sexo | null): { readonly autorizou: string;
 
 // --- O envio (D-1453, D-1505) ------------------------------------------------------------------------------------------
 
-/** `recusado`: o servidor respondeu e não aceitou; `sem-rede`: não respondeu. */
-export type ResultadoDoEnvio = 'ok' | 'recusado' | 'sem-rede'
+/**
+ * D-1547: `conta-cheia`, o servidor recusou pelo teto da conta (500 MB ou 2.000 arquivos, o código 53100 da D-1546);
+ * `sessao`, recusou a sessão (401, 403 ou o token); `recusado`, respondeu e não aceitou por outro motivo; `sem-rede`, não
+ * respondeu.
+ */
+export type ResultadoDoEnvio = 'ok' | 'conta-cheia' | 'sessao' | 'recusado' | 'sem-rede'
 
 /** Um arquivo da pasta do plano, como o armazenamento diz (DP-AT-21). */
 export interface ArquivoNoArmazenamento {
@@ -211,8 +217,9 @@ interface FrasesDoEnvio {
 }
 
 /**
- * D-1505 e D-1531: depois do envio, a frase de cada resposta do servidor. A recusa é lida pela pasta do plano: cheia
- * (5 fotos ou 10 anexos), a frase do limite; somando mais de 8 MB com o arquivo novo, a do teto; senão, a de sessão.
+ * D-1505, D-1531 e D-1547: depois do envio, a frase de cada resposta do servidor. A conta cheia e a sessão vencida têm
+ * frase própria. A outra recusa é lida pela pasta do plano: cheia (5 fotos ou 10 anexos), a frase do limite; somando mais
+ * de 8 MB com o arquivo novo, a do teto; senão (ou sem ler a pasta), a genérica, que não manda entrar de novo.
  */
 async function subir(
   porta: ArmazenamentoDeFotos,
@@ -228,13 +235,15 @@ async function subir(
   const destino = caminho(conta)
   const envio = await porta.enviar(destino, blob, tipo)
   if (envio === 'ok') return { tipo: 'ok', caminho: destino }
-  if (envio === 'sem-rede') return { tipo: 'erro', mensagem: frases.rede }
+  if (envio === 'sem-rede') return erro(frases.rede)
+  if (envio === 'sessao') return erro(frases.sessao)
+  if (envio === 'conta-cheia') return erro(FRASES.contaCheia)
   const pasta = pastaDoPlano(conta, plano)
   const lidos = await porta.listar(pasta).catch(() => null)
-  if (lidos === null) return { tipo: 'erro', mensagem: frases.sessao }
-  if (lidos.filter((a) => a.caminho.startsWith(`${pasta}/${sub}/`)).length >= frases.limite) return { tipo: 'erro', mensagem: frases.cheio }
+  if (lidos === null) return erro(FRASES.recusa)
+  if (lidos.filter((a) => a.caminho.startsWith(`${pasta}/${sub}/`)).length >= frases.limite) return erro(frases.cheio)
   const naPasta = lidos.reduce((soma, a) => soma + (Number.isFinite(a.bytes) && a.bytes > 0 ? a.bytes : 0), 0)
-  return { tipo: 'erro', mensagem: tetoPassa(naPasta, blob.size) ? frases.passa : frases.sessao }
+  return erro(tetoPassa(naPasta, blob.size) ? frases.passa : FRASES.recusa)
 }
 
 /**
