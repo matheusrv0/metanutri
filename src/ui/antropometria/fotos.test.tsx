@@ -75,7 +75,7 @@ const foto = (id: string, angulo: ArquivoDaAvaliacao['angulo'], plano = 'av', by
 })
 const anexo = (id: string, bytes = 412 * 1024): ArquivoDaAvaliacao => ({
   id,
-  nome: 'bioimpedancia-03-11-2026.pdf',
+  nome: 'anexo-1.pdf',
   caminho: `${CONTA}/av/anexos/${id}.pdf`,
   bytes,
   tipo: 'application/pdf',
@@ -271,14 +271,21 @@ describe('Comparar fotos (CA-2486, CB-1412, CB-1466, D-1510)', () => {
 })
 
 describe('anexos e espaço (CA-2482, CA-2483, D-1511)', () => {
-  it('CA-2482: o PDF sobe como anexo', async () => {
+  it('CA-2482, CB-1474 e D-1536: o PDF sobe como anexo, com o nome neutro e a data; o nome do arquivo não fica', async () => {
     const f = falsos()
     const { usuario, gravado, cartao } = abrir({ porta: f.porta })
-    await usuario.upload(campoDoAnexo(), arquivoDe(PDF, 'exame.pdf', 'application/pdf'))
+    await usuario.upload(campoDoAnexo(), arquivoDe(PDF, 'exame-maria-silva.pdf', 'application/pdf'))
     await vi.waitFor(() => expect(gravado()?.anexos).toHaveLength(1))
     expect(f.enviados.map((e) => e.tipo)).toEqual(['application/pdf'])
     expect(f.enviados[0]?.caminho).toMatch(/\/anexos\/[0-9a-f-]{36}\.pdf$/)
-    expect(within(cartao().getByRole('list', { name: 'Anexos' })).getByText('exame.pdf')).toBeInTheDocument()
+    expect(gravado()?.anexos?.[0]?.nome).toBe('anexo-1.pdf')
+    expect(JSON.stringify(gravado())).not.toMatch(/maria/i)
+    const lista = within(cartao().getByRole('list', { name: 'Anexos' }))
+    expect(lista.getByText('anexo-1.pdf')).toBeInTheDocument()
+    expect(lista.getByText(/^\d{2}\/\d{2}\/\d{4} · \d+ KB$/)).toBeInTheDocument()
+    expect(cartao().queryByText(/maria/i)).not.toBeInTheDocument()
+    await usuario.upload(campoDoAnexo(), arquivoDe(PDF, 'outro.pdf', 'application/pdf'))
+    await vi.waitFor(() => expect(gravado()?.anexos?.map((a) => a.nome)).toEqual(['anexo-1.pdf', 'anexo-2.pdf']))
   })
 
   it('CB-1467 e D-1530: a imagem anexada (o PNG chamado .pdf) entra como foto "Outra", em JPEG, e conta nas 5', async () => {
@@ -331,7 +338,7 @@ describe('anexos e espaço (CA-2482, CA-2483, D-1511)', () => {
     const { cartao } = abrir({ avaliacao: { fotosAutorizadasEm: '2026-11-03', fotos: [foto('f1', 'frente', 'av', 3.3 * MEGA)], anexos: [anexo('a1', 0.4 * MEGA)] } })
     expect(cartao().getByText('3,7 de 8 MB usados')).toBeInTheDocument()
     expect(cartao().getByRole('progressbar', { name: 'Espaço usado' })).toBeInTheDocument()
-    expect(within(cartao().getByRole('list', { name: 'Anexos' })).getByText('410 KB')).toBeInTheDocument()
+    expect(within(cartao().getByRole('list', { name: 'Anexos' })).getByText('03/11/2026 · 410 KB')).toBeInTheDocument()
   })
 
   it('D-1511: com 10 anexos, "Adicionar arquivo" fica desligado e "10 de 10 anexos."', () => {
@@ -346,7 +353,7 @@ describe('anexos e espaço (CA-2482, CA-2483, D-1511)', () => {
     const abrirAba = vi.spyOn(window, 'open').mockReturnValue(aba as unknown as Window)
     try {
       const { usuario, cartao } = abrir({ porta: f.porta, avaliacao: { anexos: [anexo('a1')] } })
-      await usuario.click(cartao().getByRole('button', { name: 'Abrir bioimpedancia-03-11-2026.pdf' }))
+      await usuario.click(cartao().getByRole('button', { name: 'Abrir anexo-1.pdf' }))
       await vi.waitFor(() => expect(aba.location.replace).toHaveBeenCalledWith(`https://falso.supabase.co/assinada/${CONTA}/av/anexos/a1.pdf?vez=1`))
       expect(abrirAba).toHaveBeenCalledWith('about:blank', '_blank')
       expect(aba.opener).toBeNull()

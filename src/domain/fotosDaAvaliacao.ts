@@ -196,8 +196,6 @@ export interface EntradaDaFoto extends EntradaComum {
 }
 
 export interface EntradaDoAnexo extends EntradaComum {
-  /** O nome do arquivo escolhido: só para a tela (DP-AT-20). */
-  readonly nome: string
   /** O sexo da ficha, para a frase da autorização quando a imagem anexada vira foto (D-1508 e D-1530). */
   readonly sexo: Sexo | null
 }
@@ -309,8 +307,19 @@ export async function enviarAnexo(entrada: EntradaDoAnexo, porta: ArmazenamentoD
     { sessao: FRASES.sessaoAnexo, rede: FRASES.redeAnexo, cheio: FRASES.dezAnexos, passa: FRASES.passaAnexo, limite: ANEXOS_POR_AVALIACAO },
   )
   if (r.tipo === 'erro') return r
-  const nome = entrada.nome.trim() || `Anexo.${EXTENSAO[tipo]}`
+  const nome = proximoNomeDeAnexo(entrada.avaliacao.anexos ?? [])
   return { tipo: 'ok', campo: 'anexos', arquivo: { id, nome, caminho: r.caminho, bytes: entrada.bytes.length, tipo, enviadoEm: entrada.agora.toISOString() } }
+}
+
+const NOME_NEUTRO = /^anexo-(\d{1,6})\.pdf$/
+
+/**
+ * D-1536: o nome neutro do anexo novo, "anexo-N.pdf", com N o maior da lista mais 1 (excluído o 1, o próximo não repete o
+ * 2). O nome do arquivo escolhido pode ter o da paciente ("exame-maria-silva.pdf") e não vai a lugar nenhum.
+ */
+export function proximoNomeDeAnexo(anexos: readonly ArquivoDaAvaliacao[]): string {
+  const maior = anexos.reduce((m, a) => Math.max(m, Number(NOME_NEUTRO.exec(a.nome)?.[1] ?? 0)), 0)
+  return `anexo-${maior + 1}.pdf`
 }
 
 // --- Comparar fotos (D-1455, D-1510) -----------------------------------------------------------------------------------

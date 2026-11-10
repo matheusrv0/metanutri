@@ -22,6 +22,7 @@ import {
   textoDoUso,
   textosPeloSexo,
   tipoDoAnexo,
+  proximoNomeDeAnexo,
   type ArmazenamentoDeFotos,
   type ArquivoNoArmazenamento,
   type DesenhistaDeFoto,
@@ -265,7 +266,6 @@ describe('enviar a foto (D-1453, D-1505)', () => {
 describe('enviar o anexo (D-1452, D-1505, D-1511, D-1530)', () => {
   const entrada = (bytes: Uint8Array, p: Partial<Parameters<typeof enviarAnexo>[0]> = {}) => ({
     plano: PLANO,
-    nome: 'exame.pdf',
     bytes,
     arquivo: new Blob([new Uint8Array(bytes)], { type: 'application/pdf' }),
     avaliacao: avaliacao(),
@@ -280,7 +280,7 @@ describe('enviar o anexo (D-1452, D-1505, D-1511, D-1530)', () => {
     const { porta, enviados } = portaFalsa()
     const { desenhista, pedidos } = desenhistaFalso()
     const r = await enviarAnexo(entrada(PDF), porta, desenhista)
-    expect(r).toEqual({ tipo: 'ok', campo: 'anexos', arquivo: { id: ID, nome: 'exame.pdf', caminho: `${CONTA}/${PLANO}/anexos/${ID}.pdf`, bytes: PDF.length, tipo: 'application/pdf', enviadoEm: agora.toISOString() } })
+    expect(r).toEqual({ tipo: 'ok', campo: 'anexos', arquivo: { id: ID, nome: 'anexo-1.pdf', caminho: `${CONTA}/${PLANO}/anexos/${ID}.pdf`, bytes: PDF.length, tipo: 'application/pdf', enviadoEm: agora.toISOString() } })
     expect(enviados.map((e) => [e.caminho, e.tipo])).toEqual([[`${CONTA}/${PLANO}/anexos/${ID}.pdf`, 'application/pdf']])
     expect(pedidos).toEqual([])
   })
@@ -288,13 +288,13 @@ describe('enviar o anexo (D-1452, D-1505, D-1511, D-1530)', () => {
   it('CB-1467 e D-1530: a imagem anexada (o PNG chamado .pdf, o JPEG do celular) entra como foto "Outra", redesenhada em JPEG', async () => {
     const { porta, enviados } = portaFalsa()
     const { desenhista, pedidos } = desenhistaFalso(250_000)
-    const r = await enviarAnexo(entrada(png(10, 10), { nome: 'bioimpedancia.pdf', avaliacao: autorizada }), porta, desenhista)
+    const r = await enviarAnexo(entrada(png(10, 10), { avaliacao: autorizada }), porta, desenhista)
     expect(r).toEqual({
       tipo: 'ok',
       campo: 'fotos',
       arquivo: { id: ID, angulo: 'outra', nome: 'Outra', caminho: `${CONTA}/${PLANO}/fotos/${ID}.jpg`, bytes: 250_000, tipo: 'image/jpeg', enviadoEm: agora.toISOString() },
     })
-    await enviarAnexo(entrada(jpeg(4000, 3000), { nome: 'IMG_0001.jpg', avaliacao: autorizada }), porta, desenhista)
+    await enviarAnexo(entrada(jpeg(4000, 3000), { avaliacao: autorizada }), porta, desenhista)
     expect(pedidos).toEqual([
       { largura: 1600, altura: 1200, qualidade: 0.85 },
       { largura: 1600, altura: 1200, qualidade: 0.85 },
@@ -322,6 +322,19 @@ describe('enviar o anexo (D-1452, D-1505, D-1511, D-1530)', () => {
     const r = await enviarAnexo(entrada(jpeg(1200, 1600), { avaliacao: avaliacao({ fotosAutorizadasEm: '2026-11-03', fotos: cinco }) }), porta, desenhistaFalso().desenhista)
     expect(r).toEqual({ tipo: 'erro', mensagem: 'Já há 5 fotos nesta avaliação.' })
     expect(enviados).toEqual([])
+  })
+
+  it('CB-1474 e D-1536: o anexo leva um nome neutro, o maior "anexo-N.pdf" da lista mais 1, nunca o do arquivo escolhido', async () => {
+    const pdfs = (...nomes: string[]) => nomes.map((nome, i) => arquivo(10, { id: String(i), nome, tipo: 'application/pdf', caminho: `${CONTA}/${PLANO}/anexos/${i}.pdf` }))
+    expect(proximoNomeDeAnexo([])).toBe('anexo-1.pdf')
+    expect(proximoNomeDeAnexo(pdfs('anexo-1.pdf', 'anexo-2.pdf'))).toBe('anexo-3.pdf')
+    // Excluído o 1, o próximo não repete o 2.
+    expect(proximoNomeDeAnexo(pdfs('anexo-2.pdf'))).toBe('anexo-3.pdf')
+    expect(proximoNomeDeAnexo(pdfs('anexo-9.pdf', 'anexo-10.pdf'))).toBe('anexo-11.pdf')
+    expect(proximoNomeDeAnexo(pdfs('exame-antigo.pdf'))).toBe('anexo-1.pdf')
+    const { porta } = portaFalsa()
+    const r = await enviarAnexo(entrada(PDF, { avaliacao: avaliacao({ anexos: pdfs('anexo-1.pdf') }) }), porta, desenhistaFalso().desenhista)
+    expect(r.tipo === 'ok' ? r.arquivo.nome : r.mensagem).toBe('anexo-2.pdf')
   })
 
   it('CA-2482: outro tipo: "Anexo em PDF, JPG ou PNG."', async () => {

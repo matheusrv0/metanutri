@@ -155,7 +155,7 @@ export function CartaoFotos({ bruto, sexo, atual, anterior, aoAlterar, agora }: 
       // D-1530: a imagem anexada vira foto, e a foto vai até 20 MB antes de reduzir.
       const bytes = await lerBytes(arquivo, FOTO_ENVIO_MAX_BYTES + 1)
       const resultado = await enviarAnexo(
-        { plano: bruto.id, nome: arquivo.name, sexo, bytes, arquivo, avaliacao: ultimo.current.bruto.avaliacao, agora: new Date(), gerarId: () => globalThis.crypto.randomUUID() },
+        { plano: bruto.id, sexo, bytes, arquivo, avaliacao: ultimo.current.bruto.avaliacao, agora: new Date(), gerarId: () => globalThis.crypto.randomUUID() },
         armazenamento,
         desenhista,
       )

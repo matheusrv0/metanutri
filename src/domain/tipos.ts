@@ -157,7 +157,7 @@ export interface ArquivoDaAvaliacao {
   readonly id: string
   /** Só na foto. */
   readonly angulo?: AnguloDaFoto
-  /** O nome que a tela mostra (no anexo, o nome do arquivo enviado; nunca entra no caminho, DP-AT-20). */
+  /** O nome que a tela mostra: na foto, o do ângulo; no anexo, o neutro "anexo-N.pdf" (D-1536), nunca o do arquivo escolhido. */
   readonly nome: string
   /** `<conta>/<plano>/fotos/<id>.jpg` ou `<conta>/<plano>/anexos/<id>.<ext>`. */
   readonly caminho: string

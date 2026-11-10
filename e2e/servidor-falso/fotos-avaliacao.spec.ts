@@ -141,7 +141,7 @@ for (const [nome, viewport, toque] of [
   test.describe(`fotos e anexos da avaliação (${nome})`, () => {
     test.use({ viewport, hasTouch: toque, isMobile: toque })
 
-    test('CA-2480, CA-2481, CA-2486, CA-2491, CB-1465, CB-1467 e CA-2485: autorizar, enviar sem EXIF, comparar, anexar e excluir', async ({ page }) => {
+    test('CA-2480, CA-2481, CA-2486, CA-2491, CB-1465, CB-1467, CB-1469, CB-1474 e CA-2485: autorizar, enviar sem EXIF, comparar, anexar e excluir', async ({ page }) => {
       const erros = await vigiarConsole(page)
       const servidor = await ligarServidorFalso(page, { sessao: true, perfil: PERFIL_NUTRICIONISTA, assinatura: assinaturaFalsa('ativa') })
       const id = await prepararDuasAvaliacoes(page, servidor)
@@ -184,7 +184,9 @@ for (const [nome, viewport, toque] of [
 
       // D-1511: o anexo em PDF.
       await cartao.getByLabel('Adicionar arquivo').setInputFiles({ name: 'bioimpedancia-03-11-2026.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4\n% exame de teste\n%%EOF\n') })
-      await expect(cartao.getByRole('list', { name: 'Anexos' }).getByText('bioimpedancia-03-11-2026.pdf')).toBeVisible()
+      // CB-1474 e D-1536: o anexo leva o nome neutro, com o dia do envio; o nome do arquivo não aparece.
+      await expect(cartao.getByRole('list', { name: 'Anexos' }).getByText('anexo-1.pdf')).toBeVisible()
+      await expect(cartao.getByText('bioimpedancia-03-11-2026.pdf')).toHaveCount(0)
       expect([...servidor.arquivos.keys()].filter((c) => c.startsWith(`${CONTA}/${id}/anexos/`) && c.endsWith('.pdf'))).toHaveLength(1)
 
       // CB-1467 e D-1530: a foto do celular escolhida como anexo, com GPS e aparelho no EXIF, entra como foto "Outra",
