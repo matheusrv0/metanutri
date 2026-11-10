@@ -80,7 +80,7 @@ describe('banco: as fotos e os anexos da avaliação (018, spec antropometria-te
     expect(trava).toBeGreaterThan(-1)
     expect(trava).toBeLessThan(gatilho.indexOf('select count(*)'))
     expect(gatilho).toContain(`v_limite integer := case split_part(new.name, '/', 3) when 'fotos' then ${FOTOS_POR_AVALIACAO} else ${ANEXOS_POR_AVALIACAO} end;`)
-    expect(gatilho).toContain('if v_na_conta >= 2000 or v_no_plano >= v_limite then')
+    expect(gatilho).toContain('if v_no_plano >= v_limite then')
     expect(gatilho).toContain("raise exception 'Limite de arquivos da avaliação.' using errcode = 'check_violation';")
     expect(semComentarios).toContain('before insert on storage.objects\n    for each row execute function public.limite_de_arquivos_da_avaliacao();')
     expect(semComentarios).toContain('drop trigger if exists limite_de_arquivos_da_avaliacao on storage.objects;')
@@ -98,12 +98,24 @@ describe('banco: as fotos e os anexos da avaliação (018, spec antropometria-te
     expect(gatilho).toContain(`coalesce(sum(${tamanho}), 0)`)
     expect(gatilho).toContain("v_plano text := split_part(new.name, '/', 1) || '/' || split_part(new.name, '/', 2) || '/';")
     expect(gatilho).toContain('starts_with(o.name, v_plano)')
-    expect(gatilho).toContain(`if v_bytes_no_plano + v_tamanho > ${TETO_DA_AVALIACAO} or v_bytes_na_conta + v_tamanho > ${TETO_DA_CONTA} then`)
-    expect(gatilho).toContain("raise exception 'Espaço da avaliação ou da conta cheio.' using errcode = 'check_violation';")
+    expect(gatilho).toContain(`if v_bytes_no_plano + v_tamanho > ${TETO_DA_AVALIACAO} then`)
+    expect(gatilho).toContain("raise exception 'Espaço da avaliação cheio.' using errcode = 'check_violation';")
+    expect(gatilho).toContain(`if v_na_conta >= 2000 or v_bytes_na_conta + v_tamanho > ${TETO_DA_CONTA} then`)
     const trava = gatilho.indexOf('perform pg_advisory_xact_lock(')
     expect(trava).toBeLessThan(gatilho.indexOf('sum('))
     // O teto de 8 MB conta fotos e anexos juntos: a soma é da pasta do plano, não da subpasta.
     expect(gatilho).not.toMatch(/sum\([^;]*v_pasta/)
+  })
+
+  it('CB-1496 e D-1546: a conta cheia (2.000 arquivos ou 500 MB) recusa com o código próprio 53100; o resto, 23514', () => {
+    const gatilho = semComentarios.split('create or replace function public.limite_de_arquivos_da_avaliacao()')[1]?.split('$$;')[0] ?? ''
+    // O código, e não o texto, é o que chega ao app ("database error, code: 53100").
+    expect(gatilho).toContain(`if v_na_conta >= 2000 or v_bytes_na_conta + v_tamanho > ${TETO_DA_CONTA} then\n    raise exception 'Espaço da conta cheio.' using errcode = '53100';`)
+    expect(gatilho.match(/errcode = '53100'/g)).toHaveLength(1)
+    expect(gatilho.match(/errcode = 'check_violation'/g)).toHaveLength(3)
+    // A conta cheia é conferida depois das recusas do plano: o plano cheio continua com a frase dele, lida pela pasta.
+    expect(gatilho.indexOf("'Espaço da conta cheio.'")).toBeGreaterThan(gatilho.indexOf("'Espaço da avaliação cheio.'"))
+    expect(gatilho.indexOf("'Espaço da conta cheio.'")).toBeGreaterThan(gatilho.indexOf("'Limite de arquivos da avaliação.'"))
   })
 
   it('CB-1473 e D-1535: com o tipo na linha, o gatilho exige image/jpeg em fotos/ e application/pdf em anexos/, exatos', () => {
@@ -129,6 +141,9 @@ describe('banco: as fotos e os anexos da avaliação (018, spec antropometria-te
 
   it('o cabeçalho diz como rodar, a ordem e o que conferir depois', () => {
     expect(sql).toContain('-- Rode DEPOIS do 001 ao 015')
+    // D-1547: sem o 018, o balde não existe e o app diz a frase genérica, não a de sessão.
+    expect(sql).not.toContain('Entre de novo')
+    expect(sql).toContain('"Não foi possível enviar agora. Tente de novo."')
     expect(sql).toContain('-- Conferência depois de rodar')
     expect(sql).toContain("-- select id, public, file_size_limit, allowed_mime_types from storage.buckets where id = 'fotos-avaliacao';")
   })

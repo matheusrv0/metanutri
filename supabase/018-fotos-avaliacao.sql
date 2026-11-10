@@ -2,8 +2,8 @@
 -- Rode no SQL Editor do Supabase: SQL Editor > New query > cole tudo > Run. As consultas de conferência no fim valem
 -- depois, numa consulta nova.
 -- Pode rodar de novo: nenhum dado é apagado.
--- Rode DEPOIS do 001 ao 015 e ANTES de publicar o site desta versão. Sem ele, o app diz "Entre de novo para enviar
--- fotos." ao enviar (a política não existe) e o resto continua igual.
+-- Rode DEPOIS do 001 ao 015 e ANTES de publicar o site desta versão. Sem ele, o envio diz
+-- "Não foi possível enviar agora. Tente de novo." (o balde não existe) e o resto continua igual.
 --
 -- O que faz: um balde PRIVADO, "fotos-avaliacao", para as fotos e os anexos da avaliação. Cada arquivo mora em
 -- <conta>/<plano>/fotos/<id>.jpg ou <conta>/<plano>/anexos/<id>.pdf. Cada conta envia, lê e apaga só na
@@ -148,7 +148,7 @@ begin
     into v_bytes_no_plano
     from storage.objects o
    where o.bucket_id = 'fotos-avaliacao' and starts_with(o.name, v_plano) and o.name <> new.name;
-  if v_na_conta >= 2000 or v_no_plano >= v_limite then
+  if v_no_plano >= v_limite then
     raise exception 'Limite de arquivos da avaliação.' using errcode = 'check_violation';
   end if;
   -- D-1535: o armazenamento não lê o conteúdo; o tipo dito tem de ser o do caminho, exato (sem maiúsculas nem
@@ -157,8 +157,13 @@ begin
     raise exception 'Tipo do arquivo da avaliação.' using errcode = 'check_violation';
   end if;
   -- 8 MB = 8.388.608 bytes por plano; 500 MB = 524.288.000 bytes por conta (D-1506 e D-1531).
-  if v_bytes_no_plano + v_tamanho > 8388608 or v_bytes_na_conta + v_tamanho > 524288000 then
-    raise exception 'Espaço da avaliação ou da conta cheio.' using errcode = 'check_violation';
+  if v_bytes_no_plano + v_tamanho > 8388608 then
+    raise exception 'Espaço da avaliação cheio.' using errcode = 'check_violation';
+  end if;
+  -- D-1546: a conta cheia (2.000 arquivos ou 500 MB) tem código próprio, 53100: o texto da recusa não chega ao app, e o
+  -- código chega ("database error, code: 53100"). O app diz "O espaço de fotos da conta acabou.".
+  if v_na_conta >= 2000 or v_bytes_na_conta + v_tamanho > 524288000 then
+    raise exception 'Espaço da conta cheio.' using errcode = '53100';
   end if;
   return new;
 end;
@@ -194,5 +199,5 @@ commit;
 -- -- uma linha: false, true
 -- select tgname from pg_trigger where tgrelid = 'storage.objects'::regclass and tgname = 'limite_de_arquivos_da_avaliacao';
 -- -- uma linha: limite_de_arquivos_da_avaliacao (sem ela, o aviso do gatilho apareceu ao rodar; o resto vale, sem os tetos de bytes)
--- select position('524288000' in prosrc) > 0 as soma_bytes from pg_proc where proname = 'limite_de_arquivos_da_avaliacao';
--- -- uma linha: true (o gatilho é o desta versão, que soma os bytes)
+-- select position('524288000' in prosrc) > 0 as soma_bytes, position('53100' in prosrc) > 0 as conta_cheia from pg_proc where proname = 'limite_de_arquivos_da_avaliacao';
+-- -- uma linha: true, true (o gatilho é o desta versão, que soma os bytes e dá à conta cheia o código 53100)

@@ -1,9 +1,10 @@
 // CA-2488 (spec antropometria-telas, D-1457 e D-1504): o balde das fotos e dos anexos da avaliação no Supabase LOCAL.
 // A dona envia, lê, assina e apaga na própria pasta; outra conta e quem não tem conta não fazem nada na pasta dela; o
 // servidor recusa o tipo, o tamanho, o caminho fora do formato, a 6ª foto, o 11º anexo e a conta com 2.000 arquivos,
-// também com duas abas enviando juntas; e soma os bytes: 8 MB por plano e 500 MB por conta (D-1531, CB-1468).
+// também com duas abas enviando juntas; e soma os bytes: 8 MB por plano e 500 MB por conta (D-1531, CB-1468). A conta
+// cheia chega ao app com o código próprio 53100; o resto do gatilho, com 23514 (D-1546, CB-1496).
 import { randomUUID } from 'node:crypto'
-import type { SupabaseClient } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { afterEach, beforeAll, describe, expect, it } from 'vitest'
 import { sqlNoBancoLocal } from './bancoLocal.ts'
 import { negadoOuVazio, prepararCenario, recusado, type Cenario } from './preparo.ts'
@@ -44,6 +45,15 @@ const pdfDe = (bytes: number): Blob => new Blob([new TextEncoder().encode('%PDF-
 
 async function enviar(cliente: SupabaseClient, caminho: string, arquivo: Blob = jpeg()) {
   return balde(cliente).upload(caminho, arquivo, { contentType: arquivo.type, upsert: false })
+}
+
+/**
+ * D-1546: recusado pelo gatilho com este código, como o app o recebe ("database error, code: 53100"). O texto do `raise`
+ * não chega; o código chega, e é por ele que o app reconhece a conta cheia.
+ */
+function recusadoComCodigo(resposta: Awaited<ReturnType<typeof enviar>>, codigo: '23514' | '53100'): void {
+  expect(resposta.error, `esperava recusa com ${codigo}`).not.toBeNull()
+  expect(resposta.error?.message).toContain(`code: ${codigo}`)
 }
 
 /** A pasta da vítima neste balde, com o conteúdo de cada arquivo: igual antes e depois = o ataque não mudou nada. */
@@ -204,9 +214,9 @@ describe('CA-2488: o servidor confere o arquivo e as contagens (D-1457, D-1504)'
   it('CA-2488: a 6ª foto e o 11º anexo de um plano são recusados; outro plano continua aceitando', async () => {
     const plano = 'plano-cheio'
     for (let i = 0; i < 5; i++) expect((await enviar(c.atacante.cliente, caminhoDaFoto(c.atacante.id, plano))).error).toBeNull()
-    recusado(await enviar(c.atacante.cliente, caminhoDaFoto(c.atacante.id, plano)))
+    recusadoComCodigo(await enviar(c.atacante.cliente, caminhoDaFoto(c.atacante.id, plano)), '23514')
     for (let i = 0; i < 10; i++) expect((await enviar(c.atacante.cliente, caminhoDoAnexo(c.atacante.id, plano), pdf())).error).toBeNull()
-    recusado(await enviar(c.atacante.cliente, caminhoDoAnexo(c.atacante.id, plano), pdf()))
+    recusadoComCodigo(await enviar(c.atacante.cliente, caminhoDoAnexo(c.atacante.id, plano), pdf()), '23514')
     expect(nomesNoBanco(`${c.atacante.id}/${plano}/fotos`)).toHaveLength(5)
     expect(nomesNoBanco(`${c.atacante.id}/${plano}/anexos`)).toHaveLength(10)
     expect((await enviar(c.atacante.cliente, caminhoDaFoto(c.atacante.id, 'plano-vizinho'))).error).toBeNull()
@@ -237,13 +247,14 @@ describe('CA-2488: o servidor confere o arquivo e as contagens (D-1457, D-1504)'
     const id = c.atacante.id
     expect((await enviar(c.atacante.cliente, caminhoDoAnexo(id, plano), pdfDe(4 * MB))).error).toBeNull()
     expect((await enviar(c.atacante.cliente, caminhoDaFoto(id, plano), jpegDe(4 * MB))).error).toBeNull()
-    recusado(await enviar(c.atacante.cliente, caminhoDaFoto(id, plano)))
-    recusado(await enviar(c.atacante.cliente, caminhoDoAnexo(id, plano), pdf()))
+    // O teto do plano não é o da conta: continua com 23514, e o app o lê pela pasta (D-1531).
+    recusadoComCodigo(await enviar(c.atacante.cliente, caminhoDaFoto(id, plano)), '23514')
+    recusadoComCodigo(await enviar(c.atacante.cliente, caminhoDoAnexo(id, plano), pdf()), '23514')
     expect(nomesNoBanco(`${id}/${plano}`)).toHaveLength(2)
     expect(bytesNoBanco(`${id}/${plano}`)).toBe(8 * MB)
   })
 
-  it('CB-1468 e D-1531: a conta que soma 500 MB tem o próximo arquivo recusado, em qualquer plano', async () => {
+  it('CB-1468, CB-1496 e D-1546: a conta que soma 500 MB tem o próximo arquivo recusado, em qualquer plano, com 53100', async () => {
     const id = c.atacante.id
     // Linhas de mentira (sem arquivo), postas pelo banco, até a conta somar 500 MB: 8 MB em cada plano (o teto do plano
     // vale também para elas) e o resto no último. O gatilho só soma o que o banco diz.
@@ -259,8 +270,8 @@ describe('CA-2488: o servidor confere o arquivo e as contagens (D-1457, D-1504)'
     expect(r.ok, r.erro).toBe(true)
     try {
       expect(bytesNoBanco(id)).toBe(500 * MB)
-      recusado(await enviar(c.atacante.cliente, caminhoDaFoto(id, 'plano-depois-dos-500')))
-      recusado(await enviar(c.atacante.cliente, caminhoDoAnexo(id, 'plano-depois-dos-500'), pdf()))
+      recusadoComCodigo(await enviar(c.atacante.cliente, caminhoDaFoto(id, 'plano-depois-dos-500')), '53100')
+      recusadoComCodigo(await enviar(c.atacante.cliente, caminhoDoAnexo(id, 'plano-depois-dos-500'), pdf()), '53100')
       expect(nomesNoBanco(`${id}/plano-depois-dos-500`)).toEqual([])
     } finally {
       // As linhas ficam (a pilha local é apagada depois), mas sem peso: os testes seguintes usam a mesma conta.
@@ -270,7 +281,7 @@ describe('CA-2488: o servidor confere o arquivo e as contagens (D-1457, D-1504)'
     expect((await enviar(c.atacante.cliente, caminhoDaFoto(id, 'plano-depois-de-zerar'))).error).toBeNull()
   })
 
-  it('D-1457: com 2.000 arquivos na conta, o próximo é recusado', async () => {
+  it('D-1457, CB-1496 e D-1546: com 2.000 arquivos na conta, o próximo é recusado, com 53100', async () => {
     const id = c.atacante.id
     const ja = nomesNoBanco(id).length
     const faltam = 2000 - ja
@@ -279,8 +290,23 @@ describe('CA-2488: o servidor confere o arquivo e as contagens (D-1457, D-1504)'
     )
     expect(r.ok, r.erro).toBe(true)
     expect(nomesNoBanco(id)).toHaveLength(2000)
-    recusado(await enviar(c.atacante.cliente, caminhoDaFoto(id, 'plano-depois-do-teto')))
+    recusadoComCodigo(await enviar(c.atacante.cliente, caminhoDaFoto(id, 'plano-depois-do-teto')), '53100')
+    recusadoComCodigo(await enviar(c.atacante.cliente, caminhoDoAnexo(id, 'plano-depois-do-teto'), pdf()), '53100')
     // As linhas de mentira ficam até o fim: a pilha local é apagada depois dos testes.
+  })
+
+  it('CB-1497 e D-1547: o token recusado volta como sessão (401, 403 ou InvalidJWT), nunca como 53100', async () => {
+    const semToken = createClient(c.ambiente.url, c.ambiente.anon, {
+      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+      global: { headers: { Authorization: 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ4In0.assinatura-falsa' } },
+    })
+    const r = await enviar(semToken, caminhoDaFoto(c.atacante.id, 'plano-token-falso'))
+    expect(r.error).not.toBeNull()
+    const erro: { readonly status?: unknown; readonly statusCode?: unknown; readonly code?: unknown; readonly message: string } = r.error ?? { message: '' }
+    const sessao = [401, 403].includes(Number(erro.status)) || ['401', '403'].includes(String(erro.statusCode)) || erro.code === 'InvalidJWT'
+    expect(sessao, JSON.stringify({ status: erro.status, statusCode: erro.statusCode, code: erro.code, message: erro.message })).toBe(true)
+    expect(erro.message).not.toContain('53100')
+    expect(nomesNoBanco(`${c.atacante.id}/plano-token-falso`)).toEqual([])
   })
 
   it('D-1504: o gatilho existe no banco local (o limite com dois envios juntos não depende só da política)', () => {
