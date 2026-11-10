@@ -7,6 +7,7 @@ import { casoNasFaixas } from '@/domain/caso.ts'
 import { propostaNaDieta } from '@/domain/documentoDoPaciente.ts'
 import { casoComFicha } from '@/domain/fichaNoPlano.ts'
 import { assinaturaDaFolha } from '@/domain/folhaDieta.ts'
+import { anteriorComFoto } from '@/domain/fotosDaAvaliacao.ts'
 import { avaliacoesParaHistorico, historicoAntropometrico } from '@/domain/historicoAntropometrico.ts'
 import type { Paciente } from '@/domain/pacientes.ts'
 import type { CasoSalvo } from '@/domain/persistencia.ts'
@@ -20,6 +21,7 @@ import type { PassoTrilha } from '../layout/Cabecalho.tsx'
 import type { Rota, VistaDaAntropometria } from '../navegacao.ts'
 import { AbasDaFicha } from './AbasDaFicha.tsx'
 import { BarraDaAvaliacao } from './BarraDaAvaliacao.tsx'
+import { CartaoFotos } from './CartaoFotos.tsx'
 import { DialogoDocumentoAvaliacao } from './DialogoDocumentoAvaliacao.tsx'
 import { VistaAvaliacao } from './VistaAvaliacao.tsx'
 import { VistaHistorico } from './VistaHistorico.tsx'
@@ -174,6 +176,18 @@ export function TelaAntropometria({ rota, navegar, moldura, aoNovaAvaliacao, ass
   )
   // D-1528: sem a data da consulta, o dia da última alteração no relógio de quem usa.
   const data = dataDaAvaliacao(registro)
+  // F2 (D-1459, D-1510): as fotos só com paciente; "Comparar fotos" com a avaliação de antes que tem foto.
+  const cartaoFotos =
+    paciente && vista === 'avaliacao' ? (
+      <CartaoFotos
+        bruto={registro.caso}
+        sexo={caso.sexo}
+        atual={{ casoId: registro.caso.id, data, caso }}
+        anterior={anteriorComFoto(avaliacoesParaHistorico(avaliacoes, paciente, hoje), registro.caso.id)}
+        aoAlterar={alterarCaso}
+        agora={agora}
+      />
+    ) : null
 
   return moldura(
     { titulo, trilha, acoes },
@@ -213,7 +227,7 @@ export function TelaAntropometria({ rota, navegar, moldura, aoNovaAvaliacao, ass
       {historico ? (
         <VistaHistorico historico={historico} />
       ) : (
-        <VistaAvaliacao caso={caso} bruto={registro.caso} paciente={paciente} aoAlterar={alterarCaso} />
+        <VistaAvaliacao caso={caso} bruto={registro.caso} paciente={paciente} aoAlterar={alterarCaso} cartaoFotos={cartaoFotos} />
       )}
     </div>,
   )

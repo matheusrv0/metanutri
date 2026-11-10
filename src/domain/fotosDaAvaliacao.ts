@@ -57,6 +57,8 @@ export type ConferenciaDaFoto = { readonly tipo: 'ok'; readonly mime: 'image/jpe
 /** Os ângulos na ordem da escolha (D-1454) e o nome de cada um. */
 export const ANGULOS: readonly AnguloDaFoto[] = ['frente', 'lado', 'costas', 'outra']
 export const NOME_DO_ANGULO: Readonly<Record<AnguloDaFoto, string>> = { frente: 'Frente', lado: 'Lado', costas: 'Costas', outra: 'Outra' }
+/** "frente", "lado", "costas", "outra": o ângulo no meio da frase (a foto sem ângulo conta como Outra). */
+export const anguloNaFrase = (angulo: AnguloDaFoto | undefined): string => NOME_DO_ANGULO[angulo ?? 'outra'].toLocaleLowerCase('pt-BR')
 /** Os que "Comparar fotos" oferece (D-1455). */
 export const ANGULOS_DA_COMPARACAO: readonly AnguloDaFoto[] = ['frente', 'lado', 'costas']
 
@@ -313,7 +315,7 @@ function quadro(a: AvaliacaoDoHistorico, angulo: AnguloDaFoto): QuadroDaComparac
   const foto = fotosDe(a).find((f) => f.angulo === angulo) ?? null
   const peso = a.caso.pesoKg
   const detalhe = peso === null ? NOME_DO_ANGULO[angulo] : `${NOME_DO_ANGULO[angulo]} · ${formatarNumero(peso, 1)} kg`
-  return { data, detalhe, foto, falta: foto ? null : `Sem foto de ${NOME_DO_ANGULO[angulo].toLocaleLowerCase('pt-BR')} em ${data}.` }
+  return { data, detalhe, foto, falta: foto ? null : `Sem foto de ${anguloNaFrase(angulo)} em ${data}.` }
 }
 
 /** As linhas do documento (D-1494) que "Comparar fotos" mostra: o peso, a cintura e a soma das dobras. */

@@ -27,8 +27,10 @@ export function criarArmazenamentoDeFotos(cliente: SupabaseClient): Armazenament
     },
     async enviar(caminho, arquivo, tipo) {
       try {
+        // O supabase-js manda o Blob num formulário, com o tipo do próprio Blob: ele leva o tipo conferido pelo conteúdo.
+        const corpo = arquivo.type === tipo ? arquivo : arquivo.slice(0, arquivo.size, tipo)
         // D-1513: o arquivo sai do servidor com "max-age=0": o navegador não guarda a foto entre uma visita e outra.
-        const { error } = await balde().upload(caminho, arquivo, { contentType: tipo, upsert: false, cacheControl: '0' })
+        const { error } = await balde().upload(caminho, corpo, { contentType: tipo, upsert: false, cacheControl: '0' })
         if (!error) return 'ok'
         return respondeu(error) ? 'recusado' : 'sem-rede'
       } catch {

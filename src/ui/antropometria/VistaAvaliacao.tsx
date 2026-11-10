@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import type { Paciente } from '@/domain/pacientes.ts'
 import type { Caso } from '@/domain/tipos.ts'
 import { ContextoDaAjudaAberta } from './ajudaAberta.ts'
@@ -16,13 +16,15 @@ interface VistaAvaliacaoProps {
   readonly bruto: Caso
   readonly paciente: Paciente | null
   readonly aoAlterar: (mudanca: Partial<Caso>) => void
+  /** "Fotos e anexos" (F2), depois das dobras, como o protótipo; nulo no plano sem paciente (D-1459). */
+  readonly cartaoFotos?: ReactNode
 }
 
 /**
  * A vista Avaliação (spec antropometria-telas, D-1406): à esquerda, as medidas; à direita, o resultado e o ponto de
  * partida. Uma coluna abaixo de 1280 px, na mesma ordem. Uma ajuda aberta por vez na vista inteira (D-1461).
  */
-export function VistaAvaliacao({ caso, bruto, paciente, aoAlterar }: VistaAvaliacaoProps) {
+export function VistaAvaliacao({ caso, bruto, paciente, aoAlterar, cartaoFotos = null }: VistaAvaliacaoProps) {
   const [aberta, abrir] = useState<string | null>(null)
   return (
     <ContextoDaAjudaAberta.Provider value={{ aberta, abrir }}>
@@ -32,6 +34,7 @@ export function VistaAvaliacao({ caso, bruto, paciente, aoAlterar }: VistaAvalia
           <CartaoCircunferencias bruto={bruto} aoAlterar={aoAlterar} />
           <CartaoDiametros bruto={bruto} aoAlterar={aoAlterar} />
           <CartaoDobras caso={caso} bruto={bruto} aoAlterar={aoAlterar} />
+          {cartaoFotos}
         </div>
         <div className="flex min-w-0 flex-col gap-6">
           <CartaoResultado caso={caso} />
