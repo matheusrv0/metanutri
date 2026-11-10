@@ -845,3 +845,18 @@ T68 a T71 em cima de f73f89c3. Rodada final, com as travas de sempre:
   o próprio paciente pede no link (o S1 do "Receber", o S3 e a recuperação), e o resumo da adesão (N1) da conta só
   confere o que volta. A Política diz isso (D-1263). Não mudei o código.
 - A Política (D-1250, D-1259 e D-1263) continua **PARA O DONO APROVAR**; a versão dos textos fica `2026-11-03`.
+
+### 10.4 A validação da correção da revisão r4 (10/11/2026)
+
+T73 a T75 em cima de 892a070b, só o que os dois leves pedem (o pedido foi a validação dos arquivos mexidos):
+- `npm run lint`: 0 erro (o aviso antigo de sempre). `npm run typecheck`: limpo.
+- vitest dos arquivos mexidos (`sqlLadoDoPaciente`, `servidorAvisosResposta`), `--maxWorkers=4`: 68 de 68.
+- `npm run test:seguranca` (com a `trava-ataques`): **364 de 364** em 11 arquivos, com o CA-2311 (o apagar de verdade
+  parado no meio por uma terceira transação e o "Confirmar" da mesma chave). Antes do conserto, o mesmo teste caiu com
+  `deadlock detected`.
+- A sonda da revisão r4, com a G5 refeita na ordem nova (G5a em SQL cru, G5b com a função de verdade) e a G6 como
+  conferência: "nenhum furo". Antes do conserto, a G5b deu `40P01 deadlock detected` e a G6, um S1 ao devolvido. A K
+  roda o 017 mais duas vezes, com o apagar novo, e os grants continuam.
+
+**Divergências que ficam:** as da seção 10.3. A observação 1 da revisão r4 (o D-1261 dizia "marca a chave como usada
+e só então grava", e o SQL marca no fim, na mesma transação) foi resolvida na frase da SPEC, sem mudar o código.
