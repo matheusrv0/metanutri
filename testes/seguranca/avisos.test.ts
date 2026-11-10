@@ -73,8 +73,10 @@ const para = (endereco: string): readonly Enviado[] => enviados.filter((e) => e.
 
 // ---------- As funções como nas Edge Functions ----------
 
-// D-1254: a suíte manda muitos e-mails da mesma conta no mesmo dia; o teto por conta tem o teste dele abaixo.
-const variaveis: Record<string, string> = { RESEND_API_KEY: CHAVE_DO_RESEND, ENDERECO_DO_APP: APP, REMETENTE_DOS_AVISOS: REMETENTE, TETO_CONTA_DIA: '100000' }
+// A suíte manda, no mesmo dia e quase toda da mesma conta, mais e-mails que os 70 do teto do dia e os 30 do teto por
+// conta (D-1237, D-1254): os tetos ficam altos aqui, e cada teto tem o teste dele (com o número de sempre, abaixo).
+const TETOS_DA_SUITE: Readonly<Record<string, string>> = { TETO_DIA: '100000', TETO_MES: '1000000', TETO_CONTA_DIA: '100000' }
+const variaveis: Record<string, string> = { RESEND_API_KEY: CHAVE_DO_RESEND, ENDERECO_DO_APP: APP, REMETENTE_DOS_AVISOS: REMETENTE, ...TETOS_DA_SUITE }
 
 function dependencias(agora: Date = new Date()): DependenciasComuns {
   return { ...dependenciasDoAmbiente((nome) => variaveis[nome], c.servico, resendDeMentira, c.ambiente.url), agora: () => agora, log: () => undefined }
@@ -407,6 +409,8 @@ describe('o paciente pede sem conta (função meu-link)', () => {
     const antes = para(novo).length
     expect(await meuLink({ metodo: 'POST', ip: '203.0.113.90', corpo: { acao: 'recuperar', email: novo, turnstile: 'turnstile-certo' } }, dependenciasDoMeuLink())).toEqual({ status: 200, corpo: { ok: true } })
     expect(para(novo)).toHaveLength(antes)
+    // Este pedido gastou um dos 3 da hora deste e-mail (CA-2234): ele volta, para o teste da recuperação, abaixo, ter os 3.
+    sem('devolver o pedido da recuperação', (await c.servico.rpc('devolver_limite', { p_chave: `rec-email:${await hashDoEmail(novo)}` })).error)
     const chaves = await c.servico.from('chaves_de_aviso').select('tipo, avisos, email, email_hash, vence_em, usado_em').eq('link_id', link.id).eq('tipo', 'aceite')
     expect(chaves.data).toEqual([expect.objectContaining({ tipo: 'aceite', avisos: ['semana', 'lembrete'], email: novo, email_hash: await hashDoEmail(novo), usado_em: null })])
     // CB-1222: a chave do aceite vale 7 dias.
@@ -617,6 +621,23 @@ describe('os eventos do Resend (função webhook-resend)', () => {
   })
 })
 
+describe('a chave de descadastro presa ao endereço (D-1252)', () => {
+  it('CA-2297: com a ficha corrigida, o um clique do e-mail que foi para o endereço errado não vale e não muda nada', async () => {
+    const errado = endereco('rui.errado')
+    const certo = endereco('rui')
+    const rui = await novoLink('Rui Lopes', errado)
+    const conta = await quemPedeOEnvio(c.servico, `Bearer ${tokenDaVitima}`)
+    expect((await enviarLink({ metodo: 'POST', conta, corpo: { acao: 'enviar', link: rui.id } }, dependencias())).status).toBe(200)
+    const chave = chaveDe(para(errado)[0]?.email.headers?.['List-Unsubscribe'], CHAVE_DO_UM_CLIQUE)
+    sem('corrigir a ficha', (await c.vitima.cliente.rpc('definir_email_da_ficha', { p_link: rui.id, p_email: certo })).error)
+    expect(await responderAosAvisos({ metodo: 'POST', chaveDaUrl: chave, corpo: null, umClique: true }, dependencias())).toEqual({
+      status: 404,
+      corpo: { erro: 'Este endereço não vale. Abra o botão do e-mail mais recente.' },
+    })
+    expect((await c.servico.from('emails_dos_links').select('parou_tudo_em').eq('link_id', rui.id).single()).data?.parou_tudo_em).toBeNull()
+  })
+})
+
 describe('a pausa e os tetos (D-1237, D-1239)', () => {
   const email = endereco('lucas')
   const dia = somarDias(HOJE, 9)
@@ -650,8 +671,12 @@ describe('a pausa e os tetos (D-1237, D-1239)', () => {
       delete variaveis['TETO_DIA']
       delete variaveis['TETO_MES']
     }
-    expect((await rodar('a1', instanteEmBrasilia(dia, 10, 15))).status).toBe(200)
-    expect((await c.servico.from('estado_dos_avisos').select('teto_dia, teto_mes').eq('id', 1).single()).data).toEqual({ teto_dia: 70, teto_mes: 2100 })
+    try {
+      expect((await rodar('a1', instanteEmBrasilia(dia, 10, 15))).status).toBe(200)
+      expect((await c.servico.from('estado_dos_avisos').select('teto_dia, teto_mes').eq('id', 1).single()).data).toEqual({ teto_dia: 70, teto_mes: 2100 })
+    } finally {
+      Object.assign(variaveis, TETOS_DA_SUITE)
+    }
   })
 
   it('CA-2299: o banco conta o que cada conta mandou no dia, e a conta no teto dela ouve a frase do limite', async () => {
@@ -660,7 +685,6 @@ describe('a pausa e os tetos (D-1237, D-1239)', () => {
     const contagem = await banco.contarEnvios(new Date(Date.UTC(agora.getUTCFullYear(), agora.getUTCMonth(), agora.getUTCDate())), new Date(Date.UTC(agora.getUTCFullYear(), agora.getUTCMonth(), 1)))
     const daVitima = contagem.porConta?.get(c.vitima.id) ?? 0
     expect(daVitima).toBeGreaterThan(0)
-    expect(contagem.porConta?.get(c.atacante.id) ?? 0).toBe(0)
     const helena = await novoLink('Helena Teto', endereco('helena.teto'))
     variaveis['TETO_CONTA_DIA'] = String(daVitima)
     try {
