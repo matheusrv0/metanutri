@@ -83,11 +83,11 @@ describe('documentoDaAvaliacao: a avaliação de exemplo (CA-2459)', () => {
     expect(d.metodos).toContain('Peso e estatura aferidos na consulta.')
   })
 
-  it('as medidas básicas, com a origem e a classificação do IMC com a fonte', () => {
+  it('CB-1493 (D-1543): as medidas básicas, com a origem e a classificação do IMC, sem a fonte', () => {
     expect(d.basicas.map((b) => [b.rotulo, b.valor, b.nota])).toEqual([
       ['Peso', '71,5 kg', 'aferido'],
       ['Estatura', '164,0 cm', 'aferida'],
-      ['IMC', '26,58 kg/m²', expect.stringMatching(/^Sobrepeso · .+/)],
+      ['IMC', '26,58 kg/m²', 'Sobrepeso'],
     ])
   })
 
@@ -153,7 +153,7 @@ describe('documentoDaAvaliacao: a avaliação de exemplo (CA-2459)', () => {
     expect(outro.paciente.find((c) => c.rotulo === 'Avaliação')?.valor).toBe('Retorno · 3ª avaliação')
   })
 
-  it('as referências, sem repetir', () => {
+  it('CB-1495 (D-1545): as citações completas continuam no domínio, sem repetir (decidem a linha da D-1541)', () => {
     expect(d.referencias.length).toBeGreaterThan(3)
     expect(new Set(d.referencias).size).toBe(d.referencias.length)
   })

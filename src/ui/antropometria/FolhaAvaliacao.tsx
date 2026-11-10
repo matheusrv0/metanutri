@@ -57,9 +57,9 @@ function Cabecalho({ assinatura }: { readonly assinatura: AssinaturaDaFolha }) {
   )
 }
 
-/** Duas linhas por item abaixo de 640 px; a grade de cinco colunas no computador e no papel (D-1499). */
+/** Duas linhas por item abaixo de 640 px; a grade de quatro colunas no computador e no papel (D-1499; sem "Fonte", D-1542). */
 // No celular, a classificação tem metade da linha: "Risco substancialmente aumentado" quebra entre as palavras.
-const COLUNAS_DOS_RESULTADOS = 'grid grid-cols-[minmax(0,1fr)_minmax(0,50%)] gap-x-3 gap-y-0.5 sm:grid-cols-[minmax(0,1.5fr)_5.5rem_minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1fr)]'
+const COLUNAS_DOS_RESULTADOS = 'grid grid-cols-[minmax(0,1fr)_minmax(0,50%)] gap-x-3 gap-y-0.5 sm:grid-cols-[minmax(0,1.5fr)_5.5rem_minmax(0,1.2fr)_minmax(0,1.2fr)]'
 const COLUNAS_DA_COMPARACAO = 'grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-0.5 sm:grid-cols-[minmax(0,1.4fr)_5rem_5rem_6rem_minmax(0,1fr)]'
 
 /**
@@ -250,7 +250,6 @@ export function FolhaAvaliacao({ documento: d, assinatura, proposta, data }: Fol
                 </span>
                 <span role="columnheader">Referência</span>
                 <span role="columnheader">Classificação</span>
-                <span role="columnheader">Fonte</span>
               </div>
             </div>
             <div role="rowgroup" className="grid">
@@ -269,9 +268,6 @@ export function FolhaAvaliacao({ documento: d, assinatura, proposta, data }: Fol
                     </span>
                     <span role="cell" className="flex min-w-0 justify-end [overflow-wrap:normal] sm:justify-start">
                       {a.selo ? <SeloDaSituacao rotulo={a.selo.rotulo} tom={a.selo.tom} /> : <span className="text-muted-foreground">—</span>}
-                    </span>
-                    <span role="cell" className="col-span-2 min-w-0 text-xs text-muted-foreground sm:col-span-1">
-                      {a.fonte?.curta ?? ''}
                     </span>
                   </div>
                 )
@@ -339,18 +335,10 @@ export function FolhaAvaliacao({ documento: d, assinatura, proposta, data }: Fol
         {d.observacoes ? <p className="whitespace-pre-line text-xs text-muted-foreground">{`Condições da medida: ${d.observacoes}`}</p> : null}
       </Secao>
 
-      {d.referencias.length > 0 ? (
-        <Secao titulo="Referências">
-          <ul className="grid gap-1 text-xs text-muted-foreground sm:grid-cols-2 sm:gap-x-8">
-            {d.referencias.map((r) => (
-              <li key={r}>{r}</li>
-            ))}
-          </ul>
-        </Secao>
-      ) : null}
-
       {/* A assinatura não fica sozinha no topo de uma página (D-1433): vai junto com o aviso. */}
       <div className="flex flex-col gap-2 break-inside-avoid">
+        {/* D-1540 e D-1541: no lugar da lista de referências, uma linha, só quando o documento usa alguma fonte. */}
+        {d.referencias.length > 0 ? <p className="text-xs text-muted-foreground">Referências completas no MetaNutri.</p> : null}
         <p className="text-xs text-muted-foreground">A interpretação é da nutricionista e não substitui avaliação clínica.</p>
         <LinhasDeAssinatura assinatura={assinatura} />
         <p className="text-center text-sm text-foreground sm:ml-auto sm:w-1/2">{dataPorExtenso(data)}</p>
