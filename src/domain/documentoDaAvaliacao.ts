@@ -30,7 +30,7 @@ export interface CampoDoDocumento {
 export interface MedidaBasica {
   readonly rotulo: 'Peso' | 'Estatura' | 'IMC'
   readonly valor: string
-  /** A origem ("aferido") ou a classificação do IMC com a fonte ("Sobrepeso · SISVAN, 2011"); vazio sem nada. */
+  /** A origem ("aferido") ou a classificação do IMC, sem a fonte ("Sobrepeso", D-1543); vazio sem nada. */
   readonly nota: string
 }
 
@@ -70,7 +70,10 @@ export interface DocumentoDaAvaliacao {
   /** Escrito pela nutricionista (D-1432); vazio, o papel mostra linhas para escrever à mão. */
   readonly diagnostico: string
   readonly observacoes: string
-  /** As citações completas das fontes usadas, na ordem em que aparecem, sem repetir. */
+  /**
+   * As citações completas das fontes usadas, na ordem em que aparecem, sem repetir. O papel não as lista (D-1540): com
+   * alguma, sai só a linha "Referências completas no MetaNutri." (D-1541); a citação fica no "ⓘ" da tela (D-1545).
+   */
   readonly referencias: readonly string[]
 }
 
@@ -262,10 +265,8 @@ function basicasDo(caso: Caso, imc: LinhaDoResultado | undefined): MedidaBasica[
   const basicas: MedidaBasica[] = []
   if (peso !== null) basicas.push({ rotulo: 'Peso', valor: numeroComUnidade(peso, 1, 'kg'), nota: notaDoPeso })
   if (estatura !== null) basicas.push({ rotulo: 'Estatura', valor: numeroComUnidade(estatura, 1, 'cm'), nota: notaDaEstatura })
-  if (imc && imc.valor !== null) {
-    const nota = [imc.situacao?.rotulo, imc.fonte?.curta].filter((t) => t !== undefined && t !== '').join(' · ')
-    basicas.push({ rotulo: 'IMC', valor: numeroComUnidade(imc.valor, imc.casas, imc.unidade), nota })
-  }
+  // D-1543: a classificação sem a fonte; a fonte do IMC fica no "ⓘ" da tela e em `referencias`.
+  if (imc && imc.valor !== null) basicas.push({ rotulo: 'IMC', valor: numeroComUnidade(imc.valor, imc.casas, imc.unidade), nota: imc.situacao?.rotulo ?? '' })
   return basicas
 }
 

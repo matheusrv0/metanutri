@@ -1,4 +1,4 @@
-import { MEDIDAS_CORPORAIS_VAZIAS, casoNasFaixas, completarCasoLido, criarCasoVazio, erroDaFaixa, lerNumero, modoDeQuantidade, validarCaso } from './caso.ts'
+import { MEDIDAS_CORPORAIS_VAZIAS, casoNasFaixas, completarCasoLido, criarCasoVazio, erroDaFaixa, lerNumero, lerOrigemIa, modoDeQuantidade, validarCaso } from './caso.ts'
 import type { Caso } from './tipos.ts'
 
 describe('quantidades para o paciente (spec conduta-da-nutricionista, D-297)', () => {
@@ -226,6 +226,23 @@ describe('medidas da antropometria completa (spec antropometria-completa)', () =
   it('CB-1008: o ponto da cintura de uma versão mais nova fica como veio', () => {
     const futuro = { ...criarCasoVazio('f'), medidasCorporais: { ...MEDIDAS_CORPORAIS_VAZIAS, pontoDaCintura: 'umbigo' } } as unknown as Caso
     expect(completarCasoLido(futuro).medidasCorporais.pontoDaCintura).toBe('umbigo')
+  })
+})
+
+describe('A marca da IA no caso (spec assistente-ia, D-1308 e D-1352)', () => {
+  it('CA-2402: plano novo nasce sem a marca; o plano gravado lê a marca guardada', () => {
+    expect(criarCasoVazio('c1').origemIa).toBeNull()
+    const lido = completarCasoLido({ ...criarCasoVazio('c1'), origemIa: { em: '2026-11-03', modelo: 'claude-opus-5-5' } })
+    expect(lido.origemIa).toEqual({ em: '2026-11-03', modelo: 'claude-opus-5-5' })
+  })
+
+  it('CA-2402: a marca estragada, ou de antes desta versão, vira nula', () => {
+    for (const ruim of [undefined, null, true, 'sim', { em: 'ontem', modelo: 'x' }, { em: '2026-11-03', modelo: 7 }, { em: '2026-11-03', modelo: 'm'.repeat(65) }]) {
+      expect(lerOrigemIa(ruim)).toBeNull()
+    }
+    const semCampo = { ...criarCasoVazio('c1') } as Record<string, unknown>
+    delete semCampo['origemIa']
+    expect(completarCasoLido(semCampo as unknown as Caso).origemIa).toBeNull()
   })
 })
 

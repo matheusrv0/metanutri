@@ -28,6 +28,7 @@ const MUDANCA: Readonly<Record<string, Readonly<Record<string, unknown>>>> = {
   assinando_agora: { desde: '2020-01-01T00:00:00Z' },
   tentativas_de_cartao: { recusada: true },
   chamadas_da_cobranca: { tipo: 'conferir' },
+  uso_da_ia: { status: 'erro', custo_microdolares: 0 },
   marcas: { cor: '#7a2944', logo: null },
 }
 
@@ -52,6 +53,8 @@ function linhaEmNomeDa(conta: string, tabela: string): Readonly<Record<string, u
       return { nutricionista_id: conta, recusada: true }
     case 'chamadas_da_cobranca':
       return { nutricionista_id: conta, tipo: 'cartao' }
+    case 'uso_da_ia':
+      return { nutricionista_id: conta, modo: 'gerar', status: 'reservado', consentimento_declarado: true }
     case 'marcas':
       return { nutricionista_id: conta, cor: '#7a2944' }
     default:

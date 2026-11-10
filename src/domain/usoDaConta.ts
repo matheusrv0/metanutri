@@ -1,6 +1,7 @@
 // Quantas vezes cada alimento aparece nos planos da conta, para a busca pôr primeiro o que a nutricionista usa (spec
 // alimentos-e-gramaturas, D-370, item 2). Conta os itens das três opções; o ingrediente de receita não conta (ele não
 // foi escolhido na busca da refeição). Plano estragado não quebra a conta.
+import { lerOpcoesDoItem } from './opcoesDoItem.ts'
 import { OPCOES, type Plano } from './tipos.ts'
 
 export function contarUso(planos: Iterable<Plano | null | undefined>): Map<number, number> {
@@ -23,8 +24,9 @@ export function contarUso(planos: Iterable<Plano | null | undefined>): Map<numbe
 }
 
 /**
- * Em quantos planos o alimento aparece, como item ou como ingrediente de receita guardada no item (spec
- * alimentos-e-gramaturas, D-385): editar o alimento próprio muda os cálculos deles.
+ * Em quantos planos o alimento aparece, como item, como ingrediente de receita guardada no item (spec
+ * alimentos-e-gramaturas, D-385) ou como opção do item (spec busca-substitutos, D-1123): editar o alimento próprio muda
+ * os cálculos deles.
  */
 export function planosComAlimento(planos: Iterable<Plano | null | undefined>, alimentoId: number): number {
   let quantos = 0
@@ -34,7 +36,15 @@ export function planosComAlimento(planos: Iterable<Plano | null | undefined>, al
     const usa = (refeicoes as Plano['refeicoes']).some((refeicao) =>
       OPCOES.some((opcao) => {
         const itens: unknown = refeicao?.opcoes?.[opcao]
-        return Array.isArray(itens) && (itens as Plano['refeicoes'][number]['opcoes'][typeof opcao]).some((i) => i?.alimentoId === alimentoId || i?.receita?.ingredientes?.some((g) => g?.alimentoId === alimentoId) === true)
+        return (
+          Array.isArray(itens) &&
+          (itens as Plano['refeicoes'][number]['opcoes'][typeof opcao]).some(
+            (i) =>
+              i?.alimentoId === alimentoId ||
+              i?.receita?.ingredientes?.some((g) => g?.alimentoId === alimentoId) === true ||
+              (i ? lerOpcoesDoItem(i).some((o) => o.alimentoId === alimentoId) : false),
+          )
+        )
       }),
     )
     if (usa) quantos += 1

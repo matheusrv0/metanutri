@@ -71,7 +71,14 @@ describe('roteiro padrão (spec ficha-unica, D-347 e seção 2)', () => {
     expect(textos(ROTEIRO_PADRAO.perguntas.atividade)).toEqual(['Prática de exercício', 'Tipo de atividade', 'Vezes por semana', 'Minutos por vez', 'Horário do exercício'])
     expect(textos(ROTEIRO_PADRAO.perguntas.agua)).toEqual(['Água por dia', 'Cor da urina', 'Outras bebidas'])
     expect(textos(ROTEIRO_PADRAO.perguntas['alcool-fumo'])).toEqual(['Álcool', 'Tabagismo'])
-    expect(textos(ROTEIRO_PADRAO.perguntas.alimentacao)).toEqual(['Alimentos de que gosta', 'Alimentos de que não gosta', 'Vontade de doce ou salgado', 'Quem prepara as refeições e onde come'])
+    expect(textos(ROTEIRO_PADRAO.perguntas.alimentacao)).toEqual([
+      'Alimentos de que gosta',
+      'Alimentos de que não gosta',
+      'Vontade de doce ou salgado',
+      'Quem prepara as refeições e onde come',
+      // Spec assistente-ia, CA-2379.
+      'Orçamento para a alimentação',
+    ])
     expect(textos(ROTEIRO_PADRAO.perguntas.idoso)).toEqual(['Perda de peso sem querer', 'Quedas'])
     expect(textos(ROTEIRO_PADRAO.perguntas.recordatorio)).toEqual(['Ao acordar', 'Café da manhã', 'Lanche da manhã', 'Almoço', 'Lanche da tarde', 'Jantar', 'Ceia'])
   })
@@ -619,5 +626,13 @@ describe('Correção B: cada pergunta para quem vale (spec ficha-unica, seção 
     const respondida = responder([], { id: 'atividade-tipo', texto: 'Tipo de atividade' }, 'atividade', 'Natação')
     const bloco = blocosDaFicha(ROTEIRO_PADRAO, respondida, perfil({ idadeAnos: 2 })).find((b) => b.id === 'atividade')
     expect(bloco?.aviso).toBe('Este bloco vale a partir de 3 anos. As respostas continuam guardadas.')
+  })
+})
+
+describe('CA-2379 (spec assistente-ia): a pergunta do orçamento', () => {
+  it('fica no bloco Alimentação, com Econômico, Intermediário e Sem restrição', () => {
+    expect(ROTEIRO_PADRAO.perguntas.alimentacao.find((q) => q.id === 'orcamento')).toEqual({ id: 'orcamento', texto: 'Orçamento para a alimentação' })
+    expect(tipoDaPergunta('orcamento')).toBe('escolha')
+    expect(opcoesDaPergunta('orcamento')).toEqual(['Econômico', 'Intermediário', 'Sem restrição'])
   })
 })

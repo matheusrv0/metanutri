@@ -151,8 +151,8 @@ function NotaEstudante({ aoEscolher }: { readonly aoEscolher: () => void }) {
         <GraduationCap className="mt-0.5 size-5 shrink-0 text-infotext" aria-hidden="true" />
         <p className="min-w-0 text-sm text-foreground">
           <strong className="font-semibold text-heading">Estudante de nutrição:</strong> crie a conta com o e-mail da faculdade e envie o comprovante de matrícula.
-          Com o comprovante aprovado, o limite do Free sobe para <strong>{estudante.limitePacientesAtivos} pacientes</strong> e{' '}
-          <strong>{estudante.limiteLinksPaciente} links</strong>, por 12 meses ou até a formatura, o que vier antes. A conta de estudante é de uso não
+          Com o comprovante aprovado, o limite do Free sobe para <strong>{estudante.limitePacientesAtivos} pacientes</strong>,{' '}
+          <strong>{estudante.limiteLinksPaciente} links</strong> e <strong>{estudante.limiteSugestoesIa} sugestões com IA por mês</strong>, por 12 meses ou até a formatura, o que vier antes. A conta de estudante é de uso não
           comercial: a tela do paciente avisa que não é atendimento profissional.
         </p>
       </div>

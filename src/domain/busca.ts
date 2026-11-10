@@ -149,6 +149,8 @@ interface OpcoesDaMedida {
   readonly semFatia?: boolean | undefined
   /** Tira a colher (de sopa, de sobremesa, de servir, de chá) que pediria mais colheres que isto (D-483, carne e peixe). */
   readonly maximoDeColheres?: number | undefined
+  /** Só as medidas que este filtro aceita (a busca de substitutos, D-1135: o leite em copo ou em ml). */
+  readonly aceita?: ((nomeDaMedida: string) => boolean) | undefined
 }
 
 const PECAS_DA_FRUTA_PEQUENA: ReadonlySet<string> = new Set(['unidade', 'unidade pequena'])
@@ -186,7 +188,7 @@ function melhorMedida(alimentoId: number, gramas: number, opcoes: OpcoesDaMedida
   const servePraFruta = pecaDaFruta(alimentoId, medidas)
   for (const m of medidas) {
     const preferencia = PREFERENCIA_MEDIDAS.indexOf(m.nome)
-    if (preferencia < 0 || (opcoes.semFatia && m.nome === 'fatia')) continue
+    if (preferencia < 0 || (opcoes.semFatia && m.nome === 'fatia') || (opcoes.aceita && !opcoes.aceita(m.nome))) continue
     const q = Math.max(0.5, Math.round((gramas / m.gramas) * 2) / 2)
     if (q > QUANTIDADE_MAXIMA) continue
     if (servePraFruta && !servePraFruta(m, q)) continue
@@ -245,24 +247,26 @@ function emPontaDeFaca(alimentoId: number, gramas: number): MedidaEquivalente | 
  * pede mais de 4 unidades ou pedaços e outra medida do alimento serve, a outra ("1 unidade" de ovo frito, não "5 fatias e
  * meia"). Sem outra que sirva, fica a do planejador. Gordura nunca em fatia (D-242 da revisao-geral-trabalho).
  */
-export function medidaCaseiraParaPaciente(alimentoId: number, gramas: number): MedidaEquivalente | null {
+export function medidaCaseiraParaPaciente(alimentoId: number, gramas: number, aceita?: (nomeDaMedida: string) => boolean): MedidaEquivalente | null {
   const categoria = buscarAlimento(alimentoId)?.categoria
   const semFatia = categoria === GORDURAS
   // D-483 (correção C): carne, ave e peixe em colher só até 4 ("7 colheres de sopa e meia" de atum não se lê).
   const maximoDeColheres = categoria !== undefined && CARNE_OU_PEIXE.has(categoria) ? MAXIMO_DE_PEDACOS : undefined
   return (
-    melhorMedida(alimentoId, gramas, { semFatia, maximoDePedacos: MAXIMO_DE_PEDACOS, maximoDeColheres }) ??
-    melhorMedida(alimentoId, gramas, { semFatia, maximoDeColheres })
+    melhorMedida(alimentoId, gramas, { semFatia, maximoDePedacos: MAXIMO_DE_PEDACOS, maximoDeColheres, aceita }) ??
+    melhorMedida(alimentoId, gramas, { semFatia, maximoDeColheres, aceita })
   )
 }
 
 /**
  * A medida caseira que se mostra, igual no planejador, na folha do paciente, no link, no Cobrir, no substituto e no Word
  * (D-242 da revisao-geral-trabalho): ponta de faca primeiro; depois a medida para a paciente (D-295 da
- * conduta-da-nutricionista, que substitui o "mais de 4 pedaços, sem medida" da D-242).
+ * conduta-da-nutricionista, que substitui o "mais de 4 pedaços, sem medida" da D-242). Com `aceita`, só as medidas que
+ * ele aceita (a busca de substitutos, D-1135); sem ele, todas, como sempre.
  */
-export function medidaParaMostrar(alimentoId: number, gramas: number): MedidaEquivalente | null {
-  return emPontaDeFaca(alimentoId, gramas) ?? medidaCaseiraParaPaciente(alimentoId, gramas)
+export function medidaParaMostrar(alimentoId: number, gramas: number, aceita?: (nomeDaMedida: string) => boolean): MedidaEquivalente | null {
+  const ponta = aceita === undefined || aceita(PONTA_DE_FACA) ? emPontaDeFaca(alimentoId, gramas) : null
+  return ponta ?? medidaCaseiraParaPaciente(alimentoId, gramas, aceita)
 }
 
 /** Nomes de medidas conhecidos, das mais longas para as mais curtas (para casar "colher de sopa" antes de "colher"). */

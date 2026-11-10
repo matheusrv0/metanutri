@@ -1,5 +1,5 @@
 // O "Documento da avaliação": a prévia A4 e "Salvar em PDF" (spec antropometria-telas, D-1429 a D-1433, D-1489,
-// D-1495, D-1499; T18).
+// D-1495, D-1499; T18) e, desde 10/11, sem a lista de referências (D-1540 a D-1545; D1).
 import { screen, within } from '@testing-library/react'
 import type { AssinaturaDoPlano } from '@/domain/assinaturaDoPlano.ts'
 import { FRASE_PROPOSTA } from '@/domain/documentoDoPaciente.ts'
@@ -94,11 +94,11 @@ describe('o documento da avaliação (T18)', () => {
     expect(folha().getByText('Gerado no MetaNutri')).toBeInTheDocument()
   })
 
-  it('CA-2459: os blocos com dado: paciente, métodos, medidas básicas, dobras com o "●", resultados e referências', async () => {
+  it('CA-2459: os blocos com dado: paciente, métodos, medidas básicas, dobras com o "●" e resultados', async () => {
     const { usuario } = abrir()
     await gerar(usuario)
     const f = folha()
-    for (const titulo of ['Paciente', 'Métodos', 'Medidas básicas', 'Circunferências (cm)', 'Dobras cutâneas (mm)', 'Resultados', 'Diagnóstico nutricional', 'Referências']) {
+    for (const titulo of ['Paciente', 'Métodos', 'Medidas básicas', 'Circunferências (cm)', 'Dobras cutâneas (mm)', 'Resultados', 'Diagnóstico nutricional']) {
       expect(f.getByRole('heading', { name: titulo })).toBeInTheDocument()
     }
     expect(f.queryByRole('heading', { name: 'Diâmetros ósseos (cm)' })).not.toBeInTheDocument()
@@ -109,6 +109,62 @@ describe('o documento da avaliação (T18)', () => {
     const resultados = within(f.getByRole('table', { name: 'Resultados' }))
     expect(resultados.getByText('26,58 kg/m²')).toBeInTheDocument()
     expect(resultados.getByText('Sobrepeso')).toBeInTheDocument()
+  })
+
+  it('CB-1490 (D-1540): sem a seção "Referências" nem citação completa; uma linha antes do aviso e da assinatura', async () => {
+    const { usuario } = abrir()
+    await gerar(usuario)
+    const f = folha()
+    expect(f.queryByRole('heading', { name: 'Referências' })).not.toBeInTheDocument()
+    const papel = document.querySelector('.area-impressao')?.textContent ?? ''
+    expect(papel).not.toContain('Med Sci Sports Exerc')
+    expect(papel).not.toContain('Ministério da Saúde')
+    expect(papel.split('Referências completas no MetaNutri.').length - 1).toBe(1)
+    const linha = f.getByText('Referências completas no MetaNutri.')
+    const aviso = f.getByText('A interpretação é da nutricionista e não substitui avaliação clínica.')
+    expect(linha.compareDocumentPosition(aviso) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(linha.compareDocumentPosition(f.getByRole('heading', { name: 'Diagnóstico nutricional' })) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy()
+  })
+
+  it('CB-1491 (D-1541): plano sem medida, sem fonte usada: a linha das referências não sai', async () => {
+    const { usuario } = abrir({ caso: casoDe({ pacienteId: 'renata', dataConsulta: '2026-11-03' }) })
+    await gerar(usuario)
+    expect(folha().queryByText('Referências completas no MetaNutri.')).not.toBeInTheDocument()
+  })
+
+  it('CB-1492 (D-1542): "Resultados" sem a coluna "Fonte" e sem a fonte curta em nenhuma linha', async () => {
+    const { usuario } = abrir()
+    await gerar(usuario)
+    const resultados = within(folha().getByRole('table', { name: 'Resultados' }))
+    expect(resultados.getAllByRole('columnheader').map((c) => c.textContent)).toEqual(['Indicador', 'Valor', 'Referência', 'Classificação'])
+    for (const linha of resultados.getAllByRole('row').slice(1)) expect(within(linha).getAllByRole('cell')).toHaveLength(3)
+    expect(document.querySelector('.area-impressao')?.textContent).not.toContain('SISVAN, 2011')
+  })
+
+  it('CB-1493 (D-1543): a nota do IMC em "Medidas básicas" é só a classificação', async () => {
+    const { usuario } = abrir()
+    await gerar(usuario)
+    expect(folha().getByText('Sobrepeso', { selector: 'p' })).toBeInTheDocument()
+  })
+
+  it('CB-1494 (D-1544): "Métodos" fica com o protocolo, a conversão e as fontes das equações', async () => {
+    const { usuario } = abrir()
+    await gerar(usuario)
+    expect(folha().getByText('Dobras: Jackson & Pollock, 7 dobras, conversão de Siri (Jackson, Pollock e Ward, 1980; Siri, 1961). Adipômetro Lange.')).toBeInTheDocument()
+  })
+
+  it('CB-1494 (D-1544): o rascunho do diagnóstico, quando usado, sai no papel com as fontes curtas como ela deixou', async () => {
+    const { usuario } = abrir()
+    const dialogo = await gerar(usuario)
+    await usuario.click(within(dialogo).getByRole('button', { name: 'Usar o resumo das classificações' }))
+    expect(document.querySelector('.area-impressao')?.textContent).toContain('IMC: Sobrepeso (26,58 kg/m²; SISVAN, 2011).')
+  })
+
+  it('CB-1495 (D-1545): na tela, o "ⓘ" do IMC continua abrindo a citação completa', async () => {
+    const { usuario } = abrir()
+    const info = screen.getByRole('button', { name: 'Fonte: IMC' })
+    await usuario.click(info)
+    expect(document.getElementById(info.getAttribute('aria-controls') ?? '')?.textContent).toMatch(/^Fonte: Brasil\. Ministério da Saúde/)
   })
 
   it('CA-2461: "Usar o resumo das classificações" escreve o rascunho, que fica gravado; vazio, o papel tem linhas', async () => {

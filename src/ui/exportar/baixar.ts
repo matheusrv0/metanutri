@@ -1,3 +1,7 @@
+import type { AssinaturaDoPlano } from '@/domain/assinaturaDoPlano.ts'
+import { gerarBlob } from '@/export/docx-comum.ts'
+import { criarTermoIa, quemRevisaNoTermo } from '@/export/termoIa.ts'
+
 /** Nome de arquivo seguro: sem acentos nem caracteres proibidos no Windows. */
 export function nomeDeArquivo(base: string, sufixo: string): string {
   const limpo = base
@@ -45,4 +49,9 @@ export async function copiarTabela(html: string, texto: string): Promise<boolean
   } catch {
     return false
   }
+}
+
+/** Spec assistente-ia, CA-2376: o termo de autorização para o uso de IA, em Word, com o nome de quem revisa. */
+export async function baixarTermoDeIa(assinatura: AssinaturaDoPlano | null, nomeDoPaciente: string): Promise<void> {
+  baixarBlob(await gerarBlob(criarTermoIa(quemRevisaNoTermo(assinatura))), nomeDeArquivo(nomeDoPaciente, 'autorizacao-ia'))
 }

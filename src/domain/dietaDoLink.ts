@@ -6,6 +6,7 @@ import { modoDeQuantidade } from './caso.ts'
 import { medidasDoAlimento } from './busca.ts'
 import { lerMedidaDoItem, medidaNaLinha } from './medidaDoItem.ts'
 import { nomeParaPaciente } from './nomeParaPaciente.ts'
+import { lerOpcoesDoItem, MAXIMO_DE_OPCOES_DO_ITEM } from './opcoesDoItem.ts'
 import { quantidadeNaFolha } from './quantidadeNaFolha.ts'
 import {
   ehItemDeReceita,
@@ -41,6 +42,11 @@ export interface ItemDaDieta {
   readonly aproximada?: true
   /** Só no alimento que não está na base (alimento próprio) medido em ml (D-378); o da base, "Meu plano" sabe sozinho. */
   readonly unidade?: 'ml'
+  /**
+   * As opções do item, que o paciente lê com "ou" (spec busca-substitutos, D-1115). Só existe no item que tem opção: a
+   * cópia de um plano sem opção fica igual à de antes, e o link enviado não aparece como mudado.
+   */
+  readonly ou?: readonly ItemDaDieta[]
 }
 
 export interface RefeicaoDaDieta {
@@ -78,6 +84,11 @@ export interface DietaDoPlano {
    * igual à de antes.
    */
   readonly quantidades?: 'gramas' | 'medida-e-gramas'
+  /**
+   * Spec assistente-ia, D-1322 e CA-2377: o plano recebeu sugestão da IA; o link diz isso ao paciente ("estagio" na conta
+   * de estudante). Só existe no plano com a marca: a cópia de antes fica igual.
+   */
+  readonly apoioDeIa?: 'plano' | 'estagio'
 }
 
 /** A cópia que mora no link. */
@@ -119,7 +130,25 @@ function alimentoDaDieta(alimentoId: number, gramas: number, buscar: BuscarAlime
  * (D-297 da conduta-da-nutricionista).
  */
 function itemDaDieta(item: ItemPlano, buscar: BuscarAlimento, modo: ModoQuantidade): ItemDaDieta {
-  if (!ehItemDeReceita(item)) return alimentoDaDieta(item.alimentoId, item.gramas, buscar, modo, item.medida)
+  if (!ehItemDeReceita(item)) {
+    // D-1115 (spec busca-substitutos): as opções do item vão junto; a do alimento excluído fica de fora (CB-1102).
+    const ou = lerOpcoesDoItem(item).flatMap((o): ItemDaDieta[] => {
+      if (buscar(o.alimentoId) !== undefined) return [alimentoDaDieta(o.alimentoId, o.gramas, buscar, modo, o.medida)]
+      // D-1122 e CB-1110: a opção da base ampliada sem a base vai pela cópia do nome, em gramas.
+      if (!o.copia) return []
+      const q = quantidadeNaFolha(o.alimentoId, o.gramas, modo, o.medida)
+      return [
+        {
+          medida: q.medida,
+          gramas: o.gramas,
+          alimento: o.copia.paciente,
+          ...(lerMedidaDoItem(o.medida) !== undefined ? { escolhida: true as const } : {}),
+          ...(o.copia.unidade === 'ml' ? { unidade: 'ml' as const } : {}),
+        },
+      ]
+    })
+    return { ...alimentoDaDieta(item.alimentoId, item.gramas, buscar, modo, item.medida), ...(ou.length > 0 ? { ou } : {}) }
+  }
   const receita = receitaDoItem(item)
   const medida = modo === 'gramas' || !receita ? null : textoDaPorcao(receita, item.gramas)
   return { medida, gramas: item.gramas, alimento: nomeDaReceita(receita), receita: true }
@@ -137,9 +166,10 @@ function receitaDaDieta(r: ReceitaDoPlano, buscar: BuscarAlimento, modo: ModoQua
 
 /** A dieta de agora, com a mesma regra da folha impressa (CA-531 a CA-534) e a escolha de quantidade do plano. */
 export function dietaDoPlano(
-  caso: Pick<Caso, 'orientacoes' | 'receitas'> & { readonly quantidades?: ModoQuantidade },
+  caso: Pick<Caso, 'orientacoes' | 'receitas'> & { readonly quantidades?: ModoQuantidade; readonly origemIa?: Caso['origemIa'] },
   plano: Plano,
   buscar: BuscarAlimento = buscarAlimento,
+  opcoes: { readonly estagio?: boolean } = {},
 ): DietaDoPlano {
   const modo = modoDeQuantidade(caso)
   const refeicoes = plano.refeicoes
@@ -165,17 +195,19 @@ export function dietaDoPlano(
     receitas: caso.receitas.trim(),
     ...(receitasDoPlano.length > 0 ? { receitasDoPlano } : {}),
     ...(modo === 'medida-caseira' ? {} : { quantidades: modo }),
+    ...(caso.origemIa ? { apoioDeIa: opcoes.estagio === true ? ('estagio' as const) : ('plano' as const) } : {}),
   }
 }
 
 export function copiarDieta(dieta: DietaDoPlano, dia: string): DietaDoLink {
-  const { refeicoes, orientacoes, receitas, receitasDoPlano, quantidades } = dieta
+  const { refeicoes, orientacoes, receitas, receitasDoPlano, quantidades, apoioDeIa } = dieta
   return {
     refeicoes,
     orientacoes,
     receitas,
     ...(receitasDoPlano && receitasDoPlano.length > 0 ? { receitasDoPlano } : {}),
     ...(quantidades === 'gramas' || quantidades === 'medida-e-gramas' ? { quantidades } : {}),
+    ...(apoioDeIa === 'plano' || apoioDeIa === 'estagio' ? { apoioDeIa } : {}),
     copiadaEm: dia,
   }
 }
@@ -189,6 +221,8 @@ const conteudo = (dieta: DietaDoPlano): string =>
     ...(dieta.receitasDoPlano && dieta.receitasDoPlano.length > 0 ? [dieta.receitasDoPlano] : []),
     // D-319 (integracao-rodada-1910) e D-376 (alimentos-e-gramaturas): trocar o modo muda o que o paciente vê.
     ...(dieta.quantidades === 'gramas' || dieta.quantidades === 'medida-e-gramas' ? [dieta.quantidades] : []),
+    // Spec assistente-ia, CA-2377: a linha de apoio de IA é parte do que o paciente vê.
+    ...(dieta.apoioDeIa ? [`ia:${dieta.apoioDeIa}`] : []),
   ])
 
 /** O plano mudou em algo que o paciente vê desde a cópia (CA-545, CA-546). */
@@ -205,7 +239,7 @@ export function temDieta(dieta: DietaDoLink | null): dieta is DietaDoLink {
 
 const objeto = (v: unknown): Record<string, unknown> | null => (typeof v === 'object' && v !== null && !Array.isArray(v) ? (v as Record<string, unknown>) : null)
 
-function lerItem(v: unknown): ItemDaDieta | null {
+function lerItemSemOpcoes(v: unknown): ItemDaDieta | null {
   const o = objeto(v)
   if (!o) return null
   const { medida, gramas, alimento } = o
@@ -222,6 +256,18 @@ function lerItem(v: unknown): ItemDaDieta | null {
     ...(o['aproximada'] === true ? { aproximada: true as const } : {}),
     ...(o['unidade'] === 'ml' ? { unidade: 'ml' as const } : {}),
   }
+}
+
+/** O item e, quando há, as opções dele (D-1115): no máximo 2, sem opção dentro de opção; o estragado fica de fora. */
+function lerItem(v: unknown): ItemDaDieta | null {
+  const item = lerItemSemOpcoes(v)
+  const bruto = objeto(v)?.['ou']
+  if (!item || !Array.isArray(bruto)) return item
+  const ou = bruto
+    .map(lerItemSemOpcoes)
+    .filter((i): i is ItemDaDieta => i !== null)
+    .slice(0, MAXIMO_DE_OPCOES_DO_ITEM)
+  return ou.length > 0 ? { ...item, ou } : item
 }
 
 function lerRefeicao(v: unknown): RefeicaoDaDieta | null {
@@ -263,6 +309,7 @@ export function lerDieta(v: unknown): DietaDoLink | null {
     // D-319 (integracao-rodada-1910) e D-376: "gramas" e "medida-e-gramas" valem; link de antes não tem o campo e é
     // "Só medida".
     ...(o['quantidades'] === 'gramas' || o['quantidades'] === 'medida-e-gramas' ? { quantidades: o['quantidades'] } : {}),
+    ...(o['apoioDeIa'] === 'plano' || o['apoioDeIa'] === 'estagio' ? { apoioDeIa: o['apoioDeIa'] } : {}),
     copiadaEm: typeof o['copiadaEm'] === 'string' ? o['copiadaEm'] : '',
   }
 }

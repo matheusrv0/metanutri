@@ -29,13 +29,15 @@ const dentroDa = async (caixa: Locator, filhos: Locator) => {
   }
 }
 
-test('CA-1243: a janela do substituto cabe a 1280 px, com o resultado escolhido', async ({ page }) => {
+test('CA-1243: a calculadora do substituto cabe a 1280 px, com o resultado escolhido', async ({ page }) => {
   const entrada = await abrirPlanoRapido(page)
   await entrada.fill('1 concha de feijao carioca cozido')
   await expect(page.getByRole('option').first()).toBeVisible()
   await entrada.press('Enter')
-  await page.getByRole('button', { name: /^Substituir Feijão, carioca/ }).click()
-  const janela = page.getByRole('dialog', { name: 'Substituto equivalente' })
+  // Spec busca-substitutos (D-1101): a calculadora virou o modo "Adicionar manualmente" do painel de substitutos.
+  await page.getByRole('button', { name: /^Buscar substitutos para Feijão, carioca/ }).click()
+  const janela = page.getByRole('complementary', { name: /^Substitutos de Feijão, carioca/ })
+  await janela.getByRole('radio', { name: 'Adicionar manualmente' }).click()
   const busca = janela.getByRole('combobox', { name: 'Escolher alimento substituto' })
   await busca.fill('lentilha')
   await expect(janela.getByRole('option').first()).toBeVisible()

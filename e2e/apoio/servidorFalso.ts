@@ -3,6 +3,7 @@
 // Assim dá para abrir, sem banco, as telas que só existem com o servidor ligado: Completar cadastro, Comprovar
 // matrícula, o checkout com sessão, a volta do pagamento e o link do paciente lido da nuvem.
 import type { BrowserContext, Page, Route } from '@playwright/test'
+import { AJUSTES_IA, SUGESTAO_IA } from './respostasIa.ts'
 
 export const ENDERECO_FALSO = 'https://falso-e2e.supabase.co'
 /** Só tem o tamanho de uma chave (o site confere o comprimento); não abre nada. */
@@ -29,6 +30,14 @@ export interface Cenario {
   readonly marcar?: 'ok' | 'sem-rede'
   /** O e-mail da sessão, quando o teste precisa de um diferente (um e-mail longo, por exemplo). */
   readonly emailDaSessao?: string
+  /** A cópia da conta já na nuvem (o `dados` da linha de `copias`), para a conta abrir com pacientes e planos. */
+  readonly copia?: unknown
+  /**
+   * Spec assistente-ia, CA-2380: o que a função sugerir-plano de mentira responde. "sugestao" responde a sugestão (ou os
+   * ajustes, no adequar); "lento", a mesma depois de 3 s; "limite", o mês cheio; "recusa", 422; "erro", 503; "sem-rede",
+   * o pedido cai (o contador responde). A API da Anthropic nunca é chamada.
+   */
+  readonly ia?: 'sugestao' | 'lento' | 'limite' | 'recusa' | 'erro' | 'sem-rede'
 }
 
 const base64url = (texto: string): string => Buffer.from(texto).toString('base64url')
@@ -94,6 +103,8 @@ export interface ServidorFalso {
    * que chegaram. Começa vazio e vale para as abas do mesmo navegador.
    */
   readonly arquivos: Map<string, ArquivoGuardado>
+  /** Spec assistente-ia: o corpo de cada pedido à função sugerir-plano, na ordem. */
+  readonly pedidosDaIa: Linha[]
 }
 
 /** Um arquivo no armazenamento falso. */
@@ -156,9 +167,14 @@ const corpoDoPedido = (valor: unknown): Record<string, unknown> => {
  */
 export async function ligarServidorFalso(pagina: Page, cenario: Cenario = {}): Promise<ServidorFalso> {
   const contexto = pagina.context()
-  const nuvem = nuvens.get(contexto) ?? { copia: null, arquivos: new Map<string, ArquivoGuardado>() }
+  const nuvem = nuvens.get(contexto) ?? {
+    copia: cenario.copia ? { dados: cenario.copia, aparelho: 'outro-aparelho', atualizado_em: '2026-11-01T12:00:00.000Z' } : null,
+    arquivos: new Map<string, ArquivoGuardado>(),
+  }
   nuvens.set(contexto, nuvem)
-  const servidor: ServidorFalso = { logouts: [], gravacoesDaCopia: [], gravacoesDaMarca: [], semRede: false, arquivos: nuvem.arquivos }
+  const servidor: ServidorFalso = { logouts: [], gravacoesDaCopia: [], gravacoesDaMarca: [], semRede: false, arquivos: nuvem.arquivos, pedidosDaIa: [] }
+  // A função da IA conta os usos do mês como a de verdade: a sugestão que deu certo sobe o contador (D-1318).
+  let usosDaIa = cenario.ia === 'limite' ? 20 : 7
   if (cenario.sessao) {
     await contexto.addInitScript(
       ([chave, valor]) => {
@@ -230,6 +246,20 @@ export async function ligarServidorFalso(pagina: Page, cenario: Cenario = {}): P
       const nomes = corpoDoPedido(pedido.postDataJSON())['prefixes']
       const apagados = (Array.isArray(nomes) ? nomes : []).filter((nome): nome is string => typeof nome === 'string' && nuvem.arquivos.delete(nome))
       return json(route, apagados.map((nome) => ({ name: nome })))
+    }
+    if (caminho === '/functions/v1/sugerir-plano') {
+      const corpo = corpoDoPedido(pedido.postDataJSON())
+      servidor.pedidosDaIa.push(corpo)
+      const uso = () => ({ usados: usosDaIa, limite: 20, renovaEm: '2026-12-01' })
+      if (corpo['modo'] === 'uso') return json(route, { uso: uso() })
+      const erro = (status: number, codigo: string, frase: string) => json(route, { erro: frase, codigo }, status)
+      if (cenario.ia === 'sem-rede') return route.abort('internetdisconnected')
+      if (cenario.ia === 'limite') return erro(429, 'limite-mes', 'As 20 sugestões do mês foram usadas.')
+      if (cenario.ia === 'recusa') return erro(422, 'recusa', 'A IA não respondeu a este pedido.')
+      if (cenario.ia === 'erro') return erro(503, 'indisponivel', 'As sugestões com IA estão indisponíveis agora.')
+      if (cenario.ia === 'lento') await new Promise((pronto) => setTimeout(pronto, 3000))
+      usosDaIa += 1
+      return json(route, { resposta: corpo['modo'] === 'ajustar' ? AJUSTES_IA : SUGESTAO_IA, uso: uso(), foraDaBase: 0, modelo: 'claude-opus-5-5' })
     }
 
     if (caminho === '/rest/v1/rpc/missoes_por_token') {

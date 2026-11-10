@@ -4,8 +4,9 @@ import { Document, Paragraph, TextRun } from 'docx'
 import { comSinalDeMenos, type ResultadoAntropometria } from '../domain/antropometria.ts'
 import { modoDeQuantidade } from '../domain/caso.ts'
 import { nomeSemAlimento } from '../domain/produtos.ts'
-import { FRASE_PROPOSTA } from '../domain/documentoDoPaciente.ts'
+import { FRASE_PROPOSTA, fraseDeApoioDeIa } from '../domain/documentoDoPaciente.ts'
 import { dataCompleta } from '../domain/formatarData.ts'
+import { lerOpcoesDoItem } from '../domain/opcoesDoItem.ts'
 import { quantidadeNaFolha, textoDoPeso, type QuantidadeNaFolha } from '../domain/quantidadeNaFolha.ts'
 import { ehItemDeReceita, nomeDaReceita, receitaDoItem, receitasDoPlano, textoDaPorcao, textoDoRendimento } from '../domain/receitaNoPlano.ts'
 import { descreverSuplemento, suplementosParaDocumento, type Suplemento } from '../domain/suplementos.ts'
@@ -32,6 +33,11 @@ export interface DadosAconselhamento {
   readonly suplementos?: readonly Suplemento[] | undefined
   /** CA-584: plano de estágio; a seção de suplementos leva a frase de proposta. */
   readonly propostaDeEstagio?: boolean | undefined
+}
+
+function apoioDeIa(caso: Caso, estagio: boolean): Paragraph[] {
+  const frase = fraseDeApoioDeIa(caso, estagio)
+  return frase ? [new Paragraph({ spacing: { before: 360 }, children: [new TextRun({ text: frase, size: 18 })] })] : []
 }
 
 const NOME_OPCAO: Readonly<Record<OpcaoId, string>> = {
@@ -68,7 +74,17 @@ export function quantidadeNoWord(q: QuantidadeNaFolha): string {
  * banana (1 unidade)"); sem meia porção que feche, ou com o plano em "Gramas", o peso (D-297 da conduta-da-nutricionista).
  */
 export function descreverItem(item: ItemPlano, buscar: BuscarAlimento, modo: ModoQuantidade = 'medida-caseira'): string {
-  if (!ehItemDeReceita(item)) return descreverAlimento(item.alimentoId, item.gramas, buscar, modo, item.medida)
+  if (!ehItemDeReceita(item)) {
+    // Spec busca-substitutos, D-1115 e CA-2124: as opções do item depois de "ou"; a do alimento excluído fica de fora.
+    const opcoes = lerOpcoesDoItem(item).flatMap((o) => {
+      if (buscar(o.alimentoId) !== undefined) return [` ou ${descreverAlimento(o.alimentoId, o.gramas, buscar, modo, o.medida)}`]
+      // D-1122 e CB-1110: a opção da base ampliada sem a base sai pela cópia do nome; a do próprio excluído, não.
+      if (!o.copia) return []
+      const q = quantidadeNaFolha(o.alimentoId, o.gramas, modo, o.medida)
+      return [` ou ${o.copia.descricao} (${quantidadeNoWord({ ...q, unidade: o.copia.unidade ?? q.unidade })})`]
+    })
+    return `${descreverAlimento(item.alimentoId, item.gramas, buscar, modo, item.medida)}${opcoes.join('')}`
+  }
   const receita = receitaDoItem(item)
   const porcao = modo === 'gramas' || !receita ? null : textoDaPorcao(receita, item.gramas)
   return `${nomeDaReceita(receita)} (${quantidadeNoWord({ medida: porcao, gramas: item.gramas, unidade: 'g', aproximada: false, comPeso: modo === 'medida-e-gramas' })})`
@@ -214,6 +230,8 @@ export function criarAconselhamento(dados: DadosAconselhamento): Document {
           ...blocoSuplementos(dados.suplementos, dados.propostaDeEstagio === true),
           ...receitas,
           ...assinaturas,
+          // Spec assistente-ia, CA-2377: o plano que recebeu sugestão da IA diz isso ao paciente.
+          ...apoioDeIa(caso, dados.propostaDeEstagio === true),
         ],
       },
     ],

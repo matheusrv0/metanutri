@@ -2,7 +2,8 @@
 
 **Spec de origem:** `./SPEC.md` (D-1400 a D-1460, CA-2400 a CA-2491, CB-1400 a CB-1417; correções da revisão r1:
 D-1520 a D-1529 e CB-1480 a CB-1489; da revisão r2: D-1500 a D-1502 e CB-1460 a CB-1462; da implementação da F2: D-1503 a D-1513 e CB-1463 a CB-1466; da revisão r1 da F2: D-1530 a D-1538 e CB-1467 a
-CB-1475; da revisão r2 da F2: D-1546 a D-1549 e CB-1496 a CB-1498).
+CB-1475; do documento sem a lista de referências: D-1540 a D-1545 e CB-1490 a CB-1495; da revisão r2 da F2: D-1546 a
+D-1549 e CB-1496 a CB-1498).
 **Motor:** `specs/antropometria-completa/` (D-1000 a D-1042), na `main` desde o 8a96bc8.
 **Protótipo aprovado:** `AvaliacaoAntropometrica.dc.html`, `HistoricoAntropometrico.dc.html` e
 `DocumentoAvaliacao.dc.html` (canvas "MetaNutri Redesenho", 03/11/2026).
@@ -334,9 +335,20 @@ A revisão r2 da F2 reprovou por M1; B1 entra junto, e B2 vira risco aceito (D-1
 - **R19** · `ResultadoDoEnvio` ganha `sessao` e `conta-cheia`. A porta lê a recusa (`recusaDoArmazenamento`): sem
   status, `sem-rede`; "code: 53100" na mensagem, `conta-cheia`; 401, 403 ou `InvalidJWT`, `sessao`; o resto,
   `recusado`. Nota da revisão r3 (B1): o 403 da política ("row-level security" na mensagem) é `recusado`, lido pela
-  pasta; o 403 do token (`AccessDenied`, "exp" ou "signature") continua `sessao`. `subir`: `conta-cheia` dá "O espaço de fotos da conta acabou."; `sessao`, a frase de sessão; `recusado`,
-  a leitura da pasta, e sem limite nem teto (ou sem ler), "Não foi possível enviar agora. Tente de novo.".
+  pasta; o 403 do token (`AccessDenied`, "exp" ou "signature") continua `sessao`. `subir`: `conta-cheia` dá "O espaço
+  de fotos da conta acabou."; `sessao`, a frase de sessão; `recusado`, a leitura da pasta, e sem limite nem teto (ou
+  sem ler), "Não foi possível enviar agora. Tente de novo.".
 - **R20** · Ao marcar a autorização, o alerta "Marque a autorização…" sai das fotos e dos anexos (só ele).
+
+### D1 · O documento sem a lista de referências (10/11/2026)
+
+Uma tarefa, um commit, em TDD (D-1540 a D-1545, CB-1490 a CB-1495).
+
+- **D1** · `documento.test.tsx` e `documentoDaAvaliacao.test.ts` primeiro (CB-1490 a CB-1495). Depois: em
+  `FolhaAvaliacao.tsx`, a seção "Referências" vira a linha "Referências completas no MetaNutri." (só com
+  `referencias.length > 0`) e a coluna "Fonte" sai da grade de "Resultados" (quatro colunas); em
+  `documentoDaAvaliacao.ts`, a nota do IMC fica sem a fonte curta. `referencias`, "Métodos", o rascunho e a tela não
+  mudam. `DialogoDocumentoAvaliacao.tsx` não precisa mudar.
 
 ### T27 · F3 (bloqueada)
 

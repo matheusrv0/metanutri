@@ -22,6 +22,7 @@ import { CartaoDadosDoPaciente } from './CartaoDadosDoPaciente.tsx'
 import { CartaoExames } from './CartaoExames.tsx'
 import { CartaoProximaConsulta } from './CartaoProximaConsulta.tsx'
 import { CartaoSuplementos } from './CartaoSuplementos.tsx'
+import { baixarTermoDeIa } from '../exportar/baixar.ts'
 import type { CampoDaFicha } from '../navegacao.ts'
 import { EvolucaoPeso, type PontoEvolucao } from './EvolucaoPeso.tsx'
 import { AbasDaFicha } from '../antropometria/AbasDaFicha.tsx'
@@ -145,7 +146,14 @@ export function TelaPaciente({
   const ficha = (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
       <div className="flex flex-col gap-6">
-        <CartaoDadosDoPaciente paciente={paciente} perfil={perfil} hoje={hoje} aoAlterar={alterar} focarTelefone={focar === 'telefone'} />
+        <CartaoDadosDoPaciente
+          paciente={paciente}
+          perfil={perfil}
+          hoje={hoje}
+          aoAlterar={alterar}
+          focarTelefone={focar === 'telefone'}
+          aoBaixarTermoIa={() => void baixarTermoDeIa(assinatura, paciente.nome)}
+        />
 
         <AnamneseDaFicha key={paciente.id} paciente={paciente} aoAlterar={alterar} perfil={perfil} hoje={hoje} adesao={adesao} />
 

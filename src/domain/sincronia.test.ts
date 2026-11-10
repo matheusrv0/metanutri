@@ -940,7 +940,8 @@ describe('navegador sem espaço com duas abas (DP-29)', () => {
     expect(pacientesNaNuvem(nuvem)).toHaveLength(31)
 
     // O navegador de A e B fica quase cheio; A muda algo, junta com a nuvem e a juntada não cabe aqui.
-    navegador.limite = [...navegador.dados].reduce((total, [k, v]) => total + k.length + v.length, 0) + 600
+    // A folga cabe o paciente novo (que ganhou `consentimentoIa`, spec assistente-ia, D-1304), mas não a juntada.
+    navegador.limite = [...navegador.dados].reduce((total, [k, v]) => total + k.length + v.length, 0) + 700
     vi.setSystemTime(new Date('2026-10-08T12:20:00.000Z'))
     a.pacientes.criar('Bia')
     await salvar()
