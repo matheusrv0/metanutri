@@ -225,6 +225,17 @@ describe('documentos legais', () => {
     )
   })
 
+  it('D-1250 (spec lado-do-paciente): a política diz o que o código faz: o resumo (hash), quem entra na lista de bloqueio, os 6 meses do aceite e os 2 dias da recuperação', () => {
+    render(<TelaPrivacidade />)
+    const texto = document.body.textContent ?? ''
+    expect(texto).not.toContain('cifrado')
+    expect(texto).toContain('O e-mail que o paciente informa no link só passa a valer depois que ele toca em Confirmar no e-mail que recebe.')
+    expect(texto).toContain('enquanto o link existir e por mais 6 meses depois que ele sai')
+    expect(texto).toContain('O e-mail que volta (o endereço não existe) ou que é marcado como spam entra numa lista de bloqueio, que guarda só um resumo do endereço (hash)')
+    expect(texto).toContain('Quem sai de um aviso só deixa de recebê-lo.')
+    expect(texto).toContain('um resumo (hash) do e-mail e do endereço de internet de quem pede, por 2 dias')
+  })
+
   it('CA-2286 (spec lado-do-paciente): a política diz para que serve o e-mail do paciente, que o link registra o dia do acesso e que o Resend manda os e-mails', () => {
     render(<TelaPrivacidade />)
     const texto = document.body.textContent ?? ''

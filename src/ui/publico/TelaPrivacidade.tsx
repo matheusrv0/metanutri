@@ -40,11 +40,18 @@ export function TelaPrivacidade() {
           O plano alimentar do paciente (refeições, quantidades, substitutos, orientações e receitas), quando o nutricionista ativa “Mostrar o plano
           alimentar no link”: para o paciente consultar o plano.
         </li>
+        {/* PARA O DONO APROVAR (spec lado-do-paciente, D-1250): o texto diz o que o código faz. */}
         <li>
           O e-mail do paciente, quando o nutricionista o registra na ficha ou o próprio paciente o informa no link: para mandar o link do plano,
-          os avisos que o paciente aceitou e os e-mails que o nutricionista envia pelo MetaNutri. Guardamos também o aceite (o aviso, a data e a hora
-          e a versão do texto), enquanto o link existir, e o histórico dos e-mails enviados (tipo, assunto, situação e data), por 6 meses. Quem sai
-          de um aviso, ou cujo e-mail volta, fica numa lista de bloqueio que guarda só um resumo cifrado do endereço, para nunca mais receber o aviso.
+          os avisos que o paciente aceitou e os e-mails que o nutricionista envia pelo MetaNutri. O e-mail que o paciente informa no link só passa
+          a valer depois que ele toca em Confirmar no e-mail que recebe. Guardamos também o aceite (o aviso, a data e a hora e a versão do texto)
+          enquanto o link existir e por mais 6 meses depois que ele sai, e o histórico dos e-mails enviados (tipo, assunto, situação e data), por 6
+          meses. O e-mail que volta (o endereço não existe) ou que é marcado como spam entra numa lista de bloqueio, que guarda só um resumo do
+          endereço (hash), para não receber mais avisos. Quem sai de um aviso só deixa de recebê-lo.
+        </li>
+        <li>
+          Em “Recuperar meu link”, um resumo (hash) do e-mail e do endereço de internet de quem pede, por 2 dias: para limitar os pedidos e evitar
+          abuso.
         </li>
         <li>O dia em que o paciente abriu o link (só a data, sem a hora): para o nutricionista saber se o paciente está abrindo o plano.</li>
       </ul>
