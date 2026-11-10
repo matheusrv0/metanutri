@@ -5,9 +5,9 @@
 // o botão age, por POST ('confirmar', 'sair', 'parar-todos', 'desfazer'). O POST de um clique chega com `?c=<chave>` e o
 // corpo `List-Unsubscribe=One-Click`, e sai daquele aviso sem página (CA-2252). Cada chave mexe só no link dela
 // (CA-2255); a chave mexida à mão não existe e responde "Este endereço não vale." (404). Puro: o banco chega de fora.
-import { CHAVE_QUE_NAO_VALE, ehChave, erro, hashDoToken, PEDIDO_INVALIDO, type DependenciasComuns } from './comum.ts'
+import { CHAVE_QUE_NAO_VALE, ehChave, enviarServico, erro, hashDoToken, itemDoLinkDoPlano, PEDIDO_INVALIDO, type DependenciasComuns } from './comum.ts'
 import { mascararEmail } from './email.ts'
-import type { AceiteDoBanco, ChaveDeAviso, Desfazer, EmailDoLink, LinkDoBanco, RespostaDaFuncao } from './portas.ts'
+import type { AceiteDoBanco, ChaveDeAviso, DadosDaNutricionista, Desfazer, EmailDoLink, LinkDoBanco, RespostaDaFuncao } from './portas.ts'
 import { emBrasilia } from './regras.ts'
 import { TIPOS_DE_AVISO, ehTipoDeAviso, type TipoDeAviso } from './tipos.ts'
 
@@ -33,6 +33,8 @@ interface Contexto {
   readonly link: LinkDoBanco | null
   readonly email: EmailDoLink | null
   readonly aceites: readonly AceiteDoBanco[]
+  /** A conta da chave (o S1 do "Confirmar", D-1258). */
+  readonly conta: DadosDaNutricionista
   readonly nutricionista: string
   readonly resumoDaAdesao: boolean
   /** As ofertas de quem ainda não tem a linha do e-mail (D-1227). */
@@ -49,7 +51,7 @@ async function carregar(chave: string, deps: DependenciasComuns): Promise<Contex
   if (lida.linkId === null) {
     // Só o descadastro do N1 é da conta, sem link.
     return lida.avisos[0] === 'n1'
-      ? { chave: lida, link: null, email: null, aceites: [], nutricionista: 'MetaNutri', resumoDaAdesao: nutri.resumoDaAdesao, oferecerAosNovos: nutri.oferecerAosNovos }
+      ? { chave: lida, link: null, email: null, aceites: [], conta: nutri, nutricionista: 'MetaNutri', resumoDaAdesao: nutri.resumoDaAdesao, oferecerAosNovos: nutri.oferecerAosNovos }
       : null
   }
   const [link] = await deps.banco.linksPorIds([lida.linkId])
@@ -66,6 +68,7 @@ async function carregar(chave: string, deps: DependenciasComuns): Promise<Contex
     link,
     email,
     aceites: await deps.banco.aceitesDoLink(link.id),
+    conta: nutri,
     nutricionista: nutri.nome.trim() || 'Sua nutricionista',
     resumoDaAdesao: nutri.resumoDaAdesao,
     oferecerAosNovos: nutri.oferecerAosNovos,
@@ -130,7 +133,7 @@ export async function responderAosAvisos(pedido: PedidoDaResposta, deps: Depende
 /**
  * D-1226 e CA-2241: o aceite vale só aqui, no botão "Confirmar" da página. Guarda o tipo, o dia e a hora e a versão. Na
  * chave do e-mail digitado no link (D-1247, CA-2291), o "Confirmar" também leva o endereço ao link, com a data da
- * confirmação, mesmo sem nenhum aviso marcado.
+ * confirmação, mesmo sem nenhum aviso marcado, e manda o link do plano para ele (D-1258, CA-2303).
  */
 async function confirmar(c: Contexto, pedidos: unknown, deps: DependenciasComuns): Promise<RespostaDaFuncao> {
   if (c.link === null) return NAO_VALE
@@ -163,9 +166,22 @@ async function confirmar(c: Contexto, pedidos: unknown, deps: DependenciasComuns
   if (escolhidos.length > 0 && c.email?.parouTudoEm) await deps.banco.pararTudo(c.link.id, null)
   if (escolhidos.length > 0 && novo === null) await deps.banco.marcarConfirmado(c.link.id, agora)
   await deps.banco.marcarChave(c.chave.chave, { usadoEm: agora, desfazer: null })
+  if (novo !== null) await mandarOLink(c.link, c.conta, novo, emailHash, deps)
   const email = novo === null ? c.email : await deps.banco.emailDoLink(c.link.id)
   const depois = await deps.banco.aceitesDoLink(c.link.id)
   return pagina({ ...c, email, aceites: depois, chave: { ...c.chave, usadoEm: agora.toISOString() } }, { feito: true })
+}
+
+/**
+ * D-1258: o S1 para o e-mail que acabou de ser confirmado. O que não sai (o Resend fora, o teto, o banco) não desfaz a
+ * confirmação (CB-1233): fica no registro, e o paciente pede de novo pelo "Receber" ou por "Recuperar meu link".
+ */
+async function mandarOLink(link: LinkDoBanco, nutri: DadosDaNutricionista, email: string, emailHash: string, deps: DependenciasComuns): Promise<void> {
+  try {
+    if ((await enviarServico([itemDoLinkDoPlano(link, nutri, email, emailHash, deps)], deps)) !== 'enviado') deps.log('O link do "Confirmar" não saiu agora.')
+  } catch {
+    deps.log('O link do "Confirmar" falhou no meio.')
+  }
 }
 
 /** D-1235 e CA-2253: "Não quero mais receber". A chave usada responde como feita, sem mexer de novo. */

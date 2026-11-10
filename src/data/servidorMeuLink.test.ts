@@ -231,19 +231,20 @@ describe('Receber meu link por e-mail (D-1221)', () => {
     expect(resend.lotes[0]?.emails.map((e) => e.tipo)).toEqual(['S1'])
   })
 
-  it('CA-2291: o e-mail digitado recebe o S1 e o "Confirme o seu e-mail", e o link continua com o e-mail de antes', async () => {
+  it('CA-2291 e CA-2303: o e-mail digitado recebe só o "Confirme o seu e-mail", sem o link, e o link continua com o e-mail de antes', async () => {
     const { emailHash } = await comLink(estado, { aceites: ['semana'] })
     expect(await pedir({ acao: 'receber', token: 'k7q2mx9pla3r', email: 'Pedro.Novo@Gmail.com', avisos: ['lembrete'] })).toEqual({
       status: 200,
       corpo: { enviadoPara: 'p•••o@gmail.com', confirmar: true, confirmarEmail: true },
     })
     const emails = resend.lotes[0]?.emails ?? []
-    expect(emails.map((e) => [e.tipo, e.para, e.assunto])).toEqual([
-      ['S1', 'pedro.novo@gmail.com', 'Seu link do plano'],
-      ['S3', 'pedro.novo@gmail.com', 'Confirme o seu e-mail'],
-    ])
-    expect(emails[1]?.texto).toContain('Juliana, confirme que este e-mail é seu para usá-lo no seu plano com Ana Lima.')
-    expect(emails[1]?.texto).toContain('Com a confirmação, você recebe:\n- Lembrete depois de 3 dias sem marcar')
+    expect(emails.map((e) => [e.tipo, e.para, e.assunto])).toEqual([['S3', 'pedro.novo@gmail.com', 'Confirme o seu e-mail']])
+    expect(emails[0]?.texto).toContain('Juliana, confirme que este e-mail é seu para receber o link do seu plano com Ana Lima.')
+    expect(emails[0]?.texto).toContain('Com a confirmação, você recebe também:\n- Lembrete depois de 3 dias sem marcar')
+    expect(emails[0]?.texto).toContain('Sem a confirmação, este e-mail não recebe nada e não serve para recuperar o link.')
+    // D-1258: o endereço do plano não vai para um e-mail por confirmar.
+    expect(emails[0]?.texto).not.toContain('/p/k7q2mx9pla3r')
+    expect(emails[0]?.html).not.toContain('/p/k7q2mx9pla3r')
     // O link não muda: nem o endereço, nem a origem, nem o aceite do e-mail de antes.
     expect(estado.emails.get('link-juliana')).toMatchObject({ email: 'juliana.martins@gmail.com', origem: 'ficha', emailHash })
     expect(estado.aceites.filter((a) => a.saiuEm === null).map((a) => a.tipo)).toEqual(['semana'])
@@ -254,14 +255,14 @@ describe('Receber meu link por e-mail (D-1221)', () => {
   it('CA-2291: sem aviso marcado, o "Confirme o seu e-mail" sai do mesmo jeito', async () => {
     await comLink(estado)
     expect((await pedir({ acao: 'receber', token: 'k7q2mx9pla3r', email: 'pedro.novo@gmail.com', avisos: [] })).corpo).toEqual({ enviadoPara: 'p•••o@gmail.com', confirmar: true, confirmarEmail: true })
-    expect(resend.lotes[0]?.emails.map((e) => e.assunto)).toEqual(['Seu link do plano', 'Confirme o seu e-mail'])
+    expect(resend.lotes[0]?.emails.map((e) => e.assunto)).toEqual(['Confirme o seu e-mail'])
     expect([...estado.chaves.values()][0]?.avisos).toEqual([])
   })
 
   it('D-1247: o e-mail digitado igual ao do link também pede confirmação (a resposta não revela se ele acertou)', async () => {
     await comLink(estado)
     expect((await pedir({ acao: 'receber', token: 'k7q2mx9pla3r', email: 'juliana.martins@gmail.com', avisos: [] })).corpo).toMatchObject({ confirmarEmail: true })
-    expect(resend.lotes[0]?.emails.map((e) => e.assunto)).toEqual(['Seu link do plano', 'Confirme o seu e-mail'])
+    expect(resend.lotes[0]?.emails.map((e) => e.assunto)).toEqual(['Confirme o seu e-mail'])
   })
 
   it('CA-2291: o e-mail que o paciente deu e não confirmou não serve como o mascarado, para "Recuperar" nem ligar aviso', async () => {

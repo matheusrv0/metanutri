@@ -144,14 +144,14 @@ test('CA-2219, CA-2235, CA-2236 e CA-2240: Mais › "Receber meu link por e-mail
   await receber.getByRole('button', { name: 'juliana@gmail.com' }).click()
   await expect(receber.getByLabel('Seu e-mail')).toHaveValue('juliana@gmail.com')
 
-  // CA-2240 e CA-2291: os avisos vêm desmarcados; com o e-mail digitado, a folha pede o Confirmar do e-mail.
+  // CA-2240, CA-2291 e CA-2303: os avisos vêm desmarcados; com o e-mail digitado, sai só o pedido de confirmação.
   const resumo = receber.getByRole('checkbox', { name: 'Resumo da semana' })
   await expect(receber.getByRole('checkbox')).toHaveCount(3)
   for (const caixa of await receber.getByRole('checkbox').all()) await expect(caixa).not.toBeChecked()
   await resumo.check()
   await receber.getByRole('button', { name: 'Enviar' }).click()
-  await expect(receber.getByRole('status')).toContainText(`Enviamos o link para ${MASCARADO}.`)
-  await expect(receber.getByRole('status')).toContainText('Para usar este e-mail no seu plano, toque em Confirmar no e-mail.')
+  await expect(receber.getByRole('status')).toContainText(`Enviamos um e-mail para ${MASCARADO}.`)
+  await expect(receber.getByRole('status')).toContainText('Toque em Confirmar nele para receber o link.')
   expect(servidor.pedidosDeFuncao.filter((p) => p.nome === 'meu-link').map((p) => p.corpo)).toEqual([
     { acao: 'receber', token: TOKEN, email: 'juliana@gmail.com', avisos: ['semana'] },
   ])

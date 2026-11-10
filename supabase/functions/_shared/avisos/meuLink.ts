@@ -15,6 +15,7 @@ import {
   gerarChave,
   hashDoToken,
   inicioDoDiaDeBrasilia,
+  itemDoLinkDoPlano,
   LINK_QUE_NAO_ABRE,
   NAO_ENVIOU,
   nomeDoRemetente,
@@ -160,15 +161,6 @@ async function mandarPedido(link: LinkDoBanco, itens: readonly ItemDeServico[], 
 /** D-1247: o e-mail do link que vale para mandar e recuperar: o da ficha, ou o que o paciente já confirmou. */
 const emailQueVale = (linha: EmailDoLink): boolean => linha.origem === 'ficha' || Boolean(linha.confirmadoEm)
 
-/** O S1 de um link só (D-1221). */
-function linkDoPlano(link: LinkDoBanco, nutri: DadosDaNutricionista, email: string, emailHash: string, deps: DependenciasComuns): ItemDeServico {
-  const montado = emailLinkDoPlano({ primeiroNome: primeiroNomeDoLink(link), planos: [{ remetente: remetenteDoLink(nutri, link), url: urlDoLink(deps.ambiente, link.token) }] })
-  return {
-    email: { ...montado, nomeDoRemetente: nomeDoRemetente(nutri), para: email, responderPara: responderPara(nutri), tipo: 'S1' },
-    envios: [{ linkId: link.id, nutricionistaId: link.nutricionistaId, emailHash, contaNoTeto: true, extra: null }],
-  }
-}
-
 /**
  * D-1249 e CA-2294: a resposta não espera o trabalho. Ela sai sempre `TEMPO_DA_RECUPERACAO_MS` depois do pedido, com
  * cadastro ou sem, mesmo com o Resend lento; o trabalho corre junto e, se passar disso, termina depois (em segundo
@@ -237,10 +229,10 @@ async function recuperar(corpo: Readonly<Record<string, unknown>>, ip: string | 
 const avisosDoCorpo = (valor: unknown): readonly TipoDeAviso[] => (Array.isArray(valor) ? TIPOS_DE_AVISO.filter((t) => valor.includes(t)) : [])
 
 /**
- * D-1221, D-1247, CA-2235 a CA-2237, CA-2240, CA-2291 e CA-2292. O e-mail que o link já tem e vale (mascarado na tela)
- * recebe o S1 na hora e, com avisos marcados, o S3 do aceite. O e-mail digitado recebe o S1 e o S3 "Confirme o seu
- * e-mail", sempre, mesmo igual ao do link (a resposta não revela se ele acertou o da ficha); o link continua com o
- * e-mail de antes até o "Confirmar".
+ * D-1221, D-1247, D-1258, CA-2235 a CA-2237, CA-2240, CA-2291, CA-2292 e CA-2303. O e-mail que o link já tem e vale
+ * (mascarado na tela) recebe o S1 na hora e, com avisos marcados, o S3 do aceite. O e-mail digitado recebe só o S3
+ * "Confirme o seu e-mail", sempre, mesmo igual ao do link (a resposta não revela se ele acertou o da ficha); o link do
+ * plano vai para ele no "Confirmar" (avisosResposta.ts), e o link continua com o e-mail de antes até lá.
  */
 async function receber(corpo: Readonly<Record<string, unknown>>, deps: DependenciasDoMeuLink): Promise<RespostaDaFuncao> {
   const aberto = await abrir(corpo['token'], deps)
@@ -271,7 +263,8 @@ async function receber(corpo: Readonly<Record<string, unknown>>, deps: Dependenc
 
   const ativos = new Set((await deps.banco.aceitesDoLink(link.id)).filter((a) => a.saiuEm === null && a.emailHash === emailHash).map((a) => a.tipo))
   const pedir = marcados.filter((t) => !ativos.has(t))
-  const itens: ItemDeServico[] = [linkDoPlano(link, nutri, email, emailHash, deps)]
+  // D-1258: o link do plano só vai para o e-mail que já vale; o digitado o recebe no "Confirmar".
+  const itens: ItemDeServico[] = usarDoLink ? [itemDoLinkDoPlano(link, nutri, email, emailHash, deps)] : []
   const chaves: string[] = []
   if (!usarDoLink || pedir.length > 0) {
     const aceite = await pedidoDeAceite(link, nutri, email, emailHash, pedir, !usarDoLink, deps)

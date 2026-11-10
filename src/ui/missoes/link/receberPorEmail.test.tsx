@@ -25,15 +25,16 @@ describe('CA-2235: o e-mail', () => {
     expect(screen.queryByText('Para receber os avisos, toque em Confirmar no e-mail.')).not.toBeInTheDocument()
   })
 
-  it('CA-2291: com um e-mail digitado, a folha diz que falta confirmar para ele valer no plano', async () => {
+  it('CA-2291 e CA-2303: com um e-mail digitado, a folha diz que foi o pedido de confirmação, e que o link vem depois dele', async () => {
     const { cliente } = clienteDasFolhas(() => ({ status: 200, corpo: { enviadoPara: 'p•••o@gmail.com', confirmar: true, confirmarEmail: true } }))
     const { usuario } = await abrirReceber({ cliente })
     await usuario.click(screen.getByRole('button', { name: 'Usar outro' }))
     await usuario.type(screen.getByRole('textbox', { name: 'Seu e-mail' }), 'pedro.novo@gmail.com')
     await usuario.click(screen.getByRole('button', { name: 'Enviar' }))
     const status = await screen.findByRole('status')
-    expect(status).toHaveTextContent('Enviamos o link para p•••o@gmail.com.')
-    expect(status).toHaveTextContent('Para usar este e-mail no seu plano, toque em Confirmar no e-mail.')
+    expect(status).toHaveTextContent('Enviamos um e-mail para p•••o@gmail.com.')
+    expect(status).toHaveTextContent('Toque em Confirmar nele para receber o link.')
+    expect(status).not.toHaveTextContent('Enviamos o link')
     expect(screen.queryByText('Para receber os avisos, toque em Confirmar no e-mail.')).not.toBeInTheDocument()
   })
 

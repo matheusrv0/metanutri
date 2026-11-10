@@ -391,16 +391,16 @@ export function emailConfirmeOEmail(dados: {
   readonly diaDaSemana: number
   readonly urlConfirmar: string
 }): EmailMontado {
-  const comAvisos: readonly Peca[] = dados.avisos.length > 0 ? [paragrafo('Com a confirmação, você recebe:'), lista(dados.avisos.map((a) => avisoNoS3(a, dados.diaDaSemana)))] : []
+  const comAvisos: readonly Peca[] = dados.avisos.length > 0 ? [paragrafo('Com a confirmação, você recebe também:'), lista(dados.avisos.map((a) => avisoNoS3(a, dados.diaDaSemana)))] : []
   return montar({
     assunto: 'Confirme o seu e-mail',
-    preCabecalho: 'Sem a confirmação, este e-mail não recebe avisos.',
+    preCabecalho: 'Confirme para receber o link do plano.',
     topo: topo(dados.remetente),
     corpo: [
-      paragrafo(comNome(dados.primeiroNome, `confirme que este e-mail é seu para usá-lo no seu plano com ${quem(dados.remetente)}.`)),
+      paragrafo(comNome(dados.primeiroNome, `confirme que este e-mail é seu para receber o link do seu plano com ${quem(dados.remetente)}.`)),
       ...comAvisos,
       botao('Confirmar', dados.urlConfirmar, corDoBotao(dados.remetente.cor)),
-      nota('Sem a confirmação, este e-mail não recebe avisos nem serve para recuperar o link.'),
+      nota('Sem a confirmação, este e-mail não recebe nada e não serve para recuperar o link.'),
     ],
     rodape: { linhas: [`Alguém deu este e-mail no link do seu plano com ${quem(dados.remetente)}. Se não foi você, ignore este e-mail.`] },
   })

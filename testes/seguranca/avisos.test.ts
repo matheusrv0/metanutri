@@ -396,12 +396,12 @@ describe('o paciente pede sem conta (função meu-link)', () => {
     link = await novoLink('Pedro Alves', daFicha)
   })
 
-  it('CA-2235, CA-2291 e CB-1211: "Receber meu link" com um e-mail digitado manda o S1 e o "Confirme o seu e-mail"; o link fica com o da ficha', async () => {
+  it('CA-2291, CA-2303 e CB-1211: "Receber meu link" com um e-mail digitado manda só o "Confirme o seu e-mail", sem o link; o link fica com o da ficha', async () => {
     const r = await meuLink({ metodo: 'POST', ip: null, corpo: { acao: 'receber', token: link.token, email: ` ${novo.toUpperCase()} `, avisos: ['semana', 'lembrete'] } }, dependenciasDoMeuLink())
     expect(r).toEqual({ status: 200, corpo: { enviadoPara: mascararEmail(novo), confirmar: true, confirmarEmail: true } })
     const recebidos = para(novo)
-    expect(recebidos.map((e) => e.email.subject)).toEqual(['Seu link do plano', 'Confirme o seu e-mail'])
-    expect(recebidos[0]?.email.html).toContain(`${APP}/p/${link.token}`)
+    expect(recebidos.map((e) => e.email.subject)).toEqual(['Confirme o seu e-mail'])
+    expect(recebidos[0]?.email.html).not.toContain(`/p/${link.token}`)
     expect(para(daFicha)).toHaveLength(0)
     // D-1247: até o "Confirmar", o link continua com o e-mail da ficha, e o digitado não recupera o link.
     const linha = await c.servico.from('emails_dos_links').select('email, origem, confirmado_em').eq('link_id', link.id).single()
@@ -418,8 +418,8 @@ describe('o paciente pede sem conta (função meu-link)', () => {
     expect(Math.abs(vence - (Date.now() + 7 * 24 * 60 * 60 * 1000))).toBeLessThan(5 * 60 * 1000)
   })
 
-  it('CA-2241 e CA-2291: abrir a página não aceita nada; só o "Confirmar" leva o e-mail ao link e grava os aceites, com a versão avisos-v1', async () => {
-    const chave = chaveDe(para(novo)[1]?.email.html, CHAVE_DA_PAGINA)
+  it('CA-2241, CA-2291 e CA-2303: abrir a página não aceita nada; só o "Confirmar" leva o e-mail ao link, grava os aceites (avisos-v1) e manda o link', async () => {
+    const chave = chaveDe(para(novo)[0]?.email.html, CHAVE_DA_PAGINA)
     const lida = await responderAosAvisos({ metodo: 'POST', chaveDaUrl: null, corpo: { acao: 'ler', chave }, umClique: false }, dependencias())
     expect(lida).toMatchObject({ status: 200, corpo: { tipo: 'aceite', escolhidos: ['semana', 'lembrete'], emailNovo: mascararEmail(novo), feito: false } })
     expect((await c.servico.from('aceites').select('id').eq('link_id', link.id)).data).toEqual([])
@@ -439,6 +439,9 @@ describe('o paciente pede sem conta (função meu-link)', () => {
     const linha = await c.servico.from('emails_dos_links').select('email, email_hash, origem, confirmado_em').eq('link_id', link.id).single()
     expect(linha.data).toMatchObject({ email: novo, email_hash: hash, origem: 'paciente' })
     expect(linha.data?.confirmado_em).not.toBeNull()
+    // D-1258: o link do plano chega depois do "Confirmar", uma vez só.
+    expect(para(novo).map((e) => e.email.subject)).toEqual(['Confirme o seu e-mail', 'Seu link do plano'])
+    expect(para(novo)[1]?.email.html).toContain(`${APP}/p/${link.token}`)
   })
 
   it('CA-2292: o pedido que não sai (o Resend recusa) não muda o e-mail, não deixa chave e não conta nos 3 do dia', async () => {

@@ -5,10 +5,11 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { responderAosAvisos, type PedidoDaResposta } from '../../supabase/functions/_shared/avisos/avisosResposta.ts'
 import { CHAVE_QUE_NAO_VALE, hashDoToken, type DependenciasComuns } from '../../supabase/functions/_shared/avisos/comum.ts'
 import { hashDoEmail } from '../../supabase/functions/_shared/avisos/email.ts'
-import { acertarRelogio, ANA, bancoFalso, comLink, dependencias, resendFalso, type EstadoFalso } from './servidorAvisosFalsos.test-utils.ts'
+import { acertarRelogio, ANA, bancoFalso, comLink, dependencias, resendFalso, type EstadoFalso, type ResendFalso } from './servidorAvisosFalsos.test-utils.ts'
 
 let estado: EstadoFalso
 let deps: DependenciasComuns
+let resend: ResendFalso
 
 const ACEITE = 'A'.repeat(32)
 
@@ -16,7 +17,8 @@ beforeEach(() => {
   acertarRelogio(new Date('2026-11-05T12:43:00.000Z'))
   const falso = bancoFalso()
   estado = falso.estado
-  deps = dependencias(falso.banco, resendFalso())
+  resend = resendFalso()
+  deps = dependencias(falso.banco, resend)
 })
 
 const pedir = (corpo: Record<string, unknown>, sobre: Partial<PedidoDaResposta> = {}) => responderAosAvisos({ metodo: 'POST', chaveDaUrl: null, corpo, umClique: false, ...sobre }, deps)
@@ -180,6 +182,34 @@ describe('o e-mail digitado no link só vale confirmado (D-1247)', () => {
     expect(estado.emails.get('link-juliana')?.email).toBe(segundo)
     await pedir({ acao: 'confirmar', chave: DO_EMAIL, avisos: [] })
     expect(estado.emails.get('link-juliana')?.email).toBe(NOVO)
+  })
+
+  it('CA-2303: o "Confirmar" do e-mail digitado manda o link do plano (S1) para ele; ler e confirmar de novo não mandam', async () => {
+    await comEmailPorConfirmar({ avisos: ['semana'] })
+    expect((await pedir({ acao: 'ler', chave: DO_EMAIL })).status).toBe(200)
+    expect(resend.lotes).toHaveLength(0)
+    expect((await pedir({ acao: 'confirmar', chave: DO_EMAIL, avisos: ['semana'] })).corpo).toMatchObject({ feito: true })
+    const enviados = resend.lotes.flatMap((l) => l.emails)
+    expect(enviados.map((e) => [e.tipo, e.para, e.assunto])).toEqual([['S1', NOVO, 'Seu link do plano']])
+    expect(enviados[0]?.texto).toContain('https://app.metanutri.com.br/p/k7q2mx9pla3r')
+    expect(enviados[0]?.nomeDoRemetente).toBe('Ana Lima via MetaNutri')
+    expect(estado.envios.map((e) => [e.tipo, e.linkId])).toEqual([['S1', 'link-juliana']])
+    await pedir({ acao: 'confirmar', chave: DO_EMAIL, avisos: ['semana'] })
+    expect(resend.lotes.flatMap((l) => l.emails)).toHaveLength(1)
+  })
+
+  it('CA-2303: a confirmação só dos avisos (sem e-mail digitado) não manda o link', async () => {
+    await comPedidoDeAceite()
+    await pedir({ acao: 'confirmar', chave: ACEITE, avisos: ['semana'] })
+    expect(resend.lotes).toHaveLength(0)
+  })
+
+  it('CB-1233: com o Resend fora, o "Confirmar" vale do mesmo jeito, e o S1 não sai', async () => {
+    await comEmailPorConfirmar()
+    resend.modo = 'fora'
+    expect((await pedir({ acao: 'confirmar', chave: DO_EMAIL, avisos: [] })).corpo).toMatchObject({ feito: true })
+    expect(estado.emails.get('link-juliana')).toMatchObject({ email: NOVO, origem: 'paciente' })
+    expect(estado.envios).toHaveLength(0)
   })
 
   it('CA-2300: a confirmação pedida com o endereço de antes da troca não vale, nem para ler nem para confirmar', async () => {

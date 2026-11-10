@@ -3,7 +3,7 @@
 // fora (portas.ts).
 import { emBrasilia, instanteEmBrasilia } from './regras.ts'
 import type { EmailParaEnviar, ResultadoDoEnvio } from './resend.ts'
-import { primeiroNomeDe, linhaDoRegistro, type Remetente } from './emails.ts'
+import { emailLinkDoPlano, primeiroNomeDe, linhaDoRegistro, type Remetente } from './emails.ts'
 import type { BancoDosAvisos, DadosDaNutricionista, LinkDoBanco, NovoEnvio, Ofertas, Registro, RespostaDaFuncao } from './portas.ts'
 import { cortarNoTeto, inicioDoDiaDoTeto, inicioDoMesDoTeto, type Tetos } from './tetos.ts'
 import type { TipoDeAviso } from './tipos.ts'
@@ -172,6 +172,18 @@ export interface ItemDeServico {
   readonly email: EmailParaEnviar
   /** O envio gravado: o primeiro do pedido conta no teto (o S1 da recuperação grava um por link). */
   readonly envios: readonly Omit<NovoEnvio, 'estado' | 'chaveUnica' | 'dia' | 'tipo' | 'assunto'>[]
+}
+
+/**
+ * O S1 de um link só (D-1221), com o nome da nutricionista: o "Receber" do e-mail que já vale e o "Confirmar" do e-mail
+ * digitado (D-1258).
+ */
+export function itemDoLinkDoPlano(link: LinkDoBanco, nutri: DadosDaNutricionista, email: string, emailHash: string, deps: Pick<DependenciasComuns, 'ambiente'>): ItemDeServico {
+  const montado = emailLinkDoPlano({ primeiroNome: primeiroNomeDoLink(link), planos: [{ remetente: remetenteDoLink(nutri, link), url: urlDoLink(deps.ambiente, link.token) }] })
+  return {
+    email: { ...montado, nomeDoRemetente: nomeDoRemetente(nutri), para: email, responderPara: responderPara(nutri), tipo: 'S1' },
+    envios: [{ linkId: link.id, nutricionistaId: link.nutricionistaId, emailHash, contaNoTeto: true, extra: null }],
+  }
 }
 
 /**

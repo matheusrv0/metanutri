@@ -84,9 +84,10 @@ export function FolhaReceberPorEmail({ aberta, aoFechar, cor, token, cliente, em
             <span aria-hidden="true" className="grid size-13 place-content-center rounded-full bg-lightsuccess text-successtext">
               <Mail className="size-6" />
             </span>
-            <p className="text-base text-foreground [overflow-wrap:anywhere]">{`Enviamos o link para ${envio.para}.`}</p>
+            {/* D-1258 e CA-2303: o e-mail digitado recebe só o pedido de confirmação; o link vai depois do Confirmar. */}
+            <p className="text-base text-foreground [overflow-wrap:anywhere]">{envio.confirmarEmail ? `Enviamos um e-mail para ${envio.para}.` : `Enviamos o link para ${envio.para}.`}</p>
             {envio.confirmarEmail ? (
-              <p className="text-sm text-muted-foreground">Para usar este e-mail no seu plano, toque em Confirmar no e-mail.</p>
+              <p className="text-sm text-muted-foreground">Toque em Confirmar nele para receber o link.</p>
             ) : envio.confirmar ? (
               <p className="text-sm text-muted-foreground">Para receber os avisos, toque em Confirmar no e-mail.</p>
             ) : null}
