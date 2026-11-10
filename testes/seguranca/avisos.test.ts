@@ -73,7 +73,8 @@ const para = (endereco: string): readonly Enviado[] => enviados.filter((e) => e.
 
 // ---------- As funções como nas Edge Functions ----------
 
-const variaveis: Record<string, string> = { RESEND_API_KEY: CHAVE_DO_RESEND, ENDERECO_DO_APP: APP, REMETENTE_DOS_AVISOS: REMETENTE }
+// D-1254: a suíte manda muitos e-mails da mesma conta no mesmo dia; o teto por conta tem o teste dele abaixo.
+const variaveis: Record<string, string> = { RESEND_API_KEY: CHAVE_DO_RESEND, ENDERECO_DO_APP: APP, REMETENTE_DOS_AVISOS: REMETENTE, TETO_CONTA_DIA: '100000' }
 
 function dependencias(agora: Date = new Date()): DependenciasComuns {
   return { ...dependenciasDoAmbiente((nome) => variaveis[nome], c.servico, resendDeMentira, c.ambiente.url), agora: () => agora, log: () => undefined }
@@ -651,6 +652,25 @@ describe('a pausa e os tetos (D-1237, D-1239)', () => {
     }
     expect((await rodar('a1', instanteEmBrasilia(dia, 10, 15))).status).toBe(200)
     expect((await c.servico.from('estado_dos_avisos').select('teto_dia, teto_mes').eq('id', 1).single()).data).toEqual({ teto_dia: 70, teto_mes: 2100 })
+  })
+
+  it('CA-2299: o banco conta o que cada conta mandou no dia, e a conta no teto dela ouve a frase do limite', async () => {
+    const banco = criarBancoDosAvisos(c.servico, (n) => new Uint8Array(randomBytes(n)))
+    const agora = new Date()
+    const contagem = await banco.contarEnvios(new Date(Date.UTC(agora.getUTCFullYear(), agora.getUTCMonth(), agora.getUTCDate())), new Date(Date.UTC(agora.getUTCFullYear(), agora.getUTCMonth(), 1)))
+    const daVitima = contagem.porConta?.get(c.vitima.id) ?? 0
+    expect(daVitima).toBeGreaterThan(0)
+    expect(contagem.porConta?.get(c.atacante.id) ?? 0).toBe(0)
+    const helena = await novoLink('Helena Teto', endereco('helena.teto'))
+    variaveis['TETO_CONTA_DIA'] = String(daVitima)
+    try {
+      const conta = await quemPedeOEnvio(c.servico, `Bearer ${tokenDaVitima}`)
+      const antes = enviados.length
+      expect(await enviarLink({ metodo: 'POST', conta, corpo: { acao: 'enviar', link: helena.id } }, dependencias())).toEqual({ status: 429, corpo: { erro: 'Você chegou a 30 e-mails hoje. Amanhã volta.' } })
+      expect(enviados.length).toBe(antes)
+    } finally {
+      variaveis['TETO_CONTA_DIA'] = '100000'
+    }
   })
 })
 

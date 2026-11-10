@@ -16,13 +16,24 @@ export interface Tetos {
   readonly mes: number
   /** `TETO_AVISOS_MES`: os avisos do mês; sem a variável, `TETO_MES − 200`. */
   readonly avisosMes: number
+  /**
+   * `TETO_CONTA_DIA` (D-1254): o que cada conta manda no dia UTC, somando serviço, avisos e o N1; sem a variável, 30 ou
+   * 40% do `TETO_DIA`, o que for mais. Ausente: sem teto por conta.
+   */
+  readonly conta?: number
 }
 
 /** DP-LP-11: o que fica para o serviço quando a variável dos avisos não é dita. */
 const FOLGA_DO_SERVICO_NO_DIA = 25
 const FOLGA_DO_SERVICO_NO_MES = 200
 
-export const TETOS_PADRAO: Tetos = { dia: 70, avisosDia: 70 - FOLGA_DO_SERVICO_NO_DIA, mes: 2100, avisosMes: 2100 - FOLGA_DO_SERVICO_NO_MES }
+/** D-1254: o teto por conta mínimo e a parte do teto do dia que uma conta pode usar. */
+const TETO_CONTA_MINIMO = 30
+const PARTE_DA_CONTA = 0.4
+
+const tetoDaConta = (dia: number): number => Math.max(TETO_CONTA_MINIMO, Math.floor(PARTE_DA_CONTA * dia))
+
+export const TETOS_PADRAO: Tetos = { dia: 70, avisosDia: 70 - FOLGA_DO_SERVICO_NO_DIA, mes: 2100, avisosMes: 2100 - FOLGA_DO_SERVICO_NO_MES, conta: tetoDaConta(70) }
 
 /** Um inteiro positivo da variável, ou nulo. */
 function inteiro(valor: string | undefined): number | null {
@@ -40,6 +51,7 @@ export function lerTetos(ler: (nome: string) => string | undefined): Tetos {
     avisosDia: inteiro(ler('TETO_AVISOS_DIA')) ?? Math.max(dia - FOLGA_DO_SERVICO_NO_DIA, 0),
     mes,
     avisosMes: inteiro(ler('TETO_AVISOS_MES')) ?? Math.max(mes - FOLGA_DO_SERVICO_NO_MES, 0),
+    conta: inteiro(ler('TETO_CONTA_DIA')) ?? tetoDaConta(dia),
   }
 }
 
@@ -55,6 +67,8 @@ export interface Contagem {
   readonly mes: number
   readonly avisosDia: number
   readonly avisosMes: number
+  /** D-1254: o que cada conta (o id da nutricionista) já mandou no dia do teto. */
+  readonly porConta?: ReadonlyMap<string, number>
 }
 
 export interface Corte<T> {
@@ -66,6 +80,8 @@ export interface Corte<T> {
   readonly descartados: readonly T[]
   /** Serviço que não coube: a função responde que não deu para enviar agora (CB-1216). */
   readonly barrados: readonly T[]
+  /** Os que não couberam porque a conta deles chegou ao `TETO_CONTA_DIA` (também estão numa das listas acima). */
+  readonly pelaConta: readonly T[]
 }
 
 /** S1 e S3 são pedidos do próprio paciente: passam do teto do mês (não do dia). */
@@ -73,30 +89,38 @@ const PASSA_DO_MES: readonly TipoDeEmail[] = ['S1', 'S3']
 const LEMBRETES: readonly TipoDeEmail[] = ['A3', 'A4']
 
 /**
- * D-1237, CA-2271 a CA-2273: a fila por prioridade (serviço > N1 > A1 > A3/A4 > A2), cortada no que sobra dos tetos. A
- * conta anda dentro da chamada: o segundo item vê o primeiro.
+ * D-1237, D-1254, CA-2271 a CA-2273 e CA-2299: a fila por prioridade (serviço > N1 > A1 > A3/A4 > A2), cortada no que
+ * sobra dos tetos de todos e no teto da conta de cada item. A conta anda dentro da chamada: o segundo item vê o primeiro.
  */
-export function cortarNoTeto<T extends { readonly tipo: TipoDeEmail }>(fila: readonly T[], contagem: Contagem, tetos: Tetos): Corte<T> {
+export function cortarNoTeto<T extends { readonly tipo: TipoDeEmail; readonly nutricionistaId?: string | null }>(fila: readonly T[], contagem: Contagem, tetos: Tetos): Corte<T> {
   const vao: T[] = []
   const adiados: T[] = []
   const descartados: T[] = []
   const barrados: T[] = []
+  const pelaConta: T[] = []
   let { dia, mes, avisosDia, avisosMes } = contagem
+  const daConta = new Map(contagem.porConta ?? [])
   for (const item of porPrioridade(fila)) {
     const aviso = ehAviso(item.tipo)
-    const cabe =
+    const conta = item.nutricionistaId ?? null
+    const cabeNaConta = tetos.conta === undefined || conta === null || (daConta.get(conta) ?? 0) < tetos.conta
+    const cabeEmTodos =
       dia < tetos.dia && (mes < tetos.mes || PASSA_DO_MES.includes(item.tipo)) && (!aviso || (avisosDia < tetos.avisosDia && avisosMes < tetos.avisosMes))
-    if (cabe) {
+    if (cabeEmTodos && cabeNaConta) {
       vao.push(item)
       dia += 1
       mes += 1
+      if (conta !== null) daConta.set(conta, (daConta.get(conta) ?? 0) + 1)
       if (aviso) {
         avisosDia += 1
         avisosMes += 1
       }
-    } else if (item.tipo.startsWith('S')) barrados.push(item)
+      continue
+    }
+    if (cabeEmTodos) pelaConta.push(item)
+    if (item.tipo.startsWith('S')) barrados.push(item)
     else if (LEMBRETES.includes(item.tipo)) descartados.push(item)
     else adiados.push(item)
   }
-  return { vao, adiados, descartados, barrados }
+  return { vao, adiados, descartados, barrados, pelaConta }
 }

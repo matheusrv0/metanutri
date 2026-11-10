@@ -8,7 +8,7 @@
 // (ou deixa para a próxima rodada). Importa só o tipo, pelo npm:, na versão das outras funções.
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2.117.2'
 import type { MarcacaoDia } from '../adesao.ts'
-import { gerarChave } from './comum.ts'
+import { gerarChave, nomeLimpoDoRemetente } from './comum.ts'
 import type {
   AceiteDoBanco,
   AvisoDaChave,
@@ -165,6 +165,20 @@ export function criarBancoDosAvisos(cliente: SupabaseClient, aleatorio: (tamanho
   }
 
   const contar = async (consulta: PromiseLike<Resultado>, onde: string) => numero(await consulta, onde)
+
+  /** D-1254: o que cada conta mandou no dia do teto (só o que conta no teto e saiu). */
+  const enviosDoDiaPorConta = async (dia: Date): Promise<ReadonlyMap<string, number>> => {
+    const lidas = await todas(
+      (a, b) => de('envios').select('nutricionista_id').eq('conta_no_teto', true).in('estado', [...SAIRAM]).gte('criado_em', dia.toISOString()).order('id').range(a, b),
+      'envios do dia por conta',
+    )
+    const porConta = new Map<string, number>()
+    for (const l of lidas) {
+      const conta = String(l['nutricionista_id'])
+      porConta.set(conta, (porConta.get(conta) ?? 0) + 1)
+    }
+    return porConta
+  }
 
   return {
     async linkPorToken(token) {
@@ -324,6 +338,7 @@ export function criarBancoDosAvisos(cliente: SupabaseClient, aleatorio: (tamanho
         mes: await contar(base(mes), 'envios do mês'),
         avisosDia: await contar(base(dia).in('tipo', ['A1', 'A2', 'A3', 'A4']), 'avisos do dia'),
         avisosMes: await contar(base(mes).in('tipo', ['A1', 'A2', 'A3', 'A4']), 'avisos do mês'),
+        porConta: await enviosDoDiaPorConta(dia),
       }
     },
     async registrarEnvios(novos) {
@@ -422,7 +437,8 @@ export function criarBancoDosAvisos(cliente: SupabaseClient, aleatorio: (tamanho
       if (perfil === null && emailDaConta === null) return null
       const dadosDela: DadosDaNutricionista = {
         id,
-        nome: texto(config?.['nome'])?.trim() || texto(perfil?.['nome'])?.trim() || '',
+        // D-1254: o nome do remetente sai limpo (sem endereço web, sem e-mail, até 60 caracteres).
+        nome: nomeLimpoDoRemetente(texto(config?.['nome'])?.trim() || texto(perfil?.['nome'])?.trim() || ''),
         responderPara: texto(config?.['responder_para']),
         emailDaConta,
         estudante: perfil?.['situacao'] === 'estudante',

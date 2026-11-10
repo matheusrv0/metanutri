@@ -7,7 +7,7 @@ import { hashDoEmail } from '../../supabase/functions/_shared/avisos/email.ts'
 import { meuLink, TEMPO_DA_RECUPERACAO_MS, type DependenciasDoMeuLink } from '../../supabase/functions/_shared/avisos/meuLink.ts'
 import { TETOS_PADRAO } from '../../supabase/functions/_shared/avisos/tetos.ts'
 import * as doApp from '../domain/emailsDoLink.ts'
-import { acertarRelogio, ANA, bancoFalso, comLink, dependencias, linkDe, resendFalso, type EstadoFalso, type ResendFalso } from './servidorAvisosFalsos.test-utils.ts'
+import { acertarRelogio, ANA, bancoFalso, comLink, dependencias, envioAntigo, linkDe, resendFalso, type EstadoFalso, type ResendFalso } from './servidorAvisosFalsos.test-utils.ts'
 
 let estado: EstadoFalso
 let resend: ResendFalso
@@ -272,6 +272,13 @@ describe('Receber meu link por e-mail (D-1221)', () => {
     expect(estado.emails.get('link-juliana')?.email).toBe('juliana.martins@gmail.com')
     resend.modo = 'ok'
     for (let i = 0; i < 3; i++) expect((await pedir({ acao: 'receber', token: 'k7q2mx9pla3r', usarDaFicha: true, avisos: [] })).status).toBe(200)
+  })
+
+  it('CA-2299: a conta da nutricionista no teto dela: "Não foi possível enviar agora.", e o pedido não conta', async () => {
+    await comLink(estado)
+    for (let i = 0; i < 30; i++) estado.envios.push(envioAntigo({ tipo: 'A2', emailHash: `${i}`.padStart(64, 'b'), dia: '2026-11-03', criadoEm: '2026-11-03T12:00:00.000Z', linkId: null }))
+    expect(await pedir({ acao: 'receber', token: 'k7q2mx9pla3r', usarDaFicha: true, avisos: [] })).toEqual({ status: 503, corpo: { erro: NAO_ENVIOU } })
+    expect(estado.limites).toHaveLength(0)
   })
 
   it('CA-2292: o teto cheio também não conta', async () => {

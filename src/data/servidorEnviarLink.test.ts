@@ -1,10 +1,10 @@
 // @vitest-environment node
 // A função enviar-link (spec lado-do-paciente): o S2, o convite, o S4 e o A1 agendado, pedidos pela nutricionista.
 import { beforeEach, describe, expect, it } from 'vitest'
-import { LIMITE_DA_CONTA, NAO_ENVIOU, type DependenciasComuns } from '../../supabase/functions/_shared/avisos/comum.ts'
+import { LIMITE_DA_CONTA, NAO_ENVIOU, nomeDoRemetente, nomeLimpoDoRemetente, type DependenciasComuns } from '../../supabase/functions/_shared/avisos/comum.ts'
 import { hashDoEmail } from '../../supabase/functions/_shared/avisos/email.ts'
 import { EMAIL_DEVOLVIDO, enviarLink, SEM_EMAIL } from '../../supabase/functions/_shared/avisos/enviarLink.ts'
-import { acertarRelogio, ANA, bancoFalso, comLink, dependencias, resendFalso, type EstadoFalso, type ResendFalso } from './servidorAvisosFalsos.test-utils.ts'
+import { acertarRelogio, ANA, bancoFalso, comLink, dependencias, envioAntigo, resendFalso, type EstadoFalso, type ResendFalso } from './servidorAvisosFalsos.test-utils.ts'
 
 const LINK = '11111111-2222-4333-8444-555555555555'
 let estado: EstadoFalso
@@ -133,6 +133,40 @@ describe('"Enviar convite" (D-1227)', () => {
   it('D-1227: sem aviso para oferecer, não há convite', async () => {
     await comJuliana({ aceites: ['plano', 'semana', 'lembrete'] })
     expect(await pedir('convite')).toEqual({ status: 409, corpo: { erro: 'Juliana já recebe os avisos oferecidos.' } })
+  })
+})
+
+describe('o teto por conta e o remetente limpo (D-1254)', () => {
+  /** Uma conta que já mandou `n` e-mails hoje (o dia do teto, UTC). */
+  const jaMandou = (n: number, conta = ANA.id) => {
+    for (let i = 0; i < n; i++) estado.envios.push(envioAntigo({ tipo: 'A2', emailHash: `${i}`.padStart(64, 'a'), dia: '2026-11-03', criadoEm: '2026-11-03T12:00:00.000Z', nutricionistaId: conta, linkId: null }))
+  }
+
+  it('CA-2299: a conta que já mandou TETO_CONTA_DIA e-mails hoje ouve "Você chegou a 30 e-mails hoje. Amanhã volta.", e nada sai', async () => {
+    await comJuliana()
+    jaMandou(30)
+    expect(await pedir('enviar')).toEqual({ status: 429, corpo: { erro: LIMITE_DA_CONTA } })
+    expect(await pedir('trocou')).toEqual({ status: 429, corpo: { erro: LIMITE_DA_CONTA } })
+    expect(resend.lotes).toHaveLength(0)
+  })
+
+  it('CA-2299: as outras contas continuam', async () => {
+    await comJuliana()
+    jaMandou(30, 'nutri-abusiva')
+    expect((await pedir('enviar')).status).toBe(200)
+  })
+
+  it('CA-2299: o nome do remetente sai sem endereço web, sem e-mail, sem aspas e com até 60 caracteres', () => {
+    expect(nomeLimpoDoRemetente('Ana Lima')).toBe('Ana Lima')
+    expect(nomeLimpoDoRemetente('Ana Lima - acesse www.golpe.com/pix')).toBe('Ana Lima - acesse')
+    expect(nomeLimpoDoRemetente('Ana https://golpe.example/x Lima')).toBe('Ana Lima')
+    expect(nomeLimpoDoRemetente('Ana Lima ganhe-premio.com.br')).toBe('Ana Lima')
+    expect(nomeLimpoDoRemetente('Ana <ana@golpe.com>')).toBe('Ana')
+    expect(nomeLimpoDoRemetente('Ana "Lima"\r\nBcc: x')).toBe('Ana Lima Bcc x')
+    expect(nomeLimpoDoRemetente('Dra. Ana Lima')).toBe('Dra. Ana Lima')
+    expect(nomeLimpoDoRemetente('A'.repeat(80))).toHaveLength(60)
+    expect(nomeDoRemetente({ ...ANA, nome: 'www.golpe.com' })).toBe('MetaNutri')
+    expect(nomeDoRemetente({ ...ANA, nome: 'Ana Lima' })).toBe('Ana Lima via MetaNutri')
   })
 })
 

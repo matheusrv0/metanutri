@@ -234,8 +234,16 @@ describe('os tetos, o lote e a repetição (D-1237)', () => {
 
   it('CA-2272: com 45 avisos no dia, os avisos param; os lembretes que não couberam não ficam para depois', async () => {
     await muitos(50)
+    // Sem o teto por conta (D-1254), para ver só o dos avisos.
+    deps = { ...deps, tetos: () => ({ ...TETOS_PADRAO, conta: 1000 }) }
     expect((await rodar('tarde', as(4, 18))).corpo).toEqual({ enviados: 45, adiados: 0, pulados: 5 })
     expect(enviados()).toHaveLength(45)
+  })
+
+  it('CA-2299: uma conta com 50 pacientes manda até o teto dela (30) no dia; os lembretes que passaram não ficam para depois', async () => {
+    await muitos(50)
+    expect((await rodar('tarde', as(4, 18))).corpo).toEqual({ enviados: 30, adiados: 0, pulados: 20 })
+    expect(enviados()).toHaveLength(30)
   })
 
   it('CA-2271: com 70 no dia (do Resend), nada mais sai', async () => {

@@ -82,8 +82,28 @@ export function remetenteDoLink(nutri: DadosDaNutricionista, link: Pick<LinkDoBa
   }
 }
 
-/** D-1225: "Ana Lima via MetaNutri"; sem nome no Perfil, "MetaNutri". */
-export const nomeDoRemetente = (nutri: DadosDaNutricionista): string => (nutri.nome.trim() ? `${nutri.nome.trim()} via MetaNutri` : 'MetaNutri')
+/**
+ * D-1254 e CA-2299: o nome do remetente sem endereço web, sem e-mail, sem aspas e sem os sinais de cabeçalho, com até 60
+ * caracteres. Uma conta não manda e-mail com um nome que leva a outro site.
+ */
+export function nomeLimpoDoRemetente(nome: string): string {
+  return nome
+    .replace(/[\u0000-\u001f\u007f]/g, ' ')
+    .replace(/\S+@\S+/g, ' ')
+    .replace(/\b(?:https?:\/\/|www\.)\S*/gi, ' ')
+    .replace(/\b[\p{L}\p{N}-]+(?:\.[\p{L}\p{N}-]+)*\.(?:com|net|org|br|io|app|me|info|site|online|xyz|link|co|biz|shop|store|top|club|ly|gl)\b\S*/giu, ' ')
+    .replace(/["'`<>\\;:,()[\]{}|]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 60)
+    .trim()
+}
+
+/** D-1225: "Ana Lima via MetaNutri"; sem nome no Perfil, "MetaNutri". O nome sai limpo (D-1254). */
+export const nomeDoRemetente = (nutri: DadosDaNutricionista): string => {
+  const nome = nomeLimpoDoRemetente(nutri.nome)
+  return nome ? `${nome} via MetaNutri` : 'MetaNutri'
+}
 
 /** D-1225 e CA-2259: a resposta vai para o e-mail do Perfil, ou o da conta. */
 export const responderPara = (nutri: DadosDaNutricionista): string | null => nutri.responderPara ?? nutri.emailDaConta
@@ -132,20 +152,22 @@ export interface ItemDeServico {
 /**
  * S1 a S4: confere o teto do dia e do mês (D-1237: serviço só não passa do dia; S1 e S3 passam do mês), grava os envios e
  * manda. Qualquer e-mail que não sai deixa o pedido como "não deu" (CB-1216): a linha dele é apagada (DP-LP-13) e a tela
- * mostra a frase. Devolve 'enviado' ou 'fora'.
+ * mostra a frase. Devolve 'enviado', 'fora' ou 'conta' (a conta passou do `TETO_CONTA_DIA`, D-1254).
  */
-export async function enviarServico(itens: readonly ItemDeServico[], deps: DependenciasComuns): Promise<'enviado' | 'fora'> {
+export async function enviarServico(itens: readonly ItemDeServico[], deps: DependenciasComuns): Promise<'enviado' | 'fora' | 'conta'> {
   if (itens.length === 0) return 'enviado'
   const agora = deps.agora()
   const contagem = await deps.banco.contarEnvios(inicioDoDiaDoTeto(agora), inicioDoMesDoTeto(agora))
   const corte = cortarNoTeto(
-    itens.map((item, i) => ({ tipo: item.email.tipo, i })),
+    itens.map((item, i) => ({ tipo: item.email.tipo, i, nutricionistaId: item.envios[0]?.nutricionistaId ?? null })),
     contagem,
     deps.tetos(),
   )
   if (corte.barrados.length > 0 || corte.vao.length !== itens.length) {
-    deps.log('Serviço barrado pelo teto do dia ou do mês:', itens.map((i) => i.email.tipo).join(','))
-    return 'fora'
+    // D-1254: a conta que passou do teto dela não gasta o teto de todo mundo.
+    const daConta = corte.pelaConta.length > 0
+    deps.log(daConta ? 'Serviço barrado pelo teto da conta:' : 'Serviço barrado pelo teto do dia ou do mês:', itens.map((i) => i.email.tipo).join(','))
+    return daConta ? 'conta' : 'fora'
   }
   const dia = emBrasilia(agora).dia
   const marca = agora.toISOString()

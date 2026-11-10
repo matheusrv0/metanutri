@@ -225,7 +225,7 @@ async function recuperar(corpo: Readonly<Record<string, unknown>>, ip: string | 
     email: { ...montado, nomeDoRemetente: 'MetaNutri', para: email, responderPara: null, tipo: 'S1' },
     envios: comNutri.map((link, i) => ({ linkId: link.id, nutricionistaId: link.nutricionistaId, emailHash, contaNoTeto: i === 0, extra: { recuperacao: true } })),
   }
-  if ((await enviarServico([item], deps)) === 'fora') deps.log('A recuperação não saiu agora.')
+  if ((await enviarServico([item], deps)) !== 'enviado') deps.log('A recuperação não saiu agora.')
 }
 
 /** Os avisos pedidos no corpo, só os conhecidos. */

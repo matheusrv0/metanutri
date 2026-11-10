@@ -95,7 +95,10 @@ export async function enviarLink(pedido: PedidoDeEnvio, deps: DependenciasComuns
 
   const convidar = acao === 'convite' || (acao === 'enviar' && !conviteRecente && naoAceitos.length > 0)
   const item = await planoEnviado(link, nutri, linha, convidar ? naoAceitos : [], deps)
-  if ((await enviarServico([item], deps)) === 'fora') return erro(NAO_ENVIOU, 503)
+  const enviado = await enviarServico([item], deps)
+  // D-1254 e CA-2299: a conta que chegou ao teto dela ouve a frase do limite da conta.
+  if (enviado === 'conta') return erro(LIMITE_DA_CONTA, 429)
+  if (enviado === 'fora') return erro(NAO_ENVIOU, 503)
   if (convidar) await deps.banco.marcarConvite(link.id, agora)
   return { status: 200, corpo: { enviadoPara: mascararEmail(linha.email), agendadoPara: null } }
 }
@@ -173,6 +176,8 @@ async function trocou(link: LinkDoBanco, nutri: DadosDaNutricionista, linha: Ema
     email: { ...montado, nomeDoRemetente: nomeDoRemetente(nutri), para: email, responderPara: responderPara(nutri), tipo: 'S4' },
     envios: [{ linkId: link.id, nutricionistaId: link.nutricionistaId, emailHash, contaNoTeto: true, extra: null }],
   }
-  if ((await enviarServico([item], deps)) === 'fora') return erro(NAO_ENVIOU, 503)
+  const enviado = await enviarServico([item], deps)
+  if (enviado === 'conta') return erro(LIMITE_DA_CONTA, 429)
+  if (enviado === 'fora') return erro(NAO_ENVIOU, 503)
   return { status: 200, corpo: { enviadoPara: mascararEmail(email), agendadoPara: null } }
 }

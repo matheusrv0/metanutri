@@ -186,7 +186,9 @@ export function bancoFalso(inicio: Partial<Pick<EstadoFalso, 'chaveDaRodada'>> =
         const saiu = estado.envios.filter((e) => e.contaNoTeto && SAIRAM.includes(e.estado))
         const desde = (d: Date) => saiu.filter((e) => Date.parse(e.criadoEm) >= d.getTime())
         const aviso = (e: EnvioFalso) => e.tipo.startsWith('A')
-        return { dia: desde(dia).length, mes: desde(mes).length, avisosDia: desde(dia).filter(aviso).length, avisosMes: desde(mes).filter(aviso).length }
+        const porConta = new Map<string, number>()
+        for (const e of desde(dia)) porConta.set(e.nutricionistaId, (porConta.get(e.nutricionistaId) ?? 0) + 1)
+        return { dia: desde(dia).length, mes: desde(mes).length, avisosDia: desde(dia).filter(aviso).length, avisosMes: desde(mes).filter(aviso).length, porConta }
       }),
     registrarEnvios: (novos) =>
       ok(() => {

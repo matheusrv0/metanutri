@@ -12,13 +12,19 @@ const ids = (itens: readonly { readonly id: number }[]) => itens.map((i) => i.id
 
 describe('lerTetos (CA-2274)', () => {
   it('DP-LP-11: sem variável, os tetos do grátis: 70, 45, 2.100 e 1.900', () => {
-    expect(lerTetos(ambiente({}))).toEqual({ dia: 70, avisosDia: 45, mes: 2100, avisosMes: 1900 })
-    expect(TETOS_PADRAO).toEqual({ dia: 70, avisosDia: 45, mes: 2100, avisosMes: 1900 })
+    expect(lerTetos(ambiente({}))).toEqual({ dia: 70, avisosDia: 45, mes: 2100, avisosMes: 1900, conta: 30 })
+    expect(TETOS_PADRAO).toEqual({ dia: 70, avisosDia: 45, mes: 2100, avisosMes: 1900, conta: 30 })
   })
 
   it('CA-2274: os segredos trocados valem na próxima chamada, sem código novo', () => {
-    expect(lerTetos(ambiente({ TETO_DIA: '1500', TETO_MES: '45000' }))).toEqual({ dia: 1500, avisosDia: 1475, mes: 45000, avisosMes: 44800 })
-    expect(lerTetos(ambiente({ TETO_DIA: '100', TETO_AVISOS_DIA: '60', TETO_MES: '3000', TETO_AVISOS_MES: '2500' }))).toEqual({ dia: 100, avisosDia: 60, mes: 3000, avisosMes: 2500 })
+    expect(lerTetos(ambiente({ TETO_DIA: '1500', TETO_MES: '45000' }))).toEqual({ dia: 1500, avisosDia: 1475, mes: 45000, avisosMes: 44800, conta: 600 })
+    expect(lerTetos(ambiente({ TETO_DIA: '100', TETO_AVISOS_DIA: '60', TETO_MES: '3000', TETO_AVISOS_MES: '2500', TETO_CONTA_DIA: '25' }))).toEqual({
+      dia: 100,
+      avisosDia: 60,
+      mes: 3000,
+      avisosMes: 2500,
+      conta: 25,
+    })
   })
 
   it('valor estranho volta ao padrão', () => {
@@ -77,6 +83,30 @@ describe('cortarNoTeto', () => {
   it('CA-2271: S1 e S3 também param no teto do dia', () => {
     const r = cortarNoTeto(fila('S1', 'S3'), { dia: 70, mes: 2100, avisosDia: 0, avisosMes: 0 }, TETOS_PADRAO)
     expect(ids(r.barrados)).toEqual([0, 1])
+  })
+
+  it('CA-2299: a conta que chegou ao teto dela não manda mais; as outras continuam', () => {
+    const daConta = (tipo: TipoDeEmail, id: number, nutricionistaId: string) => ({ tipo, id, nutricionistaId })
+    const r = cortarNoTeto(
+      [daConta('S2', 0, 'abusiva'), daConta('A2', 1, 'abusiva'), daConta('A3', 2, 'abusiva'), daConta('S2', 3, 'ana'), daConta('A1', 4, 'abusiva')],
+      { ...ZERO, dia: 30, mes: 30, porConta: new Map([['abusiva', 30]]) },
+      TETOS_PADRAO,
+    )
+    expect(ids(r.vao)).toEqual([3])
+    expect(ids(r.barrados)).toEqual([0])
+    expect(ids(r.adiados)).toEqual([4, 1])
+    expect(ids(r.descartados)).toEqual([2])
+    expect(ids(r.pelaConta).sort()).toEqual([0, 1, 2, 4])
+  })
+
+  it('CA-2299: o teto da conta conta dentro da mesma chamada', () => {
+    const r = cortarNoTeto(
+      [0, 1, 2].map((id) => ({ tipo: 'A2' as const, id, nutricionistaId: 'ana' })),
+      { ...ZERO, porConta: new Map([['ana', 28]]) },
+      TETOS_PADRAO,
+    )
+    expect(ids(r.vao)).toEqual([0, 1])
+    expect(ids(r.pelaConta)).toEqual([2])
   })
 
   it('a conta anda dentro da mesma chamada', () => {
