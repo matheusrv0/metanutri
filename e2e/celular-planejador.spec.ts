@@ -144,6 +144,10 @@ for (const largura of COM_TABLET) {
       await page.getByRole('region', { name: 'Micronutrientes' }).getByRole('button', { name: /^Cobrir / }).first().click()
       const gaveta = page.getByRole('dialog')
       const destino = gaveta.getByLabel('Adicionar em')
+      // A lista "Adicionar em" também é alvo de toque, medida com o texto de uma linha ("Refeição de cada alimento"): a
+      // lista nativa, transparente, cobre a caixa inteira, borda incluída (spec busca-substitutos, T30; o mesmo defeito de
+      // 42 px da T25).
+      if (largura < 640) expect((await destino.boundingBox())?.height ?? 0, 'toque da lista "Adicionar em"').toBeGreaterThanOrEqual(44)
       const valor = await destino.locator('option', { hasText: REFEICAO_LONGA }).getAttribute('value')
       await destino.selectOption(valor ?? '')
       await expect(gaveta.getByRole('button', { name: `Adicionar em ${REFEICAO_LONGA}` }).first()).toBeVisible()

@@ -41,41 +41,48 @@ const kcalPorCem = (a: Alimento): number | null => {
  * A categoria da TACO é grossa: "Cereais e derivados" junta arroz e biscoito recheado.
  * Numa folha entregue ao paciente, isso é conselho ruim, então esses saem da lista.
  * O que é prescritível decide a regra comum (prescritivel.ts); esta lista diz só o que não é troca justa.
+ * Spec busca-substitutos, D-1121: a palavra não corta o que não é doce: a batata-doce e o peixe de água doce, o caqui
+ * "chocolate", o macarrão à bolonhesa e a folha de mostarda. D-1127: também no nome livre do alimento próprio e da cópia
+ * do catálogo ("Batata doce", "Caqui chocolate", "Folha de mostarda", "à bolonhesa"), e "zero açúcar", "sem açúcar" e
+ * "sem adição de açúcar" não cortam: o nome diz que não tem.
  */
 const NAO_EQUIVALE =
-  /(^|[\s,])(biscoito|bolo|torta|chocolate|bombom|brigadeiro|doce|docinho|goiabada|geleia|sorvete|picol(é|e)|pudim|mousse|refrigerante|suco em p(ó|o)|achocolatado|salgadinho|pizza|hamb(ú|u)rguer|nuggets|empanado|salsicha|lingui(ç|c)a|mortadela|salame|presunto|bacon|toucinho|maionese|catchup|ketchup|mostarda|leite condensado|creme de leite|a(ç|c)(ú|u)car)/i
+  /(^|[\s,])(biscoito|bolos?(?=$|[\s,])|torta|(?<!caqui,? )chocolate|bombom|brigadeiro|(?<!batata(, | )|água )doce|docinho|goiabada|geleia|sorvete|picol(é|e)|pudim|mousse|refrigerante|suco em p(ó|o)|achocolatado|salgadinho|pizza|hamb(ú|u)rguer|nuggets|empanado|salsicha|lingui(ç|c)a|mortadela|salame|presunto|bacon|toucinho|maionese|catchup|ketchup|(?<!folhas? de )mostarda(?!,? folha)|leite condensado|creme de leite|(?<!(zero|sem|sem adi(ç|c)(ã|a)o de) )a(ç|c)(ú|u)car)/i
 
-const ehTrocaRazoavel = (a: Alimento): boolean => !NAO_EQUIVALE.test(a.descricao)
+export const ehTrocaRazoavel = (a: Alimento): boolean => !NAO_EQUIVALE.test(a.descricao)
 
 type Macro = 'proteina_g' | 'carboidrato_g' | 'lipideos_g'
 const KCAL_POR_GRAMA: Readonly<Record<Macro, number>> = { proteina_g: 4, carboidrato_g: 4, lipideos_g: 9 }
 
-/** Qual macronutriente carrega a energia do alimento; `null` quando a tabela não sabe. */
-function macroDominante(a: Alimento): Macro | null {
+/**
+ * Qual macronutriente carrega a energia do alimento; `null` quando a tabela não sabe. A busca de substitutos usa a mesma
+ * regra no mesmo grupo (spec busca-substitutos, D-1125, regra a).
+ */
+export function macroDominante(a: Alimento): Macro | null {
   const energias = (Object.keys(KCAL_POR_GRAMA) as Macro[]).map((m) => ({ m, kcal: (a.nutrientes[m] ?? 0) * KCAL_POR_GRAMA[m] }))
   const maior = energias.reduce((x, y) => (y.kcal > x.kcal ? y : x))
   return maior.kcal <= 0 ? null : maior.m
 }
 
 /** Ovo inteiro só troca por ovo inteiro: duas gemas não equivalem a um ovo (spec sugestoes-com-criterio, D-194). */
-function formaDoOvo(a: Alimento): 'gema' | 'clara' | 'inteiro' | null {
+export function formaDoOvo(a: Alimento): 'gema' | 'clara' | 'inteiro' | null {
   if (a.categoria !== 'Ovos e derivados') return null
   if (/(^|[\s,])gema($|[\s,])/i.test(a.descricao)) return 'gema'
   if (/(^|[\s,])clara($|[\s,])/i.test(a.descricao)) return 'clara'
   return 'inteiro'
 }
 
-const ehCru = (a: Alimento): boolean => a.preparo === 'cru' || /(^|[\s,])cru(a|s|as)?($|[\s,])/i.test(a.descricao)
+export const ehCru = (a: Alimento): boolean => a.preparo === 'cru' || /(^|[\s,])cru(a|s|as)?($|[\s,])/i.test(a.descricao)
 
 /**
  * A TACO põe pão de queijo, farinha de mandioca, farofa, nhoque, fécula e polvilho entre as verduras. Para a troca,
  * eles não são verdura: couve refogada por pão de queijo não é troca (spec sugestoes-com-criterio, CA-671).
  */
 const NAO_E_VERDURA = /^(Pão|Farinha|Mandioca, farofa|Nhoque|Fécula|Polvilho|Biscoito)/i
-const ehVerdura = (a: Alimento): boolean => a.categoria.startsWith('Verduras') && !NAO_E_VERDURA.test(a.descricao.trim())
+export const ehVerdura = (a: Alimento): boolean => a.categoria.startsWith('Verduras') && !NAO_E_VERDURA.test(a.descricao.trim())
 
 /** Verdura cozida troca só por verdura cozida: brócolis cozido por vagem crua não é troca de prato. */
-const ehVerduraCozida = (a: Alimento): boolean => ehVerdura(a) && !ehCru(a)
+export const ehVerduraCozida = (a: Alimento): boolean => ehVerdura(a) && !ehCru(a)
 
 const mesmaForma = (base: Alimento) => (a: Alimento): boolean =>
   formaDoOvo(a) === formaDoOvo(base) && ehVerdura(a) === ehVerdura(base) && (!ehVerduraCozida(base) || !ehCru(a))
@@ -111,7 +118,7 @@ function ehRealista(alimentoId: number, gramas: number): boolean {
  * de forma, e separa arroz de batata; a troca segue o lugar no prato. Lista por nome: alimento novo fica sem papel até
  * alguém o incluir.
  */
-type Papel = 'acompanhamento' | 'pao' | 'cereal-do-cafe'
+export type Papel = 'acompanhamento' | 'pao' | 'cereal-do-cafe'
 const PAPEIS: readonly (readonly [Papel, RegExp])[] = [
   [
     'acompanhamento',
@@ -120,7 +127,7 @@ const PAPEIS: readonly (readonly [Papel, RegExp])[] = [
   ['pao', /^(Pão, (aveia|de soja|glúten|milho|trigo)|Torrada, pão francês)/],
   ['cereal-do-cafe', /^(Aveia, flocos|Cereal matinal|Cereais, mistura para vitamina|Farinha, láctea)/],
 ]
-const papelDe = (a: Alimento): Papel | null => PAPEIS.find(([, re]) => re.test(a.descricao.trim()))?.[0] ?? null
+export const papelDe = (a: Alimento): Papel | null => PAPEIS.find(([, re]) => re.test(a.descricao.trim()))?.[0] ?? null
 
 /**
  * No acompanhamento, pronto troca por pronto e cru por cru. O cru (arroz e macarrão pelo peso cru) é forma de

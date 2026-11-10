@@ -312,6 +312,33 @@ export interface ItemPlano {
   readonly medida?: MedidaDoItem | null
   /** Só no item de receita: a cópia dela (spec receitas-com-calculo). */
   readonly receita?: ReceitaDoPlano
+  /**
+   * As opções deste alimento, até 2, escolhidas na busca de substitutos (spec busca-substitutos, D-1114): o paciente lê
+   * "ou" embaixo do item. Plano gravado antes não tem o campo. Lido sempre por `lerOpcoesDoItem`.
+   */
+  readonly opcoesDoItem?: readonly OpcaoDoItem[]
+}
+
+/** Uma opção do item: outro alimento na porção equivalente (spec busca-substitutos, D-1114). */
+export interface OpcaoDoItem {
+  readonly alimentoId: number
+  readonly gramas: number
+  /** A medida da porção (D-379); `null` = só gramas; sem o campo, a automática. */
+  readonly medida?: MedidaDoItem | null
+  /**
+   * Só na opção da base ampliada (D-1122): o nome copiado ao entrar no plano. A base chega sob demanda; sem ela, a folha,
+   * o link e o Word mostram a opção por aqui, em gramas, em vez de deixá-la de fora.
+   */
+  readonly copia?: CopiaDoAlimento
+}
+
+/** O nome do alimento copiado na opção (D-1122). */
+export interface CopiaDoAlimento {
+  /** O nome da base ("Macarrão, trigo, cozido"), o do planejador e do Word. */
+  readonly descricao: string
+  /** O nome para o paciente, o da folha e do link. */
+  readonly paciente: string
+  readonly unidade?: 'ml'
 }
 
 export interface Refeicao {

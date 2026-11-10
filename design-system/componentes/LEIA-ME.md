@@ -96,6 +96,15 @@ um `Label` ao lado, não uma prop.
 <Switch id="crus" checked={v} onCheckedChange={setV} />
 ```
 
+### ChipAlternavel
+Ficha que liga e desliga, para escolher **vários** de uma lista curta (os nutrientes da busca de
+substitutos). O desenho do `GrupoOpcoes`; o "+" vira "✓" e o estado sai em `aria-pressed`.
+*Nasceu na spec `busca-substitutos` (03/11/2026).*
+
+```tsx
+<ChipAlternavel ligado={marcado} aoAlternar={alternar}>Carboidratos</ChipAlternavel>
+```
+
 ### GrupoOpcoes
 Escolha única entre 2 a 4 opções curtas (sexo, preset, fórmula), todas visíveis — mais
 rápido que uma lista suspensa. `valor={null}` é o estado vazio.

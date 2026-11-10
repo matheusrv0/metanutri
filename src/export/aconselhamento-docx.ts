@@ -6,6 +6,7 @@ import { modoDeQuantidade } from '../domain/caso.ts'
 import { nomeSemAlimento } from '../domain/produtos.ts'
 import { FRASE_PROPOSTA } from '../domain/documentoDoPaciente.ts'
 import { dataCompleta } from '../domain/formatarData.ts'
+import { lerOpcoesDoItem } from '../domain/opcoesDoItem.ts'
 import { quantidadeNaFolha, textoDoPeso, type QuantidadeNaFolha } from '../domain/quantidadeNaFolha.ts'
 import { ehItemDeReceita, nomeDaReceita, receitaDoItem, receitasDoPlano, textoDaPorcao, textoDoRendimento } from '../domain/receitaNoPlano.ts'
 import { descreverSuplemento, suplementosParaDocumento, type Suplemento } from '../domain/suplementos.ts'
@@ -68,7 +69,17 @@ export function quantidadeNoWord(q: QuantidadeNaFolha): string {
  * banana (1 unidade)"); sem meia porção que feche, ou com o plano em "Gramas", o peso (D-297 da conduta-da-nutricionista).
  */
 export function descreverItem(item: ItemPlano, buscar: BuscarAlimento, modo: ModoQuantidade = 'medida-caseira'): string {
-  if (!ehItemDeReceita(item)) return descreverAlimento(item.alimentoId, item.gramas, buscar, modo, item.medida)
+  if (!ehItemDeReceita(item)) {
+    // Spec busca-substitutos, D-1115 e CA-2124: as opções do item depois de "ou"; a do alimento excluído fica de fora.
+    const opcoes = lerOpcoesDoItem(item).flatMap((o) => {
+      if (buscar(o.alimentoId) !== undefined) return [` ou ${descreverAlimento(o.alimentoId, o.gramas, buscar, modo, o.medida)}`]
+      // D-1122 e CB-1110: a opção da base ampliada sem a base sai pela cópia do nome; a do próprio excluído, não.
+      if (!o.copia) return []
+      const q = quantidadeNaFolha(o.alimentoId, o.gramas, modo, o.medida)
+      return [` ou ${o.copia.descricao} (${quantidadeNoWord({ ...q, unidade: o.copia.unidade ?? q.unidade })})`]
+    })
+    return `${descreverAlimento(item.alimentoId, item.gramas, buscar, modo, item.medida)}${opcoes.join('')}`
+  }
   const receita = receitaDoItem(item)
   const porcao = modo === 'gramas' || !receita ? null : textoDaPorcao(receita, item.gramas)
   return `${nomeDaReceita(receita)} (${quantidadeNoWord({ medida: porcao, gramas: item.gramas, unidade: 'g', aproximada: false, comPeso: modo === 'medida-e-gramas' })})`
