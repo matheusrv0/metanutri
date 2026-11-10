@@ -463,6 +463,8 @@ export function useConta(): ValorConta {
       // O motivo vai antes de encerrar: as outras abas recebem o SIGNED_OUT e já acham o "Entre de novo" (CA-1445).
       gravarSaida(armazenamento, { ate, pendente: !apagar })
       apagarMarca(armazenamento)
+      // D-1260 e CA-2305: num computador de clínica, a sessão costuma acabar por tempo; os planos lembrados saem também.
+      esquecerTodosOsPlanos(armazenamento)
       const c = obterSupabase()
       if (!c) return
       // CA-1452: só a sessão deste navegador; a do outro aparelho continua.

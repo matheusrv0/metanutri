@@ -726,6 +726,17 @@ describe('a sessão com tempo (spec separacao-site-app, D-514 a D-520)', () => {
       expect(result.current.sessao).toBeNull()
     })
 
+    it('CA-2305 (D-1260): a saída por tempo também apaga os planos de paciente lembrados, com pendência ou sem', async () => {
+      for (const apagar of [true, false]) {
+        localStorage.setItem('metanutri:meus-planos', JSON.stringify([{ token: 'k7q2mx9pla3r', primeiroNome: 'Juliana', nutricionista: 'Ana Lima', ultimoAcesso: '2026-11-03' }]))
+        const { result } = await abrirCom(sessaoDe())
+        await act(async () => {
+          await result.current.sairPorTempo({ apagar, ate: Date.now() })
+        })
+        expect(localStorage.getItem('metanutri:meus-planos'), `apagar: ${String(apagar)}`).toBeNull()
+      }
+    })
+
     it('CA-1448: com pendência, o espaço fica e o motivo diz que ficou algo para enviar', async () => {
       const { result } = await abrirCom(sessaoDe())
       const antes = daConta('u1')
