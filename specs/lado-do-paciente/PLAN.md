@@ -862,3 +862,17 @@ T73 a T75 em cima de 892a070b, só o que os dois leves pedem (o pedido foi a val
 
 **Divergências que ficam:** as da seção 10.3. A observação 1 da revisão r4 (o D-1261 dizia "marca a chave como usada
 e só então grava", e o SQL marca no fim, na mesma transação) foi resolvida na frase da SPEC, sem mudar o código.
+
+### 10.5 A junção com a `main` (10/11/2026)
+
+A `main` em 650a783d (o assistente de IA, a antropometria e a busca de substitutos), por `git merge main`. Dez arquivos
+em conflito, todos resolvidos mantendo os dois lados (a mensagem do merge diz como). A Política e os Termos ficaram com
+os textos da IA e os do paciente, aprovados pelo dono em 10/11/2026: `VERSAO_TERMOS = '2026-11-10'`, "10 de novembro
+de 2026". O "ou" da busca de substitutos entrou no desenho novo do Plano do link, e o teste do CA-2123 lê a linha nova.
+- `npm run lint`: 0 erro (o aviso antigo). `npm run typecheck`: limpo. `npm run build`: limpo.
+- `npx vitest run --maxWorkers=4`: 469 arquivos, 8448 testes verdes e 2 pulados (o CA-2123 corrigido e rodado de novo).
+- e2e completo, com a `trava-e2e` e `--workers=2`: 526 de 526. `npm run test:csp`: 3 de 3.
+- `npm run test:seguranca`: 384 de 385 na rodada inteira. O que caiu foi o CA-2292 de `avisos.test.ts`, com "JWT
+  issued at future", porque o relógio do contêiner estava atrás do da máquina. Rodado sozinho, `avisos.test.ts` deu 33
+  de 33, e a sonda da r4 deu "nenhum furo".
+- O SQL deste ramo continua sendo um só, o `supabase/017-lado-do-paciente.sql`. A `main` não o tem e não mexeu nele.
