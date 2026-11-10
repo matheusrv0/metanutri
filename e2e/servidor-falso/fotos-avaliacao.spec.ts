@@ -206,6 +206,13 @@ for (const [nome, viewport, toque] of [
       await expect(cartao.getByRole('button', { name: /compartilh|baix|download|documento/i })).toHaveCount(0)
       await semRolagemLateral(page)
 
+      // CB-1469 e D-1532: o "Excluir" da foto tem pelo menos 44 × 44 px no celular.
+      if (toque) {
+        const caixa = await cartao.getByRole('button', { name: 'Excluir a foto de frente' }).boundingBox()
+        expect(caixa?.width ?? 0).toBeGreaterThanOrEqual(44)
+        expect(caixa?.height ?? 0).toBeGreaterThanOrEqual(44)
+      }
+
       // CA-2485: excluir a foto tira o arquivo do armazenamento.
       await cartao.getByRole('button', { name: 'Excluir a foto de frente' }).click()
       await page.getByRole('alertdialog', { name: 'Excluir a foto de frente?' }).getByRole('button', { name: 'Excluir foto' }).click()

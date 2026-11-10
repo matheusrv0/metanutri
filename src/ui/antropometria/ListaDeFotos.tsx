@@ -13,8 +13,8 @@ interface ListaDeFotosProps {
 }
 
 /**
- * As fotos de hoje (D-1454): cada uma com o ângulo, o tamanho e "Excluir"; as vagas, "Foto N de 5". Cinco por linha na
- * tela larga e três abaixo de 640 px, como o protótipo.
+ * As fotos de hoje (D-1454): cada uma com o ângulo, o tamanho e "Excluir" (44 × 44 px no toque, D-1532); as vagas,
+ * "Foto N de 5". Cinco por linha na tela larga e três abaixo de 640 px, como o protótipo.
  */
 export function ListaDeFotos({ armazenamento, fotos, data, aoExcluir }: ListaDeFotosProps) {
   const vagas = Array.from({ length: Math.max(0, FOTOS_POR_AVALIACAO - fotos.length) }, (_, i) => fotos.length + i + 1)
@@ -27,7 +27,7 @@ export function ListaDeFotos({ armazenamento, fotos, data, aoExcluir }: ListaDeF
             <span className="text-sm font-semibold text-heading">{NOME_DO_ANGULO[foto.angulo ?? 'outra']}</span>
             <span className="numeros">{textoDoTamanho(foto.bytes)}</span>
           </div>
-          <Button variant="link" size="sm" className="self-start px-0 text-muted-foreground" aria-label={`Excluir a foto de ${anguloNaFrase(foto.angulo)}`} onClick={() => aoExcluir(foto)}>
+          <Button variant="link" size="sm" className="self-start px-0 text-muted-foreground max-sm:min-w-11 sm:pointer-coarse:min-w-11" aria-label={`Excluir a foto de ${anguloNaFrase(foto.angulo)}`} onClick={() => aoExcluir(foto)}>
             Excluir
           </Button>
         </li>

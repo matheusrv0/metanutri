@@ -222,6 +222,12 @@ describe('os quadros e a exclusão (CA-2485, CB-1414, D-1509)', () => {
     expect(f.apagados).toEqual([[`${CONTA}/av/fotos/f1.jpg`]])
   })
 
+  it('CB-1469 e D-1532: "Excluir" da foto tem 44 px de largura e de altura no celular e no toque', () => {
+    const { cartao } = abrir({ avaliacao: { fotosAutorizadasEm: '2026-11-03', fotos: [foto('f1', 'frente')] } })
+    const classes = cartao().getByRole('button', { name: 'Excluir a foto de frente' }).className.split(/\s+/)
+    expect(classes).toEqual(expect.arrayContaining(['h-11', 'max-sm:min-w-11', 'sm:pointer-coarse:h-11', 'sm:pointer-coarse:min-w-11']))
+  })
+
   it('CA-2485: o servidor falhou: a foto fica e a frase diz "Não foi possível excluir. Tente de novo."', async () => {
     const { usuario, gravado, cartao } = abrir({ porta: falsos({ apagar: false }).porta, avaliacao: { fotosAutorizadasEm: '2026-11-03', fotos: [foto('f1', 'frente')] } })
     await usuario.click(cartao().getByRole('button', { name: 'Excluir a foto de frente' }))
