@@ -11,6 +11,7 @@ import { AvisoContaExcluida } from '../AvisoContaExcluida.tsx'
 import { AvisoFormulario } from './AvisoFormulario.tsx'
 import { AvisoSemServidor } from './AvisoSemServidor.tsx'
 import { CampoSenha } from './CampoSenha.tsx'
+import { CartaoMeusPlanos } from './CartaoMeusPlanos.tsx'
 import { LadoDoPlano } from './LadoDoPlano.tsx'
 import { MolduraConta } from './MolduraConta.tsx'
 import { useVerificacao } from './usarVerificacao.ts'
@@ -27,13 +28,15 @@ interface TelaEntrarProps {
   readonly aoAbrirSistema: () => void
   /** Veio de uma tela que pede sessão (CA-148): o subtítulo diz isso. */
   readonly pedidoPorTela?: boolean | undefined
+  /** Spec lado-do-paciente, D-1220: "Sou paciente" leva a "Recuperar meu link". Sem ele, o botão não aparece. */
+  readonly aoSouPaciente?: (() => void) | undefined
 }
 
 const BOTAO_TEXTO =
   'inline-flex min-h-11 items-center rounded-sm font-semibold text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
 
 /** Entrar (spec estilo-spora, US-1.4; mockup conta e checkout v1). */
-export function TelaEntrar({ conta, aoEntrou, aoCriarConta, aoEsqueci, aoConfirmarEmail, aoIrParaInicio, aoAbrirSistema, pedidoPorTela = false }: TelaEntrarProps) {
+export function TelaEntrar({ conta, aoEntrou, aoCriarConta, aoEsqueci, aoConfirmarEmail, aoIrParaInicio, aoAbrirSistema, pedidoPorTela = false, aoSouPaciente }: TelaEntrarProps) {
   const id = useId()
   // Spec separacao-site-app, D-526 e DP-SA-22: depois da saída por tempo, "Entre de novo" e uma frase só. O motivo fica
   // guardado até alguém entrar (DP-SA-19), então todas as abas e as recargas mostram o mesmo.
@@ -83,7 +86,13 @@ export function TelaEntrar({ conta, aoEntrou, aoCriarConta, aoEsqueci, aoConfirm
       aoIrParaInicio={aoIrParaInicio}
       lado={<LadoDoPlano plano={null} ciclo="mensal" />}
       // Spec separacao-site-app, DP-SA-49: depois de excluir a conta, o aviso fica no topo daqui (a landing é de outro endereço).
-      aviso={<AvisoContaExcluida />}
+      // Spec lado-do-paciente, D-1218 e CA-2227: o plano lembrado neste aparelho vem acima do login, com "Nutricionista" antes dele.
+      aviso={
+        <>
+          <AvisoContaExcluida />
+          <CartaoMeusPlanos />
+        </>
+      }
     >
       {conta.disponivel ? null : <AvisoSemServidor aoAbrirSistema={aoAbrirSistema} />}
       {semInternet ? <AvisoFormulario tipo="erro">Você está sem internet. Conecte-se para entrar e abrir seus dados.</AvisoFormulario> : null}
@@ -127,6 +136,13 @@ export function TelaEntrar({ conta, aoEntrou, aoCriarConta, aoEsqueci, aoConfirm
             Entrar
           </Button>
         </VerificacaoContraRobos>
+
+        {/* Spec lado-do-paciente, D-1220 e CA-2233: quem é paciente recupera o link pelo e-mail, sem conta. */}
+        {aoSouPaciente ? (
+          <button type="button" onClick={aoSouPaciente} className={`self-center text-base underline underline-offset-4 ${BOTAO_TEXTO}`}>
+            Sou paciente
+          </button>
+        ) : null}
 
         <p className="text-center text-sm text-muted-foreground">
           Ainda não tem conta?{' '}

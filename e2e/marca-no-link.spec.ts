@@ -74,8 +74,26 @@ const linkNoCelular = (pagina: Page, tema: 'claro' | 'escuro') =>
 
 const cores = (alvo: Locator) => alvo.evaluate((el) => ({ fundo: getComputedStyle(el).backgroundColor, texto: getComputedStyle(el).color }))
 
-/** A aba escolhida ("Missões") dentro de um celular da prévia. */
-const abaEscolhida = (pagina: Page, tema: 'claro' | 'escuro') => linkNoCelular(pagina, tema).locator('[role="tab"][data-state="active"]')
+/**
+ * A parte escolhida da barra de baixo, dentro de um celular da prévia (spec lado-do-paciente, D-1202 e CA-2215): o nome
+ * vai na cor da marca. A prévia fica fora da árvore de acessibilidade (é desenho), então a busca é pelo seletor.
+ */
+const abaEscolhida = (pagina: Page, tema: 'claro' | 'escuro') => linkNoCelular(pagina, tema).locator('nav[aria-label="Partes do plano"] a[aria-current="page"]')
+
+/**
+ * O par da ação do link no celular (o fundo e o texto de "Marcar como feita", CA-2215), lido num pedaço de prova: na
+ * barra de baixo, a cor vai só no nome da parte.
+ */
+const acaoNoCelular = (pagina: Page, tema: 'claro' | 'escuro') =>
+  linkNoCelular(pagina, tema).evaluate((raiz) => {
+    const prova = document.createElement('span')
+    prova.className = 'bg-linkacao text-linkacaotexto'
+    raiz.appendChild(prova)
+    const estilo = getComputedStyle(prova)
+    const par = { fundo: estilo.backgroundColor, texto: estilo.color }
+    prova.remove()
+    return par
+  })
 
 test('CA-1950: a Conta tem o cartão "Sua marca", que abre a tela; Configurações não tem mais o cartão "Logotipo"', async ({ page }) => {
   await abrirLimpo(page)
@@ -171,17 +189,21 @@ test('CA-1957 e CA-1966: a cor pronta pinta a aba e a barra no celular claro; no
   await abrirSuaMarca(page)
   await page.getByTitle('Vinho').click()
   // #7A2944 no claro, com texto branco; #DA90A9 (a mesma cor clareada até 7:1) no escuro, com texto #101A1D.
-  expect(await cores(abaEscolhida(page, 'claro'))).toEqual({ fundo: 'rgb(122, 41, 68)', texto: 'rgb(255, 255, 255)' })
-  expect(await cores(abaEscolhida(page, 'escuro'))).toEqual({ fundo: 'rgb(218, 144, 169)', texto: 'rgb(16, 26, 29)' })
-  const barra = (tema: 'claro' | 'escuro') => linkNoCelular(page, tema).locator('[role="progressbar"] > div')
+  expect((await cores(abaEscolhida(page, 'claro'))).texto).toBe('rgb(122, 41, 68)')
+  expect((await cores(abaEscolhida(page, 'escuro'))).texto).toBe('rgb(218, 144, 169)')
+  expect(await acaoNoCelular(page, 'claro')).toEqual({ fundo: 'rgb(122, 41, 68)', texto: 'rgb(255, 255, 255)' })
+  expect(await acaoNoCelular(page, 'escuro')).toEqual({ fundo: 'rgb(218, 144, 169)', texto: 'rgb(16, 26, 29)' })
+  // D-1203: a barra do dia em segmentos; o cheio é o pedaço de dentro.
+  const barra = (tema: 'claro' | 'escuro') => linkNoCelular(page, tema).locator('[role="progressbar"] > span > span').first()
   expect((await cores(barra('claro'))).fundo).toBe('rgb(122, 41, 68)')
   expect((await cores(barra('escuro'))).fundo).toBe('rgb(218, 144, 169)')
   await expect(page.getByRole('figure', { name: /Celular escuro/ })).toContainText('#DA90A9')
 
   // DP-ML-9: com o app no escuro, o celular claro continua claro.
   await page.evaluate(() => document.documentElement.classList.add('dark'))
-  expect(await cores(abaEscolhida(page, 'claro'))).toEqual({ fundo: 'rgb(122, 41, 68)', texto: 'rgb(255, 255, 255)' })
-  expect(await cores(abaEscolhida(page, 'escuro'))).toEqual({ fundo: 'rgb(218, 144, 169)', texto: 'rgb(16, 26, 29)' })
+  expect((await cores(abaEscolhida(page, 'claro'))).texto).toBe('rgb(122, 41, 68)')
+  expect(await acaoNoCelular(page, 'claro')).toEqual({ fundo: 'rgb(122, 41, 68)', texto: 'rgb(255, 255, 255)' })
+  expect(await acaoNoCelular(page, 'escuro')).toEqual({ fundo: 'rgb(218, 144, 169)', texto: 'rgb(16, 26, 29)' })
 })
 
 test('CA-1960: #8CC63F é recusada e "Usar #587F26" resolve; a padrão volta o link ao de hoje', async ({ page }) => {
@@ -196,8 +218,9 @@ test('CA-1960: #8CC63F é recusada e "Usar #587F26" resolve; a padrão volta o l
   await expect(page.getByRole('button', { name: 'Salvar' })).toBeEnabled()
 
   await page.getByTitle('Padrão do MetaNutri').click()
-  // Sem cor própria: a aba escolhida é a pílula branca de sempre.
-  expect((await cores(abaEscolhida(page, 'claro'))).fundo).toBe('rgb(255, 255, 255)')
+  // Sem cor própria: o link de hoje, sem a classe da marca, e a parte escolhida na cor da ação do MetaNutri.
+  await expect(linkNoCelular(page, 'claro').and(page.locator('.marca-da-nutricionista'))).toHaveCount(0)
+  expect((await cores(abaEscolhida(page, 'claro'))).texto).not.toBe('rgb(88, 127, 38)')
 })
 
 test('CA-1981 e D-800: em 360 e 390 px, a tela é uma coluna (o formulário e depois os celulares) e nada rola de lado', async ({ page }) => {

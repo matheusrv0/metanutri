@@ -188,9 +188,10 @@ export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pe
     navegar({ tela: 'planejador', casoId: salvo.caso.id, aba: 'plano' })
   }
 
-  // O link do paciente abre sozinho: sem menu, sem conta e sem nada da área do nutricionista.
+  // O link do paciente abre sozinho: sem menu, sem conta e sem nada da área do nutricionista. D-1253: com a sessão de
+  // nutricionista neste navegador (ou ainda sem saber), a tela não lembra o plano nem registra o acesso.
   if (rota.tela === 'missoes') {
-    return <TelaMissoesPaciente token={rota.token} fonte={fonte} />
+    return <TelaMissoesPaciente token={rota.token} fonte={fonte} comoPaciente={!conta.carregando && conta.sessao === null} />
   }
 
   // CA-839: sem o código do app, o menu do administrador aparece sem o número de pendências (nada foi lido).
@@ -281,6 +282,7 @@ export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pe
           aoNovoPlano={(pacienteId, modo) => novoCaso(modo, pacienteId)}
           aoVoltar={() => navegar({ tela: 'pacientes' })}
           focar={rota.campo}
+          aoCadastrarTelefone={cadastrarTelefone}
           aoAbrirAntropometria={() => navegar({ tela: 'antropometria-do-paciente', pacienteId: rota.pacienteId })}
         />
       </Estrutura>
@@ -422,7 +424,7 @@ export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pe
   if (rota.tela === 'config') {
     return (
       <Estrutura {...base} titulo="Configurações">
-        <TelaConfiguracoes />
+        <TelaConfiguracoes usuarioId={sessao?.id ?? null} />
       </Estrutura>
     )
   }
@@ -593,6 +595,13 @@ export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pe
                   aoVerPlanos={() => navegar(rotaDePlanos(assinatura.plano))}
                   aoCadastrarTelefone={cadastrarTelefone}
                   situacao={perfil?.situacao ?? null}
+                  // D-1216 e CA-2224: o link exige paciente; o plano sem ficha cria a ficha com o nome escrito e liga o plano a ela.
+                  aoCriarPaciente={(nomeDoPaciente) => {
+                    const criado = repoPacientes.criar(nomeDoPaciente)
+                    atualizarPacientes()
+                    alterarCaso({ pacienteId: criado.id })
+                    return criado.id
+                  }}
                   {...(sessao ? { plano: assinatura.plano } : {})}
                 />
               </div>

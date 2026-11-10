@@ -217,12 +217,55 @@ describe('documentos legais', () => {
     )
   })
 
-  it('CA-464: a política diz, em "Onde os dados ficam", que o Cloudflare Turnstile recebe dados técnicos do navegador nas telas de conta', () => {
+  it('CA-464 e CA-2304: a política diz, em "Onde os dados ficam", que o Cloudflare Turnstile recebe dados técnicos do navegador nas telas de conta e em "Recuperar meu link"', () => {
     render(<TelaPrivacidade />)
     const lista = screen.getByRole('heading', { name: 'Onde os dados ficam' }).nextElementSibling
     expect(lista).toHaveTextContent(
-      'Nas telas de conta, o Cloudflare Turnstile recebe dados técnicos do navegador, como o endereço IP, para separar pessoas de robôs.',
+      'Nas telas de conta e em “Recuperar meu link”, o Cloudflare Turnstile recebe dados técnicos do navegador, como o endereço IP, para separar pessoas de robôs.',
     )
+  })
+
+  it('CA-2304 (spec lado-do-paciente, D-1259): o e-mail informado no link, até ser confirmado, recebe só o pedido de confirmação e fica guardado até 8 dias', () => {
+    render(<TelaPrivacidade />)
+    const texto = document.body.textContent ?? ''
+    expect(texto).toContain(
+      'O e-mail que o paciente informa no link só passa a valer depois que ele toca em Confirmar no e-mail que recebe. Até lá, esse e-mail recebe só o pedido de confirmação e fica guardado com ele por até 8 dias.',
+    )
+  })
+
+  it('D-1250 (spec lado-do-paciente): a política diz o que o código faz: o resumo (hash), quem entra na lista de bloqueio, os 6 meses do aceite e os 2 dias da recuperação', () => {
+    render(<TelaPrivacidade />)
+    const texto = document.body.textContent ?? ''
+    expect(texto).not.toContain('cifrado')
+    expect(texto).toContain('O e-mail que o paciente informa no link só passa a valer depois que ele toca em Confirmar no e-mail que recebe.')
+    expect(texto).toContain('enquanto o link existir e por mais 6 meses depois que ele sai')
+    expect(texto).toContain('O e-mail que volta (o endereço não existe) ou que é marcado como spam entra numa lista de bloqueio, que guarda só um resumo do endereço (hash)')
+    expect(texto).toContain('Quem sai de um aviso só deixa de recebê-lo.')
+    expect(texto).toContain('um resumo (hash) do e-mail e do endereço de internet de quem pede, por 2 dias')
+  })
+
+  it('CA-2310 (spec lado-do-paciente, D-1263): o histórico guarda o resumo do endereço, até do não confirmado, e a lista de bloqueio diz o que cada caso deixa de receber', () => {
+    render(<TelaPrivacidade />)
+    const texto = document.body.textContent ?? ''
+    expect(texto).toContain(
+      'o histórico dos e-mails enviados (tipo, assunto, situação, data e um resumo do endereço, o hash), por 6 meses, inclusive dos enviados a um e-mail que não foi confirmado.',
+    )
+    expect(texto).toContain(
+      'O que volta não recebe mais nenhum e-mail do MetaNutri; o marcado como spam não recebe mais avisos nem os e-mails do nutricionista, só o que o próprio paciente pedir no link.',
+    )
+    expect(texto).not.toContain('para não receber mais avisos')
+  })
+
+  it('CA-2286 (spec lado-do-paciente): a política diz para que serve o e-mail do paciente, que o link registra o dia do acesso e que o Resend manda os e-mails', () => {
+    render(<TelaPrivacidade />)
+    const texto = document.body.textContent ?? ''
+    expect(texto).toContain('O e-mail do paciente, quando o nutricionista o registra na ficha ou o próprio paciente o informa no link')
+    expect(texto).toContain('os avisos que o paciente aceitou')
+    expect(texto).toContain('O dia em que o paciente abriu o link (só a data, sem a hora)')
+    expect(texto).toContain('os e-mails ao paciente e ao nutricionista')
+    expect(texto).toContain('nunca para propaganda do MetaNutri e nunca em lista de contatos')
+    expect(texto).toContain('são enviados pelo Resend')
+    expect(texto).toContain('como deixar de receber, num toque e sem login')
   })
 
   const textoDaSecao = (nome: string): string => {

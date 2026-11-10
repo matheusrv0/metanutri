@@ -65,9 +65,10 @@ const TELAS: readonly Tela[] = [
     titulo: 'Seu plano alimentar, Ana',
     acao: (p) => p.getByRole('region', { name: '12:00 Almoço' }),
     cenario: { link: linkFalso({ dieta: DIETA_GUARDADA }) },
-    antes: async (p) => p.getByRole('tab', { name: 'Meu plano' }).click(),
+    // Spec lado-do-paciente (D-1202): a dieta fica na parte Plano da barra de baixo.
+    antes: async (p) => p.getByRole('navigation', { name: 'Partes do plano' }).getByRole('link', { name: 'Plano' }).click(),
   },
-  { nome: 'Link do paciente (link que não existe)', endereco: '/#/missoes/token-do-teste', titulo: 'Este link não existe mais', acao: (p) => p.getByRole('main'), cenario: { link: null } },
+  { nome: 'Link do paciente (link que não existe)', endereco: '/#/missoes/token-do-teste', titulo: 'Este link não abre mais', acao: (p) => p.getByRole('main'), cenario: { link: null } },
 ]
 
 for (const largura of LARGURAS_DA_FUMACA) {

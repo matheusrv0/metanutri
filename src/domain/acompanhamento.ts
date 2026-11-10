@@ -2,15 +2,22 @@
 // que precisa cumprir. O plano vira missões (ver `missoes.ts`), o paciente marca o
 // que fez num link próprio, e daí sai a única métrica que diz se o produto funciona
 // — quem está marcando e quem está sumindo (`docs/plano-negocio.md`).
+import { ultimaMarcacao, DIAS_NA_SEMANA_PARA_EM_DIA, DIAS_PARA_SUMIR, type EstadoAcompanhamento, type MarcacaoDia } from '../../supabase/functions/_shared/adesao.ts'
 import type { DietaDoLink } from './dietaDoLink.ts'
 import type { Missao } from './missoes.ts'
 
-export interface MarcacaoDia {
-  /** Dia do calendário, AAAA-MM-DD, no fuso de quem marcou. */
-  readonly dia: string
-  /** Ids das missões marcadas naquele dia. */
-  readonly feitas: readonly string[]
-}
+// A conta da adesão mora em `_shared` para o servidor fazer a mesma (spec lado-do-paciente, DP-LP-15).
+export {
+  diasEntre,
+  diasMarcadosNaSemana,
+  estadoDoAcompanhamento,
+  ultimaMarcacao,
+  DIAS_NA_SEMANA_PARA_EM_DIA,
+  DIAS_PARA_SUMIR,
+  ROTULO_ESTADO,
+  type EstadoAcompanhamento,
+  type MarcacaoDia,
+} from '../../supabase/functions/_shared/adesao.ts'
 
 export interface Acompanhamento {
   readonly id: string
@@ -38,15 +45,25 @@ export interface Acompanhamento {
    * missões: muda só quando o nutricionista liga, desliga ou atualiza. Nula quando desligada.
    */
   readonly dieta: DietaDoLink | null
+  /**
+   * A mensagem da nutricionista no link (spec lado-do-paciente, D-1208): texto livre de até 400 caracteres, que aparece em
+   * Hoje e nunca vai por e-mail. Nula ou ausente: sem mensagem (o link de antes não tem o campo).
+   */
+  readonly mensagem?: string | null
+  /** Quando a mensagem foi salva (ISO): "Ana Lima · 3 nov." (CA-2212). */
+  readonly mensagemEm?: string | null
+  /** A próxima consulta da ficha, `AAAA-MM-DD` ou `AAAA-MM-DDTHH:MM` (D-1209, D-143); sobe para o link quando a ficha muda. */
+  readonly proximaConsulta?: string | null
+  /** O dia em que o paciente abriu o link pela última vez (AAAA-MM-DD, Brasília; D-1223). Só a nuvem escreve. */
+  readonly ultimoAcesso?: string | null
+  /** O link fixo do mesmo paciente que substitui este (migração, D-1217). Substituído, o link some da Adesão e do limite. */
+  readonly substituidoPor?: string | null
+  /** Quando as missões, a dieta ou o plano do link mudaram por último (ISO). Só a nuvem escreve (D-1228, D-1230). */
+  readonly planoEm?: string | null
 }
 
-/** Dias sem nenhuma marcação até o paciente contar como sumido. */
-export const DIAS_PARA_SUMIR = 4
-
-/** Dias com missão marcada na semana para o paciente contar como em dia (métrica do plano). */
-export const DIAS_NA_SEMANA_PARA_EM_DIA = 4
-
-const DIA_EM_MS = 24 * 60 * 60 * 1000
+/** Os limites da mensagem do link (D-1208, CA-2213). */
+export const MENSAGEM_MAXIMA = 400
 
 /**
  * Dia do calendário de quem está olhando, não em UTC. `toISOString()` daria o dia
@@ -57,14 +74,6 @@ export function diaLocal(data: Date = new Date()): string {
   const mes = String(data.getMonth() + 1).padStart(2, '0')
   const dia = String(data.getDate()).padStart(2, '0')
   return `${data.getFullYear()}-${mes}-${dia}`
-}
-
-/** Distância em dias entre dois dias de calendário. Negativo quando `b` é anterior. */
-export function diasEntre(a: string, b: string): number {
-  const inicio = Date.parse(`${a}T00:00:00Z`)
-  const fim = Date.parse(`${b}T00:00:00Z`)
-  if (Number.isNaN(inicio) || Number.isNaN(fim)) return Number.NaN
-  return Math.round((fim - inicio) / DIA_EM_MS)
 }
 
 const ALFABETO = 'abcdefghijkmnopqrstuvwxyz23456789'
@@ -185,21 +194,6 @@ export function progressoDoDia(acompanhamento: Acompanhamento, dia: string): Pro
   return { feitas, total, pct: total === 0 ? 0 : Math.round((feitas / total) * 100) }
 }
 
-/** Quantos dos últimos sete dias, contando hoje, tiveram ao menos uma missão marcada. */
-export function diasMarcadosNaSemana(acompanhamento: Acompanhamento, hoje: string): number {
-  return acompanhamento.marcacoes.filter((m) => {
-    if (m.feitas.length === 0) return false
-    const atras = diasEntre(m.dia, hoje)
-    return !Number.isNaN(atras) && atras >= 0 && atras < 7
-  }).length
-}
-
-/** Dia da marcação mais recente, ou nulo se o paciente nunca marcou nada. */
-export function ultimaMarcacao(acompanhamento: Acompanhamento): string | null {
-  const dias = acompanhamento.marcacoes.filter((m) => m.feitas.length > 0).map((m) => m.dia)
-  return dias.length === 0 ? null : (dias.sort((a, b) => b.localeCompare(a))[0] ?? null)
-}
-
 /**
  * Última vez que este paciente deu sinal de vida. É o que a cobrança olha para
  * saber se ele conta como paciente ativo (`ehPacienteAtivo` em `conta.ts`).
@@ -208,32 +202,6 @@ export function ultimaMarcacao(acompanhamento: Acompanhamento): string | null {
 export function ultimaAtividade(acompanhamento: Acompanhamento): string {
   const marcacao = ultimaMarcacao(acompanhamento)
   return marcacao ? `${marcacao}T12:00:00.000Z` : acompanhamento.criadoEm
-}
-
-export type EstadoAcompanhamento = 'em-dia' | 'atencao' | 'sumindo' | 'nao-comecou'
-
-/**
- * O estado que o nutricionista vê na lista. A ordem das perguntas importa:
- * quem sumiu precisa aparecer como sumindo mesmo que tenha ido bem na semana passada.
- */
-export function estadoDoAcompanhamento(acompanhamento: Acompanhamento, hoje: string): EstadoAcompanhamento {
-  const ultima = ultimaMarcacao(acompanhamento)
-
-  if (ultima === null) {
-    const desdeCriacao = diasEntre(acompanhamento.criadoEm.slice(0, 10), hoje)
-    return !Number.isNaN(desdeCriacao) && desdeCriacao >= DIAS_PARA_SUMIR ? 'sumindo' : 'nao-comecou'
-  }
-
-  const atras = diasEntre(ultima, hoje)
-  if (!Number.isNaN(atras) && atras >= DIAS_PARA_SUMIR) return 'sumindo'
-  return diasMarcadosNaSemana(acompanhamento, hoje) >= DIAS_NA_SEMANA_PARA_EM_DIA ? 'em-dia' : 'atencao'
-}
-
-export const ROTULO_ESTADO: Readonly<Record<EstadoAcompanhamento, string>> = {
-  'em-dia': 'Em dia',
-  atencao: 'Atenção',
-  sumindo: 'Parou de marcar',
-  'nao-comecou': 'Ainda não começou',
 }
 
 export const EXPLICACAO_ESTADO: Readonly<Record<EstadoAcompanhamento, string>> = {

@@ -462,7 +462,12 @@ const TELAS: readonly Tela[] = [
     abrir: async (p, casoId) => {
       await p.goto(`/#/caso/${casoId}/plano`)
       await p.getByRole('button', { name: 'Gerar link do paciente' }).click()
-      await p.getByRole('button', { name: 'Já tenho a autorização, gerar link' }).click()
+      // Spec lado-do-paciente, CA-2224: o plano sem paciente pergunta antes para quem é o link.
+      const paraQuem = p.getByRole('button', { name: 'Criar a ficha e seguir' })
+      const autorizar = p.getByRole('button', { name: 'Já tenho a autorização, gerar link' })
+      await expect(paraQuem.or(autorizar)).toBeVisible()
+      if (await paraQuem.isVisible()) await paraQuem.click()
+      await autorizar.click()
       await expect(p.getByLabel('Endereço do link')).toBeVisible()
       await p.goto('/#/adesao')
       return 'Adesão'

@@ -265,6 +265,17 @@ describe('useConta', () => {
       expect(localStorage.getItem('metanutri:tema')).toBe('escuro')
     })
 
+    it('CA-2298 (D-1253): sair apaga os planos de paciente lembrados neste navegador', async () => {
+      localStorage.setItem('metanutri:meus-planos', JSON.stringify([{ token: 'k7q2mx9pla3r', primeiroNome: 'Juliana', nutricionista: 'Ana Lima', ultimoAcesso: '2026-11-03' }]))
+      comSessao()
+      const { result } = renderHook(() => useConta())
+      await waitFor(() => expect(result.current.sessao?.id).toBe('u1'))
+      await act(async () => {
+        await result.current.sair()
+      })
+      expect(localStorage.getItem('metanutri:meus-planos')).toBeNull()
+    })
+
     it('DP-10: sem sessão, sair não apaga nada', async () => {
       const { result } = renderHook(() => useConta())
       await waitFor(() => expect(result.current.carregando).toBe(false))
@@ -713,6 +724,17 @@ describe('a sessão com tempo (spec separacao-site-app, D-514 a D-520)', () => {
       expect(auth.signOut).toHaveBeenCalledOnce()
       expect(auth.signOut).toHaveBeenCalledWith({ scope: 'local' })
       expect(result.current.sessao).toBeNull()
+    })
+
+    it('CA-2305 (D-1260): a saída por tempo também apaga os planos de paciente lembrados, com pendência ou sem', async () => {
+      for (const apagar of [true, false]) {
+        localStorage.setItem('metanutri:meus-planos', JSON.stringify([{ token: 'k7q2mx9pla3r', primeiroNome: 'Juliana', nutricionista: 'Ana Lima', ultimoAcesso: '2026-11-03' }]))
+        const { result } = await abrirCom(sessaoDe())
+        await act(async () => {
+          await result.current.sairPorTempo({ apagar, ate: Date.now() })
+        })
+        expect(localStorage.getItem('metanutri:meus-planos'), `apagar: ${String(apagar)}`).toBeNull()
+      }
     })
 
     it('CA-1448: com pendência, o espaço fica e o motivo diz que ficou algo para enviar', async () => {

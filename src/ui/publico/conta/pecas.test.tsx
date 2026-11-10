@@ -11,11 +11,11 @@ describe('peças das telas de conta', () => {
     render(<LadoDoPlano plano={null} ciclo="mensal" />)
     expect(screen.getByText('No Free, você já tem')).toBeInTheDocument()
     expect(screen.getAllByRole('listitem').map((item) => item.textContent)).toEqual([
-      '2 pacientes ativos',
-      '2 links do paciente',
+      '2 pacientes com link',
       'Adequação de 20 vitaminas e minerais e da fibra, com o botão Cobrir',
       'Missões diárias no link do paciente e tela Adesão',
       'Plano impresso em PDF; aconselhamento e memorial em Word',
+      'Sua logo e sua cor no link do paciente; a logo também no plano impresso',
     ])
   })
 

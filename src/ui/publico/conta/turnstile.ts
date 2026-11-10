@@ -9,7 +9,7 @@
 export const URL_DO_TURNSTILE = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit'
 
 /** O nome de cada pedido no painel do Cloudflare. O Supabase não confere este nome (spec, seção 4). */
-export type AcaoDaVerificacao = 'signup' | 'login' | 'recuperar' | 'reenviar'
+export type AcaoDaVerificacao = 'signup' | 'login' | 'recuperar' | 'reenviar' | 'recuperar-link'
 
 export type TamanhoDoWidget = 'flexible' | 'compact'
 

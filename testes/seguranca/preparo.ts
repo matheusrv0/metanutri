@@ -43,6 +43,9 @@ export const arquivoPdf = (texto = 'comprovante'): Blob => new Blob([PDF, new Te
 
 const aleatorio = (bytes = 8): string => randomBytes(bytes).toString('hex')
 
+/** O resumo do endereço como o app e o banco fazem (spec lado-do-paciente, DP-LP-16): SHA-256 do endereço normalizado. */
+export const resumoDoEmail = (email: string): string => createHash('sha256').update(email.replace(/\s+/g, '').toLowerCase()).digest('hex')
+
 export interface Conta {
   readonly id: string
   readonly email: string
@@ -59,6 +62,8 @@ export interface Vitima extends Conta {
   readonly pedidoAprovadoId: string
   readonly arquivo: string
   readonly segundoArquivo: string
+  /** Spec lado-do-paciente: o e-mail do paciente no link da vítima, publicado pela ficha. */
+  readonly emailDoPaciente: string
 }
 
 export interface Atacante extends Conta {
@@ -213,6 +218,24 @@ export async function prepararCenario(): Promise<Cenario> {
     'gravar a marca da vítima',
     (await contaVitima.cliente.from('marcas').upsert({ nutricionista_id: contaVitima.id, logo: LOGO_DE_TESTE, cor: COR_DE_TESTE }, { onConflict: 'nutricionista_id' })).error,
   )
+  // Spec lado-do-paciente: a configuração de e-mail e o e-mail do link da vítima, gravados pelo próprio login como o app
+  // grava; e, como as funções do servidor gravam, um aceite, um envio e uma chave de descadastro.
+  const emailDoPaciente = `paciente.${sufixo}@exemplo.com`
+  falhou(
+    'gravar a configuração de e-mail da vítima',
+    (await contaVitima.cliente.from('config_de_emails').upsert({ nutricionista_id: contaVitima.id, nome: `Ana ${marcador}`, responder_para: `ana.${sufixo}@exemplo.com` }, { onConflict: 'nutricionista_id' })).error,
+  )
+  falhou('gravar o e-mail do link da vítima', (await contaVitima.cliente.rpc('definir_email_da_ficha', { p_link: linkVitima, p_email: emailDoPaciente })).error)
+  const resumo = resumoDoEmail(emailDoPaciente)
+  falhou('gravar o aceite da vítima', (await servico.from('aceites').insert({ link_id: linkVitima, nutricionista_id: contaVitima.id, tipo: 'semana', email_hash: resumo })).error)
+  falhou(
+    'gravar o envio da vítima',
+    (await servico.from('envios').insert({ link_id: linkVitima, nutricionista_id: contaVitima.id, tipo: 'S2', email_hash: resumo, assunto: `Envio ${marcador}`, estado: 'entregue', chave_unica: `${resumo}:S2:${sufixo}` })).error,
+  )
+  falhou(
+    'gravar a chave de descadastro da vítima',
+    (await servico.from('chaves_de_aviso').insert({ chave: aleatorio(16), link_id: linkVitima, nutricionista_id: contaVitima.id, tipo: 'sair', avisos: ['semana'], email_hash: resumo })).error,
+  )
   const arquivo = `${contaVitima.id}/comprovante.pdf`
   const segundoArquivo = `${contaVitima.id}/comprovante-2.pdf`
   await enviarArquivo(contaVitima, arquivo)
@@ -289,6 +312,7 @@ export async function prepararCenario(): Promise<Cenario> {
       pedidoAprovadoId,
       arquivo,
       segundoArquivo,
+      emailDoPaciente,
     },
     atacante: { ...contaAtacante, token: tokenAtacante, linkId: linkAtacante, arquivo: arquivoAtacante },
     admin,
@@ -310,10 +334,26 @@ export const TABELAS_DA_CONTA: readonly { readonly tabela: string; readonly dono
   { tabela: 'uso_da_ia', dono: 'nutricionista_id' },
   // Spec marca-no-link (DP-ML-1): a marca publicada.
   { tabela: 'marcas', dono: 'nutricionista_id' },
+  // Spec lado-do-paciente (017): a configuração de e-mail, o e-mail do link, os aceites, as chaves e os envios.
+  { tabela: 'config_de_emails', dono: 'nutricionista_id' },
+  { tabela: 'emails_dos_links', dono: 'nutricionista_id' },
+  { tabela: 'aceites', dono: 'nutricionista_id' },
+  { tabela: 'chaves_de_aviso', dono: 'nutricionista_id' },
+  { tabela: 'envios', dono: 'nutricionista_id' },
 ]
 
 /** As tabelas sem dono que ninguém de fora lê nem escreve. */
-export const TABELAS_FECHADAS: readonly string[] = ['administradores', 'dominios_faculdade', 'avisos_da_operadora']
+export const TABELAS_FECHADAS: readonly string[] = [
+  'administradores',
+  'dominios_faculdade',
+  'avisos_da_operadora',
+  // Spec lado-do-paciente (017): só o servidor.
+  'supressao',
+  'limites_de_envio',
+  'estado_dos_avisos',
+  // Revisão r1 (D-1246): os resumos dos endereços trocados.
+  'tokens_trocados',
+]
 
 const ordenar = (linhas: readonly unknown[]): unknown[] => [...linhas].map((l) => JSON.stringify(l)).sort()
 

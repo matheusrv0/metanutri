@@ -17,6 +17,8 @@ interface CaixaDietaNoLinkProps {
   readonly pedindoAutorizacao?: boolean
   readonly aoAutorizar?: (() => void) | undefined
   readonly aoDesistir?: (() => void) | undefined
+  /** O nome da caixa: na ficha, "Mostrar a dieta no link" (spec lado-do-paciente, CA-2260). */
+  readonly titulo?: string
 }
 
 /** A caixa (DP-150): o rótulo inteiro é clicável e tem 44 px de altura. */
@@ -30,6 +32,7 @@ export function CaixaDietaNoLink({
   pedindoAutorizacao = false,
   aoAutorizar,
   aoDesistir,
+  titulo = 'Mostrar o plano alimentar no link',
 }: CaixaDietaNoLinkProps) {
   const id = useId()
   return (
@@ -47,7 +50,7 @@ export function CaixaDietaNoLink({
         />
         <span className="flex min-w-0 flex-col gap-0.5">
           <span id={`${id}-titulo`} className="text-sm font-semibold text-heading">
-            Mostrar o plano alimentar no link
+            {titulo}
           </span>
           <span id={`${id}-texto`} className="text-xs text-muted-foreground">
             Refeições com as quantidades, substitutos, orientações e receitas. Sem kcal.

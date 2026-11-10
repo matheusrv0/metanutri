@@ -7,10 +7,11 @@
 // Ver `supabase/001-acompanhamentos.sql`.
 import { FALHA_DE_REDE, mensagemDoBanco } from '@/ui/estado/mensagemDoBanco.ts'
 import type { Acompanhamento, MarcacaoDia } from './acompanhamento.ts'
+import { lerDadosDoLink, separarDadosDoLink } from './dadosDoLink.ts'
 import { lerDieta } from './dietaDoLink.ts'
 import { lerMarcaDoLink, separarMarca } from './marca.ts'
 import type { Missao } from './missoes.ts'
-import { fonteLocal, LinkSemConexao, MarcacaoRecusada, type AcompanhamentoDoLink, type FonteAcompanhamentos, type RepositorioAcompanhamentos } from './repositorioAcompanhamentos.ts'
+import { fonteLocal, LinkSemConexao, LinkTrocado, MarcacaoRecusada, type AcompanhamentoDoLink, type FonteAcompanhamentos, type RepositorioAcompanhamentos } from './repositorioAcompanhamentos.ts'
 
 interface ErroDoBanco {
   readonly message: string
@@ -72,8 +73,19 @@ export function daLinha(linha: unknown): Acompanhamento | null {
     usoNaoComercial: o['uso_nao_comercial'] !== false,
     // A função antiga (banco sem o 012) não traz a coluna: o link abre só com as missões (CB-151).
     dieta: lerDieta(o['dieta']),
+    // Spec lado-do-paciente: a mensagem, a consulta, o último acesso, o link fixo e a data do plano. Banco sem o 017 não
+    // traz as colunas, e o link abre como antes.
+    mensagem: textoOuNulo(o['mensagem']),
+    mensagemEm: textoOuNulo(o['mensagem_em']),
+    proximaConsulta: textoOuNulo(o['proxima_consulta']),
+    ultimoAcesso: textoOuNulo(o['ultimo_acesso']),
+    substituidoPor: textoOuNulo(o['substituido_por']),
+    planoEm: textoOuNulo(o['plano_em']),
   }
 }
+
+/** O texto que veio do banco, ou nulo. */
+const textoOuNulo = (valor: unknown): string | null => (typeof valor === 'string' && valor !== '' ? valor : null)
 
 function paraLinha(a: Acompanhamento, nutricionistaId: string): Record<string, unknown> {
   return {
@@ -89,21 +101,44 @@ function paraLinha(a: Acompanhamento, nutricionistaId: string): Record<string, u
     uso_nao_comercial: a.usoNaoComercial,
     // Desligada, vai nula: a cópia sai da linha (D-152).
     dieta: a.dieta,
+    // Spec lado-do-paciente (D-1208, D-1209, D-1217). O último acesso e a data do plano são da nuvem: não vão daqui.
+    mensagem: a.mensagem ?? null,
+    mensagem_em: a.mensagemEm ?? null,
+    proxima_consulta: a.proximaConsulta ?? null,
+    substituido_por: a.substituidoPor ?? null,
   }
 }
 
 /**
  * DP-154: banco sem o 012 (CB-151). O PostgREST recusa o pedido inteiro que traz uma coluna que ele não
- * conhece, com este código e o nome da coluna na mensagem. Só esse caso manda de novo sem a dieta.
+ * conhece, com este código e o nome da coluna na mensagem. Spec lado-do-paciente, DP-LP-30: vale para qualquer coluna
+ * nova (o banco sem o 017), não só a da dieta. Devolve a coluna que faltou, se for uma das que o pedido levava.
  */
-const faltaColunaDieta = (erro: ErroDoBanco | null): boolean => erro?.code === 'PGRST204' && erro.message.includes("'dieta'")
+function colunaQueFalta(erro: ErroDoBanco | null, linha: Record<string, unknown>): string | null {
+  if (erro?.code !== 'PGRST204') return null
+  const coluna = /'([a-z_]+)'/.exec(erro.message)?.[1]
+  return coluna !== undefined && COLUNAS_NOVAS.includes(coluna) && coluna in linha ? coluna : null
+}
 
-const semDieta = (linha: Record<string, unknown>): Record<string, unknown> => Object.fromEntries(Object.entries(linha).filter(([coluna]) => coluna !== 'dieta'))
+/** As colunas que um banco antigo pode não ter: a dieta (012) e as do lado do paciente (017). As outras são de sempre. */
+const COLUNAS_NOVAS: readonly string[] = ['dieta', 'mensagem', 'mensagem_em', 'proxima_consulta', 'substituido_por']
 
-/** Faz o pedido; se o banco ainda não conhece a coluna da dieta, faz de novo sem ela, e o link salva como antes. */
+const sem = (linha: Record<string, unknown>, coluna: string): Record<string, unknown> => Object.fromEntries(Object.entries(linha).filter(([nome]) => nome !== coluna))
+
+/**
+ * Faz o pedido; se o banco ainda não conhece uma coluna do link (a dieta, do 012; as do 017), faz de novo sem ela, e o
+ * link salva como antes. Cada coluna que falta sai uma vez; o resto do link vai do mesmo jeito.
+ */
 async function comOuSemDieta(linha: Record<string, unknown>, pedir: (linha: Record<string, unknown>) => PromiseLike<Resposta<unknown>>): Promise<Resposta<unknown>> {
-  const resposta = await pedir(linha)
-  return faltaColunaDieta(resposta.error) ? pedir(semDieta(linha)) : resposta
+  let atual = linha
+  let resposta = await pedir(atual)
+  for (let tentativas = Object.keys(linha).length; tentativas > 0; tentativas--) {
+    const coluna = colunaQueFalta(resposta.error, atual)
+    if (coluna === null) break
+    atual = sem(atual, coluna)
+    resposta = await pedir(atual)
+  }
+  return resposta
 }
 
 export interface OpcoesFonteSupabase {
@@ -128,7 +163,12 @@ export function fonteSupabase(cliente: ClienteMissoes, opcoes: OpcoesFonteSupaba
       const linha = Array.isArray(data) ? data[0] : data
       const acompanhamento = daLinha(linha)
       // Spec marca-no-link (CA-1974): a marca vem na mesma linha; a função de antes não a traz, e o link abre sem ela.
-      return acompanhamento ? { ...acompanhamento, marca: lerMarcaDoLink(linha) } : null
+      // Spec lado-do-paciente: o nome da nutricionista, o e-mail mascarado e os avisos também (só se mostram).
+      if (acompanhamento) return { ...acompanhamento, marca: lerMarcaDoLink(linha), doLink: lerDadosDoLink(linha) }
+      // Revisão r1 (D-1246, CA-2289): o endereço trocado tem a tela dele. Sem resposta (ou banco sem o 017), vale o
+      // "não abre mais" de sempre.
+      if (await foiTrocado(cliente, token)) throw new LinkTrocado()
+      return null
     },
 
     /**
@@ -144,14 +184,25 @@ export function fonteSupabase(cliente: ClienteMissoes, opcoes: OpcoesFonteSupaba
   }
 }
 
-/** O link sem a marca que veio com ele (DP-ML-14). */
-const semMarca = (link: AcompanhamentoDoLink): Acompanhamento => separarMarca(link).acompanhamento
+/** A nuvem diz que o endereço foi trocado (`link_trocado`, supabase/017): só um sim conta. */
+async function foiTrocado(cliente: ClienteMissoes, token: string): Promise<boolean> {
+  try {
+    const { data, error } = await cliente.rpc('link_trocado', { p_token: token })
+    return error === null && data === true
+  } catch {
+    return false
+  }
+}
+
+/** O link sem a marca (DP-ML-14) e sem os dados do link (spec lado-do-paciente) que vieram com ele. */
+const semMarca = (link: AcompanhamentoDoLink): Acompanhamento => separarDadosDoLink(separarMarca(link).acompanhamento).link
 
 /**
  * A fonte do link do paciente (spec revisao-geral-publica, D-232): a nuvem, com a cópia do aparelho por trás. Sem
  * servidor, só o aparelho, como antes (CB-239). Com servidor:
  * - abrir: vale o da nuvem; sem ele, a cópia do aparelho (CA-754); sem os dois, nulo quando a nuvem respondeu que o
- *   link não existe (CA-755), e `LinkSemConexao` quando ela nem respondeu (CA-753);
+ *   link não existe (CA-755), e `LinkSemConexao` quando ela nem respondeu (CA-753); o endereço trocado (D-1246) rejeita
+ *   com `LinkTrocado`, e a cópia dele sai do aparelho (CA-2289);
  * - marcar: grava pela função do paciente e só depois a cópia do aparelho. Sem resposta da nuvem, rejeita com
  *   `LinkSemConexao`; recusada por um motivo da nuvem ("Este link já guarda marcações demais."), com `MarcacaoRecusada`
  *   e o motivo (M-3b). Nos dois casos nada é gravado aqui (CA-756), e a tela não finge que salvou.
@@ -180,10 +231,20 @@ export function fonteDoPaciente(cliente: ClienteMissoes | null, repositorio: Rep
     naNuvem: true,
     async porToken(token) {
       const { pedido, fonte } = daNuvem()
-      const achado = await fonte.porToken(token).catch(() => {
-        pedido.falhou = true
+      let trocado = false
+      const achado = await fonte.porToken(token).catch((erro: unknown) => {
+        if (erro instanceof LinkTrocado) trocado = true
+        else pedido.falhou = true
         return null
       })
+      if (trocado) {
+        const copiaVelha = repositorio.porToken(token)
+        if (copiaVelha) {
+          repositorio.remover(copiaVelha.id)
+          aoSalvar()
+        }
+        throw new LinkTrocado()
+      }
       if (achado) return achado
       const copia = repositorio.porToken(token)
       if (copia) return copia
@@ -243,8 +304,11 @@ export async function apagarAcompanhamentosDaNuvem(cliente: ClienteMissoes, espe
  */
 export const LIMITE_DE_LINKS_NO_BANCO = 'Você chegou ao limite de links do seu plano.'
 
-/** O que a tela diz no limite (spec textos-e-promessas, D-408): "assinatura" é a cobrança. */
-export const LIMITE_DE_LINKS = 'Você chegou ao limite de links da sua assinatura.'
+/**
+ * O que a tela diz no limite (spec textos-e-promessas, D-408): "assinatura" é a cobrança. Spec lado-do-paciente, CA-2226:
+ * o limite conta pacientes com link (D-1214).
+ */
+export const LIMITE_DE_LINKS = 'Você chegou ao limite de pacientes com link da sua assinatura.'
 
 /** O P0001 é de qualquer `raise exception`: o limite é o P0001 com esta frase. */
 const ehLimiteDeLinks = (erro: ErroDoBanco): boolean => erro.code === 'P0001' && erro.message === LIMITE_DE_LINKS_NO_BANCO

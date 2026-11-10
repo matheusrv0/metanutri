@@ -6,9 +6,10 @@ import { cartoesDosPlanos, extrasDosPlanos, planoIndicado, REGUA_DE_PACIENTES, t
 describe('cartoesDosPlanos', () => {
   it('CA-1677: Free, Solo e Pro com o nome, a descrição, os limites e "Todas as funções", de PLANOS', () => {
     expect(cartoesDosPlanos().map((c) => [c.id, c.nome, c.descricao, c.itens])).toEqual([
-      ['free', 'Free', 'Para testar com um paciente real, sem cartão.', ['2 pacientes ativos', '2 links do paciente', 'Todas as funções']],
-      ['solo', 'Solo', 'Para quem está começando a atender.', ['25 pacientes ativos', '25 links do paciente', 'Todas as funções']],
-      ['pro', 'Pro', 'Para quem já tem agenda cheia.', ['Pacientes ilimitados', 'Links do paciente ilimitados', 'Todas as funções']],
+      // D-1255 (spec lado-do-paciente): os dois limites iguais viram uma linha só.
+      ['free', 'Free', 'Para testar com um paciente real, sem cartão.', ['2 pacientes com link', 'Todas as funções']],
+      ['solo', 'Solo', 'Para quem está começando a atender.', ['25 pacientes com link', 'Todas as funções']],
+      ['pro', 'Pro', 'Para quem já tem agenda cheia.', ['Pacientes ilimitados', 'Todas as funções']],
     ])
   })
 
@@ -23,7 +24,7 @@ describe('cartoesDosPlanos', () => {
   })
 
   it('mudou o plano em conta.ts, a landing acompanha', () => {
-    const outros: PlanoAssinatura[] = PLANOS.map((p) => (p.id === 'solo' ? { ...p, mensal: 39.9, anual: 349, limitePacientesAtivos: 30, limiteLinksPaciente: 30, recursos: ['30 pacientes ativos', '30 links do paciente'] } : p))
+    const outros: PlanoAssinatura[] = PLANOS.map((p) => (p.id === 'solo' ? { ...p, mensal: 39.9, anual: 349, limitePacientesAtivos: 30, limiteLinksPaciente: 30, recursos: ['30 pacientes ativos', '30 pacientes com link'] } : p))
     const solo = cartoesDosPlanos(outros)[1]
     expect(solo?.mensal.valor).toBe('39,90')
     expect(solo?.anual?.detalhe).toBe('R$ 29,08 por mês · economize R$ 129,80')

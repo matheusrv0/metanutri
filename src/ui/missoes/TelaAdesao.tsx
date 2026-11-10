@@ -1,24 +1,25 @@
 // A tela que responde a pergunta que o plano de negócio vende: quem está sumindo?
 // Ordena por urgência, não por data: quem parou de marcar aparece primeiro.
-import { UserRoundX } from 'lucide-react'
-import { useState } from 'react'
+import { Mail, UserRoundX } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import {
   diasMarcadosNaSemana,
   estadoDoAcompanhamento,
   ultimaAtividade,
-  ultimaMarcacao,
   DIAS_NA_SEMANA_PARA_EM_DIA,
   type Acompanhamento,
   type EstadoAcompanhamento,
 } from '@/domain/acompanhamento.ts'
+import { textoDoAcesso } from '@/domain/acessoDoLink.ts'
 import { estadoDoLimite, pacientesAtivos, planoPorId, PLANO_PADRAO, type IdPlano } from '@/domain/conta.ts'
-import { dataCompleta } from '@/domain/formatarData.ts'
+import { linksComAvisos } from '@/domain/emailsDoLink.ts'
 import type { Paciente } from '@/domain/pacientes.ts'
 import { agoraEmBrasilia, consultaPassou, lerConsulta, pacienteDoAcompanhamento, quando, type Momento } from '@/domain/retorno.ts'
 import { textoDeContato } from '@/domain/whatsapp.ts'
 import { useAcompanhamentos, useLerDaNuvemAoAbrir } from '@/ui/estado/contextoAcompanhamentos.ts'
 import { useCasosOpcional } from '@/ui/estado/contextoCasos.ts'
 import { useAgora } from '@/ui/estado/usarAgora.ts'
+import { useClienteDosEmails } from '@/ui/estado/usarEmailsDoLink.ts'
 import { usePacientesOpcional } from '@/ui/estado/contextoPacientes.ts'
 import { BotaoWhatsApp } from '@/ui/whatsapp/BotaoWhatsApp.tsx'
 import type { PacienteDoWhatsApp } from '@/ui/whatsapp/DialogoWhatsApp.tsx'
@@ -60,6 +61,19 @@ export function TelaAdesao({ aoAbrirPlano, plano = PLANO_PADRAO, hoje: hojeFixo,
   const hoje = hojeFixo ?? momento.dia
   // D-104: as marcações do paciente vêm da nuvem, ao abrir e ao voltar para a aba.
   useLerDaNuvemAoAbrir()
+  // Spec lado-do-paciente, CA-2269: os links com algum aviso aceito ganham o envelope.
+  const clienteDosEmails = useClienteDosEmails()
+  const [comAvisos, setComAvisos] = useState<ReadonlySet<string>>(() => new Set())
+  useEffect(() => {
+    if (clienteDosEmails === null) return
+    let vivo = true
+    void linksComAvisos(clienteDosEmails).then((ids) => {
+      if (vivo) setComAvisos(ids)
+    })
+    return () => {
+      vivo = false
+    }
+  }, [clienteDosEmails])
 
   /** A ficha de quem marca: a do paciente do plano ou, se o plano não tem paciente, a gravada no link (D-147). */
   const fichaDe = (acompanhamento: Acompanhamento): Paciente | null => {
@@ -149,6 +163,7 @@ export function TelaAdesao({ aoAbrirPlano, plano = PLANO_PADRAO, hoje: hojeFixo,
                 retorno={textoDoRetorno(ficha, momento)}
                 ficha={ficha}
                 foraDaNuvem={foraDaNuvem.get(acompanhamento.id)}
+                recebeAvisos={comAvisos.has(acompanhamento.id)}
                 aoAbrirPlano={aoAbrirPlano}
                 aoRemover={() => remover(acompanhamento.id)}
                 aoTentarDeNovo={lerDaNuvem}
@@ -169,6 +184,7 @@ function LinhaPaciente({
   retorno,
   ficha,
   foraDaNuvem,
+  recebeAvisos,
   aoAbrirPlano,
   aoRemover,
   aoTentarDeNovo,
@@ -183,6 +199,8 @@ function LinhaPaciente({
   readonly ficha: PacienteDoWhatsApp | null
   /** O motivo de o link ainda não estar na nuvem (CA-443). */
   readonly foraDaNuvem: string | undefined
+  /** CA-2269: o paciente aceitou algum aviso por e-mail. */
+  readonly recebeAvisos: boolean
   readonly aoAbrirPlano: (casoId: string) => void
   /** Devolve o motivo quando a nuvem não removeu (CA-440). */
   readonly aoRemover: () => Promise<string | null>
@@ -191,7 +209,6 @@ function LinhaPaciente({
   readonly aoCadastrarTelefone: ((pacienteId: string) => void) | undefined
 }) {
   const naSemana = diasMarcadosNaSemana(acompanhamento, hoje)
-  const ultima = ultimaMarcacao(acompanhamento)
   const [confirmando, setConfirmando] = useState(false)
   const [removendo, setRemovendo] = useState(false)
   const [falhou, setFalhou] = useState(false)
@@ -222,10 +239,16 @@ function LinhaPaciente({
           <div className="flex flex-wrap items-center gap-2">
             <p className="font-medium text-heading">{acompanhamento.nome || 'Paciente sem nome'}</p>
             <SeloEstado estado={estado} />
+            {recebeAvisos ? (
+              <span role="img" aria-label="Recebe avisos por e-mail" title="Recebe avisos por e-mail" className="text-muted-foreground">
+                <Mail className="size-4" aria-hidden="true" />
+              </span>
+            ) : null}
             {retorno ? <span className="text-xs font-medium text-muted-foreground">{retorno}</span> : null}
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
-            {naSemana} de {DIAS_NA_SEMANA_PARA_EM_DIA} dias na semana · {ultima ? `última marcação em ${dataCompleta(ultima)}` : 'nunca marcou'}
+            {/* D-1223 e CA-2239: o último acesso, só o dia, e a última marcação. */}
+            {naSemana} de {DIAS_NA_SEMANA_PARA_EM_DIA} dias na semana · {textoDoAcesso(acompanhamento, hoje)}
           </p>
           {foraDaNuvem ? (
             <div className="mt-1 flex flex-wrap items-center gap-2">

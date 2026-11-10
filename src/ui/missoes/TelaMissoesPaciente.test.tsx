@@ -1,4 +1,4 @@
-import { act, render, screen, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { criarAcompanhamento, marcarMissao, type Acompanhamento } from '@/domain/acompanhamento.ts'
 import type { DietaDoLink } from '@/domain/dietaDoLink.ts'
@@ -44,7 +44,7 @@ describe('Tela de missões do paciente', () => {
     render(<TelaMissoesPaciente token="abc" fonte={fonte} hoje={HOJE} />)
 
     expect(await screen.findByRole('heading', { name: 'Suas missões de hoje, Ana' })).toBeInTheDocument()
-    expect(screen.getAllByRole('button')).toHaveLength(3)
+    expect(within(screen.getByRole('list', { name: 'Missões de hoje' })).getAllByRole('button')).toHaveLength(3)
     expect(screen.getByText('Beber cerca de 2,1 litros de água')).toBeInTheDocument()
   })
 
@@ -97,8 +97,9 @@ describe('Tela de missões do paciente', () => {
 
     await usuario.click(await screen.findByRole('button', { name: /litros de água/ }))
 
-    expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '33')
-    expect(screen.getByText('feitas hoje')).toBeInTheDocument()
+    expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '1')
+    expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuemax', '3')
+    expect(screen.getByText(/de 3/).closest('p')).toHaveTextContent('1 de 3 feitas')
   })
 
   it('comemora quando o dia fecha', async () => {
@@ -109,7 +110,8 @@ describe('Tela de missões do paciente', () => {
     await usuario.click(await screen.findByRole('button', { name: /litros de água/ }))
 
     expect(screen.getByText(/Dia completo, Ana/)).toBeInTheDocument()
-    expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '100')
+    expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '3')
+    expect(screen.getByText('Tudo feito hoje')).toBeInTheDocument()
   })
 
   it('mostra quantos dias da semana a pessoa marcou', async () => {
@@ -120,8 +122,8 @@ describe('Tela de missões do paciente', () => {
     const { fonte } = fonteFalsa(acompanhamento({ marcacoes }))
     render(<TelaMissoesPaciente token="abc" fonte={fonte} hoje={HOJE} />)
 
-    expect(await screen.findByText('Você marcou missão em 2 dias desta semana.')).toBeInTheDocument()
-    expect(screen.getByText('A meta é marcar em 4 dias por semana.')).toBeInTheDocument()
+    expect(await screen.findByText('2 de 7 dias nesta semana')).toBeInTheDocument()
+    expect(screen.getByText('A meta é 4 dias.')).toBeInTheDocument()
   })
 
   it('quem está no ritmo recebe outra frase', async () => {
@@ -129,7 +131,7 @@ describe('Tela de missões do paciente', () => {
     const { fonte } = fonteFalsa(acompanhamento({ marcacoes: dias.map((dia) => ({ dia, feitas: ['agua'] })) }))
     render(<TelaMissoesPaciente token="abc" fonte={fonte} hoje={HOJE} />)
 
-    expect(await screen.findByText('Você está no ritmo combinado.')).toBeInTheDocument()
+    expect(await screen.findByText('Dentro da meta.')).toBeInTheDocument()
   })
 
   it('sem nuvem ligada, explica por que o link não abre em outro aparelho', async () => {
@@ -140,11 +142,11 @@ describe('Tela de missões do paciente', () => {
     expect(screen.getByText(/O servidor da conta não está configurado nesta instalação\. Por enquanto/)).toBeInTheDocument()
   })
 
-  it('com nuvem ligada, link inexistente diz que foi trocado', async () => {
+  it('CA-2238: com nuvem ligada, link inexistente diz que não abre mais', async () => {
     const { fonte } = fonteFalsa(null, true)
     render(<TelaMissoesPaciente token="abc" fonte={fonte} hoje={HOJE} />)
 
-    expect(await screen.findByText('Este link não existe mais')).toBeInTheDocument()
+    expect(await screen.findByText('Este link não abre mais')).toBeInTheDocument()
   })
 
   it('plano sem missão nenhuma não mostra lista vazia sem explicação', async () => {
@@ -207,52 +209,44 @@ describe('A dieta no link: "Meu plano" (spec dieta-no-link)', () => {
     const { fonte, salvos } = fonteFalsa(acompanhamento({ dieta: DIETA, ...parcial }))
     const usuario = userEvent.setup()
     render(<TelaMissoesPaciente token="abc" fonte={fonte} hoje={HOJE} />)
-    await usuario.click(await screen.findByRole('tab', { name: 'Meu plano' }))
+    await usuario.click(await screen.findByRole('link', { name: 'Plano' }))
     return { usuario, salvos }
   }
 
-  it('CA-530: com a dieta, o link mostra as abas e abre em "Missões", com a tela de hoje dentro do painel da aba', async () => {
+  it('CA-530 e CA-2200 (spec lado-do-paciente): com a dieta, a barra tem Hoje, Plano e Semana e abre em Hoje', async () => {
     const { fonte } = fonteFalsa(acompanhamento({ dieta: DIETA }))
     render(<TelaMissoesPaciente token="abc" fonte={fonte} hoje={HOJE} />)
 
-    const abas = await screen.findByRole('tablist', { name: 'O que ver' })
-    const missoes = within(abas).getByRole('tab', { name: 'Missões' })
-    expect(missoes).toHaveAttribute('aria-selected', 'true')
-    expect(within(abas).getByRole('tab', { name: 'Meu plano' })).toHaveAttribute('aria-selected', 'false')
-    const painel = screen.getByRole('tabpanel', { name: 'Missões' })
-    expect(missoes).toHaveAttribute('aria-controls', painel.id)
-    expect(within(painel).getByRole('heading', { name: 'Suas missões de hoje, Ana' })).toBeInTheDocument()
+    const barra = await screen.findByRole('navigation', { name: 'Partes do plano' })
+    expect(within(barra).getAllByRole('link').map((a) => a.textContent)).toEqual(['Hoje', 'Plano', 'Semana'])
+    expect(within(barra).getByRole('link', { name: 'Hoje' })).toHaveAttribute('aria-current', 'page')
+    expect(within(barra).getByRole('link', { name: 'Plano' })).not.toHaveAttribute('aria-current')
+    expect(screen.getByRole('heading', { name: 'Suas missões de hoje, Ana' })).toBeInTheDocument()
     expect(screen.queryByRole('region', { name: '12:00 Almoço' })).not.toBeInTheDocument()
   })
 
-  it('CA-530: com o foco numa aba, as setas do teclado passam para a outra', async () => {
+  it('CA-2217: a barra de baixo funciona com o teclado (Enter no link)', async () => {
     const { fonte } = fonteFalsa(acompanhamento({ dieta: DIETA }))
     const usuario = userEvent.setup()
     render(<TelaMissoesPaciente token="abc" fonte={fonte} hoje={HOJE} />)
 
-    await usuario.click(await screen.findByRole('tab', { name: 'Missões' }))
-    await usuario.keyboard('{ArrowRight}')
-
-    const meuPlano = screen.getByRole('tab', { name: 'Meu plano' })
-    expect(meuPlano).toHaveFocus()
-    expect(meuPlano).toHaveAttribute('aria-selected', 'true')
-    expect(within(screen.getByRole('tabpanel', { name: 'Meu plano' })).getByRole('heading', { level: 1, name: 'Seu plano alimentar, Ana' })).toBeInTheDocument()
-
-    await usuario.keyboard('{ArrowLeft}')
-    expect(screen.getByRole('tab', { name: 'Missões' })).toHaveAttribute('aria-selected', 'true')
+    const plano = await screen.findByRole('link', { name: 'Plano' })
+    plano.focus()
+    await usuario.keyboard('{Enter}')
+    expect(screen.getByRole('link', { name: 'Plano' })).toHaveAttribute('aria-current', 'page')
+    expect(screen.getByRole('heading', { level: 1, name: 'Seu plano alimentar, Ana' })).toBeInTheDocument()
   })
 
-  it('CA-531, CA-748 (spec revisao-geral-publica) e CA-928 (spec conduta-da-nutricionista): cada refeição com horário e nome, só a medida caseira em destaque e o nome da folha impressa', async () => {
+  it('CA-2209, CA-748 (spec revisao-geral-publica) e CA-928 (spec conduta-da-nutricionista): cada refeição com horário e nome, o nome da folha impressa e, no "Só medida", a medida à direita', async () => {
     await abrirMeuPlano()
     expect(screen.getByRole('heading', { level: 1, name: 'Seu plano alimentar, Ana' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: /Suas missões/ })).not.toBeInTheDocument()
 
     const almoco = within(screen.getByRole('region', { name: '12:00 Almoço' }))
     expect(almoco.getByRole('heading', { name: '12:00 Almoço' })).toBeInTheDocument()
-    expect(almoco.getByText('6 colheres de sopa').tagName).toBe('STRONG')
+    expect(almoco.getByText('Arroz branco cozido').closest('li')?.textContent).toBe('Arroz branco cozido6 colheres de sopa')
     // D-297 (conduta-da-nutricionista): com a medida caseira, o peso não vai ao lado.
     expect(almoco.queryByText(/150 g/)).not.toBeInTheDocument()
-    expect(almoco.getByText('Arroz branco cozido')).toBeInTheDocument()
     expect(almoco.queryByText('Arroz, tipo 1, cozido')).not.toBeInTheDocument()
     expect(screen.getAllByRole('region', { name: /^\d\d:\d\d / }).map((r) => r.getAttribute('aria-label'))).toEqual(['12:00 Almoço', '19:00 Jantar'])
   })
@@ -279,11 +273,11 @@ describe('A dieta no link: "Meu plano" (spec dieta-no-link)', () => {
     })
     const cafe = within(screen.getByRole('region', { name: '07:00 Café da manhã' }))
     const linha = (nome: string) => cafe.getByText(nome).closest('li')?.textContent
-    // D-434 (correção A): a medida a mais de 5% dos gramas sai com o peso e "cerca de".
-    expect(linha('Pão francês')).toBe('70 g (cerca de 1 unidade e meia)Pão francês')
-    expect(linha('Margarina com sal')).toBe('1 ponta de facaMargarina com sal')
-    expect(linha('Banana prata')).toBe('130 g (cerca de 1 unidade e meia)Banana prata')
-    expect(linha('Maçã Fuji com casca')).toBe('130 g (cerca de 1 unidade)Maçã Fuji com casca') // D-423 e D-484
+    // D-434 (correção A): a medida a mais de 5% dos gramas sai com o peso à direita e "cerca de" embaixo do nome.
+    expect(linha('Pão francês')).toBe('Pão francês70 gcerca de 1 unidade e meia')
+    expect(linha('Margarina com sal')).toBe('Margarina com sal1 ponta de faca')
+    expect(linha('Banana prata')).toBe('Banana prata130 gcerca de 1 unidade e meia')
+    expect(linha('Maçã Fuji com casca')).toBe('Maçã Fuji com casca130 gcerca de 1 unidade') // D-423 e D-484
   })
 
   it('CA-750: produto do nutricionista e alimento removido saem como foram guardados', async () => {
@@ -306,57 +300,72 @@ describe('A dieta no link: "Meu plano" (spec dieta-no-link)', () => {
       },
     })
     const lanche = within(screen.getByRole('region', { name: '10:00 Lanche' }))
-    expect(lanche.getByText('Barra de proteína da Ana, sabor cacau').closest('li')?.textContent).toBe('45 gBarra de proteína da Ana, sabor cacau')
-    expect(lanche.getByText('Pão, de queijo, nome antigo').closest('li')?.textContent).toBe('2 unidadesPão, de queijo, nome antigo')
-    expect(lanche.getByText('Alimento removido').closest('li')?.textContent).toBe('80 gAlimento removido')
+    expect(lanche.getByText('Barra de proteína da Ana, sabor cacau').closest('li')?.textContent).toBe('Barra de proteína da Ana, sabor cacau45 g')
+    expect(lanche.getByText('Pão, de queijo, nome antigo').closest('li')?.textContent).toBe('Pão, de queijo, nome antigo2 unidades')
+    expect(lanche.getByText('Alimento removido').closest('li')?.textContent).toBe('Alimento removido80 g')
   })
 
   it('CA-751: desenhar "Meu plano" não muda a cópia guardada; marcar grava a mesma dieta', async () => {
     const copia = structuredClone(DIETA)
     const { usuario, salvos } = await abrirMeuPlano({ dieta: copia })
     expect(copia).toEqual(DIETA)
-    await usuario.click(screen.getByRole('tab', { name: 'Missões' }))
+    await usuario.click(screen.getByRole('link', { name: 'Hoje' }))
     await usuario.click(screen.getByRole('button', { name: /litros de água/ }))
     expect(salvos[0]?.dieta).toEqual(DIETA)
   })
 
-  it('CA-752: o alimento continua em letra de 16 px (text-base) e a medida em destaque, em cima do nome', async () => {
+  it('CA-752 e D-1206: o alimento em letra de 16 px (text-base), e a quantidade à direita, em números alinhados', async () => {
     await abrirMeuPlano()
     const linha = within(screen.getByRole('region', { name: '12:00 Almoço' })).getByText('Arroz branco cozido').closest('li')
-    expect(linha?.className).toContain('text-base')
-    expect(linha?.firstElementChild?.textContent).toBe('6 colheres de sopa')
+    expect(linha?.firstElementChild?.className).toContain('text-base')
+    expect(linha?.children[1]?.textContent).toBe('6 colheres de sopa')
+    expect(linha?.children[1]?.className).toContain('numeros')
+    expect(linha?.children[1]?.className).toContain('text-right')
+  })
+
+  it('CA-2209: no "Medida e gramas", as gramas à direita e a medida embaixo do nome', async () => {
+    await abrirMeuPlano({ dieta: { ...DIETA, quantidades: 'medida-e-gramas' } })
+    const linha = within(screen.getByRole('region', { name: '12:00 Almoço' })).getByText('Arroz branco cozido').closest('li')
+    expect(Array.from(linha?.children ?? [], (filho) => filho.textContent)).toEqual(['Arroz branco cozido', '150 g', '6 colheres de sopa'])
   })
 
   it('CA-928 (spec conduta-da-nutricionista) e D-319 (integracao-rodada-1910): plano em "Gramas" chega sem medida e marcado, e cada alimento mostra só o peso', async () => {
     const emGramas = DIETA.refeicoes.map((r) => ({ ...r, opcoes: r.opcoes.map((o) => o.map((i) => ({ ...i, medida: null }))) }))
     await abrirMeuPlano({ dieta: { ...DIETA, refeicoes: emGramas, quantidades: 'gramas' } })
     const almoco = within(screen.getByRole('region', { name: '12:00 Almoço' }))
-    expect(almoco.getByText('150 g').tagName).toBe('STRONG')
+    expect(almoco.getByText('150 g').className).toContain('text-right')
     expect(almoco.queryByText(/colheres/)).not.toBeInTheDocument()
   })
 
   it('CB-156: alimento sem medida caseira mostra só o peso', async () => {
     await abrirMeuPlano()
     const jantar = within(screen.getByRole('region', { name: '19:00 Jantar' }))
-    expect(jantar.getByText('80 g').tagName).toBe('STRONG')
+    expect(jantar.getByText('80 g').className).toContain('text-right')
     expect(jantar.queryByText(/· 80 g/)).not.toBeInTheDocument()
     expect(jantar.getByText('Macarrão (peso cru)')).toBeInTheDocument()
   })
 
-  it('CA-532 e CA-645 (spec impressao-do-plano): as opções vêm uma depois da outra, com "Opção 1" e "ou Opção N"', async () => {
-    await abrirMeuPlano()
-    const almoco = screen.getByRole('region', { name: '12:00 Almoço' })
-    expect(within(almoco).getByText('Opção 1')).toBeInTheDocument()
-    expect(within(almoco).getAllByText(/^ou Opção \d$/).map((e) => e.textContent)).toEqual(['ou Opção 2', 'ou Opção 3'])
-    const texto = almoco.textContent ?? ''
-    expect(texto.indexOf('Opção 1')).toBeLessThan(texto.indexOf('Feijão'))
-    expect(texto.indexOf('Feijão')).toBeLessThan(texto.indexOf('ou Opção 2'))
-    expect(texto.indexOf('ou Opção 2')).toBeLessThan(texto.indexOf('Batata'))
-    expect(texto.indexOf('ou Opção 3')).toBeLessThan(texto.indexOf('Mandioca'))
-    // Uma opção só: sem rótulo e sem "ou".
+  it('CA-2208 e CA-645 (spec impressao-do-plano): as opções viram um seletor, e cada toque mostra uma opção inteira', async () => {
+    const { usuario } = await abrirMeuPlano()
+    const almoco = within(screen.getByRole('region', { name: '12:00 Almoço' }))
+    const seletor = almoco.getByRole('tablist', { name: 'Opções de almoço' })
+    expect(within(seletor).getAllByRole('tab').map((t) => t.textContent)).toEqual(['Opção 1', 'Opção 2', 'Opção 3'])
+    expect(almoco.getByRole('tab', { name: 'Opção 1' })).toHaveAttribute('aria-selected', 'true')
+    expect(almoco.getByText('Feijão carioca cozido')).toBeInTheDocument()
+    expect(almoco.queryByText(/Batata/)).not.toBeInTheDocument()
+
+    await usuario.click(almoco.getByRole('tab', { name: 'Opção 2' }))
+    expect(almoco.getByText(/Batata/)).toBeInTheDocument()
+    expect(almoco.queryByText('Feijão carioca cozido')).not.toBeInTheDocument()
+    // CA-2217: as setas do teclado passam de uma opção à outra.
+    await usuario.keyboard('{ArrowRight}')
+    expect(almoco.getByRole('tab', { name: 'Opção 3' })).toHaveAttribute('aria-selected', 'true')
+    expect(almoco.getByText(/Mandioca/)).toBeInTheDocument()
+
+    // CA-2208: uma opção só, sem seletor.
     const jantar = within(screen.getByRole('region', { name: '19:00 Jantar' }))
+    expect(jantar.queryByRole('tablist')).not.toBeInTheDocument()
     expect(jantar.queryByText(/Opção/)).not.toBeInTheDocument()
-    expect(jantar.queryByText(/^ou/)).not.toBeInTheDocument()
   })
 
   it('CA-533: orientações e receitas aparecem com as quebras de linha que o nutricionista escreveu', async () => {
@@ -393,9 +402,9 @@ describe('A dieta no link: "Meu plano" (spec dieta-no-link)', () => {
     }
   })
 
-  it('CA-538: o fim da parte diz o dia da cópia por extenso', async () => {
+  it('CA-538 e D-1206: o fim da parte diz o dia da cópia por extenso, com o ano só quando é outro', async () => {
     await abrirMeuPlano()
-    expect(screen.getByText('Atualizado em 14 de outubro de 2026.')).toBeInTheDocument()
+    expect(screen.getByText('Atualizado em 14 de outubro.')).toBeInTheDocument()
   })
 
   it('CA-537: link de estudante mantém o aviso de estágio em "Meu plano"', async () => {
@@ -403,20 +412,19 @@ describe('A dieta no link: "Meu plano" (spec dieta-no-link)', () => {
     expect(screen.getByText(/estágio de nutrição/i)).toBeInTheDocument()
   })
 
-  it('voltar para "Missões" mostra as missões de novo, e marcar continua gravando só as marcações', async () => {
+  it('voltar para Hoje mostra as missões de novo, e marcar continua gravando só as marcações', async () => {
     const { usuario, salvos } = await abrirMeuPlano()
-    await usuario.click(screen.getByRole('tab', { name: 'Missões' }))
+    await usuario.click(screen.getByRole('link', { name: 'Hoje' }))
     await usuario.click(screen.getByRole('button', { name: /litros de água/ }))
     expect(salvos[0]?.marcacoes).toEqual([{ dia: HOJE, feitas: ['agua'] }])
     expect(salvos[0]?.dieta).toEqual(DIETA)
   })
 
-  it('CA-536: link sem dieta (desligada, antigo ou banco sem o 012) é a tela de missões de hoje, sem seletor', async () => {
+  it('CA-536 e CA-2200: link sem dieta (desligada, antigo ou banco sem o 012) tem só Hoje e Semana', async () => {
     const { fonte } = fonteFalsa(acompanhamento({ dieta: null }))
     render(<TelaMissoesPaciente token="abc" fonte={fonte} hoje={HOJE} />)
     expect(await screen.findByRole('heading', { name: 'Suas missões de hoje, Ana' })).toBeInTheDocument()
-    expect(screen.queryByRole('tablist')).not.toBeInTheDocument()
-    expect(screen.queryByText('Meu plano')).not.toBeInTheDocument()
+    expect(within(screen.getByRole('navigation', { name: 'Partes do plano' })).getAllByRole('link').map((a) => a.textContent)).toEqual(['Hoje', 'Semana'])
   })
 
   it('CB-159: dieta vazia conta como sem dieta; só com orientações, "Meu plano" mostra as orientações', async () => {
@@ -424,7 +432,7 @@ describe('A dieta no link: "Meu plano" (spec dieta-no-link)', () => {
     const { fonte } = fonteFalsa(acompanhamento({ dieta: vazia }))
     const { unmount } = render(<TelaMissoesPaciente token="abc" fonte={fonte} hoje={HOJE} />)
     await screen.findByRole('heading', { name: /missões de hoje/ })
-    expect(screen.queryByRole('tablist')).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Plano' })).not.toBeInTheDocument()
     unmount()
 
     await abrirMeuPlano({ dieta: { ...vazia, orientacoes: 'Beber água.' } })
@@ -446,7 +454,7 @@ describe('Link do paciente sem internet (spec revisao-geral-publica, D-232)', ()
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Não foi possível abrir suas missões' })).toBeInTheDocument()
     expect(screen.getByText('Confira a internet do celular e tente de novo.')).toBeInTheDocument()
-    expect(screen.queryByText('Este link não existe mais')).not.toBeInTheDocument()
+    expect(screen.queryByText('Este link não abre mais')).not.toBeInTheDocument()
 
     // CB-235: tentar de novo ainda sem internet volta à mesma tela.
     await usuario.click(screen.getByRole('button', { name: 'Tentar de novo' }))
@@ -458,10 +466,10 @@ describe('Link do paciente sem internet (spec revisao-geral-publica, D-232)', ()
     expect(await screen.findByRole('heading', { name: 'Suas missões de hoje, Ana' })).toBeInTheDocument()
   })
 
-  it('CA-755: a nuvem respondeu que o link não existe: continua "Este link não existe mais"', async () => {
+  it('CA-755 e CA-2238: a nuvem respondeu que o link não existe: "Este link não abre mais"', async () => {
     const { fonte } = fonteFalsa(null, true)
     render(<TelaMissoesPaciente token="abc" fonte={fonte} hoje={HOJE} />)
-    expect(await screen.findByRole('heading', { level: 1, name: 'Este link não existe mais' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { level: 1, name: 'Este link não abre mais' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Tentar de novo' })).not.toBeInTheDocument()
   })
 
@@ -581,5 +589,92 @@ describe('Link do paciente sem internet (spec revisao-geral-publica, D-232)', ()
     render(<TelaMissoesPaciente token="abc" fonte={fonte} hoje={HOJE} />)
     await screen.findByRole('heading', { name: 'Suas missões de hoje, Ana' })
     expect(screen.getByRole('main')).toContainElement(screen.getByRole('heading', { level: 1 }))
+  })
+})
+
+describe('Duas abas do link (spec lado-do-paciente, CB-1221)', () => {
+  /** A outra aba (ou o outro aparelho) marcou: a nuvem mudou sem esta aba saber. */
+  function nuvemQueMuda(inicial: Acompanhamento) {
+    let nuvem = inicial
+    let salvarPendente: (() => void) | null = null
+    let segurarSalvar = false
+    const fonte: FonteAcompanhamentos = {
+      naNuvem: true,
+      porToken: () => Promise.resolve(nuvem),
+      salvar: (a) => {
+        if (!segurarSalvar) {
+          nuvem = a
+          return Promise.resolve(a)
+        }
+        return new Promise((resolver) => {
+          salvarPendente = () => {
+            nuvem = a
+            resolver(a)
+          }
+        })
+      },
+    }
+    return {
+      fonte,
+      marcarNaOutraAba: (missaoId: string) => {
+        nuvem = marcarMissao(nuvem, HOJE, missaoId, true)
+      },
+      segurar: () => {
+        segurarSalvar = true
+      },
+      soltar: () => salvarPendente?.(),
+    }
+  }
+
+  const voltarParaAAba = () =>
+    act(async () => {
+      fireEvent(document, new Event('visibilitychange'))
+      await new Promise((fim) => setTimeout(fim, 0))
+    })
+
+  it('CB-1221: ao voltar para esta aba, o link relê a nuvem e mostra o que a outra aba marcou', async () => {
+    const nuvem = nuvemQueMuda(acompanhamento())
+    render(<TelaMissoesPaciente token="abc" fonte={nuvem.fonte} hoje={HOJE} cliente={null} />)
+    const agua = await screen.findByRole('button', { name: /litros de água/ })
+    expect(agua).toHaveAttribute('aria-pressed', 'false')
+
+    nuvem.marcarNaOutraAba('agua')
+    await voltarParaAAba()
+
+    expect(screen.getByRole('button', { name: /litros de água/ })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: /Café da manhã/ })).toHaveAttribute('aria-pressed', 'false')
+  })
+
+  it('CB-1221: com uma marcação ainda a caminho da nuvem, voltar para a aba não desfaz o que acabou de ser marcado', async () => {
+    const nuvem = nuvemQueMuda(acompanhamento())
+    const usuario = userEvent.setup()
+    render(<TelaMissoesPaciente token="abc" fonte={nuvem.fonte} hoje={HOJE} cliente={null} />)
+    const cafe = await screen.findByRole('button', { name: /Café da manhã/ })
+    nuvem.segurar()
+    await usuario.click(cafe)
+    await voltarParaAAba()
+    expect(cafe).toHaveAttribute('aria-pressed', 'true')
+
+    await act(async () => {
+      nuvem.soltar()
+      await new Promise((fim) => setTimeout(fim, 0))
+    })
+    expect(cafe).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  it('CB-1221: sem servidor, o link é só deste aparelho e voltar para a aba não relê', async () => {
+    let lidas = 0
+    const fonte: FonteAcompanhamentos = {
+      naNuvem: false,
+      porToken: () => {
+        lidas++
+        return Promise.resolve(acompanhamento())
+      },
+      salvar: (a) => Promise.resolve(a),
+    }
+    render(<TelaMissoesPaciente token="abc" fonte={fonte} hoje={HOJE} cliente={null} />)
+    await screen.findByRole('heading', { name: 'Suas missões de hoje, Ana' })
+    await voltarParaAAba()
+    expect(lidas).toBe(1)
   })
 })

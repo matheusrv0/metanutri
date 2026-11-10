@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { escreverRota, lerRota, type Rota } from './navegacao.ts'
+import { enderecoDaPagina, escreverRota, rotaDoEndereco, type Rota } from './navegacao.ts'
 
 /**
  * Uma tela com mudança não salva pode segurar a saída (spec receitas-com-calculo, CA-863a). A guarda recebe como seguir
@@ -23,7 +23,8 @@ export function useGuardaDeSaida(ativa: boolean, guardar: GuardaDeSaida): void {
 
 /** Rota atual lida do endereço, atualizada quando o usuário navega (inclusive voltar do navegador). */
 export function useRota(): readonly [Rota, (rota: Rota) => void] {
-  const [rota, setRota] = useState<Rota>(() => lerRota(globalThis.location?.hash ?? ''))
+  // Spec lado-do-paciente (DP-LP-1): o caminho `/p/<token>` também é rota.
+  const [rota, setRota] = useState<Rota>(() => rotaDoEndereco(enderecoDaPagina()))
   // O endereço da tela de agora, para voltar a ele quando a guarda segura o voltar do navegador.
   const enderecoAtual = useRef(escreverRota(rota))
 
@@ -36,7 +37,7 @@ export function useRota(): readonly [Rota, (rota: Rota) => void] {
 
   useEffect(() => {
     const aoMudar = () => {
-      const nova = lerRota(globalThis.location.hash)
+      const nova = rotaDoEndereco(enderecoDaPagina())
       const segurar = guarda
       // CA-863a: o voltar do navegador já trocou o endereço; segurado, ele volta para a tela de agora.
       if (segurar && escreverRota(nova) !== enderecoAtual.current) {

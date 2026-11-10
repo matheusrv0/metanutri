@@ -1,46 +1,59 @@
-// "Meu plano": a dieta no celular do paciente (spec dieta-no-link). O conteúdo é o da folha
-// impressa que serve a quem come, em letra de ler no ônibus: refeição, medida caseira, os
-// substitutos como "ou" e as orientações. Sem kcal e sem nutriente (D-150). O nome e a quantidade
-// seguem as regras da folha, aplicadas na hora sobre a cópia guardada (spec revisao-geral-publica, D-231).
-import { useId } from 'react'
+// O Plano do link (spec lado-do-paciente, D-1205 e D-1206; antes, "Meu plano" da spec dieta-no-link): a dieta no celular
+// do paciente, com o conteúdo da folha impressa que serve a quem come. Cada refeição num cartão, com o horário e o nome;
+// as opções viram um seletor dentro do cartão (cada toque mostra uma opção inteira, CA-645); cada alimento numa linha,
+// com o nome à esquerda e as gramas à direita (D-1206). Sem kcal e sem nutriente (D-150). O nome e a quantidade seguem as
+// regras da folha, aplicadas na hora sobre a cópia guardada (spec revisao-geral-publica, D-231).
+import { useEffect, useId, useRef, useState } from 'react'
+import type { MissaoDoDia } from '@/domain/acompanhamento.ts'
 import type { DietaDoLink, ItemDaDieta, ReceitaDaDieta } from '@/domain/dietaDoLink.ts'
 import { FRASE_APOIO_IA, FRASE_APOIO_IA_ESTAGIO } from '@/domain/documentoDoPaciente.ts'
 import { modoDaCopia, paraOPaciente } from '@/domain/dietaParaPaciente.ts'
-import { dataPorExtenso } from '@/domain/formatarData.ts'
-import { textoDaQuantidade, type QuantidadeNaFolha } from '@/domain/quantidadeNaFolha.ts'
+import { textoDaQuantidade } from '@/domain/quantidadeNaFolha.ts'
+import type { RotuloDaRefeicao } from '@/domain/refeicaoDaHora.ts'
 import type { ModoQuantidade } from '@/domain/tipos.ts'
+import { cn } from '@/lib/utils'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@ds/componentes/navigation/tabs.tsx'
+import { atualizadoEm, quantidadeNoPlano, tituloDoPlano } from './link/textosDoLink.ts'
+import { Visto } from './link/Visto.tsx'
 
 interface MeuPlanoProps {
   readonly dieta: DietaDoLink
-  /** Como o paciente é chamado no título, igual à parte das missões. */
+  /** Como o paciente é chamado no título; vazio, sem nome (CB-1227). */
   readonly primeiroNome: string
+  /** O dia de hoje, para "Atualizado em" levar o ano só quando é outro. Sem ele, vale o da cópia. */
+  readonly hoje?: string
+  /** D-1205: a missão de Hoje de cada refeição (pelo índice), para "Marcar como feita"; nula na refeição que não é missão. */
+  readonly missaoDaRefeicao?: (indice: number) => MissaoDoDia | null
+  readonly aoAlternar?: (missaoId: string, feita: boolean) => void
+  readonly acabouDeMarcar?: string | null
+  /** CA-2210: a refeição da hora ("Agora" ou "Próxima"). */
+  readonly daHora?: { readonly indice: number; readonly rotulo: RotuloDaRefeicao } | null
+  /** A refeição para rolar ao abrir: a do "Ver" ou a da hora (D-1205, D-1206). */
+  readonly rolarPara?: number | null
 }
 
-/**
- * A quantidade como na folha (spec alimentos-e-gramaturas, D-376 e D-377): a medida com o peso, só a medida ou só o
- * peso, na escolha do plano; sem medida que sirva, o peso (CB-156).
- */
-function Quantidade({ quantidade }: { readonly quantidade: QuantidadeNaFolha }) {
-  return <strong className="numeros font-bold text-heading">{textoDaQuantidade(quantidade)}</strong>
-}
-
+/** Um alimento: o nome à esquerda, a quantidade à direita e, no "Medida e gramas", a medida embaixo do nome (CA-2209). */
 function Itens({ itens, modo }: { readonly itens: readonly ItemDaDieta[]; readonly modo: ModoQuantidade }) {
   return (
-    <ul className="flex flex-col gap-3">
+    <ul className="flex flex-col">
       {itens.map((item, i) => {
         const paciente = paraOPaciente(item, modo)
+        const { direita, embaixo } = quantidadeNoPlano(paciente.quantidade)
         return (
-          <li key={`${i}-${item.alimento}`} className="flex flex-col text-base leading-snug">
-            <Quantidade quantidade={paciente.quantidade} />
-            <span className="text-foreground [overflow-wrap:anywhere]">{paciente.nome}</span>
-            {/* Spec busca-substitutos, D-1115: as opções do item, com "ou", logo abaixo dele. */}
+          <li key={`${i}-${item.alimento}`} className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-3.5 gap-y-0.5 border-t border-border py-2.5 first:border-0 first:pt-0.5">
+            <span className="text-base leading-snug font-semibold text-heading [overflow-wrap:anywhere]">{paciente.nome}</span>
+            <span className="numeros text-right text-base font-extrabold whitespace-nowrap text-heading">{direita}</span>
+            {embaixo ? <span className="col-start-1 text-sm text-muted-foreground">{embaixo}</span> : null}
+            {/* Spec busca-substitutos, D-1115: as opções do item, com "ou", logo abaixo dele, na mesma linha de nome e gramas. */}
             {(item.ou ?? []).map((opcao, n) => {
               const daOpcao = paraOPaciente(opcao, modo)
+              const daQuantidade = quantidadeNoPlano(daOpcao.quantidade)
               return (
-                <span key={`${n}-${opcao.alimento}`} className="mt-1.5 flex flex-col border-l border-border pl-3">
-                  <span className="text-sm font-semibold text-muted-foreground">ou</span>
-                  <Quantidade quantidade={daOpcao.quantidade} />
-                  <span className="text-foreground [overflow-wrap:anywhere]">{daOpcao.nome}</span>
+                <span key={`${n}-${opcao.alimento}`} className="col-span-2 mt-1.5 grid grid-cols-[minmax(0,1fr)_auto] gap-x-3.5 gap-y-0.5 border-l border-border pl-3">
+                  <span className="col-span-2 text-sm font-semibold text-muted-foreground">ou</span>
+                  <span className="text-base leading-snug font-semibold text-heading [overflow-wrap:anywhere]">{daOpcao.nome}</span>
+                  <span className="numeros text-right text-base font-extrabold whitespace-nowrap text-heading">{daQuantidade.direita}</span>
+                  {daQuantidade.embaixo ? <span className="col-start-1 text-sm text-muted-foreground">{daQuantidade.embaixo}</span> : null}
                 </span>
               )
             })}
@@ -54,31 +67,32 @@ function Itens({ itens, modo }: { readonly itens: readonly ItemDaDieta[]; readon
 // CA-554: os textos que vêm do nutricionista quebram em qualquer ponto ([overflow-wrap:anywhere]): um endereço
 // longo nas orientações não empurra a página do celular para o lado.
 
-/**
- * CA-532: o "ou" entre as opções, com um fio de cada lado. Spec impressao-do-plano, CA-645: com os rótulos da folha
- * impressa, "Opção 1" em cima da primeira e "ou Opção 2" entre elas, para o paciente ver que a refeição inteira é
- * trocada. É só desenho: a cópia guardada no link não muda.
- */
-function RotuloDaOpcao({ numero }: { readonly numero: number }) {
-  if (numero === 1) return <p className="mb-2 text-sm font-semibold text-muted-foreground">Opção 1</p>
-  return (
-    <p className="my-4 flex items-center gap-3 text-sm font-semibold text-muted-foreground">
-      <span aria-hidden="true" className="h-px flex-1 bg-border" />
-      <span>{`ou Opção ${numero}`}</span>
-      <span aria-hidden="true" className="h-px flex-1 bg-border" />
-    </p>
-  )
-}
-
 function Texto({ titulo, texto }: { readonly titulo: string; readonly texto: string }) {
   const id = useId()
   return (
-    <section aria-labelledby={id} className="rounded-2xl border border-border bg-card p-5">
-      <h2 id={id} className="font-titulo text-lg font-semibold text-heading">
+    <section aria-labelledby={id} className="flex flex-col gap-2 rounded-2xl border border-border bg-card p-4">
+      <h2 id={id} className="text-base font-extrabold text-heading">
         {titulo}
       </h2>
-      <p className="mt-2 whitespace-pre-wrap text-base leading-relaxed text-foreground [overflow-wrap:anywhere]">{texto}</p>
+      <p className="text-base leading-relaxed whitespace-pre-wrap text-foreground [overflow-wrap:anywhere]">{texto}</p>
     </section>
+  )
+}
+
+/** Os ingredientes de uma receita, como a folha: a quantidade e o nome (spec receitas-com-calculo, CA-884). */
+function Ingredientes({ itens, modo }: { readonly itens: readonly ItemDaDieta[]; readonly modo: ModoQuantidade }) {
+  return (
+    <ul className="flex flex-col gap-1.5">
+      {itens.map((item, i) => {
+        const paciente = paraOPaciente(item, modo)
+        return (
+          <li key={`${i}-${item.alimento}`} className="text-base leading-snug">
+            <strong className="numeros font-bold text-heading">{textoDaQuantidade(paciente.quantidade)}</strong>{' '}
+            <span className="text-foreground [overflow-wrap:anywhere]">{paciente.nome}</span>
+          </li>
+        )
+      })}
+    </ul>
   )
 }
 
@@ -91,8 +105,8 @@ function ReceitaDoLink({ receita, modo }: { readonly receita: ReceitaDaDieta; re
         {receita.nome}
       </h3>
       <p className="numeros text-sm text-muted-foreground">{receita.rendimento}</p>
-      <Itens itens={receita.ingredientes} modo={modo} />
-      {receita.preparo ? <p className="whitespace-pre-wrap text-base leading-relaxed text-foreground [overflow-wrap:anywhere]">{receita.preparo}</p> : null}
+      <Ingredientes itens={receita.ingredientes} modo={modo} />
+      {receita.preparo ? <p className="text-base leading-relaxed whitespace-pre-wrap text-foreground [overflow-wrap:anywhere]">{receita.preparo}</p> : null}
     </article>
   )
 }
@@ -101,8 +115,8 @@ function ReceitaDoLink({ receita, modo }: { readonly receita: ReceitaDaDieta; re
 function Receitas({ receitas, texto, modo }: { readonly receitas: readonly ReceitaDaDieta[]; readonly texto: string; readonly modo: ModoQuantidade }) {
   const id = useId()
   return (
-    <section aria-labelledby={id} className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-5">
-      <h2 id={id} className="font-titulo text-lg font-semibold text-heading">
+    <section aria-labelledby={id} className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-4">
+      <h2 id={id} className="text-base font-extrabold text-heading">
         Receitas
       </h2>
       {receitas.length > 0 ? (
@@ -112,40 +126,113 @@ function Receitas({ receitas, texto, modo }: { readonly receitas: readonly Recei
           ))}
         </div>
       ) : null}
-      {texto ? <p className="whitespace-pre-wrap text-base leading-relaxed text-foreground [overflow-wrap:anywhere]">{texto}</p> : null}
+      {texto ? <p className="text-base leading-relaxed whitespace-pre-wrap text-foreground [overflow-wrap:anywhere]">{texto}</p> : null}
     </section>
   )
 }
 
-export function MeuPlano({ dieta, primeiroNome }: MeuPlanoProps) {
-  const dia = dataPorExtenso(dieta.copiadaEm)
+/** D-1205 e CA-2207: "Marcar como feita" (ou "Feita hoje", com o visto verde), no pé da refeição que é missão. */
+function MarcarRefeicao({ missao, acabouDeMarcar, aoAlternar }: { readonly missao: MissaoDoDia; readonly acabouDeMarcar: boolean; readonly aoAlternar: (missaoId: string, feita: boolean) => void }) {
+  return (
+    <button
+      type="button"
+      aria-pressed={missao.feita}
+      onClick={() => aoAlternar(missao.id, !missao.feita)}
+      className={cn(
+        'inline-flex min-h-11 items-center gap-2.5 self-start rounded-full py-0 pr-3.5 pl-2 text-sm font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+        'transition-transform duration-150 ease-[var(--ease-marcar)] motion-safe:active:scale-[0.97]',
+        // CA-2215: "Marcar como feita" na cor dela; feita, o verde de "feita" (estado, nunca a cor da marca).
+        missao.feita ? 'text-successtext' : 'text-linkacao hover:bg-surfacerow',
+      )}
+    >
+      <span
+        aria-hidden="true"
+        className={cn(
+          'grid size-5.5 shrink-0 place-content-center rounded-full border-2 transition-colors ease-[var(--ease-marcar)]',
+          missao.feita ? 'border-stateok bg-stateok text-textoninverse duration-200' : 'border-linkacao duration-[120ms]',
+          missao.feita && acabouDeMarcar ? 'mp-pulso' : null,
+        )}
+      >
+        {missao.feita ? <Visto desenhar={acabouDeMarcar} className="size-3" /> : null}
+      </span>
+      {missao.feita ? 'Feita hoje' : 'Marcar como feita'}
+    </button>
+  )
+}
+
+export function MeuPlano({ dieta, primeiroNome, hoje, missaoDaRefeicao, aoAlternar, acabouDeMarcar = null, daHora = null, rolarPara = null }: MeuPlanoProps) {
   // A escolha de quantidade do plano (spec conduta-da-nutricionista, D-297; integracao-rodada-1910, D-319 e CB-316).
   const modo: ModoQuantidade = modoDaCopia(dieta)
+  const atualizado = atualizadoEm(dieta.copiadaEm, hoje ?? dieta.copiadaEm)
+  const [opcoes, setOpcoes] = useState<Readonly<Record<number, string>>>({})
+  const cartoes = useRef(new Map<number, HTMLElement>())
+
+  // D-1205 e D-1206: o Plano abre rolado até a refeição pedida ("Ver") ou a da hora; sem ela, no topo.
+  useEffect(() => {
+    const alvo = rolarPara === null ? null : cartoes.current.get(rolarPara)
+    alvo?.scrollIntoView?.({ block: 'start' })
+  }, [rolarPara])
+
   return (
     <div className="flex flex-col gap-3">
-      <h1 className="mb-3 font-titulo text-2xl font-bold text-heading [overflow-wrap:anywhere]">{`Seu plano alimentar, ${primeiroNome}`}</h1>
+      <h1 className="mb-1 font-titulo text-2xl leading-tight font-extrabold tracking-tight text-heading [overflow-wrap:anywhere]">{tituloDoPlano(primeiroNome)}</h1>
 
-      {dieta.refeicoes.map((refeicao, i) => (
-        <section key={`${i}-${refeicao.horario}`} aria-label={`${refeicao.horario} ${refeicao.nome}`} className="rounded-2xl border border-border bg-card p-5">
-          <h2 className="mb-3 flex flex-wrap items-baseline gap-x-3 font-titulo text-lg font-semibold text-heading">
-            <span className="numeros font-bold text-primary">{refeicao.horario}</span>{' '}
-            <span className="min-w-0 [overflow-wrap:anywhere]">{refeicao.nome}</span>
-          </h2>
-          {refeicao.opcoes.map((itens, j) => (
-            <div key={j}>
-              {refeicao.opcoes.length > 1 ? <RotuloDaOpcao numero={j + 1} /> : null}
-              <Itens itens={itens} modo={modo} />
+      {dieta.refeicoes.map((refeicao, i) => {
+        const missao = missaoDaRefeicao?.(i) ?? null
+        const rotulo = daHora?.indice === i ? daHora.rotulo : null
+        return (
+          <section
+            key={`${i}-${refeicao.horario}`}
+            ref={(el) => {
+              if (el) cartoes.current.set(i, el)
+              else cartoes.current.delete(i)
+            }}
+            aria-label={`${refeicao.horario} ${refeicao.nome}`}
+            className="flex scroll-mt-20 flex-col gap-3 rounded-2xl border border-border bg-card px-4 pt-4 pb-3"
+          >
+            <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+              <h2 className="flex min-w-0 flex-wrap items-baseline gap-x-2.5">
+                <span className="numeros text-base font-extrabold text-muted-foreground">{refeicao.horario}</span>{' '}
+                <span className="min-w-0 text-lg font-extrabold tracking-tight text-heading [overflow-wrap:anywhere]">{refeicao.nome}</span>
+              </h2>
+              {rotulo ? <span className="inline-flex h-5.5 items-center rounded-full bg-linkacao px-2.5 text-xs font-bold text-linkacaotexto">{rotulo}</span> : null}
             </div>
-          ))}
-        </section>
-      ))}
+
+            {refeicao.opcoes.length > 1 ? (
+              <Tabs value={opcoes[i] ?? '0'} onValueChange={(valor) => setOpcoes((atual) => ({ ...atual, [i]: valor }))}>
+                <TabsList aria-label={`Opções de ${refeicao.nome.toLocaleLowerCase('pt-BR')}`} className="flex max-w-full flex-wrap gap-1 self-start rounded-3xl border-0 bg-surfacesunken p-0.75">
+                  {/* D-1260 e CA-2307: 44 px em toda largura, com o dedo ou com o mouse. */}
+                  {refeicao.opcoes.map((_, j) => (
+                    <TabsTrigger
+                      key={j}
+                      value={String(j)}
+                      className="h-11 rounded-full px-3.5 font-bold text-muted-foreground data-[state=active]:bg-linkacao data-[state=active]:text-linkacaotexto data-[state=active]:after:hidden"
+                    >
+                      {`Opção ${j + 1}`}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+                {refeicao.opcoes.map((itens, j) => (
+                  <TabsContent key={j} value={String(j)} className="mt-3">
+                    <Itens itens={itens} modo={modo} />
+                  </TabsContent>
+                ))}
+              </Tabs>
+            ) : (
+              <Itens itens={refeicao.opcoes[0] ?? []} modo={modo} />
+            )}
+
+            {missao && aoAlternar ? <MarcarRefeicao missao={missao} acabouDeMarcar={acabouDeMarcar === missao.id} aoAlternar={aoAlternar} /> : null}
+          </section>
+        )
+      })}
 
       {dieta.orientacoes ? <Texto titulo="Orientações" texto={dieta.orientacoes} /> : null}
       {(dieta.receitasDoPlano?.length ?? 0) > 0 || dieta.receitas ? <Receitas receitas={dieta.receitasDoPlano ?? []} texto={dieta.receitas} modo={modo} /> : null}
 
       {/* Spec assistente-ia, CA-2377: o plano que recebeu sugestão da IA diz isso ao paciente. */}
-      {dieta.apoioDeIa ? <p className="mt-5 text-center text-xs text-muted-foreground">{dieta.apoioDeIa === 'estagio' ? FRASE_APOIO_IA_ESTAGIO : FRASE_APOIO_IA}</p> : null}
-      {dia ? <p className={dieta.apoioDeIa ? 'text-center text-xs text-muted-foreground' : 'mt-5 text-center text-xs text-muted-foreground'}>{`Atualizado em ${dia}.`}</p> : null}
+      {dieta.apoioDeIa ? <p className="mt-2 text-center text-sm text-muted-foreground">{dieta.apoioDeIa === 'estagio' ? FRASE_APOIO_IA_ESTAGIO : FRASE_APOIO_IA}</p> : null}
+      {atualizado ? <p className={dieta.apoioDeIa ? 'text-center text-sm text-muted-foreground' : 'mt-2 text-center text-sm text-muted-foreground'}>{atualizado}</p> : null}
     </div>
   )
 }

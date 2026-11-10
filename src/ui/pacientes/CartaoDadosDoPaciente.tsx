@@ -18,6 +18,8 @@ interface CartaoDadosDoPacienteProps {
   readonly aoAlterar: (mudanca: Partial<Paciente>) => void
   /** O WhatsApp sem telefone leva até o campo (spec whatsapp-e-retorno, CA-517). */
   readonly focarTelefone?: boolean | undefined
+  /** "Cadastrar na ficha" dos avisos por e-mail abre a ficha no E-mail (spec lado-do-paciente, CA-2261). */
+  readonly focarEmail?: boolean | undefined
   /** Spec assistente-ia, CA-2376: baixa o termo de autorização para o uso de IA. */
   readonly aoBaixarTermoIa?: (() => void) | undefined
 }
@@ -31,7 +33,7 @@ const plural = (n: number, um: string, varios: string) => `${n} ${n === 1 ? um :
  * Parte 1 da ficha (spec ficha-unica, D-359): quem é a pessoa. Escola e ano e Responsável abaixo de 18 anos; Gestação
  * ou lactação só para o sexo feminino de 14 a 50 anos (R1). Campo fora da regra com dado continua à vista (CB-341).
  */
-export function CartaoDadosDoPaciente({ paciente, perfil, hoje, aoAlterar, focarTelefone = false, aoBaixarTermoIa }: CartaoDadosDoPacienteProps) {
+export function CartaoDadosDoPaciente({ paciente, perfil, hoje, aoAlterar, focarTelefone = false, focarEmail = false, aoBaixarTermoIa }: CartaoDadosDoPacienteProps) {
   const idade = idadeNaData(paciente.nascimento, hoje)
   const menor = menorDe18(perfil)
   const gestacaoVale = podeGestarOuLactar(perfil)
@@ -69,7 +71,7 @@ export function CartaoDadosDoPaciente({ paciente, perfil, hoje, aoAlterar, focar
           dica={paciente.telefone.trim() !== '' && normalizarTelefone(paciente.telefone) === null ? DICA_TELEFONE : undefined}
           focar={focarTelefone}
         />
-        <CampoTexto rotulo="E-mail" valor={paciente.email} aoMudar={(email) => aoAlterar({ email })} />
+        <CampoTexto rotulo="E-mail" valor={paciente.email} aoMudar={(email) => aoAlterar({ email })} focar={focarEmail} />
         <CampoTexto rotulo={rotuloDaOcupacao(perfil)} valor={paciente.ocupacao} aoMudar={(ocupacao) => aoAlterar({ ocupacao })} />
         {/* D-454: o mesmo dado de "Com quem mora", que saiu da Pessoa idosa: 1 é morar só. */}
         <CampoNumero

@@ -1,12 +1,19 @@
 import { ClipboardList, Copy, Plus, Trash, UserRound } from 'lucide-react'
-import { useId, useMemo, useState } from 'react'
+import { useEffect, useId, useMemo, useState } from 'react'
 import { diaLocal } from '@/domain/acompanhamento.ts'
 import { resumoDaAdesao } from '@/domain/adesaoNoRetorno.ts'
 import type { AssinaturaDoPlano } from '@/domain/assinaturaDoPlano.ts'
 import { dataDaAvaliacao } from '@/domain/avaliacoesDoPaciente.ts'
+import { proximoDoLink } from '@/domain/avisosNaFicha.ts'
+import { dietaDoPlano } from '@/domain/dietaDoLink.ts'
+import { apagarEmailsDoLink, definirEmailDaFicha } from '@/domain/emailsDoLink.ts'
 import { perfilDaFicha } from '@/domain/fichaNoPlano.ts'
+import { dataCompleta } from '@/domain/formatarData.ts'
 import { apagarArquivosDoPlano, semArquivos, temArquivos } from '@/domain/fotosDaAvaliacao.ts'
+import { linkDoPaciente } from '@/domain/linkFixo.ts'
+import { pacienteDoAcompanhamento } from '@/domain/retorno.ts'
 import type { Paciente } from '@/domain/pacientes.ts'
+import { lerPerfil } from '@/domain/perfil.ts'
 import { ultimoLinkPorPaciente } from '@/domain/retorno.ts'
 import type { ModoPlano } from '@/domain/tipos.ts'
 import { useArmazenamentoDeFotos } from '../antropometria/armazenamentoDeFotos.ts'
@@ -17,10 +24,16 @@ import { Card, CardDescription, CardHeader, CardTitle } from '@ds/componentes/di
 import { useAcompanhamentosOpcional } from '../estado/contextoAcompanhamentos.ts'
 import { useCasos } from '../estado/contextoCasos.ts'
 import { usePacientes } from '../estado/contextoPacientes.ts'
+import { useArmazenamento } from '../estado/contextoArmazenamento.ts'
+import { useClienteDosEmails, useEmailsDoLink } from '../estado/usarEmailsDoLink.ts'
+import { CartaoAvisosPorEmail } from './CartaoAvisosPorEmail.tsx'
+import { CartaoEnviados } from './CartaoEnviados.tsx'
 import { AnamneseDaFicha } from './AnamneseDaFicha.tsx'
 import { CartaoDadosDoPaciente } from './CartaoDadosDoPaciente.tsx'
 import { CartaoExames } from './CartaoExames.tsx'
+import { CartaoLinkDoPaciente, type PlanoNoLink } from './CartaoLinkDoPaciente.tsx'
 import { CartaoProximaConsulta } from './CartaoProximaConsulta.tsx'
+import { CartaoProximoEmail } from './CartaoProximoEmail.tsx'
 import { CartaoSuplementos } from './CartaoSuplementos.tsx'
 import { baixarTermoDeIa } from '../exportar/baixar.ts'
 import type { CampoDaFicha } from '../navegacao.ts'
@@ -40,6 +53,8 @@ interface TelaPacienteProps {
   readonly focar?: CampoDaFicha | undefined
   /** Injetável no teste; decide se a próxima consulta já passou, a idade de hoje e as semanas de gestação. */
   readonly agora?: Date | undefined
+  /** Abre a ficha com o cursor no Telefone, quando o WhatsApp do link não tem número (spec whatsapp-e-retorno, CA-505). */
+  readonly aoCadastrarTelefone?: ((pacienteId: string) => void) | undefined
   /** A aba "Antropometria" (spec antropometria-telas, D-1402); sem ela, a ficha abre sem as abas. */
   readonly aoAbrirAntropometria?: (() => void) | undefined
 }
@@ -57,12 +72,15 @@ export function TelaPaciente({
   aoVoltar,
   focar,
   agora = new Date(),
+  aoCadastrarTelefone,
   aoAbrirAntropometria,
 }: TelaPacienteProps) {
   const { repositorio, atualizar } = usePacientes()
   const { casos, repositorio: repoCasos, atualizar: atualizarCasos, salvar: salvarCaso } = useCasos()
   const fotos = useArmazenamentoDeFotos()
-  const acompanhamentos = useAcompanhamentosOpcional()?.acompanhamentos ?? null
+  const contextoDosLinks = useAcompanhamentosOpcional()
+  const acompanhamentos = contextoDosLinks?.acompanhamentos ?? null
+  const salvarLink = contextoDosLinks?.salvar ?? null
   const [confirmandoExclusao, setConfirmandoExclusao] = useState(false)
   const [excluindo, setExcluindo] = useState(false)
   const [erroDaExclusao, setErroDaExclusao] = useState<string | null>(null)
@@ -92,6 +110,46 @@ export function TelaPaciente({
     return link ? resumoDaAdesao(link, hoje) : null
   }, [acompanhamentos, casos, pacienteId, hoje])
 
+  // Spec lado-do-paciente, D-1214: o link fixo do paciente, que a ficha mostra e atualiza.
+  const link = acompanhamentos !== null && paciente ? linkDoPaciente(acompanhamentos, paciente.id, casos) : null
+  const emailsDoLink = useEmailsDoLink(link?.id ?? null)
+  const registroDoLink = link === null ? null : repoCasos.obter(link.casoId)
+  const planoNoLink: PlanoNoLink | null =
+    link === null || !registroDoLink
+      ? null
+      : {
+          rotulo: registroDoLink.caso.dataConsulta ? `Plano de ${dataCompleta(registroDoLink.caso.dataConsulta)}` : registroDoLink.caso.nome.trim() || 'Plano sem nome',
+          maisRecente: planos[0]?.id === link.casoId,
+          dieta: dietaDoPlano(registroDoLink.caso, registroDoLink.plano),
+        }
+
+  // DP-LP-7: o e-mail da ficha vai para o link quando muda (o servidor só troca se ele mudou desde a última vez).
+  const clienteDosEmails = useClienteDosEmails()
+  const emailDaFicha = paciente?.email.trim() ?? ''
+  const linkId = link?.id ?? null
+  const recarregarEmails = emailsDoLink.recarregar
+  useEffect(() => {
+    if (linkId === null || clienteDosEmails === null) return
+    let vivo = true
+    void definirEmailDaFicha(clienteDosEmails, linkId, emailDaFicha === '' ? null : emailDaFicha).then((r) => {
+      if (vivo && r.ok) recarregarEmails()
+    })
+    return () => {
+      vivo = false
+    }
+  }, [linkId, clienteDosEmails, emailDaFicha, recarregarEmails])
+
+  // O nome e o registro que assinam os e-mails, na prévia do próximo (D-1234).
+  const perfilLocal = lerPerfil(useArmazenamento())
+  const registro = perfilLocal.tipo === 'estudante' ? 'Estágio de nutrição, sob supervisão' : perfilLocal.crn.trim() ? `Nutricionista · ${perfilLocal.crn.trim()}` : 'Nutricionista'
+
+  // D-1209 e CA-2214: a próxima consulta da ficha sobe para o link quando a ficha muda, sem link novo.
+  const consultaDaFicha = paciente?.proximaConsulta ?? null
+  useEffect(() => {
+    if (link === null || salvarLink === null || (link.proximaConsulta ?? null) === consultaDaFicha) return
+    void salvarLink({ ...link, proximaConsulta: consultaDaFicha })
+  }, [link, salvarLink, consultaDaFicha])
+
   if (!paciente) {
     return (
       <Card className="items-start gap-4">
@@ -115,15 +173,23 @@ export function TelaPaciente({
     atualizar()
   }
 
-  // D-1503 e D-1534 (spec antropometria-telas): sem paciente, o cartão das fotos não aparece. A pasta de cada avaliação
-  // sai antes do balde, e o plano cuja pasta saiu perde a lista; se alguma não sair, a ficha fica e o aviso diz.
+  const perfil = perfilDaFicha(paciente, hoje, planos.length > 0)
+  const proximo = link !== null && emailsDoLink.emails !== null ? proximoDoLink(link, emailsDoLink.emails, agora) : null
+
+  /**
+   * Excluir o paciente apaga, antes da ficha, o que fica na nuvem em nome dele; se algo não sair, a ficha fica e a tela
+   * avisa. Primeiro as fotos e os anexos das avaliações (spec antropometria-telas, D-1503 e D-1534): sem paciente, o
+   * cartão das fotos não aparece; o plano cuja pasta saiu perde a lista. Depois o link dele (spec lado-do-paciente,
+   * DP-LP-26 e CA-2284; os antigos, substituídos, também), com o e-mail, os aceites e os envios; a supressão do endereço
+   * fica (D-1243). Tentar de novo refaz os dois passos sem estrago: a pasta e o link que já saíram não voltam.
+   */
   const excluirPaciente = async () => {
     setExcluindo(true)
     setErroDaExclusao(null)
-    let falhou = false
+    let fotosFalharam = false
     for (const resumo of planos) {
       if (fotos && !(await apagarArquivosDoPlano(fotos, resumo.id))) {
-        falhou = true
+        fotosFalharam = true
         continue
       }
       const registro = repoCasos.obter(resumo.id)
@@ -131,27 +197,47 @@ export function TelaPaciente({
         salvarCaso({ caso: { ...registro.caso, avaliacao: semArquivos(registro.caso.avaliacao) }, plano: registro.plano })
       }
     }
-    setExcluindo(false)
-    if (falhou) {
+    if (fotosFalharam) {
+      setExcluindo(false)
       setErroDaExclusao('Não foi possível apagar as fotos e os anexos das avaliações. A ficha continua. Confira a internet e tente de novo.')
       return
+    }
+    const doPaciente = (contextoDosLinks?.repositorio.listar() ?? []).filter((l) => pacienteDoAcompanhamento(l, casos) === paciente.id || l.pacienteId === paciente.id)
+    for (const l of doPaciente) {
+      // CB-1228: sem apagar os e-mails do link, o link fica (e a ficha também).
+      const apagados = await apagarEmailsDoLink(clienteDosEmails, l.id)
+      const motivo = apagados.ok ? ((await contextoDosLinks?.remover(l.id)) ?? null) : apagados.erro
+      if (motivo !== null) {
+        setExcluindo(false)
+        setErroDaExclusao('Não foi possível apagar o link do paciente. Confira a internet e tente de novo.')
+        return
+      }
     }
     repositorio.excluir(paciente.id)
     atualizar()
     aoVoltar()
   }
 
-  const perfil = perfilDaFicha(paciente, hoje, planos.length > 0)
+  /** CA-2261: "Cadastrar na ficha" e "Corrigir na ficha" levam o cursor ao campo E-mail desta ficha. */
+  const irParaOEmail = () => {
+    const campo = Array.from(document.querySelectorAll('label')).find((rotulo) => rotulo.textContent?.trim() === 'E-mail')?.control
+    if (!(campo instanceof HTMLElement)) return
+    campo.scrollIntoView?.({ block: 'center' })
+    campo.focus()
+  }
 
+  // Spec lado-do-paciente: a coluna da direita ganha os e-mails do link, depois do histórico e do peso; abaixo da tela
+  // larga, eles vêm depois da ficha (o histórico e o peso continuam antes, CA-587).
   const ficha = (
-    <div className="grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
-      <div className="flex flex-col gap-6">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[minmax(0,1fr)_360px] xl:grid-rows-[auto_1fr]">
+      <div className="flex flex-col gap-6 xl:row-span-2">
         <CartaoDadosDoPaciente
           paciente={paciente}
           perfil={perfil}
           hoje={hoje}
           aoAlterar={alterar}
           focarTelefone={focar === 'telefone'}
+          focarEmail={focar === 'email'}
           aoBaixarTermoIa={() => void baixarTermoDeIa(assinatura, paciente.nome)}
         />
 
@@ -164,35 +250,20 @@ export function TelaPaciente({
           <CartaoSuplementos key={paciente.id} paciente={paciente} assinatura={assinatura} bloqueio={bloqueio} aoAlterar={alterar} focar={focar === 'suplementos'} />
           <CartaoExames key={`exames-${paciente.id}`} paciente={paciente} assinatura={assinatura} bloqueio={bloqueio} aoAlterar={alterar} />
           <CartaoProximaConsulta valor={paciente.proximaConsulta} agora={agora} aoMudar={(proximaConsulta) => alterar({ proximaConsulta })} />
+          {/* D-1214 e D-359: o cartão do link vem depois da próxima consulta. */}
+          {link !== null ? (
+            <CartaoLinkDoPaciente
+              paciente={paciente}
+              link={link}
+              planoNoLink={planoNoLink}
+              emails={emailsDoLink.emails}
+              aoMudarEmails={emailsDoLink.recarregar}
+              hoje={hoje}
+              aoCadastrarTelefone={aoCadastrarTelefone}
+            />
+          ) : null}
         </section>
 
-        <Card className="gap-3">
-          <CardHeader>
-            <CardTitle>Excluir paciente</CardTitle>
-            <CardDescription>Os planos continuam salvos, mas perdem o vínculo com esta ficha. As fotos e os anexos das avaliações são apagados.</CardDescription>
-          </CardHeader>
-          {confirmandoExclusao ? (
-            <div className="flex flex-wrap items-center gap-2">
-              <Button variant="destructive" disabled={excluindo} onClick={() => void excluirPaciente()}>
-                <Trash aria-hidden="true" />
-                Excluir paciente
-              </Button>
-              <Button variant="ghost" onClick={() => setConfirmandoExclusao(false)}>
-                Cancelar
-              </Button>
-              {erroDaExclusao ? (
-                <p role="alert" className="w-full text-sm text-errortext">
-                  {erroDaExclusao}
-                </p>
-              ) : null}
-            </div>
-          ) : (
-            <Button variant="outline" className="self-start" onClick={() => setConfirmandoExclusao(true)}>
-              <Trash aria-hidden="true" />
-              Excluir paciente
-            </Button>
-          )}
-        </Card>
       </div>
 
       {/* CA-587: abaixo da tela larga, o histórico e o peso vêm antes dos cartões longos; "Excluir paciente" fica por último. */}
@@ -247,6 +318,63 @@ export function TelaPaciente({
             <CardTitle>Evolução do peso</CardTitle>
           </div>
           <EvolucaoPeso pontos={evolucao} />
+        </Card>
+      </div>
+
+      {link !== null ? (
+        <div className="flex flex-col gap-6 xl:col-start-2">
+          <CartaoAvisosPorEmail
+            nomeDoPaciente={paciente.nome}
+            linkId={link.id}
+            emails={emailsDoLink.emails}
+            erro={emailsDoLink.erro}
+            aoMudar={emailsDoLink.recarregar}
+            aoCadastrarEmail={irParaOEmail}
+            agora={agora}
+          />
+          <CartaoProximoEmail link={link} emails={emailsDoLink.emails} proximo={proximo} nomeDoPaciente={paciente.nome} nutricionista={perfilLocal.nome} registro={registro} />
+          <CartaoEnviados emails={emailsDoLink.emails} proximo={proximo} />
+        </div>
+      ) : null}
+
+      {/* CA-587 (B6 da revisão r1): "Excluir paciente" é o último cartão abaixo da tela larga, depois dos e-mails do link;
+          na tela larga, fica no fim da coluna da ficha. */}
+      <div className="flex flex-col xl:col-start-1">
+        <Card className="gap-3">
+          <CardHeader>
+            <CardTitle>Excluir paciente</CardTitle>
+            {/* D-1503: com o armazenamento das fotos, elas saem junto; D-1512: sem nuvem, não há foto a apagar. */}
+            <CardDescription>
+              {[
+                'Os planos continuam salvos, mas perdem o vínculo com esta ficha.',
+                fotos !== null ? 'As fotos e os anexos das avaliações são apagados.' : null,
+                link !== null ? 'O link do paciente deixa de abrir.' : null,
+              ]
+                .filter((frase) => frase !== null)
+                .join(' ')}
+            </CardDescription>
+          </CardHeader>
+          {erroDaExclusao ? (
+            <p role="alert" className="text-sm text-errortext">
+              {erroDaExclusao}
+            </p>
+          ) : null}
+          {confirmandoExclusao ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <Button variant="destructive" loading={excluindo} onClick={() => void excluirPaciente()}>
+                <Trash aria-hidden="true" />
+                Excluir paciente
+              </Button>
+              <Button variant="ghost" onClick={() => setConfirmandoExclusao(false)}>
+                Cancelar
+              </Button>
+            </div>
+          ) : (
+            <Button variant="outline" className="self-start" onClick={() => setConfirmandoExclusao(true)}>
+              <Trash aria-hidden="true" />
+              Excluir paciente
+            </Button>
+          )}
         </Card>
       </div>
     </div>

@@ -1,0 +1,100 @@
+/*
+ * O movimento ao marcar uma missão no link do paciente (spec lado-do-paciente, D-1204 e DP-LP-23): o segmento da barra
+ * enche (240 ms), o número sobe (180 ms), o círculo pulsa e o visto se desenha (220 ms) e, no dia completo, um brilho
+ * passa uma vez (600 ms). Só transform, opacity e cor. Com "reduzir movimento" no celular, nada se move: só as cores
+ * trocam (as transições de cor ficam nas classes da tela, em 120 ms).
+ */
+
+@keyframes mp-encher {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes mp-brilho {
+  from {
+    transform: translateX(-120%);
+  }
+  to {
+    transform: translateX(420%);
+  }
+}
+
+@keyframes mp-subir {
+  from {
+    transform: translateY(70%);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+@keyframes mp-pulso {
+  from {
+    transform: scale(0.82);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+@keyframes mp-tracar {
+  from {
+    stroke-dashoffset: 18;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.mp-segmento-novo {
+  transform-origin: left center;
+  animation: mp-encher 240ms var(--ease-marcar) both;
+}
+
+.mp-numero {
+  display: inline-block;
+  animation: mp-subir 180ms var(--ease-marcar) both;
+}
+
+.mp-pulso {
+  animation: mp-pulso 260ms var(--ease-marcar);
+}
+
+.mp-visto path {
+  stroke-dasharray: 18;
+  animation: mp-tracar 220ms var(--ease-marcar) 40ms both;
+}
+
+.mp-brilha::after {
+  content: '';
+  position: absolute;
+  top: -6px;
+  bottom: -6px;
+  left: 0;
+  width: 26%;
+  border-radius: 9999px;
+  background: color-mix(in oklab, var(--gray-0) 60%, transparent);
+  filter: blur(6px);
+  transform: translateX(-120%);
+  animation: mp-brilho 600ms cubic-bezier(0.77, 0, 0.175, 1) 120ms 1 both;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mp-segmento-novo,
+  .mp-numero,
+  .mp-pulso,
+  .mp-visto path {
+    animation: none;
+  }
+
+  .mp-brilha::after {
+    display: none;
+  }
+}

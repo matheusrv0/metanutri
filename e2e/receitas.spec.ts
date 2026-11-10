@@ -97,15 +97,19 @@ test('a receita da biblioteca ao plano, à folha e ao link do paciente', async (
   // CA-883 e CA-884: o link do paciente, no celular, com a receita.
   const cartao = page.getByRole('region', { name: 'Link do paciente' })
   await cartao.getByRole('button', { name: 'Gerar link do paciente' }).click()
+  // Spec lado-do-paciente, CA-2224: o plano sem paciente pergunta para quem é o link.
+  await cartao.getByRole('button', { name: 'Criar a ficha e seguir' }).click()
   await cartao.getByRole('button', { name: /Já tenho a autorização/ }).click()
   const endereco = await cartao.getByLabel('Endereço do link').inputValue()
   await page.setViewportSize({ width: 360, height: 780 })
   await page.goto(endereco)
-  await page.getByRole('tablist', { name: 'O que ver' }).getByRole('tab', { name: 'Meu plano' }).click()
+  // D-1202: a dieta fica na parte Plano da barra de baixo.
+  await page.getByRole('navigation', { name: 'Partes do plano' }).getByRole('link', { name: 'Plano' }).click()
   await expect(page.getByRole('region', { name: '06:00 Café da manhã' })).toContainText('Panqueca de banana')
   // CA-974 (spec integracao-rodada-1910): a porção da receita, a mesma linha da folha impressa. Plano novo em "Medida e
-  // gramas" (spec alimentos-e-gramaturas, D-376): a porção com o peso ao lado.
-  await expect(page.getByRole('region', { name: '06:00 Café da manhã' }).getByRole('listitem').filter({ hasText: 'Panqueca de banana' })).toHaveText('1 unidade (120 g)Panqueca de banana')
+  // gramas" (spec alimentos-e-gramaturas, D-376): a porção com o peso. No link (spec lado-do-paciente, D-1206), o nome à
+  // esquerda, as gramas à direita e a medida embaixo.
+  await expect(page.getByRole('region', { name: '06:00 Café da manhã' }).getByRole('listitem').filter({ hasText: 'Panqueca de banana' })).toHaveText('Panqueca de banana120 g1 unidade')
   await expect(page.getByRole('region', { name: 'Receitas' })).toContainText('Amasse a banana')
   await semRolagemLateral(page)
 })

@@ -41,6 +41,23 @@ export function TelaPrivacidade() {
           O plano alimentar do paciente (refeições, quantidades, substitutos, orientações e receitas), quando o nutricionista ativa “Mostrar o plano
           alimentar no link”: para o paciente consultar o plano.
         </li>
+        {/* Aprovado pelo dono em 10/11/2026 (spec lado-do-paciente, D-1250, D-1259 e D-1263): o texto diz o que o código faz. */}
+        <li>
+          O e-mail do paciente, quando o nutricionista o registra na ficha ou o próprio paciente o informa no link: para mandar o link do plano,
+          os avisos que o paciente aceitou e os e-mails que o nutricionista envia pelo MetaNutri. O e-mail que o paciente informa no link só passa
+          a valer depois que ele toca em Confirmar no e-mail que recebe. Até lá, esse e-mail recebe só o pedido de confirmação e fica guardado com
+          ele por até 8 dias. Guardamos também o aceite (o aviso, a data e a hora e a versão do texto) enquanto o link existir e por mais 6 meses
+          depois que ele sai, e o histórico dos e-mails enviados (tipo, assunto, situação, data e um resumo do endereço, o hash), por 6 meses,
+          inclusive dos enviados a um e-mail que não foi confirmado. O e-mail que volta (o endereço não existe) ou que é marcado como spam entra
+          numa lista de bloqueio, que guarda só um resumo do endereço (hash). O que volta não recebe mais nenhum e-mail do MetaNutri; o marcado como
+          spam não recebe mais avisos nem os e-mails do nutricionista, só o que o próprio paciente pedir no link. Quem sai de um aviso só deixa de
+          recebê-lo.
+        </li>
+        <li>
+          Em “Recuperar meu link”, um resumo (hash) do e-mail e do endereço de internet de quem pede, por 2 dias: para limitar os pedidos e evitar
+          abuso.
+        </li>
+        <li>O dia em que o paciente abriu o link (só a data, sem a hora): para o nutricionista saber se o paciente está abrindo o plano.</li>
         <li>
           Quando o nutricionista usa as sugestões com IA, o registro de cada uso (data, tipo, quantidade de texto processado e custo), sem dado do
           paciente: para aplicar o limite do plano e controlar o custo.
@@ -72,8 +89,16 @@ export function TelaPrivacidade() {
           os 4 últimos números e a data da próxima cobrança, para mostrar em Conta e assinatura. Para usar a mesma letra do site, os campos do cartão
           carregam a fonte do Google Fonts.
         </li>
-        <li>Os e-mails de confirmação e de troca de senha são enviados pelo Resend, com o endereço do MetaNutri.</li>
-        <li>Nas telas de conta, o Cloudflare Turnstile recebe dados técnicos do navegador, como o endereço IP, para separar pessoas de robôs.</li>
+        <li>
+          Os e-mails de confirmação e de troca de senha, e os e-mails ao paciente e ao nutricionista (o link do plano, os avisos aceitos e o
+          resumo da adesão), são enviados pelo Resend, sem imagem e sem rastreio de abertura ou de clique. O e-mail do paciente é usado só para
+          isso: nunca para propaganda do MetaNutri e nunca em lista de contatos.
+        </li>
+        {/* Aprovado pelo dono em 10/11/2026 (spec lado-do-paciente, D-1259): "Recuperar meu link" também passa pelo Turnstile. */}
+        <li>
+          Nas telas de conta e em “Recuperar meu link”, o Cloudflare Turnstile recebe dados técnicos do navegador, como o endereço IP, para separar
+          pessoas de robôs.
+        </li>
         <li>
           O app do MetaNutri fica em app.metanutri.com.br e é entregue pela Cloudflare; o site público, em metanutri.com.br, é entregue pelo GitHub.
           Os dois recebem dados técnicos do navegador, como o endereço IP, para entregar as páginas.
@@ -116,6 +141,7 @@ export function TelaPrivacidade() {
       <p>
         Quem usa o MetaNutri e cada paciente podem pedir confirmação, acesso, correção, anonimização, portabilidade e eliminação dos dados, e revogar o
         consentimento (LGPD, art. 18). O paciente pode pedir ao nutricionista ou diretamente pelo e-mail {CONTATO_EMAIL ?? ''}. Respondemos em até 15 dias.
+        Cada e-mail de aviso tem, no rodapé, como deixar de receber, num toque e sem login.
       </p>
 
       <h2>Segurança</h2>

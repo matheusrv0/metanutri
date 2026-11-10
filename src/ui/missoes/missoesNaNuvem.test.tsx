@@ -13,6 +13,14 @@ import { DIETA_GRANDE_DEMAIS, FALHA_DE_REDE, LINK_GRANDE_DEMAIS } from '@/ui/est
 import { CartaoLinkMissoes } from './CartaoLinkMissoes.tsx'
 import { TelaAdesao } from './TelaAdesao.tsx'
 
+/** D-1215: "Gerar link novo" virou "Trocar o endereço", com a confirmação do diálogo. */
+async function trocarOEndereco(usuario: ReturnType<typeof userEvent.setup>, achar: 'get' | 'find' = 'get') {
+  const botao = achar === 'find' ? await screen.findByRole('button', { name: 'Trocar o endereço' }) : screen.getByRole('button', { name: 'Trocar o endereço' })
+  await usuario.click(botao)
+  await usuario.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Trocar o endereço' }))
+}
+
+
 const LIMITE = LIMITE_DE_LINKS
 const NAO_SALVOU = 'Não foi possível salvar o link. O paciente ainda não consegue abri-lo. Tente de novo.'
 const SEM_ATUALIZAR = 'Não foi possível atualizar os links com a nuvem. Você está vendo a cópia deste aparelho.'
@@ -250,7 +258,7 @@ describe('Criar e gerar de novo o link (D-103)', () => {
     expect(token).toBeTruthy()
     await waitFor(() => expect(nuvem.linhas).toHaveLength(1))
     expect(nuvem.linhas[0]).toMatchObject({ token, caso_id: 'c1', nutricionista_id: 'u1', nome: 'Ana' })
-    expect((screen.getByLabelText('Endereço do link') as HTMLInputElement).value).toContain(`#/missoes/${token}`)
+    expect((screen.getByLabelText('Endereço do link') as HTMLInputElement).value).toContain(`/p/${token}`)
   })
 
   it('CA-438: gerar de novo troca o token também na nuvem', async () => {
@@ -261,7 +269,7 @@ describe('Criar e gerar de novo o link (D-103)', () => {
     nuvem.linhas = [linhaDe(antigo)]
     cartao(repo)
 
-    await usuario.click(await screen.findByRole('button', { name: /Gerar link novo/ }))
+    await trocarOEndereco(usuario, 'find')
 
     const novo = repo.porCaso('c1')?.token
     expect(novo).not.toBe(antigo.token)
@@ -280,7 +288,7 @@ describe('Criar e gerar de novo o link (D-103)', () => {
 
     // O paciente marca no celular enquanto o plano está aberto aqui.
     nuvem.linhas = [{ ...linhaDe(antigo), marcacoes: SEMANA_EM_DIA }]
-    await usuario.click(screen.getByRole('button', { name: /Gerar link novo/ }))
+    await trocarOEndereco(usuario)
 
     await waitFor(() => expect(nuvem.linhas[0]?.['token']).toBe(repo.porCaso('c1')?.token))
     expect(nuvem.linhas[0]?.['marcacoes']).toEqual(SEMANA_EM_DIA)
@@ -352,7 +360,7 @@ describe('Criar e gerar de novo o link (D-103)', () => {
     await waitFor(() => expect(nuvem.chamadas).toContain('select'))
 
     nuvem.falha.upsert = true
-    await usuario.click(screen.getByRole('button', { name: /Gerar link novo/ }))
+    await trocarOEndereco(usuario)
 
     expect(await screen.findByText(NAO_SALVOU)).toBeInTheDocument()
     expect(repo.estaNaNuvem(antigo.id)).toBe(true)
@@ -549,7 +557,7 @@ describe('Adesão lê a nuvem (D-104, D-105)', () => {
     nuvem.linhas = [laNaNuvem]
     cartao(repo)
 
-    await waitFor(() => expect((screen.getByLabelText('Endereço do link') as HTMLInputElement).value).toContain('#/missoes/outrotokenxyz9'))
+    await waitFor(() => expect((screen.getByLabelText('Endereço do link') as HTMLInputElement).value).toContain('/p/outrotokenxyz9'))
     expect(repo.porId(aqui.id)?.nome).toBe('Ana Souza')
     expect(nuvem.linhas).toEqual([laNaNuvem])
   })
@@ -729,7 +737,7 @@ describe('Mudança que não chegou à nuvem fica pendente (CB-108)', () => {
     await waitFor(() => expect(nuvem.chamadas).toContain('select'))
 
     nuvem.falha.upsert = true
-    await usuario.click(screen.getByRole('button', { name: /Gerar link novo/ }))
+    await trocarOEndereco(usuario)
     expect(await screen.findByText(NAO_SALVOU)).toBeInTheDocument()
     const novo = repo.porCaso('c1')?.token
     expect(novo).not.toBe(antigo.token)
@@ -758,7 +766,7 @@ describe('Mudança que não chegou à nuvem fica pendente (CB-108)', () => {
     await waitFor(() => expect(nuvem.chamadas).toContain('select'))
 
     nuvem.falha.upsert = true
-    await usuario.click(screen.getByRole('button', { name: /Gerar link novo/ }))
+    await trocarOEndereco(usuario)
     expect(await screen.findByText(NAO_SALVOU)).toBeInTheDocument()
     const novo = repo.porCaso('c1')?.token
 
@@ -814,14 +822,14 @@ describe('Corridas entre a leitura e o que a nutricionista faz', () => {
 
     // A leitura já tirou a foto (token antigo). A nutricionista gera o link novo; a gravação
     // espera a leitura terminar, e a resposta velha não passa por cima do link novo.
-    await usuario.click(screen.getByRole('button', { name: /Gerar link novo/ }))
+    await trocarOEndereco(usuario)
     const novo = repo.porCaso('c1')?.token
 
     await soltarUm()
 
     await waitFor(() => expect(nuvem.linhas[0]?.['token']).toBe(novo))
     expect(repo.porCaso('c1')?.token).toBe(novo)
-    expect((screen.getByLabelText('Endereço do link') as HTMLInputElement).value).toContain(`#/missoes/${novo}`)
+    expect((screen.getByLabelText('Endereço do link') as HTMLInputElement).value).toContain(`/p/${novo}`)
   })
 
   it('remover durante a subida de um link não o traz de volta', async () => {
@@ -910,7 +918,7 @@ describe('Gravação do link e leitura em andamento', () => {
     // A leitura manda de novo a mudança pendente; o pedido está a caminho.
     await waitFor(() => expect(nuvem.soltar).toHaveLength(1))
 
-    await usuario.click(screen.getByRole('button', { name: /Gerar link novo/ }))
+    await trocarOEndereco(usuario)
     const novo = repo.porCaso('c1')?.token
     await assentar()
 

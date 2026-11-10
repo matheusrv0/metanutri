@@ -28,8 +28,8 @@ describe('a receita no Meu plano', () => {
     const cafe = within(screen.getByRole('region', { name: '07:00 Café da manhã' }))
     expect(cafe.getByText('1 unidade')).toBeInTheDocument()
     expect(cafe.getByText('Panqueca de banana')).toBeInTheDocument()
-    // Uma quantidade só (spec conduta-da-nutricionista, D-297).
-    expect(cafe.getByRole('listitem')).toHaveTextContent(/^1 unidadePanqueca de banana$/)
+    // Uma quantidade só (spec conduta-da-nutricionista, D-297), à direita do nome (spec lado-do-paciente, D-1206).
+    expect(cafe.getByRole('listitem')).toHaveTextContent(/^Panqueca de banana1 unidade$/)
   })
 
   it('CA-971 (integracao-rodada-1910): receita com o nome de um prato da base mostra a porção, como a folha', () => {
@@ -41,7 +41,7 @@ describe('a receita no Meu plano', () => {
     }
     render(<MeuPlano dieta={dieta} primeiroNome="Ana" />)
     const almoco = within(screen.getByRole('region', { name: '12:00 Almoço' }))
-    expect(almoco.getByRole('listitem')).toHaveTextContent(/^1 porçãoFeijoada$/)
+    expect(almoco.getByRole('listitem')).toHaveTextContent(/^Feijoada1 porção$/)
   })
 
   it('CA-884: a seção Receitas traz a receita inteira e, depois, o texto livre', () => {
@@ -52,9 +52,9 @@ describe('a receita no Meu plano', () => {
     // Os ingredientes seguem as regras da folha, como os itens da refeição (spec revisao-geral-publica, D-231): o nome
     // para o paciente e a quantidade da folha, que é o que a folha impressa já mostra na seção Receitas.
     expect(within(receita).getAllByRole('listitem').map((li) => li.textContent)).toEqual([
-      '2 unidadesBanana prata',
+      '2 unidades Banana prata',
       // D-434 (correção A): 2 ovos são 90 g, a mais de 5% dos 100 g da receita.
-      '100 g (cerca de 2 unidades)Ovo',
+      '100 g (cerca de 2 unidades) Ovo',
     ])
     expect(within(receita).getByText(/Amasse a banana/)).toHaveClass('whitespace-pre-wrap')
     expect(secao.textContent?.indexOf('Suco verde')).toBeGreaterThan(secao.textContent?.indexOf('Amasse a banana') ?? Infinity)
@@ -76,6 +76,6 @@ describe('a receita no Meu plano', () => {
       copiadaEm: '2026-10-20',
     }
     render(<MeuPlano dieta={semCampo} primeiroNome="Ana" />)
-    expect(within(screen.getByRole('region', { name: '12:00 Almoço' })).getByRole('listitem')).toHaveTextContent(/^150 gArroz branco cozido$/)
+    expect(within(screen.getByRole('region', { name: '12:00 Almoço' })).getByRole('listitem')).toHaveTextContent(/^Arroz branco cozido150 g$/)
   })
 })

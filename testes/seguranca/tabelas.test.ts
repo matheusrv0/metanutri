@@ -30,6 +30,11 @@ const MUDANCA: Readonly<Record<string, Readonly<Record<string, unknown>>>> = {
   chamadas_da_cobranca: { tipo: 'conferir' },
   uso_da_ia: { status: 'erro', custo_microdolares: 0 },
   marcas: { cor: '#7a2944', logo: null },
+  config_de_emails: { nome: 'mudado pelo atacante', resumo_da_adesao: false },
+  emails_dos_links: { email: 'atacante@exemplo.com', parou_tudo_em: '2026-01-01T00:00:00Z' },
+  aceites: { saiu_em: '2026-01-01T00:00:00Z' },
+  chaves_de_aviso: { usado_em: '2026-01-01T00:00:00Z' },
+  envios: { estado: 'falhou' },
 }
 
 /** Uma linha nova em nome da vítima, em cada tabela. */
@@ -57,6 +62,16 @@ function linhaEmNomeDa(conta: string, tabela: string): Readonly<Record<string, u
       return { nutricionista_id: conta, modo: 'gerar', status: 'reservado', consentimento_declarado: true }
     case 'marcas':
       return { nutricionista_id: conta, cor: '#7a2944' }
+    case 'config_de_emails':
+      return { nutricionista_id: conta, nome: 'invasor' }
+    case 'emails_dos_links':
+      return { link_id: crypto.randomUUID(), nutricionista_id: conta, email: 'invasor@exemplo.com', email_hash: 'a'.repeat(64) }
+    case 'aceites':
+      return { nutricionista_id: conta, tipo: 'semana', email_hash: 'a'.repeat(64) }
+    case 'chaves_de_aviso':
+      return { chave: 'A'.repeat(32), nutricionista_id: conta, tipo: 'sair', avisos: ['semana'] }
+    case 'envios':
+      return { nutricionista_id: conta, tipo: 'A2', email_hash: 'a'.repeat(64), assunto: 'invasor', estado: 'enviado' }
     default:
       throw new Error(`tabela sem linha de ataque: ${tabela}`)
   }
@@ -75,6 +90,10 @@ describe('controle: o cenário não é vazio', () => {
     ['perfis', 'id'],
     ['pedidos_estudante', 'usuario'],
     ['marcas', 'nutricionista_id'],
+    ['config_de_emails', 'nutricionista_id'],
+    ['emails_dos_links', 'nutricionista_id'],
+    ['aceites', 'nutricionista_id'],
+    ['envios', 'nutricionista_id'],
   ] as const)('a própria vítima lê a linha dela em %s com o mesmo filtro do ataque', async (tabela, dono) => {
     const r = await c.vitima.cliente.from(tabela).select('*').eq(dono, c.vitima.id)
     expect(r.error).toBeNull()
@@ -130,6 +149,9 @@ describe('CA-488: uma conta não lê, não muda, não apaga e não cria dado de 
     ['administradores', 'usuario', { usuario: '00000000-0000-0000-0000-000000000000' }],
     ['dominios_faculdade', 'dominio', { dominio: 'gmail.com' }],
     ['avisos_da_operadora', 'topico', { topico: 'invasor', resultado: 'invasor' }],
+    ['supressao', 'email_hash', { email_hash: 'b'.repeat(64), motivo: 'queixa' }],
+    ['limites_de_envio', 'chave', { chave: 'invasor' }],
+    ['estado_dos_avisos', 'id', { id: 1, motivo: 'invasor' }],
   ]
   describe.each(FECHADAS)('%s (só o servidor)', (tabela, coluna, linha) => {
     it(`CA-488: ${tabela}: ninguém de fora lê, muda, apaga ou cria`, async () => {

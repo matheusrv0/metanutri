@@ -33,6 +33,8 @@ describe('a opção do item no Meu plano', () => {
     render(<MeuPlano dieta={DIETA} primeiroNome="Ana" />)
     const almoco = within(screen.getByRole('region', { name: '12:00 Almoço' }))
     const item = almoco.getByRole('listitem')
-    expect(item).toHaveTextContent(/^6 colheres de sopa \(150 g\)Arroz.*ou2 unidades e meia \(350 g\)Batata/)
+    // Na linha do Plano do link (spec lado-do-paciente, D-1206): o nome, as gramas à direita e a medida embaixo; a opção
+    // segue o mesmo desenho, depois do "ou".
+    expect(item).toHaveTextContent(/^Arroz.*150 g6 colheres de sopaouBatata.*350 g2 unidades e meia$/)
   })
 })
