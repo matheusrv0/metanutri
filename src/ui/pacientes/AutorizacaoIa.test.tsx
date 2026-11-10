@@ -22,4 +22,12 @@ describe('A autorização de IA na ficha (spec assistente-ia, CA-2376 e CA-2365)
     expect(aoBaixarTermo).toHaveBeenCalled()
     expect(screen.getByText(/Nome, contato e nascimento não vão\./)).toBeInTheDocument()
   })
+
+  it('CA-2411 (D-1361): o rótulo também liga e desliga, numa linha de 44 px', async () => {
+    const aoMudar = vi.fn()
+    render(<AutorizacaoIa consentimento={null} hoje="2026-11-03" aoMudar={aoMudar} aoBaixarTermo={vi.fn()} />)
+    await userEvent.setup().click(screen.getByText('Autorizou o uso de IA'))
+    expect(aoMudar).toHaveBeenLastCalledWith({ em: '2026-11-03', versao: 'ia-1' })
+    expect(screen.getByRole('switch', { name: 'Autorizou o uso de IA' }).parentElement?.className).toMatch(/min-h-11/)
+  })
 })

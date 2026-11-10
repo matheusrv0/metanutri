@@ -24,4 +24,15 @@ describe('AutorizacaoNaGaveta (spec assistente-ia, D-1304)', () => {
     await userEvent.setup().click(screen.getByRole('button', { name: 'Termo de autorização' }))
     expect(aoBaixarTermo).toHaveBeenCalled()
   })
+
+  it('CA-2411 (D-1361): o rótulo também liga e desliga, numa linha de 44 px; a chave tem a área de toque do sistema', async () => {
+    const aoMudar = vi.fn()
+    render(<AutorizacaoNaGaveta desde={null} aoMudar={aoMudar} />)
+    await userEvent.setup().click(screen.getByText('Paciente autorizou o uso de IA'))
+    expect(aoMudar).toHaveBeenLastCalledWith(true)
+    const chave = screen.getByRole('switch', { name: 'Paciente autorizou o uso de IA' })
+    expect(chave.parentElement?.className).toMatch(/min-h-11/)
+    // D-802: o desenho de 36 × 20 px com a área invisível de 48 × 48 px em volta.
+    expect(chave.className).toMatch(/before:-inset-y-3\.5/)
+  })
 })

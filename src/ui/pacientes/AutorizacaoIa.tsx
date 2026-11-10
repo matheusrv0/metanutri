@@ -21,14 +21,20 @@ export function AutorizacaoIa({ consentimento, hoje, aoMudar, aoBaixarTermo }: A
   const id = useId()
   return (
     <div className="flex flex-col gap-1.5 rounded-lg bg-surfacerow px-4 py-3 sm:col-span-2">
-      <div className="flex items-center justify-between gap-4">
+      {/* D-1361: o rótulo também liga e desliga, numa linha de 44 px; a chave tem a área de toque do sistema (D-802). */}
+      <div className="flex min-h-11 items-center justify-between gap-4">
         <p className="text-sm">
-          <span id={id} className="font-semibold text-heading">
+          <label id={id} htmlFor={`${id}-chave`} className="cursor-pointer font-semibold text-heading">
             Autorizou o uso de IA
-          </span>
+          </label>
           {consentimento ? <span className="ml-2 text-muted-foreground">{`Desde ${diaNaTela(consentimento.em)}`}</span> : null}
         </p>
-        <Switch checked={consentimento !== null} onCheckedChange={(ligada) => aoMudar(ligada ? autorizacaoDeIa(hoje) : null)} aria-labelledby={id} />
+        <Switch
+          id={`${id}-chave`}
+          checked={consentimento !== null}
+          onCheckedChange={(ligada) => aoMudar(ligada ? autorizacaoDeIa(hoje) : null)}
+          aria-labelledby={id}
+        />
       </div>
       <p className="text-sm text-muted-foreground">
         {O_QUE_VAI_A_IA}{' '}
