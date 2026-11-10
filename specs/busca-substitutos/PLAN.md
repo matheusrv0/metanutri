@@ -67,6 +67,12 @@ opção do item aparece embaixo dele no plano, na folha, no link e no Word.
 | T29 | A medida do leite e da bebida (B1) | `src/domain/busca.ts` (`medidaParaMostrar` aceita, sem mudar quem já a chama, um filtro das medidas), `src/domain/liquido.ts` (a bebida de soja e o leite semidesnatado em ml), `src/domain/buscaDeSubstitutos.ts` (a porção do líquido em copo ou ml); testes: `buscaDeSubstitutos.test.ts` (CA-2149) | CA-2149 | T28 |
 | T30 | O toque de 44 px no "Adicionar em" do Cobrir (recomendação leve 2 da rodada 3: o mesmo defeito da T25, na gaveta do Cobrir; fora da busca, D-802) | `src/ui/adequacao/GavetaCobrir.tsx` (a lista transparente cobre também a borda); teste: `e2e/celular-planejador.spec.ts` (M-010 mede o toque da lista) | D-802 | T29 |
 | T31 | Validação da rodada 3 | `npm run lint`, `npm run typecheck`, `npx vitest run --maxWorkers=4`; e2e `busca-substitutos`, `planejador` e `celular-planejador` (`--workers=2`, configuração normal, `trava-e2e`); `npm run build`; as sondas r2 e r3 (`r2-2` e `r2-4` valem pelas cópias `r3-2` e `r3-4`); a varredura da vista padrão antes e depois; prints (leite integral 150 ml, queijo minas, batata inglesa e arroz) | todos | T30 |
+| T32 | Spec e plano da rodada 4 | `specs/busca-substitutos/SPEC.md` (D-1125 a, D-1133, D-1134, D-1135, seção 3, CA-2126, CA-2136, CA-2148 revistos; D-1136 a D-1138 e CA-2150 a CA-2152 novos; nota "Para a Mor (rodada 4)"), `PLAN.md`; `src/domain/liquido.ts` (só o comentário do leite semidesnatado, recomendação leve 2) | — | T31 |
+| T33 | O macro dominante volta fora do leite e das verduras (M1) | `src/domain/grupoDeSubstituicao.ts` (`dispensaOMacroDominante` no lugar de `temGrupoConhecido`), `src/domain/buscaDeSubstitutos.ts` (`naTrocaEquivalente`); testes: `src/domain/trocaEquivalente.test.ts` (CA-2136 com a regra nova; CA-2150 novo; CA-2146 continua) | CA-2136, CA-2146, CA-2150 | T32 |
+| T34 | O mesmo alimento na verdura e nos sinônimos (B1) | `src/domain/buscaDeSubstitutos.ts` (`mesmoAlimentoDe` e `daMesmaFruta`); testes: `trocaEquivalente.test.ts` (CA-2148 revisto; CA-2151 novo) | CA-2148, CA-2151 | T33 |
+| T35 | A farinha de mandioca no grupo do arroz e da mandioca (B2) | `src/domain/grupoDeSubstituicao.ts` (o grupo `amido` e o "pronto por pronto"); testes: `src/domain/grupoDeSubstituicao.test.ts` e `trocaEquivalente.test.ts` (CA-2152 novo) | CA-2152 | T34 |
+| T36 | Os 44 px medidos com a gaveta parada (recomendação leve 1) | `e2e/busca-substitutos.spec.ts` (CA-2126 espera a animação de subida terminar antes de medir; o limite continua 44 px). O componente já tem `min-h-11` (44 px, valor inteiro): os 43,99997 px são erro de arredondamento da medida no meio da animação, e não altura do componente | CA-2126 | T35 |
+| T37 | Validação da rodada 4 | `npm run lint`, `npm run typecheck`, `npx vitest run --maxWorkers=4`; e2e `busca-substitutos`, `planejador` e `celular-planejador` (`--workers=2`, configuração normal, `trava-e2e`); `npm run build`; as sondas r2 (pelas cópias `r3-2` e `r3-4`), r3 e r4; a varredura da vista padrão (sem candidato, com 1 ou 2, e o macro trocado nos 6 primeiros das carnes e das castanhas) | todos | T36 |
 
 ## Verificação de cada tarefa
 
@@ -100,6 +106,15 @@ opção do item aparece embaixo dele no plano, na folha, no link e no Word.
    o leite semidesnatado em ml **em todo o app** (plano, folha, link), não só na busca: é a regra D-378 de sempre, que
    esses dois nomes não pegavam. A T30 mexe no Cobrir (fora desta spec), porque é o mesmo defeito de 2 px da T25 e a
    correção é de uma linha.
+
+   **Rodada 4 (T32 a T37).** A D-1136 estreita a D-1133: o macro dominante só deixa de valer no leite e no iogurte, nas
+   verduras e no derivado de soja entre as leguminosas (o tofu). **Decisão para revisar:** o pedido da rodada era "só o
+   leite e as verduras", mas também manter o tofu com o tremoço (CA-2146, sonda `r4-1`). O tofu é de gordura e o tremoço,
+   de carboidrato; com a regra (a) em toda a leguminosa, o tofu fica sem nenhum substituto (como em 10cabdd8). A saída
+   foi dispensar a regra só para o derivado de soja (a lista de equivalentes põe a soja com os feijões), e não para as
+   leguminosas inteiras. A D-1137 junta as variedades da verdura e dois sinônimos (mexerica e tangerina; o tofu da TACO e
+   o da base ampliada). A D-1138 põe a farinha de mandioca no `amido`: ela passa a aparecer também no lugar do arroz e da
+   mandioca. A T36 não muda o componente: a chave já tem `min-h-11` (44 px), e o teste passa a medir com a gaveta parada.
 
 1. **A coluna do Resumo do dia desce enquanto o painel está aberto (D-1116).** Pôr o painel exatamente no lugar dela
    exigiria mexer em `AreaDeTrabalho.tsx`, que dois ramos em andamento estão mudando. `TelaPlano` ocupa as duas colunas

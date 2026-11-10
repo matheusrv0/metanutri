@@ -1,6 +1,7 @@
 // Líquido sai em ml (spec alimentos-e-gramaturas, D-378): leite, bebida, suco e alimento próprio cadastrado em ml.
-// Densidade 1: 1 g = 1 ml, como a POF e a rotina de consultório tratam leite e suco. A bebida de soja e o leite
-// semidesnatado da base ampliada também (spec busca-substitutos, D-1135): saíam em gramas ao lado do leite em ml.
+// Densidade 1: 1 g = 1 ml, como a POF e a rotina de consultório tratam leite e suco. A bebida de soja também (spec
+// busca-substitutos, D-1135): saía em gramas ao lado do leite em ml. O leite semidesnatado da base ampliada já sai em ml
+// pelo arquivo da base (`ml: true`); o nome dele está aqui para valer também fora dela.
 import type { Alimento } from './tipos.ts'
 
 const LIQUIDO_PELO_NOME =
