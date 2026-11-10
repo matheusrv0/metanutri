@@ -214,6 +214,16 @@ era da junção com a `main`). Decididas no "apenas faça", pela fonte de cada p
 | D-1528 | **Data local** (B5): plano sem data da consulta usa o dia da última alteração no relógio de quem usa (`diaLocal`), na lista "Avaliação de", na barra, no Histórico e no documento; o "Ver exemplo" nasce com a data da consulta do dia local | Depois das 21h de Brasília, o UTC já é o dia seguinte; a mesma correção da CB-1448 |
 | D-1529 | **Duas avaliações no mesmo dia na lista** (B6): "Avaliação de 03/11/2026 · 1ª do dia" e "Avaliação de 03/11/2026 · 2ª do dia", na ordem do Histórico (a alterada por último é a 2ª, CB-1440); avaliação sozinha no dia fica sem o sufixo | O app não guarda a hora da consulta; a hora da última alteração mudaria a cada número digitado |
 
+### Correções da revisão r2 (D-1500 a D-1502, 10/11/2026)
+
+A revisão r2 aprovou a F1 com dois achados baixos (B1-r2 e B2-r2) e uma recomendação de data em UTC fora da tela nova.
+
+| # | Decisão | Motivo |
+|---|---|---|
+| D-1500 | **O campo da suprailíaca da etapa 1 é um só** (B1-r2): quando a dobra que a conta usa muda (apagar a de linha não informada num plano antigo), o mesmo campo troca só o rótulo e a dobra que grava; o foco e o que se digita depois ficam nele | Antes, o campo era desmontado e montado de novo, o foco ia para a página e o que se digitava se perdia |
+| D-1501 | **A meta de perda pelo sexo** (B2-r2; completa a D-1527): "Idosa com IMC de 22 ou menos...", "Idosa com IMC na faixa de referência..." e "Idosa com IMC de 27 a 29,99: a ESPEN..." numa mulher; "Idoso ..." num homem. A meta só sai com sexo (a prioridade pede o sexo) | Contrato do dono; CB-1411 |
+| D-1502 | **Data local no gráfico de peso da ficha**: plano sem data da consulta usa o dia da última alteração no relógio de quem usa (`diaLocal`), como a D-1528 | Depois das 21h de Brasília, o UTC já é o dia seguinte |
+
 ## 3. Critérios de aceite
 
 ### Lugar e navegação
@@ -600,6 +610,17 @@ Os casos que provam as decisões D-1520 a D-1529.
 - **CB-1489** · **Duas avaliações no mesmo dia** (B6, D-1529): a lista "Avaliação de" mostra "Avaliação de 03/11/2026 ·
   1ª do dia" e "Avaliação de 03/11/2026 · 2ª do dia", a 2ª sendo a alterada por último; a de outro dia fica sem
   sufixo; o texto inteiro cabe de 360 a 412 px (CB-1452).
+
+### Correções da revisão r2 (CB-1460 a CB-1462, 10/11/2026)
+
+- **CB-1460** · **Apagar a suprailíaca na etapa 1** (B1-r2, D-1500): mulher, JP 3, plano antigo com a suprailíaca de linha
+  não informada 18; ela apaga o número e digita "19": o foco fica no campo, que passa a "Suprailíaca · axilar anterior"
+  com "19", e o plano grava `suprailiacaAnt` 19 e `suprailiaca` vazia.
+- **CB-1461** · **Idosa sem meta de perda** (B2-r2, D-1501): mulher de 65 anos com IMC 24 e objetivo "emagrecer": "Idosa
+  com IMC na faixa de referência (> 22 e < 27, SISVAN): sem meta de perda de peso."; com IMC 22 ou menos, "Idosa com IMC
+  de 22 ou menos..."; com IMC de 27 a 29,99, o aviso "Idosa com IMC de 27 a 29,99: a ESPEN...". No homem, "Idoso".
+- **CB-1462** · **Gráfico de peso da ficha às 21h30 de Brasília** (D-1502): o plano sem data da consulta alterado às 21h30
+  de 03/11 (00h30 UTC de 04/11) vira ponto de 03/11.
 
 ## 5. O que fica para a Mor e para o dono
 

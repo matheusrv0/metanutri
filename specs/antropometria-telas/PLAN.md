@@ -1,7 +1,7 @@
 # PLAN — Antropometria completa: as telas
 
 **Spec de origem:** `./SPEC.md` (D-1400 a D-1460, CA-2400 a CA-2491, CB-1400 a CB-1417; correções da revisão r1:
-D-1520 a D-1529 e CB-1480 a CB-1489).
+D-1520 a D-1529 e CB-1480 a CB-1489; da revisão r2: D-1500 a D-1502 e CB-1460 a CB-1462).
 **Motor:** `specs/antropometria-completa/` (D-1000 a D-1042), na `main` desde o 8a96bc8.
 **Protótipo aprovado:** `AvaliacaoAntropometrica.dc.html`, `HistoricoAntropometrico.dc.html` e
 `DocumentoAvaliacao.dc.html` (canvas "MetaNutri Redesenho", 03/11/2026).
@@ -138,6 +138,9 @@ LEIA-ME (DP-AT-9). Na tela, um componente por arquivo, em `src/ui/antropometria/
 | R4 | Revisão r1, B2: texto do motor pelo sexo | `src/domain/prioridadeClinica.ts`, `metaDePerda.ts`, `pontoDePartida.ts`, `textosDaAvaliacao.ts` (o filtro da nota do idoso) (+ testes) | CB-1487, D-1527 | T20 |
 | R5 | Revisão r1, B5: data local no plano sem data da consulta | `src/domain/avaliacoesDoPaciente.ts`, `TelaAntropometria.tsx`, `src/ui/AreaDeTrabalho.tsx` ("Ver exemplo") (+ testes) | CB-1488, D-1528 | T20 |
 | R6 | Revisão r1, B6: duas avaliações no mesmo dia na lista | `src/domain/avaliacoesDoPaciente.ts` (o rótulo), `BarraDaAvaliacao.tsx` (+ testes) | CB-1489, D-1529 | R5 |
+| R7 | Revisão r2, B1-r2: o foco na suprailíaca da etapa 1 | `src/ui/caso/CamposComposicao.tsx` (`key` fixa da posição) (+ teste em `etapa1Antropometria.test.tsx`) | CB-1460, D-1500 | R1 |
+| R8 | Revisão r2, B2-r2: a meta de perda pelo sexo | `src/domain/metaDePerda.ts` (+ teste em `metaDePerda.test.ts`) | CB-1461, D-1501 | R4 |
+| R9 | Data local no gráfico de peso da ficha | `src/ui/pacientes/TelaPaciente.tsx` (+ teste) | CB-1462, D-1502 | R5 |
 | T26 | Validação | este plano (checklist e matriz), prints | todos | T3 a T25 |
 | T27 | **F3, bloqueada:** "Enviar por e-mail" | (quando o Resend do `lado-do-paciente` entrar) | D-1460 | infraestrutura do Resend |
 
