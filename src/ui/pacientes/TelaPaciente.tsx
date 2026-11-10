@@ -3,6 +3,7 @@ import { useId, useMemo, useState } from 'react'
 import { diaLocal } from '@/domain/acompanhamento.ts'
 import { resumoDaAdesao } from '@/domain/adesaoNoRetorno.ts'
 import type { AssinaturaDoPlano } from '@/domain/assinaturaDoPlano.ts'
+import { dataDaAvaliacao } from '@/domain/avaliacoesDoPaciente.ts'
 import { perfilDaFicha } from '@/domain/fichaNoPlano.ts'
 import type { Paciente } from '@/domain/pacientes.ts'
 import { ultimoLinkPorPaciente } from '@/domain/retorno.ts'
@@ -71,8 +72,8 @@ export function TelaPaciente({
       .map((resumo) => {
         const registro = repoCasos.obter(resumo.id)
         const peso = registro?.caso.pesoKg ?? null
-        const data = registro?.caso.dataConsulta ?? resumo.atualizadoEm.slice(0, 10)
-        return peso === null ? null : { data, pesoKg: peso }
+        // Spec antropometria-telas, D-1502: sem data da consulta, o dia da última alteração no relógio de quem usa.
+        return peso === null || !registro ? null : { data: dataDaAvaliacao(registro), pesoKg: peso }
       })
       .filter((p): p is PontoEvolucao => p !== null)
       .sort((a, b) => a.data.localeCompare(b.data))

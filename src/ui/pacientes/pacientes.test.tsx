@@ -164,6 +164,28 @@ describe('Pacientes', () => {
     expect(copia?.estaturaCm ?? null).toBe(estatura)
   })
 
+  it('CB-1462 (spec antropometria-telas, D-1502): plano sem data da consulta alterado às 21h30 vira ponto do dia de quem usa', () => {
+    const armazenamento = new MemoriaFalsa()
+    const pacientes = criarRepositorioPacientes(armazenamento, { agora: relogio(), gerarId: () => 'p1' })
+    pacientes.criar('Maria')
+    // 21h30 no relógio de quem usa: em Brasília, 00h30 UTC do dia seguinte.
+    const casos = criarRepositorio(armazenamento, { agora: () => new Date(2026, 10, 3, 21, 30).toISOString() })
+    const antes = casos.criar('Maria, 1ª')
+    casos.salvar({ ...antes, caso: { ...antes.caso, pacienteId: 'p1', pesoKg: 64, dataConsulta: '2026-10-01' } })
+    const noite = casos.criar('Maria, 2ª')
+    casos.salvar({ ...noite, caso: { ...noite.caso, pacienteId: 'p1', pesoKg: 62, dataConsulta: null } })
+    render(
+      <ProvedorCasos repositorio={casos}>
+        <ProvedorPacientes repositorio={pacientes}>
+          <TelaPaciente pacienteId="p1" aoAbrirPlano={vi.fn()} aoNovoPlano={vi.fn()} aoVoltar={vi.fn()} />
+        </ProvedorPacientes>
+      </ProvedorCasos>,
+    )
+    const grafico = screen.getByRole('img', { name: 'Evolução do peso ao longo dos planos' })
+    expect(within(grafico).getByText('03/11')).toBeInTheDocument()
+    expect(within(grafico).queryByText('04/11')).not.toBeInTheDocument()
+  })
+
   it('DP-26 (spec dados-na-nuvem): o paciente que não existe mais pode ter sido excluído em outra aba ou em outro aparelho', () => {
     montar(<TelaPaciente pacienteId="nao-existe" aoAbrirPlano={vi.fn()} aoNovoPlano={vi.fn()} aoVoltar={vi.fn()} />)
     expect(screen.getByText('Este paciente não existe mais. Ele pode ter sido excluído em outra aba ou em outro aparelho.')).toBeInTheDocument()
