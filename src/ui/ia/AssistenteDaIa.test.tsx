@@ -66,6 +66,9 @@ function Tela({
       <button type="button" onClick={() => setPlano((p) => ({ refeicoes: p.refeicoes.slice(1) }))}>
         mexer no plano
       </button>
+      <button type="button" onClick={() => setPaciente((p) => (p ? { ...p, consentimentoIa: null } : p))}>
+        revogar na ficha
+      </button>
       <AssistenteDaIa
         caso={caso}
         aoAlterarCaso={(m) => setCaso((c) => ({ ...c, ...m }))}
@@ -432,5 +435,54 @@ describe('AssistenteDaIa: o erro numa região que já existe (CA-2410, D-1364)',
     await usuario.click(within(gaveta).getByRole('button', { name: 'Sugerir plano' }))
     await waitFor(() => expect(regiao).toHaveTextContent('As sugestões com IA estão indisponíveis agora. Tente mais tarde.'))
     expect(regiao.isConnected).toBe(true)
+  })
+})
+
+describe('AssistenteDaIa: "Gerar de novo" e a proposta vazia (CA-2414, CA-2415, D-1365)', () => {
+  it('CA-2414: com a autorização revogada, "Gerar de novo" desliga com o motivo e nada é pedido', async () => {
+    const usuario = userEvent.setup()
+    const deps = dependencias()
+    montar(deps)
+    await usuario.click(screen.getByRole('button', { name: 'Sugerir plano com IA' }))
+    await usuario.click(screen.getByRole('button', { name: 'Sugerir plano' }))
+    const gerar = await screen.findByRole('button', { name: 'Gerar de novo' })
+    expect(gerar).toBeEnabled()
+    await usuario.click(screen.getByRole('button', { name: 'revogar na ficha' }))
+    expect(gerar).toBeDisabled()
+    expect(screen.getByText('Registre na ficha a autorização do paciente.')).toBeInTheDocument()
+    const pedidos = vi.mocked(deps.chamar).mock.calls.filter(([, c]) => c['modo'] === 'gerar').length
+    await usuario.click(gerar)
+    expect(vi.mocked(deps.chamar).mock.calls.filter(([, c]) => c['modo'] === 'gerar')).toHaveLength(pedidos)
+  })
+
+  it('CA-2414: depois do erro, "Tentar de novo" também confere a autorização', async () => {
+    const usuario = userEvent.setup()
+    const deps: DependenciasDaSugestao = {
+      chamar: vi.fn(async (_n: string, c: Record<string, unknown>) =>
+        c['modo'] === 'uso' ? { dados: { uso: USO }, falha: null } : { dados: null, falha: { status: 504, codigo: 'demorou', erro: null } },
+      ),
+      salvarAgora: vi.fn(async () => true),
+      online: () => true,
+    }
+    montar(deps)
+    await usuario.click(screen.getByRole('button', { name: 'Sugerir plano com IA' }))
+    await usuario.click(screen.getByRole('button', { name: 'Sugerir plano' }))
+    const tentar = await screen.findByRole('button', { name: 'Tentar de novo' })
+    await usuario.click(screen.getByRole('button', { name: 'revogar na ficha' }))
+    expect(tentar).toBeDisabled()
+    expect(screen.getByText('Registre na ficha a autorização do paciente.')).toBeInTheDocument()
+  })
+
+  it('CA-2415: a proposta em que a conferência retirou todos os itens não pode ser usada', async () => {
+    const usuario = userEvent.setup()
+    // Só leite, e a gestante tem alergia a leite: a conferência 2 retira tudo.
+    const soLeite = { refeicoes: [{ refeicao: 0, principal: [{ alimentoId: 458, gramas: 200 }], opcao2: [] }], mudancas: [], pontosAConfirmar: [] }
+    montar(dependencias(soLeite), PLANO_VAZIO)
+    await usuario.click(screen.getByRole('button', { name: 'Sugerir plano com IA' }))
+    await usuario.click(screen.getByRole('button', { name: 'Sugerir plano' }))
+    const usar = await screen.findByRole('button', { name: 'Usar como rascunho' })
+    expect(usar).toBeDisabled()
+    expect(screen.getByText('A conferência retirou todos os itens. Gere de novo.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Gerar de novo' })).toBeEnabled()
   })
 })

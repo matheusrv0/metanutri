@@ -91,6 +91,7 @@ interface AssistenteDaIaProps {
 const PLANO_MUDOU: Erro = { frase: 'O plano mudou enquanto a IA respondia. Gere de novo.', acao: 'tentar' }
 const SEM_REFEICAO = 'Deixe ao menos uma refeição.'
 const CORRIJA_A_META = 'Corrija a meta de energia.'
+const PROPOSTA_VAZIA = 'A conferência retirou todos os itens. Gere de novo.'
 const RASCUNHO = 'Sugestão da IA no plano, como rascunho.'
 
 const idNovo = () => globalThis.crypto.randomUUID()
@@ -279,6 +280,8 @@ export function AssistenteDaIa(p: AssistenteDaIaProps) {
     void sugestao.pedir(corpo, contexto)
   }
   const deNovo = () => {
+    // D-1365: "Gerar de novo" e "Tentar de novo" conferem a autorização, quem pode e o limite antes de pedir.
+    if (motivoDaGaveta) return
     if (!pedido) return pedir()
     setRecusadas(new Set())
     setConfirmando(false)
@@ -298,7 +301,7 @@ export function AssistenteDaIa(p: AssistenteDaIaProps) {
   const marcarIa = (modelo: string) => ({ em: hoje, modelo: modelo || 'claude' })
   const usar = () => {
     // D-1356: a proposta pedida para outro caso ou paciente não entra neste plano.
-    if (!proposta || !resposta || pedido?.dono !== dono) return
+    if (!proposta || !resposta || pedido?.dono !== dono || proposta.refeicoes.every((r) => r.principal.length === 0)) return
     if (temItens(plano) && !confirmando) return setConfirmando(true)
     setDesfazer({ dono, plano, origemIa: caso.origemIa, texto: RASCUNHO })
     p.aoAlterarPlano(propostaParaPlano(proposta, idNovo))
@@ -363,13 +366,15 @@ export function AssistenteDaIa(p: AssistenteDaIaProps) {
             Voltar ao pedido
           </Button>
         ) : erro.acao === 'tentar' ? (
-          <Button onClick={erro === PLANO_MUDOU ? pedir : deNovo}>Tentar de novo</Button>
+          <Button disabled={motivoDaGaveta !== null} onClick={erro === PLANO_MUDOU ? pedir : deNovo}>
+            Tentar de novo
+          </Button>
         ) : (
           <Button variant="secondary" onClick={fechar}>
             Fechar
           </Button>
         )
-      rodape = <RodapeDaIa acoes={acao} contador={contador} />
+      rodape = <RodapeDaIa acoes={acao} motivo={erro.acao === 'tentar' ? motivoDaGaveta : null} contador={contador} />
     } else if (resposta && !p.basePronta) {
       // CB-1307: o id da base ampliada seria "fora da base" por engano; a conferência espera por ela.
       corpo = (
@@ -380,6 +385,8 @@ export function AssistenteDaIa(p: AssistenteDaIaProps) {
       rodape = <RodapeDaIa acoes={null} contador={contador} />
     } else if (proposta) {
       corpo = <PropostaDaIa proposta={proposta} />
+      // D-1365: a proposta sem nenhum item na opção principal deixaria o plano vazio e marcado como da IA.
+      const vazia = proposta.refeicoes.every((r) => r.principal.length === 0)
       rodape = confirmando ? (
         <div role="alertdialog" aria-labelledby="confirmar-substituir" className="flex flex-col gap-2.5">
           <p id="confirmar-substituir" className="text-sm font-semibold text-heading">
@@ -397,8 +404,10 @@ export function AssistenteDaIa(p: AssistenteDaIaProps) {
         <RodapeDaIa
           acoes={
             <>
-              <Button onClick={usar}>Usar como rascunho</Button>
-              <Button variant="secondary" onClick={deNovo}>
+              <Button disabled={vazia} onClick={usar}>
+                Usar como rascunho
+              </Button>
+              <Button variant="outline" disabled={motivoDaGaveta !== null} onClick={deNovo}>
                 Gerar de novo
               </Button>
               <Button variant="outline" onClick={fechar}>
@@ -406,6 +415,7 @@ export function AssistenteDaIa(p: AssistenteDaIaProps) {
               </Button>
             </>
           }
+          motivo={motivoDaGaveta ?? (vazia ? PROPOSTA_VAZIA : null)}
           contador={contador}
         />
       )
@@ -418,7 +428,7 @@ export function AssistenteDaIa(p: AssistenteDaIaProps) {
               <Button disabled={aceitas.size === 0} onClick={aplicar}>
                 {aceitas.size === 1 ? 'Aplicar 1 mudança' : `Aplicar ${aceitas.size} mudanças`}
               </Button>
-              <Button variant="secondary" onClick={deNovo}>
+              <Button variant="outline" disabled={motivoDaGaveta !== null} onClick={deNovo}>
                 Gerar de novo
               </Button>
               <Button variant="outline" onClick={fechar}>
@@ -426,6 +436,7 @@ export function AssistenteDaIa(p: AssistenteDaIaProps) {
               </Button>
             </>
           }
+          motivo={motivoDaGaveta}
           contador={contador}
         />
       )
