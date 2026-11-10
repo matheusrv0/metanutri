@@ -2,6 +2,7 @@
 // lista que abre sozinha (o macro dominante marcado, "Só do mesmo grupo" ligado). As regras se conferem aqui por fórmula,
 // sem as funções do código: o macro dominante pelos fatores de Atwater (4, 4 e 9 kcal/g), a energia na porção pela regra
 // de três e o pó pelo nome. Rodada 3 (04/11/2026): D-1133, o macro dominante só fora dos grupos da seção 3 da spec.
+// Rodada 4 (10/11/2026): D-1136, o macro dominante em todo grupo, menos no leite, na verdura e no derivado de soja.
 import arquivo from '../data/base-ampliada.json'
 import { decodificarBaseAmpliada, type ArquivoBaseAmpliada } from './baseAmpliada.ts'
 import { buscarSubstitutos, ENERGIA_QUASE_ZERO_KCAL, mesmoAlimentoDe, naTrocaEquivalente, nutrienteInicial, textoDaPorcao, type Candidato } from './buscaDeSubstitutos.ts'
@@ -43,13 +44,19 @@ function vista(base: Alimento, gramas: number, nutrientes: readonly ChaveNutrien
 /** Os grupos da tabela da seção 3 da spec (D-1108); fora deles, "os demais", o grupo da tabela de composição. */
 const GRUPOS_DA_SECAO_3: ReadonlySet<string> = new Set(['amido', 'pao', 'cereal-do-cafe', 'leguminosa', 'carne', 'ovo-queijo', 'leite', 'fruta', 'verdura', 'oleaginosa'])
 const noGrupoDaSecao3 = (a: Alimento): boolean => GRUPOS_DA_SECAO_3.has(grupoDeSubstituicao(a).id)
+/** D-1136: os grupos em que a lista de equivalentes junta macros diferentes; e o derivado de soja entre as leguminosas. */
+const DERIVADO_DE_SOJA = /^Soja,|(^|[\s,(])tofu($|[\s,)])/i
+const semOMacro = (a: Alimento): boolean => {
+  const grupo = grupoDeSubstituicao(a).id
+  return grupo === 'leite' || grupo === 'verdura' || (grupo === 'leguminosa' && DERIVADO_DE_SOJA.test(a.descricao))
+}
 
 /** O que fura alguma das três regras, para a mensagem do teste. */
 function foraDaTroca(base: Alimento, gramas: number, c: Candidato): string | null {
   const a = c.alimento
-  // D-1133: a regra (a) só quando o grupo do item ou do candidato é desconhecido.
-  const valeOMacro = !noGrupoDaSecao3(base) || !noGrupoDaSecao3(a)
-  if (valeOMacro && macroPelaFormula(a) !== macroPelaFormula(base)) return 'macro dominante diferente, fora dos grupos da seção 3'
+  // D-1136: a regra (a) em todo grupo, menos no leite, na verdura e no derivado de soja.
+  const valeOMacro = !semOMacro(base) && !semOMacro(a)
+  if (valeOMacro && macroPelaFormula(a) !== macroPelaFormula(base)) return 'macro dominante diferente, fora do leite, da verdura e da soja'
   const kBase = base.nutrientes.energia_kcal
   if (kBase !== null && kBase > 4) {
     const k = energiaNaPorcao(a, c.gramas)
@@ -58,6 +65,9 @@ function foraDaTroca(base: Alimento, gramas: number, c: Candidato): string | nul
     if (k < kItem / 2 - 1e-9 || k > 2 * kItem + 1e-9) return `energia ×${(k / kItem).toFixed(2)}`
   }
   if (emPoOuSeco(a) && !emPoOuSeco(base)) return 'pó ou desidratado no lugar de quem não é'
+  // D-1136, regra (d): nas carnes, a proteína da porção até 1,5 vez a do item.
+  const pItem = ((base.nutrientes.proteina_g ?? 0) * gramas) / 100
+  if (grupoDeSubstituicao(base).id === 'carne' && pItem > 0 && ((a.nutrientes.proteina_g ?? 0) * c.gramas) / 100 > 1.5 * pItem + 1e-9) return 'proteína acima de 1,5 vez, nas carnes'
   return null
 }
 
@@ -99,7 +109,7 @@ describe('D-1125: a troca equivalente no mesmo grupo', () => {
     }
   })
 
-  it('CA-2136 e CB-1111: toda a TACO e a base ampliada como item, com 1 e 2 nutrientes, cumprem as três regras (a regra a, só fora dos grupos)', () => {
+  it('CA-2136 e CB-1111: toda a TACO e a base ampliada como item, com 1 e 2 nutrientes, cumprem as quatro regras (a regra a, menos no leite, na verdura e na soja; a d, nas carnes)', () => {
     const erros = new Map<string, string>()
     let candidatos = 0
     const bases = [...ALIMENTOS, ...alimentosParaSugerir().filter((a) => a.id > 100_000)]
@@ -313,6 +323,67 @@ describe('D-1133: o grupo da tabela já diz que a troca é equivalente', () => {
     const mesmaEnergia = ((frango.nutrientes.energia_kcal ?? 0) * 100) / (quibebe.nutrientes.energia_kcal ?? 1)
     expect(naTrocaEquivalente(frango, 100)(quibebe, mesmaEnergia)).toBe(false)
     expect(nomes('Frango, com açafrão', 100, 'lipideos_g')).not.toContain('Quibebe')
+  })
+})
+
+describe('D-1136 (rodada 4): o macro dominante volta fora do leite, da verdura e da soja', () => {
+  const seis = (nome: string, gramas: number): readonly Candidato[] => vista(porNome(nome), gramas).slice(0, 6)
+  const comOutroMacro = (base: Alimento, candidatos: readonly Candidato[]): string[] =>
+    candidatos.filter((c) => macroPelaFormula(c.alimento) !== macroPelaFormula(base)).map((c) => `${c.alimento.descricao.trim()} · ${textoDaPorcao(c)}`)
+
+  it.each([
+    ['Carne, bovina, cupim, assado', 100],
+    ['Carne, bovina, picanha, com gordura, grelhada', 100],
+    ['Carne, bovina, costela, assada', 100],
+    ['Frango, sobrecoxa, com pele, assada', 100],
+    ['Salmão, sem pele, fresco, grelhado', 100],
+    ['Castanha-do-Brasil, crua', 15],
+    ['Castanha-de-caju, torrada, salgada', 20],
+    ['Amendoim, torrado, salgado', 30],
+  ] as const)('CA-2150: %s %i g, vista padrão: os 6 primeiros têm o mesmo macro dominante do item', (nome, gramas) => {
+    const outros = comOutroMacro(porNome(nome), seis(nome, gramas))
+    expect(outros, outros.join(' | ')).toEqual([])
+  })
+
+  it('CA-2150: no cupim assado 100 g, nenhum dos 6 primeiros passa de 1,5 vez a proteína dele', () => {
+    const cupim = porNome('Carne, bovina, cupim, assado')
+    const proteina = cupim.nutrientes.proteina_g ?? 0
+    const demais = seis('Carne, bovina, cupim, assado', 100)
+      .filter((c) => ((c.alimento.nutrientes.proteina_g ?? 0) * c.gramas) / 100 > 1.5 * proteina)
+      .map((c) => `${c.alimento.descricao.trim()} · ${textoDaPorcao(c)}`)
+    expect(demais, demais.join(' | ')).toEqual([])
+  })
+
+  it('CA-2150: em toda a TACO, nenhum item das carnes e das castanhas tem, nos 6 primeiros, um candidato de outro macro', () => {
+    const erros: string[] = []
+    for (const base of ALIMENTOS.filter((a) => ehPrescritivel(a) && a.nutrientes.energia_kcal)) {
+      if (!['carne', 'oleaginosa'].includes(grupoDeSubstituicao(base).id)) continue
+      const outros = comOutroMacro(base, vista(base, 100).slice(0, 6))
+      if (outros.length > 0) erros.push(`${base.descricao.trim()} → ${outros.join(' | ')}`)
+    }
+    expect(erros.slice(0, 10), `${erros.length} itens`).toEqual([])
+  }, 120_000)
+
+  it('CA-2150: a regra (a) não vale no leite, na verdura e no tofu, e vale nas carnes, nas castanhas e nas frutas', () => {
+    const leite = porNome('Leite, de vaca, integral')
+    const soja = porNome('Soja, extrato solúvel, natural, fluido')
+    const tofu = porNome('Soja, queijo (tofu)')
+    const tremoco = porNome('Tremoço, em conserva')
+    const cupim = porNome('Carne, bovina, cupim, assado')
+    const patinho = porNome('Carne, bovina, patinho, sem gordura, grelhado')
+    const castanha = porNome('Castanha-do-Brasil, crua')
+    const pupunha = porNome('Pupunha, cozida')
+    const maracuja = porNome('Maracujá, cru')
+    const tucuma = porNome('Tucumã, cru')
+    const mesmaEnergia = (x: Alimento, gx: number, y: Alimento) => ((x.nutrientes.energia_kcal ?? 0) * gx) / (y.nutrientes.energia_kcal ?? 1)
+    for (const [x, y] of [[leite, soja], [tofu, tremoco], [cupim, patinho], [castanha, pupunha], [maracuja, tucuma]] as const) {
+      expect(macroPelaFormula(x), `${x.descricao} × ${y.descricao}`).not.toBe(macroPelaFormula(y))
+    }
+    expect(naTrocaEquivalente(leite, 150)(soja, mesmaEnergia(leite, 150, soja))).toBe(true)
+    expect(naTrocaEquivalente(tofu, 100)(tremoco, mesmaEnergia(tofu, 100, tremoco))).toBe(true)
+    expect(naTrocaEquivalente(cupim, 100)(patinho, mesmaEnergia(cupim, 100, patinho))).toBe(false)
+    expect(naTrocaEquivalente(castanha, 15)(pupunha, mesmaEnergia(castanha, 15, pupunha))).toBe(false)
+    expect(naTrocaEquivalente(maracuja, 100)(tucuma, mesmaEnergia(maracuja, 100, tucuma))).toBe(false)
   })
 })
 

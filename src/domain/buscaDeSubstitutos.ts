@@ -4,7 +4,7 @@
 import { MICRONUTRIENTES_ADEQUACAO } from './adequacao.ts'
 import { MAXIMO_DE_PEDACOS, MEDIDAS_DE_CONTAR, medidaParaMostrar, medidasDoAlimento } from './busca.ts'
 import { posicaoNoConsumo } from './consumoPof.ts'
-import { ehFrutaInteira, ehSucoOuPolpaDeFruta, grupoDeSubstituicao, noMesmoGrupo, temGrupoConhecido } from './grupoDeSubstituicao.ts'
+import { dispensaOMacroDominante, ehFrutaInteira, ehSucoOuPolpaDeFruta, grupoDeSubstituicao, noMesmoGrupo } from './grupoDeSubstituicao.ts'
 import { ehLiquido, unidadeDo } from './liquido.ts'
 import { CAFE_OU_CHA, ehDeUsoComum, ehFrito, ehPoOuDesidratado, ehPratoComposto, ehProcessado, ehSegundaEscolha, ehUltraprocessado } from './prescritivel.ts'
 import { casaRestricao, comoRestricoes, ehNaoGosta, type RestricoesDoPaciente } from './restricoes.ts'
@@ -285,25 +285,35 @@ export const ENERGIA_QUASE_ZERO_KCAL = 4
 /** D-1125, regra b: a porção do candidato fica entre metade e o dobro da energia do item. */
 const MENOR_RAZAO_DE_ENERGIA = 0.5
 const MAIOR_RAZAO_DE_ENERGIA = 2
+/**
+ * D-1136, regra d: nas carnes, aves e peixes, a porção do candidato tem no máximo 1,5 vez a proteína da do item. No
+ * grupo das carnes e ovos da lista de equivalentes (Philippi et al., Rev. Nutr. 1999;12(1):65-80), o grupo é o da
+ * proteína: o cupim buscado pela gordura não troca por "contra-filé com gordura, 150 g", com 1,7 vez a proteína.
+ */
+const MAIOR_RAZAO_DE_PROTEINA_NA_CARNE = 1.5
 
 /**
  * D-1125: a troca equivalente no mesmo grupo, a lista de equivalentes (Philippi et al., "Pirâmide alimentar adaptada",
  * Rev. Nutr. 1999;12(1):65-80): o mesmo macro dominante das trocas da folha (a), a energia na porção entre metade e o
  * dobro (b) e o pó ou desidratado só no lugar de outro (c). A faixa de metade ao dobro é a tolerância desta busca, que
  * procura pelo nutriente: a energia só barra o absurdo ("leite em pó 526 g" no lugar de um copo de leite).
- * D-1133: a regra (a) vale só quando o grupo do item ou do candidato é desconhecido. Dentro de um grupo da tabela, o grupo
- * já diz que a troca é equivalente: o leite integral ("de gordura") troca com o desnatado e a bebida de soja ("de
- * carboidrato"), e as verduras, cujos macros são frações de grama, trocam entre si.
+ * D-1133 e D-1136: a regra (a) não vale nos leites, nas verduras e no derivado de soja, onde o grupo já diz que a troca é
+ * equivalente: o leite integral ("de gordura") troca com o desnatado e a bebida de soja ("de carboidrato"), as verduras,
+ * cujos macros são frações de grama, trocam entre si, e o tofu, com o tremoço. Nos outros grupos, ela vale. E, nas
+ * carnes, a regra (d) da D-1136: a proteína da porção até 1,5 vez a do item.
  */
 export function naTrocaEquivalente(base: Alimento, gramas: number): (candidato: Alimento, gramasDoCandidato: number) => boolean {
   const macro = macroDominante(base)
-  const itemNoGrupo = temGrupoConhecido(base)
+  const itemSemOMacro = dispensaOMacroDominante(base)
   const kcalPorCem = base.nutrientes.energia_kcal
   const energiaDoItem = kcalPorCem !== null && kcalPorCem > ENERGIA_QUASE_ZERO_KCAL ? (kcalPorCem * gramas) / 100 : null
   const baseEmPo = ehPoOuDesidratado(base)
+  const proteinaDoItem = ((base.nutrientes.proteina_g ?? 0) * gramas) / 100
+  const tetoDeProteina = grupoDeSubstituicao(base).id === 'carne' && proteinaDoItem > 0 ? MAIOR_RAZAO_DE_PROTEINA_NA_CARNE * proteinaDoItem : null
   return (a, gramasDoCandidato) => {
-    if (!(itemNoGrupo && temGrupoConhecido(a)) && macroDominante(a) !== macro) return false
+    if (!itemSemOMacro && !dispensaOMacroDominante(a) && macroDominante(a) !== macro) return false
     if (!baseEmPo && ehPoOuDesidratado(a)) return false
+    if (tetoDeProteina !== null && ((a.nutrientes.proteina_g ?? 0) * gramasDoCandidato) / 100 > tetoDeProteina + 1e-9) return false
     if (energiaDoItem === null) return true
     // CB-1111: sem energia na tabela, não dá para dizer que a troca é equivalente.
     const kcal = a.nutrientes.energia_kcal

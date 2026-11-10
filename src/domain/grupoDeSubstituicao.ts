@@ -66,12 +66,21 @@ export function grupoDeSubstituicao(a: Alimento): GrupoDeSubstituicao {
   return achado ? achado[0] : { id: a.categoria, nome: a.categoria.toLowerCase() }
 }
 
+/** O tofu e os outros derivados de soja, que a lista de equivalentes põe com os feijões. */
+const DERIVADO_DE_SOJA = /^Soja,|(^|[\s,(])tofu($|[\s,)])/i
+
 /**
- * D-1133: o alimento está num grupo da tabela da seção 3 da spec (a lista de equivalentes, Philippi et al., Rev. Nutr.
- * 1999;12(1):65-80), e não em "os demais", o grupo da tabela de composição. Dentro de um desses grupos, o grupo já diz que
- * a troca é equivalente.
+ * D-1133, estreitada pela D-1136 (spec busca-substitutos, revisão rodada 4, M1): os grupos em que a própria lista de
+ * equivalentes (Philippi et al., "Pirâmide alimentar adaptada", Rev. Nutr. 1999;12(1):65-80) junta alimentos de macro
+ * dominante diferente, e onde o grupo já diz que a troca é equivalente: os leites e iogurtes (o integral é "de gordura";
+ * o desnatado e a bebida de soja, "de carboidrato"), as verduras (macros em frações de grama) e, entre as leguminosas, o
+ * derivado de soja (o tofu, "de gordura", com o tremoço). Nos outros grupos, o macro dominante continua valendo: sem ele,
+ * o cupim trocava por 3 bifes de patinho, e a castanha pela pupunha.
  */
-export const temGrupoConhecido = (a: Alimento): boolean => GRUPOS.some(([, casa]) => casa(a))
+export function dispensaOMacroDominante(a: Alimento): boolean {
+  const grupo = grupoDeSubstituicao(a).id
+  return grupo === 'leite' || grupo === 'verdura' || (grupo === 'leguminosa' && DERIVADO_DE_SOJA.test(a.descricao))
+}
 
 /**
  * A forma do ovo, entre ovos: ovo inteiro só por ovo inteiro, gema só por gema, clara só por clara (duas gemas não são um ovo,
