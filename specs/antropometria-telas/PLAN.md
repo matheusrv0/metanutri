@@ -2,7 +2,7 @@
 
 **Spec de origem:** `./SPEC.md` (D-1400 a D-1460, CA-2400 a CA-2491, CB-1400 a CB-1417; correções da revisão r1:
 D-1520 a D-1529 e CB-1480 a CB-1489; da revisão r2: D-1500 a D-1502 e CB-1460 a CB-1462; da implementação da F2: D-1503 a D-1513 e CB-1463 a CB-1466; da revisão r1 da F2: D-1530 a D-1538 e CB-1467 a
-CB-1475).
+CB-1475; da revisão r2 da F2: D-1546 a D-1549 e CB-1496 a CB-1498).
 **Motor:** `specs/antropometria-completa/` (D-1000 a D-1042), na `main` desde o 8a96bc8.
 **Protótipo aprovado:** `AvaliacaoAntropometrica.dc.html`, `HistoricoAntropometrico.dc.html` e
 `DocumentoAvaliacao.dc.html` (canvas "MetaNutri Redesenho", 03/11/2026).
@@ -98,19 +98,25 @@ LEIA-ME (DP-AT-9). Na tela, um componente por arquivo, em `src/ui/antropometria/
 
 ## Riscos
 
-- **R-AT-1** · O SQL 018 precisa rodar **antes** de publicar a F2; sem ele, o envio de foto falha com "Entre de novo para
-  enviar fotos." (a política não existe). A F1 não depende dele.
+- **R-AT-1** · O SQL 018 precisa rodar **antes** de publicar a F2; sem ele, o envio de foto falha com "Não foi possível
+  enviar agora. Tente de novo." (o balde não existe, D-1547). A F1 não depende dele.
 - **R-AT-2** · A exclusão da conta apaga as fotos pela função `excluir-conta`: ela precisa ser publicada de novo junto com
   o site (o código da função muda).
 - **R-AT-3** · Outros ramos mexem em `AreaDeTrabalho.tsx`, `navegacao.ts`, `MenuLateral.tsx`, `tipos.ts` e nos testes de
   segurança: o merge tem conflito pequeno e previsível (linhas acrescentadas em pontos diferentes).
 - **R-AT-4** · Portas e `node_modules/.tmp` divididos com outros agentes: `npm run e2e` e `npm run test:seguranca` podem
   cair por porta ocupada; repetir.
-- **R-AT-5** · **A conta com 500 MB** (D-1531) recebe a frase de sessão ("Entre de novo para enviar fotos."): o app não soma
-  a conta inteira, e o armazenamento devolve a mesma resposta (500, código 23514) para toda recusa do gatilho. Raro (cerca
-  de 300 avaliações com 5 fotos); se acontecer, o dono vê o uso no painel do Supabase. Uma função de uso da conta resolve
-  depois, se precisar.
+- **R-AT-5** · **A conta com 500 MB ou 2.000 arquivos** (D-1531, D-1546 e D-1547): o gatilho recusa com o código 53100, e
+  o app diz "O espaço de fotos da conta acabou." (revisão r2 da F2, M1: antes, "Entre de novo para enviar fotos."). O app
+  depende de o armazenamento pôr o código na mensagem ("database error, code: 53100"), como faz o local
+  (`storage-api` v1.79); se a produção mudar isso, a conta cheia cai na frase genérica ("Não foi possível enviar agora.
+  Tente de novo."), nunca na de sessão. O 018 desta versão precisa rodar de novo na produção para o código novo valer.
+  Raro (cerca de 300 avaliações com 5 fotos); o app não mostra quanto da conta já foi usado.
 - **R-AT-6** · **Cache do navegador** (D-1537) e **sem `nosniff`** (D-1535): riscos aceitos, escritos na spec.
+- **R-AT-7** · **Envio retomável (TUS) pela metade** (D-1549, revisão r2 da F2, B2): risco aceito. Os bytes de um envio
+  não terminado ficam no disco do armazenamento sem linha no banco, fora dos tetos; ninguém os lê, e o custo é só de
+  armazenamento. **Para o dono conferir:** no painel do Supabase, "Storage > S3 Connection" desligado (o envio em
+  partes do S3 tem o mesmo jeito; no local está desligado, no `config.toml`).
 
 ## Ordem e dependências
 
@@ -162,6 +168,9 @@ LEIA-ME (DP-AT-9). Na tela, um componente por arquivo, em `src/ui/antropometria/
 | R15 | Revisão r1 da F2, B3: a exclusão espera o armazenamento; o arquivo solto volta à lista | `src/domain/fotosDaAvaliacao.ts` (`religarSoltos`), `CartaoFotos.tsx`, `armazenamentoDeFotos.ts`, `src/ui/casos/TelaCasos.tsx`, `src/ui/pacientes/TelaPaciente.tsx` (+ testes) | CB-1471, CB-1472, D-1534 | R11, R14 |
 | R16 | Revisão r1 da F2, B4: o tipo no servidor | `supabase/018-fotos-avaliacao.sql` (o caminho, o balde e o gatilho), `src/data/sqlFotosAvaliacao.test.ts`, `testes/seguranca/fotos.test.ts` | CB-1473, D-1535 | R11 |
 | R17 | Revisão r1 da F2, B7: "Comparar fotos" sem `aria-pressed` | `CartaoFotos.tsx` (+ teste) | CB-1475, D-1538 | T25 |
+| R18 | Revisão r2 da F2, M1: o código próprio da conta cheia no servidor | `supabase/018-fotos-avaliacao.sql` (o gatilho e o cabeçalho), `src/data/sqlFotosAvaliacao.test.ts`, `testes/seguranca/fotos.test.ts` | CB-1496, D-1546 | R16 |
+| R19 | Revisão r2 da F2, M1: a frase de cada recusa no app | `src/domain/fotosDaAvaliacao.ts` (`ResultadoDoEnvio`, `FRASES`, `subir`), `src/ui/antropometria/armazenamentoDeFotos.ts` (`recusaDoArmazenamento`) (+ `fotosDaAvaliacao.test.ts`, `armazenamentoDeFotos.test.ts`, `fotos.test.tsx`) | CB-1496, CB-1497, CB-1415, D-1547 | R18 |
+| R20 | Revisão r2 da F2, B1: marcar a autorização tira o alerta | `CartaoFotos.tsx` (+ `fotos.test.tsx`) | CB-1498, D-1548 | R10 |
 | T26 | Validação | este plano (checklist e matriz), prints | todos | T3 a T25 |
 | T27 | **F3, bloqueada:** "Enviar por e-mail" | (quando o Resend do `lado-do-paciente` entrar) | D-1460 | infraestrutura do Resend |
 
@@ -312,6 +321,21 @@ A revisão r1 da F2 reprovou por M1 e M2; os baixos B1 a B7 entram junto. B6 é 
 - **R16** · A função da política aceita só `anexos/<uuid>.pdf`; o balde, só `image/jpeg` e `application/pdf`; o gatilho,
   com o tipo na linha, exige `image/jpeg` em `fotos/` e `application/pdf` em `anexos/`, exatos.
 - **R17** · Sem `aria-pressed`; o rótulo continua trocando.
+
+### R18 a R20 · Correções da revisão r2 da F2 (10/11/2026)
+
+A revisão r2 da F2 reprovou por M1; B1 entra junto, e B2 vira risco aceito (D-1549, R-AT-7), sem código. Cada correção
+é um commit, com o teste antes (TDD).
+
+- **R18** · No gatilho, a recusa dos 2.000 arquivos da conta sai do `if` das contagens do plano, e as duas recusas da
+  conta (2.000 arquivos e 500 MB) usam `errcode = '53100'`; as do plano (contagem, 8 MB) e a do tipo ficam com
+  `check_violation`. O cabeçalho do 018 diz a frase sem o 018. Ataque: com a conta em 500 MB e com 2.000 arquivos, a
+  recusa traz "code: 53100"; os 8 MB do plano trazem "code: 23514"; o token inválido volta com 401, 403 ou `InvalidJWT`.
+- **R19** · `ResultadoDoEnvio` ganha `sessao` e `conta-cheia`. A porta lê a recusa (`recusaDoArmazenamento`): sem
+  status, `sem-rede`; "code: 53100" na mensagem, `conta-cheia`; 401, 403 ou `InvalidJWT`, `sessao`; o resto,
+  `recusado`. `subir`: `conta-cheia` dá "O espaço de fotos da conta acabou."; `sessao`, a frase de sessão; `recusado`,
+  a leitura da pasta, e sem limite nem teto (ou sem ler), "Não foi possível enviar agora. Tente de novo.".
+- **R20** · Ao marcar a autorização, o alerta "Marque a autorização…" sai das fotos e dos anexos (só ele).
 
 ### T27 · F3 (bloqueada)
 
