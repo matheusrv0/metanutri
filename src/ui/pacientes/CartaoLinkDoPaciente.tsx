@@ -5,7 +5,7 @@ import { useId, useState } from 'react'
 import { regerarLink, MENSAGEM_MAXIMA, type Acompanhamento } from '@/domain/acompanhamento.ts'
 import { diaEMes, textoDoAcesso } from '@/domain/acessoDoLink.ts'
 import { copiarDieta, temDieta, type DietaDoPlano } from '@/domain/dietaDoLink.ts'
-import { pedirEnvio, type EmailsDoLink } from '@/domain/emailsDoLink.ts'
+import { emailDaFichaQueFunciona, pedirEnvio, type EmailsDoLink } from '@/domain/emailsDoLink.ts'
 import type { Paciente } from '@/domain/pacientes.ts'
 import { primeiroNome, textoDoLink } from '@/domain/whatsapp.ts'
 import { useAcompanhamentos } from '@/ui/estado/contextoAcompanhamentos.ts'
@@ -97,8 +97,9 @@ export function CartaoLinkDoPaciente({ paciente, link, planoNoLink, emails, aoMu
     else setStatus(motivo)
   }
 
-  // D-1215 e CA-2223: o endereço novo, com o S4 quando o link tem e-mail.
-  const trocarEndereco = async () => {
+  // D-1215, D-1248 e CA-2223: o endereço novo, com o S4 para o e-mail da ficha só com a caixa do diálogo marcada.
+  const fichaQueFunciona = emailDaFichaQueFunciona(emails)
+  const trocarEndereco = async (mandar: boolean) => {
     setTrocando(false)
     setCopiado(false)
     const novo = regerarLink(link, { missoes: link.missoes })
@@ -109,12 +110,13 @@ export function CartaoLinkDoPaciente({ paciente, link, planoNoLink, emails, aoMu
       setStatus(motivo)
       return
     }
-    if (emailQueFunciona === null) {
+    if (fichaQueFunciona === null || !mandar) {
       setStatus('Endereço trocado. Mande o novo pelo WhatsApp.')
+      aoMudarEmails()
       return
     }
     const envio = await pedirEnvio(cliente, 'trocou', novo.id)
-    setStatus(envio.ok ? `Endereço trocado. O novo foi para ${mascararEmail(emailQueFunciona)}.` : `Endereço trocado. ${envio.erro} Mande o novo pelo WhatsApp.`)
+    setStatus(envio.ok ? `Endereço trocado. O novo foi para ${mascararEmail(fichaQueFunciona)}.` : `Endereço trocado. ${envio.erro} Mande o novo pelo WhatsApp.`)
     aoMudarEmails()
   }
 
@@ -256,9 +258,8 @@ export function CartaoLinkDoPaciente({ paciente, link, planoNoLink, emails, aoMu
       <DialogoTrocarEndereco
         aberto={trocando}
         aoFechar={() => setTrocando(false)}
-        aoConfirmar={() => void trocarEndereco()}
-        primeiroNome={nome}
-        emailMascarado={emailQueFunciona ? mascararEmail(emailQueFunciona) : null}
+        aoConfirmar={(mandar) => void trocarEndereco(mandar)}
+        emailDaFicha={fichaQueFunciona ? mascararEmail(fichaQueFunciona) : null}
         ocupado={salvando}
       />
       {emailQueFunciona ? (

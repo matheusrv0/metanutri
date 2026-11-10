@@ -3,7 +3,7 @@
 //   - 'enviar': "E-mail" no cartão do link, o S2 (CA-2262); com avisos oferecidos e não aceitos, o bloco do convite
 //     (CA-2243), um por mês.
 //   - 'convite': "Enviar convite", o S2 com o pedido de aceite, um por mês (D-1227).
-//   - 'trocou': depois de "Trocar o endereço", o S4 (CA-2223).
+//   - 'trocou': depois de "Trocar o endereço", o S4 (CA-2223), só para o e-mail da ficha (D-1248).
 //   - 'atualizou': depois de "Atualizar com este plano", agenda (ou cancela) o A1 (CA-2249).
 // Até 30 envios de serviço por conta por dia (D-1237, CA-2262). Puro: o banco e o envio chegam de fora.
 import {
@@ -73,6 +73,7 @@ export async function enviarLink(pedido: PedidoDeEnvio, deps: DependenciasComuns
   const linha = await deps.banco.emailDoLink(link.id)
 
   if (acao === 'atualizou') return agendar(link, linha, corpo['avisar'] === true, deps)
+  if (acao === 'trocou') return trocou(link, nutri, linha, pedido.conta, deps)
 
   // Os motivos de não mandar vêm antes do limite da conta: o pedido que não sai não gasta um dos 30.
   if (!linha?.email || !linha.emailHash) return erro(SEM_EMAIL, 422)
@@ -93,7 +94,7 @@ export async function enviarLink(pedido: PedidoDeEnvio, deps: DependenciasComuns
   if (!(await deps.banco.anotarLimite(`conta:${pedido.conta}`, ENVIOS_POR_DIA_NA_CONTA, inicioDoDiaDeBrasilia(agora)))) return erro(LIMITE_DA_CONTA, 429)
 
   const convidar = acao === 'convite' || (acao === 'enviar' && !conviteRecente && naoAceitos.length > 0)
-  const item = acao === 'trocou' ? enderecoTrocado(link, nutri, linha, deps) : await planoEnviado(link, nutri, linha, convidar ? naoAceitos : [], deps)
+  const item = await planoEnviado(link, nutri, linha, convidar ? naoAceitos : [], deps)
   if ((await enviarServico([item], deps)) === 'fora') return erro(NAO_ENVIOU, 503)
   if (convidar) await deps.banco.marcarConvite(link.id, agora)
   return { status: 200, corpo: { enviadoPara: mascararEmail(linha.email), agendadoPara: null } }
@@ -155,11 +156,23 @@ async function planoEnviado(link: LinkDoBanco, nutri: DadosDaNutricionista, linh
   }
 }
 
-/** S4 (D-1215, CA-2223): o endereço novo, na hora. */
-function enderecoTrocado(link: LinkDoBanco, nutri: DadosDaNutricionista, linha: EmailDoLink, deps: DependenciasComuns): ItemDeServico {
+/**
+ * S4 (D-1215, D-1248, CA-2223 e CA-2293): o endereço novo, na hora, só para o e-mail da ficha. O e-mail que entrou pelo
+ * link pode ser de quem pegou o link que vazou; o da ficha é o que a nutricionista conferiu com o paciente.
+ */
+async function trocou(link: LinkDoBanco, nutri: DadosDaNutricionista, linha: EmailDoLink | null, conta: string, deps: DependenciasComuns): Promise<RespostaDaFuncao> {
+  const email = linha?.emailFicha ?? null
+  if (email === null) return erro(SEM_EMAIL, 422)
+  const emailHash = await deps.hash(email)
+  const suprimido = (await deps.banco.suprimidos([emailHash])).get(emailHash)
+  if (suprimido === 'devolvido') return erro(EMAIL_DEVOLVIDO, 422)
+  if (linha?.parouTudoEm || suprimido === 'queixa') return erro(`${quemE(link)} pediu para não receber e-mails.`, 409)
+  if (!(await deps.banco.anotarLimite(`conta:${conta}`, ENVIOS_POR_DIA_NA_CONTA, inicioDoDiaDeBrasilia(deps.agora())))) return erro(LIMITE_DA_CONTA, 429)
   const montado = emailEnderecoTrocado({ primeiroNome: primeiroNomeDoLink(link), remetente: remetenteDoLink(nutri, link), url: urlDoLink(deps.ambiente, link.token) })
-  return {
-    email: { ...montado, nomeDoRemetente: nomeDoRemetente(nutri), para: linha.email ?? '', responderPara: responderPara(nutri), tipo: 'S4' },
-    envios: [{ linkId: link.id, nutricionistaId: link.nutricionistaId, emailHash: linha.emailHash ?? '', contaNoTeto: true, extra: null }],
+  const item: ItemDeServico = {
+    email: { ...montado, nomeDoRemetente: nomeDoRemetente(nutri), para: email, responderPara: responderPara(nutri), tipo: 'S4' },
+    envios: [{ linkId: link.id, nutricionistaId: link.nutricionistaId, emailHash, contaNoTeto: true, extra: null }],
   }
+  if ((await enviarServico([item], deps)) === 'fora') return erro(NAO_ENVIOU, 503)
+  return { status: 200, corpo: { enviadoPara: mascararEmail(email), agendadoPara: null } }
 }

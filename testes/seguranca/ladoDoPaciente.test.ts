@@ -456,7 +456,7 @@ describe('"Trocar o endereço" corta quem tinha o link (revisão r1: CA-2289, CA
   it('CA-2293: a troca devolve o link ao e-mail da ficha, encerra o aceite do outro endereço e derruba a confirmação aberta', async () => {
     const lido = await c.vitima.cliente.rpc('emails_do_link', { p_link: fixo.id })
     expect(lido.error).toBeNull()
-    expect(lido.data).toMatchObject({ email: daFicha, origem: 'ficha', confirmado_em: null, pendentes: [] })
+    expect(lido.data).toMatchObject({ email: daFicha, email_ficha: daFicha, origem: 'ficha', confirmado_em: null, pendentes: [] })
     const aceites = await c.servico.from('aceites').select('tipo, email_hash, saiu_em').eq('link_id', fixo.id).order('tipo')
     expect(aceites.data).toEqual([
       { tipo: 'plano', email_hash: await hashDoEmail(daFicha), saiu_em: null },

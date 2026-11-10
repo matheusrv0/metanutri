@@ -123,11 +123,11 @@ describe('CA-2222: o plano novo de quem já tem link', () => {
 })
 
 describe('CA-2223: "Trocar o endereço"', () => {
-  it('CA-2223: com e-mail no link, o diálogo diz para onde vai o novo, e o S4 sai na hora', async () => {
+  it('CA-2223 e D-1248: com e-mail na ficha, a caixa "Mandar o endereço novo" vem desmarcada; marcada, o S4 sai na hora', async () => {
     const usuario = userEvent.setup()
     const repo = criarRepositorioAcompanhamentos(memoria())
     const fixo = repo.salvar(linkDe({ casoId: 'plano-1', pacienteId: 'pac-1', nome: 'Juliana', criadoEm: '2026-09-01T10:00:00.000Z' }))
-    const { cliente, chamadas } = emailsFalsos({ rpc: { emails_do_link: linhaDeEmails({ email: 'juliana@gmail.com' }) }, funcao: { 'enviar-link': { status: 200, corpo: { enviadoPara: 'j•••a@gmail.com' } } } })
+    const { cliente, chamadas } = emailsFalsos({ rpc: { emails_do_link: linhaDeEmails({ email: 'juliana@gmail.com', email_ficha: 'juliana@gmail.com' }) }, funcao: { 'enviar-link': { status: 200, corpo: { enviadoPara: 'j•••a@gmail.com' } } } })
     render(
       <Anfitriao repositorio={repo} cliente={cliente}>
         <CartaoLinkMissoes casoId="plano-1" pacienteId="pac-1" nome="Juliana Martins" missoes={MISSOES} hoje={HOJE} />
@@ -136,26 +136,66 @@ describe('CA-2223: "Trocar o endereço"', () => {
     await waitFor(() => expect(chamadas.some((c) => c.nome === 'emails_do_link')).toBe(true))
     await usuario.click(screen.getByRole('button', { name: 'Trocar o endereço' }))
     const dialogo = screen.getByRole('dialog', { name: 'Trocar o endereço?' })
-    expect(within(dialogo).getByText('O endereço atual deixa de abrir.')).toBeInTheDocument()
-    expect(within(dialogo).getByText('Juliana recebe o novo em j•••a@gmail.com.')).toBeInTheDocument()
+    expect(within(dialogo).getByText('O endereço atual deixa de abrir, e o link do paciente volta ao e-mail da ficha.')).toBeInTheDocument()
+    const caixa = within(dialogo).getByRole('checkbox', { name: 'Mandar o endereço novo para j•••a@gmail.com' })
+    expect(caixa).not.toBeChecked()
+    await usuario.click(caixa)
     await usuario.click(within(dialogo).getByRole('button', { name: 'Trocar o endereço' }))
     await waitFor(() => expect(repo.porId(fixo.id)?.token).not.toBe(fixo.token))
     await waitFor(() => expect(chamadas.find((c) => c.nome === 'enviar-link')?.corpo).toEqual({ acao: 'trocou', link: fixo.id }))
     expect(await screen.findByText('Endereço trocado. O novo foi para j•••a@gmail.com.')).toBeInTheDocument()
   })
 
-  it('CA-2223: sem e-mail, o diálogo oferece o WhatsApp, e nenhum e-mail sai', async () => {
+  it('D-1248: com a caixa desmarcada, o endereço troca e nenhum e-mail sai', async () => {
+    const usuario = userEvent.setup()
+    const repo = criarRepositorioAcompanhamentos(memoria())
+    const fixo = repo.salvar(linkDe({ casoId: 'plano-1', pacienteId: 'pac-1', nome: 'Juliana', criadoEm: '2026-09-01T10:00:00.000Z' }))
+    const { cliente, chamadas } = emailsFalsos({ rpc: { emails_do_link: linhaDeEmails({ email: 'juliana@gmail.com', email_ficha: 'juliana@gmail.com' }) } })
+    render(
+      <Anfitriao repositorio={repo} cliente={cliente}>
+        <CartaoLinkMissoes casoId="plano-1" pacienteId="pac-1" nome="Juliana Martins" missoes={MISSOES} hoje={HOJE} />
+      </Anfitriao>,
+    )
+    await waitFor(() => expect(chamadas.some((c) => c.nome === 'emails_do_link')).toBe(true))
+    await usuario.click(screen.getByRole('button', { name: 'Trocar o endereço' }))
+    await usuario.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Trocar o endereço' }))
+    await waitFor(() => expect(repo.porId(fixo.id)?.token).not.toBe(fixo.token))
+    expect(await screen.findByText('Endereço trocado. Mande o novo pelo WhatsApp.')).toBeInTheDocument()
+    expect(chamadas.some((c) => c.nome === 'enviar-link')).toBe(false)
+  })
+
+  it('D-1248: o e-mail que entrou pelo link não aparece no diálogo; a caixa é a do e-mail da ficha', async () => {
     const usuario = userEvent.setup()
     const repo = criarRepositorioAcompanhamentos(memoria())
     repo.salvar(linkDe({ casoId: 'plano-1', pacienteId: 'pac-1', nome: 'Juliana', criadoEm: '2026-09-01T10:00:00.000Z' }))
-    const { cliente, chamadas } = emailsFalsos({ rpc: { emails_do_link: linhaDeEmails({ email: null, origem: null }) } })
+    const { cliente, chamadas } = emailsFalsos({
+      rpc: { emails_do_link: linhaDeEmails({ email: 'quem.pegou@exemplo.org', origem: 'paciente', confirmado_em: '2026-11-02T10:00:00Z', email_ficha: 'juliana@gmail.com' }) },
+    })
+    render(
+      <Anfitriao repositorio={repo} cliente={cliente}>
+        <CartaoLinkMissoes casoId="plano-1" pacienteId="pac-1" nome="Juliana Martins" missoes={MISSOES} hoje={HOJE} />
+      </Anfitriao>,
+    )
+    await waitFor(() => expect(chamadas.some((c) => c.nome === 'emails_do_link')).toBe(true))
+    await usuario.click(screen.getByRole('button', { name: 'Trocar o endereço' }))
+    const dialogo = screen.getByRole('dialog', { name: 'Trocar o endereço?' })
+    expect(within(dialogo).getByRole('checkbox', { name: 'Mandar o endereço novo para j•••a@gmail.com' })).toBeInTheDocument()
+    expect(dialogo).not.toHaveTextContent('q•••u@exemplo.org')
+  })
+
+  it('CA-2223 e CB-1230: sem e-mail na ficha, o diálogo oferece o WhatsApp, e nenhum e-mail sai', async () => {
+    const usuario = userEvent.setup()
+    const repo = criarRepositorioAcompanhamentos(memoria())
+    repo.salvar(linkDe({ casoId: 'plano-1', pacienteId: 'pac-1', nome: 'Juliana', criadoEm: '2026-09-01T10:00:00.000Z' }))
+    const { cliente, chamadas } = emailsFalsos({ rpc: { emails_do_link: linhaDeEmails({ email: null, email_ficha: null, origem: null }) } })
     render(
       <Anfitriao repositorio={repo} cliente={cliente}>
         <CartaoLinkMissoes casoId="plano-1" pacienteId="pac-1" nome="Juliana" missoes={MISSOES} hoje={HOJE} />
       </Anfitriao>,
     )
     await usuario.click(screen.getByRole('button', { name: 'Trocar o endereço' }))
-    expect(within(screen.getByRole('dialog')).getByText('Sem e-mail que funcione: mande o novo pelo WhatsApp.')).toBeInTheDocument()
+    expect(within(screen.getByRole('dialog')).getByText('Sem e-mail na ficha: mande o novo pelo WhatsApp.')).toBeInTheDocument()
+    expect(within(screen.getByRole('dialog')).queryByRole('checkbox')).not.toBeInTheDocument()
     await usuario.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Trocar o endereço' }))
     expect(await screen.findByText('Endereço trocado. Mande o novo pelo WhatsApp.')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /WhatsApp/ })).toBeInTheDocument()
@@ -166,7 +206,7 @@ describe('CA-2223: "Trocar o endereço"', () => {
     const usuario = userEvent.setup()
     const repo = criarRepositorioAcompanhamentos(memoria())
     repo.salvar(linkDe({ casoId: 'plano-1', pacienteId: 'pac-1', nome: 'Pedro', criadoEm: '2026-09-01T10:00:00.000Z' }))
-    const { cliente, chamadas } = emailsFalsos({ rpc: { emails_do_link: linhaDeEmails({ email: 'pedro.alves@gmial.com', supressao: 'devolvido' }) } })
+    const { cliente, chamadas } = emailsFalsos({ rpc: { emails_do_link: linhaDeEmails({ email: 'pedro.alves@gmial.com', email_ficha: 'pedro.alves@gmial.com', supressao: 'devolvido' }) } })
     render(
       <Anfitriao repositorio={repo} cliente={cliente}>
         <CartaoLinkMissoes casoId="plano-1" pacienteId="pac-1" nome="Pedro" missoes={MISSOES} hoje={HOJE} />
@@ -174,7 +214,7 @@ describe('CA-2223: "Trocar o endereço"', () => {
     )
     await waitFor(() => expect(chamadas.some((c) => c.nome === 'emails_do_link')).toBe(true))
     await usuario.click(screen.getByRole('button', { name: 'Trocar o endereço' }))
-    expect(within(screen.getByRole('dialog')).getByText('Sem e-mail que funcione: mande o novo pelo WhatsApp.')).toBeInTheDocument()
+    expect(within(screen.getByRole('dialog')).getByText('Sem e-mail na ficha: mande o novo pelo WhatsApp.')).toBeInTheDocument()
   })
 })
 

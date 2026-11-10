@@ -28,7 +28,7 @@ import { ehTipoDeAviso, type TipoDeEmail } from './tipos.ts'
 const PAGINA = 1000
 
 const COLUNAS_DO_LINK = 'id, nutricionista_id, token, nome, criado_em, plano_em, ultimo_acesso, a1_para, substituido_por, uso_nao_comercial, marcacoes, missoes'
-const COLUNAS_DO_EMAIL = 'link_id, nutricionista_id, email, email_hash, origem, confirmado_em, oferta_plano, oferta_semana, oferta_lembrete, parou_tudo_em, convite_em'
+const COLUNAS_DO_EMAIL = 'link_id, nutricionista_id, email, email_hash, origem, email_ficha, confirmado_em, oferta_plano, oferta_semana, oferta_lembrete, parou_tudo_em, convite_em'
 const COLUNAS_DO_ACEITE = 'id, link_id, nutricionista_id, tipo, email_hash, aceito_em, dia_da_semana, saiu_em, pausado_em'
 const COLUNAS_DO_ENVIO = 'link_id, nutricionista_id, tipo, email_hash, estado, resend_id, chave_unica, dia, extra, criado_em'
 const COLUNAS_DA_CHAVE = 'chave, link_id, nutricionista_id, tipo, avisos, email_hash, email, criado_em, vence_em, usado_em, desfazer'
@@ -78,6 +78,7 @@ function paraEmail(l: Linha): EmailDoLink {
     email: texto(l['email']),
     emailHash: texto(l['email_hash']),
     origem: origem === 'ficha' || origem === 'paciente' ? origem : null,
+    emailFicha: texto(l['email_ficha']),
     confirmadoEm: texto(l['confirmado_em']),
     ofertas: { plano: l['oferta_plano'] !== false, semana: l['oferta_semana'] !== false, lembrete: l['oferta_lembrete'] !== false },
     parouTudoEm: texto(l['parou_tudo_em']),

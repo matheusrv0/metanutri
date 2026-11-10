@@ -38,6 +38,8 @@ export interface EmailDoLink {
   readonly email: string | null
   readonly emailHash: string | null
   readonly origem: 'ficha' | 'paciente' | null
+  /** O e-mail que a nutricionista registrou na ficha (D-1248: o S4 só vai para ele). */
+  readonly emailFicha: string | null
   /** Quando o paciente confirmou o e-mail que deu no link (D-1247); nulo no da ficha. */
   readonly confirmadoEm: string | null
   readonly ofertas: Ofertas

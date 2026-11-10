@@ -16,7 +16,7 @@ import {
 } from '@/domain/acompanhamento.ts'
 import { avisoLigado } from '@/domain/avisosNaFicha.ts'
 import { copiarDieta, dietaMudou, temDieta, type DietaDoPlano } from '@/domain/dietaDoLink.ts'
-import { pedirEnvio } from '@/domain/emailsDoLink.ts'
+import { emailDaFichaQueFunciona, pedirEnvio } from '@/domain/emailsDoLink.ts'
 import { dataCompleta } from '@/domain/formatarData.ts'
 import { LIMITE_DE_LINKS } from '@/domain/fonteSupabase.ts'
 import { atualizarComPlano, contarPacientesComLink, linkDoPaciente, precisaAtualizarComPlano, textoDoLimite } from '@/domain/linkFixo.ts'
@@ -111,7 +111,6 @@ export function CartaoLinkMissoes({
   const acompanhamento: Acompanhamento | null =
     (pacienteAtual ? linkDoPaciente(acompanhamentos, pacienteAtual, planos) : null) ?? acompanhamentos.find((a) => a.casoId === casoId) ?? null
   const { emails, recarregar: recarregarEmails } = useEmailsDoLink(acompanhamento?.id ?? null)
-  const emailQueFunciona = emails?.email && emails.supressao === null ? mascararEmail(emails.email) : null
   const nomeCurto = primeiroNome(nome)
   const podeAvisar = emails !== null && avisoLigado(emails, 'plano')
   const avisar = avisarEscolha ?? podeAvisar
@@ -134,10 +133,11 @@ export function CartaoLinkMissoes({
   }
 
   /**
-   * D-1215 e CA-2223: "Trocar o endereço" troca o token (o antigo deixa de abrir), com as missões do plano de agora.
-   * Com e-mail no link, o S4 sai na hora; sem, a frase manda usar o WhatsApp do cartão.
+   * D-1215, D-1248 e CA-2223: "Trocar o endereço" troca o token (o antigo deixa de abrir), com as missões do plano de
+   * agora. Com a caixa do diálogo marcada, o S4 sai na hora para o e-mail da ficha; sem, a frase manda usar o WhatsApp.
    */
-  const trocarEndereco = async () => {
+  const fichaQueFunciona = emailDaFichaQueFunciona(emails)
+  const trocarEndereco = async (mandar: boolean) => {
     if (!acompanhamento) return
     setTrocando(false)
     setCopiado(false)
@@ -145,12 +145,13 @@ export function CartaoLinkMissoes({
     const novo = { ...regerarLink(acompanhamento, { nome, missoes, ...dietaNova }), usoNaoComercial: acompanhamento.usoNaoComercial || naoComercial }
     const motivo = await gravar(novo)
     if (motivo !== null) return
-    if (emailQueFunciona === null) {
+    if (fichaQueFunciona === null || !mandar) {
       setDepoisDaTroca('Endereço trocado. Mande o novo pelo WhatsApp.')
+      recarregarEmails()
       return
     }
     const envio = await pedirEnvio(clienteDosEmails, 'trocou', novo.id)
-    setDepoisDaTroca(envio.ok ? `Endereço trocado. O novo foi para ${emailQueFunciona}.` : `Endereço trocado. ${envio.erro} Mande o novo pelo WhatsApp.`)
+    setDepoisDaTroca(envio.ok ? `Endereço trocado. O novo foi para ${mascararEmail(fichaQueFunciona)}.` : `Endereço trocado. ${envio.erro} Mande o novo pelo WhatsApp.`)
     recarregarEmails()
   }
 
@@ -384,9 +385,8 @@ export function CartaoLinkMissoes({
         <DialogoTrocarEndereco
           aberto={trocando}
           aoFechar={() => setTrocando(false)}
-          aoConfirmar={() => void trocarEndereco()}
-          primeiroNome={nomeCurto}
-          emailMascarado={emailQueFunciona}
+          aoConfirmar={(mandar) => void trocarEndereco(mandar)}
+          emailDaFicha={fichaQueFunciona ? mascararEmail(fichaQueFunciona) : null}
           ocupado={salvando}
         />
       }

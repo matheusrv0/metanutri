@@ -256,6 +256,8 @@ describe('banco: a troca do endereço corta quem tinha o link (017, revisão r1,
     expect(trocar).toContain("where e.link_id = new.id and e.origem = 'paciente'")
     expect(trocar).toMatch(/update public\.aceites x set saiu_em = now\(\)\s+where x\.link_id = new\.id and x\.saiu_em is null/)
     expect(trocar).toContain("delete from public.chaves_de_aviso k where k.link_id = new.id and k.tipo = 'aceite' and k.usado_em is null;")
+    // O diálogo da troca mostra o e-mail da ficha, o único que recebe o S4.
+    expect(funcao('create or replace function public.emails_do_link(p_link uuid)')).toContain("'email_ficha', e.email_ficha,")
   })
 
   it('CA-2290: a aba antiga não faz o endereço trocado voltar, e o app não escreve o corte', () => {

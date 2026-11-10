@@ -867,6 +867,8 @@ begin
   select coalesce((select c.oferecer_aos_novos from public.config_de_emails c where c.nutricionista_id = v_dono), true) into v_oferece;
   select jsonb_build_object(
            'email', e.email,
+           -- D-1248: o diálogo de troca mostra o e-mail da ficha (o S4 só vai para ele).
+           'email_ficha', e.email_ficha,
            'origem', e.origem,
            'confirmado_em', e.confirmado_em,
            'ofertas', jsonb_build_object(

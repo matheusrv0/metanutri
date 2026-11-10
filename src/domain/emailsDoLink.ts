@@ -194,6 +194,8 @@ export interface AceiteDoLink {
 /** O que a ficha sabe dos e-mails de um link (`emails_do_link`, supabase/017). */
 export interface EmailsDoLink {
   readonly email: string | null
+  /** O e-mail da ficha (D-1248: o S4 da troca do endereço só vai para ele). */
+  readonly emailFicha: string | null
   readonly origem: 'ficha' | 'paciente' | null
   readonly confirmadoEm: string | null
   /** Os interruptores da nutricionista (D-1227). */
@@ -210,8 +212,19 @@ export interface EmailsDoLink {
   readonly envios: readonly EnvioDoLink[]
 }
 
+/**
+ * D-1248: o e-mail da ficha que pode receber o S4 da troca do endereço; nulo sem ele, devolvido (quando é o do link) ou
+ * com o paciente fora dos e-mails do plano.
+ */
+export function emailDaFichaQueFunciona(emails: EmailsDoLink | null): string | null {
+  if (!emails?.emailFicha || emails.parouTudoEm !== null) return null
+  if (emails.email === emails.emailFicha && emails.supressao !== null) return null
+  return emails.emailFicha
+}
+
 export const SEM_EMAILS: EmailsDoLink = {
   email: null,
+  emailFicha: null,
   origem: null,
   confirmadoEm: null,
   ofertas: { plano: true, semana: true, lembrete: true },
@@ -243,6 +256,7 @@ export function lerEmailsDoLink(bruto: unknown): EmailsDoLink {
   })
   return {
     email: textoOuNulo(o['email']),
+    emailFicha: textoOuNulo(o['email_ficha']),
     origem: origem === 'ficha' || origem === 'paciente' ? origem : null,
     confirmadoEm: textoOuNulo(o['confirmado_em']),
     ofertas: { plano: ofertas['plano'] !== false, semana: ofertas['semana'] !== false, lembrete: ofertas['lembrete'] !== false },

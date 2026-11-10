@@ -2,6 +2,7 @@
 // A função enviar-link (spec lado-do-paciente): o S2, o convite, o S4 e o A1 agendado, pedidos pela nutricionista.
 import { beforeEach, describe, expect, it } from 'vitest'
 import { LIMITE_DA_CONTA, NAO_ENVIOU, type DependenciasComuns } from '../../supabase/functions/_shared/avisos/comum.ts'
+import { hashDoEmail } from '../../supabase/functions/_shared/avisos/email.ts'
 import { EMAIL_DEVOLVIDO, enviarLink, SEM_EMAIL } from '../../supabase/functions/_shared/avisos/enviarLink.ts'
 import { acertarRelogio, ANA, bancoFalso, comLink, dependencias, resendFalso, type EstadoFalso, type ResendFalso } from './servidorAvisosFalsos.test-utils.ts'
 
@@ -143,6 +144,23 @@ describe('"Trocar o endereço": o S4 (D-1215)', () => {
     expect(s4).toMatchObject({ tipo: 'S4', assunto: 'Seu link do plano mudou' })
     expect(s4?.texto).toContain('Abrir meu plano: https://app.metanutri.com.br/p/zr8mvq3cte5j')
     expect(s4?.cabecalhos).toBeUndefined()
+  })
+
+  it('CA-2293: o S4 vai só para o e-mail da ficha, nunca para o que entrou pelo link', async () => {
+    await comJuliana()
+    const linha = estado.emails.get(LINK)
+    if (linha) estado.emails.set(LINK, { ...linha, email: 'quem.pegou@exemplo.org', emailHash: await hashDoEmail('quem.pegou@exemplo.org'), origem: 'paciente', confirmadoEm: '2026-11-02T10:00:00Z' })
+    expect(await pedir('trocou')).toEqual({ status: 200, corpo: { enviadoPara: 'j•••s@gmail.com', agendadoPara: null } })
+    expect(resend.lotes[0]?.emails.map((e) => e.para)).toEqual(['juliana.martins@gmail.com'])
+    expect(estado.envios[0]).toMatchObject({ tipo: 'S4', emailHash: await hashDoEmail('juliana.martins@gmail.com') })
+  })
+
+  it('CB-1230: sem e-mail na ficha, o S4 não sai', async () => {
+    await comJuliana()
+    const linha = estado.emails.get(LINK)
+    if (linha) estado.emails.set(LINK, { ...linha, email: 'quem.pegou@exemplo.org', emailHash: await hashDoEmail('quem.pegou@exemplo.org'), origem: 'paciente', emailFicha: null })
+    expect(await pedir('trocou')).toEqual({ status: 422, corpo: { erro: SEM_EMAIL } })
+    expect(resend.lotes).toHaveLength(0)
   })
 })
 

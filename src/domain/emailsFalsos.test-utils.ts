@@ -57,6 +57,7 @@ export function emailsFalsos(opcoes: OpcoesDosEmailsFalsos = {}) {
 export function linhaDeEmails(dados: Readonly<Record<string, unknown>> = {}): Record<string, unknown> {
   return {
     email: 'juliana.martins@gmail.com',
+    email_ficha: 'juliana.martins@gmail.com',
     origem: 'ficha',
     confirmado_em: null,
     ofertas: { plano: true, semana: true, lembrete: true },
