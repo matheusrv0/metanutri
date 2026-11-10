@@ -5,7 +5,7 @@
 // Publicada com --no-verify-jwt: o paciente não tem conta. A recuperação confere a verificação contra robôs (Turnstile,
 // `TURNSTILE_SECRET_KEY`); o resto vale pelo token do link, como a tela do paciente.
 import { createClient } from 'npm:@supabase/supabase-js@2.117.2'
-import { dependenciasDoAmbiente, ipDoPedido } from '../_shared/avisos/ambiente.ts'
+import { dependenciasDoAmbiente, enderecoDoApp, ipDoPedido } from '../_shared/avisos/ambiente.ts'
 import { NAO_ENVIOU } from '../_shared/avisos/comum.ts'
 import { temServidorDeEmail } from '../_shared/avisos/dns.ts'
 import { meuLink } from '../_shared/avisos/meuLink.ts'
@@ -34,7 +34,8 @@ Deno.serve(async (req: Request) => {
       { metodo: req.method, corpo: lido.json, ip: ipDoPedido(req.headers) },
       {
         ...comuns,
-        turnstile: (token, ip) => turnstileConfere({ buscar, segredo: ler('TURNSTILE_SECRET_KEY')?.trim() || null, token, ip }),
+        // D-1251: o token só vale para a ação da recuperação e para o host do app.
+        turnstile: (token, ip) => turnstileConfere({ buscar, segredo: ler('TURNSTILE_SECRET_KEY')?.trim() || null, token, ip, host: new URL(enderecoDoApp(ler('ENDERECO_DO_APP'))).hostname }),
         temServidorDeEmail: (dominio) => temServidorDeEmail(dominio, buscar),
         ...(edge?.waitUntil ? { emSegundoPlano: (trabalho: Promise<unknown>) => edge.waitUntil?.(trabalho) } : {}),
       },

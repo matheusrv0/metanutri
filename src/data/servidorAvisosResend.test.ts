@@ -116,11 +116,12 @@ describe('o lote do Resend (CA-2275, CA-2276)', () => {
 describe('a verificação contra robôs (DP-LP-19)', () => {
   const pedir = (corpo: unknown, sobre: Partial<{ segredo: string | null; token: string | null }> = {}) => {
     const { buscar, pedidos } = buscarFalso([{ status: 200, corpo }])
-    return { pedidos, conferiu: turnstileConfere({ buscar, segredo: 'segredo', token: 'tok', ip: '200.1.2.3', ...sobre }) }
+    return { pedidos, conferiu: turnstileConfere({ buscar, segredo: 'segredo', token: 'tok', ip: '200.1.2.3', host: 'app.metanutri.com.br', ...sobre }) }
   }
+  const CERTO = { success: true, action: 'recuperar-link', hostname: 'app.metanutri.com.br' }
 
-  it('D-1220: confere o token no siteverify, com a ação recuperar-link', async () => {
-    const { pedidos, conferiu } = pedir({ success: true, action: 'recuperar-link' })
+  it('D-1220: confere o token no siteverify, com a ação recuperar-link e o host do app', async () => {
+    const { pedidos, conferiu } = pedir(CERTO)
     expect(await conferiu).toBe(true)
     expect(pedidos[0]?.url).toBe('https://challenges.cloudflare.com/turnstile/v0/siteverify')
     expect(pedidos[0]?.pedido.body).toBe('secret=segredo&response=tok&remoteip=200.1.2.3')
@@ -131,6 +132,15 @@ describe('a verificação contra robôs (DP-LP-19)', () => {
     expect(await pedir({ success: false }).conferiu).toBe(false)
     expect(await pedir({ success: true }, { segredo: null }).conferiu).toBe(false)
     expect(await pedir({ success: true }, { token: null }).conferiu).toBe(false)
+  })
+
+  it('CA-2296: token sem a ação, com outra ação ou de outro endereço não confere', async () => {
+    expect(await pedir({ ...CERTO, action: undefined }).conferiu).toBe(false)
+    expect(await pedir({ ...CERTO, action: '' }).conferiu).toBe(false)
+    expect(await pedir({ ...CERTO, action: 'entrar' }).conferiu).toBe(false)
+    expect(await pedir({ ...CERTO, hostname: 'outro-site.com' }).conferiu).toBe(false)
+    expect(await pedir({ ...CERTO, hostname: undefined }).conferiu).toBe(false)
+    expect(await pedir(CERTO, { segredo: null }).conferiu).toBe(false)
   })
 })
 
