@@ -178,9 +178,14 @@ async function confirmar(c: Contexto, pedidos: unknown, deps: DependenciasComuns
 /**
  * D-1258: o S1 para o e-mail que acabou de ser confirmado. O que não sai (o Resend fora, o teto, o banco) não desfaz a
  * confirmação (CB-1233): fica no registro, e o paciente pede de novo pelo "Receber" ou por "Recuperar meu link".
+ * D-1265 e CA-2312: o e-mail que volta (devolvido) não recebe nada; o marcado como spam recebe, porque foi ele que pediu.
  */
 async function mandarOLink(link: LinkDoBanco, nutri: DadosDaNutricionista, email: string, emailHash: string, deps: DependenciasComuns): Promise<void> {
   try {
+    if ((await deps.banco.suprimidos([emailHash])).get(emailHash) === 'devolvido') {
+      deps.log('O link do "Confirmar" não sai: o e-mail voltou.')
+      return
+    }
     if ((await enviarServico([itemDoLinkDoPlano(link, nutri, email, emailHash, deps)], deps)) !== 'enviado') deps.log('O link do "Confirmar" não saiu agora.')
   } catch {
     deps.log('O link do "Confirmar" falhou no meio.')

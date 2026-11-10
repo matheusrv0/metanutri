@@ -212,6 +212,24 @@ describe('o e-mail digitado no link só vale confirmado (D-1247)', () => {
     expect(estado.envios).toHaveLength(0)
   })
 
+  it('CA-2312: o e-mail digitado que voltou (devolvido) depois do pedido vale no link no "Confirmar", e nenhum e-mail sai para ele', async () => {
+    await comEmailPorConfirmar({ avisos: ['semana'] })
+    estado.supressao.set(await hashDoEmail(NOVO), 'devolvido')
+    const r = await pedir({ acao: 'confirmar', chave: DO_EMAIL, avisos: ['semana'] })
+    expect(r.status).toBe(200)
+    expect(r.corpo).toMatchObject({ feito: true })
+    expect(estado.emails.get('link-juliana')).toMatchObject({ email: NOVO, origem: 'paciente' })
+    expect(resend.lotes).toHaveLength(0)
+    expect(estado.envios).toHaveLength(0)
+  })
+
+  it('CA-2312: o marcado como spam (queixa) recebe o S1 do "Confirmar", porque foi ele que pediu no link', async () => {
+    await comEmailPorConfirmar()
+    estado.supressao.set(await hashDoEmail(NOVO), 'queixa')
+    await pedir({ acao: 'confirmar', chave: DO_EMAIL, avisos: [] })
+    expect(resend.lotes.flatMap((l) => l.emails).map((e) => [e.tipo, e.para])).toEqual([['S1', NOVO]])
+  })
+
   it('CA-2300: a confirmação pedida com o endereço de antes da troca não vale, nem para ler nem para confirmar', async () => {
     await comEmailPorConfirmar({ avisos: ['semana'] })
     const link = estado.links.get('link-juliana')
