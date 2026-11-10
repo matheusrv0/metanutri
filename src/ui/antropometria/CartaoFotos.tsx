@@ -264,7 +264,8 @@ export function CartaoFotos({ bruto, sexo, atual, anterior, aoAlterar, agora }: 
               onChange={(e) => void escolherFoto(e)}
             />
           </label>
-          <Button variant="outline" size="sm" aria-pressed={comparando} onClick={() => setComparando((c) => !c)}>
+          {/* D-1538: o rótulo troca ("Comparar fotos" e "Ver fotos de hoje"); com isso, sem aria-pressed. */}
+          <Button variant="outline" size="sm" onClick={() => setComparando((c) => !c)}>
             <Columns2 aria-hidden="true" />
             {comparando ? 'Ver fotos de hoje' : 'Comparar fotos'}
           </Button>

@@ -255,8 +255,18 @@ describe('Comparar fotos (CA-2486, CB-1412, CB-1466, D-1510)', () => {
     expect(regiao.getByText('−1,1 kg')).toBeInTheDocument()
     expect(regiao.getByText('72,6 → 71,5 kg')).toBeInTheDocument()
     expect(regiao.getByText('85,2 → 84,0 cm · dentro do erro de medida')).toBeInTheDocument()
-    expect(cartao().getByRole('button', { name: 'Ver fotos de hoje' })).toHaveAttribute('aria-pressed', 'true')
     expect(cartao().queryByRole('list', { name: 'Fotos de hoje' })).not.toBeInTheDocument()
+  })
+
+  it('CB-1475 e D-1538: o botão só troca o rótulo ("Comparar fotos" e "Ver fotos de hoje"), sem aria-pressed', async () => {
+    const { usuario, cartao } = abrir({ avaliacao: { fotosAutorizadasEm: '2026-11-03', fotos: [foto('f-nov', 'frente')] } })
+    const comparar = cartao().getByRole('button', { name: 'Comparar fotos' })
+    expect(comparar).not.toHaveAttribute('aria-pressed')
+    await usuario.click(comparar)
+    const voltar = cartao().getByRole('button', { name: 'Ver fotos de hoje' })
+    expect(voltar).not.toHaveAttribute('aria-pressed')
+    await usuario.click(voltar)
+    expect(cartao().getByRole('list', { name: 'Fotos de hoje' })).toBeInTheDocument()
   })
 
   it('CB-1466: sem foto de lado na de hoje, o quadro diz "Sem foto de lado em 03/11/2026." e a de antes aparece', async () => {
