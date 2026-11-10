@@ -10,7 +10,8 @@ interface BotoesDaIaProps {
   /** CA-2360: por que a IA não pode ser usada neste plano; nulo quando pode. */
   readonly motivo: string | null
   readonly aberta: ModoDaGaveta | null
-  readonly aoAbrir: (modo: ModoDaGaveta) => void
+  /** O botão vai junto: o foco volta a ele quando a gaveta fecha (D-1359). */
+  readonly aoAbrir: (modo: ModoDaGaveta, botao: HTMLElement) => void
 }
 
 /** D-1301 e D-1350: os botões ao lado de "Modelos de plano", com o motivo do botão desligado na linha de baixo. */
@@ -21,7 +22,7 @@ export function BotoesDaIa({ modelos, podeAdequar, motivo, aberta, aoAbrir }: Bo
       <div className="flex flex-wrap justify-end gap-2">
         {modelos}
         {modos.map((modo) => (
-          <Button key={modo} variant="outline" size="sm" disabled={motivo !== null} aria-expanded={aberta === modo} onClick={() => aoAbrir(modo)}>
+          <Button key={modo} variant="outline" size="sm" disabled={motivo !== null} aria-expanded={aberta === modo} onClick={(e) => aoAbrir(modo, e.currentTarget)}>
             {TITULO_DA_GAVETA[modo]}
           </Button>
         ))}

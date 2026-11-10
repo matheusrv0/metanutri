@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useRef, useState, type ReactNode } from 'react'
 import { IDS_DO_CATALOGO_IA } from '../../../supabase/functions/_shared/iaCatalogo.ts'
 import type { ContextoDaResposta, CorpoDoPedidoIa, LacunasIa } from '../../../supabase/functions/_shared/iaContrato.ts'
 import { diaLocal } from '@/domain/acompanhamento.ts'
@@ -144,6 +144,8 @@ export function AssistenteDaIa(p: AssistenteDaIaProps) {
   const [recusadas, setRecusadas] = useState<ReadonlySet<number>>(new Set())
   const [desfazer, setDesfazer] = useState<Desfazer | null>(null)
   const [erroLocal, setErroLocal] = useState<Erro | null>(null)
+  // D-1359: o botão que abriu a gaveta, para o foco voltar a ele quando ela fecha.
+  const quemAbriu = useRef<HTMLElement | null>(null)
 
   // D-1356: aberta noutro plano (a tela trocou sem desmontar), a gaveta não aparece neste.
   const dono = donoDo(caso, paciente)
@@ -171,7 +173,8 @@ export function AssistenteDaIa(p: AssistenteDaIaProps) {
     idsProprios: new Set(proprios.map((a) => a.id)),
   })
 
-  const abrir = (modo: ModoDaGaveta) => {
+  const abrir = (modo: ModoDaGaveta, botao: HTMLElement) => {
+    quemAbriu.current = botao
     if (aberta === modo) return fechar()
     if (abertaEm !== null) sugestao.cancelar()
     setAbertaEm({ modo, dono })
@@ -494,7 +497,7 @@ export function AssistenteDaIa(p: AssistenteDaIaProps) {
   }
 
   const lugar: LugarDaGaveta | null = aberta === null ? null : estreito ? 'folha' : largo ? 'lado' : 'fluxo'
-  const gaveta = lugar && aberta ? <GavetaIa titulo={titulo} lugar={lugar} aoFechar={fechar} corpo={corpo} rodape={rodape} /> : null
+  const gaveta = lugar && aberta ? <GavetaIa titulo={titulo} lugar={lugar} aoFechar={fechar} quemAbriu={quemAbriu} corpo={corpo} rodape={rodape} /> : null
 
   const vaiParaTextos = mudancas && lugar !== null ? textosDoVaiPara(mudancas, recusadas, buscarAlimento) : null
   const extras: ExtrasDoPlano = {

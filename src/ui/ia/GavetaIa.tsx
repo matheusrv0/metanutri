@@ -1,5 +1,5 @@
 import { X } from 'lucide-react'
-import { useEffect, useId, useRef, type ReactNode } from 'react'
+import { useEffect, useId, useRef, type ReactNode, type RefObject } from 'react'
 import { cn } from '@/lib/utils'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { Sheet, SheetContent, SheetTitle } from '@ds/componentes/overlay/sheet.tsx'
@@ -15,6 +15,8 @@ interface GavetaIaProps {
   readonly titulo: string
   readonly lugar: LugarDaGaveta
   readonly aoFechar: () => void
+  /** O botão que abriu a gaveta: o foco volta a ele quando ela fecha (D-1359). */
+  readonly quemAbriu?: RefObject<HTMLElement | null> | undefined
   readonly corpo: ReactNode
   readonly rodape: ReactNode
 }
@@ -23,17 +25,30 @@ interface GavetaIaProps {
  * D-1302: o título é o nome do botão que a abriu; o rodapé fica fixo embaixo, com a ação, o motivo e o contador. Ao lado
  * e no fluxo, o foco vai ao título quando ela abre (D-1357); a folha é um diálogo e leva o foco sozinha.
  */
-export function GavetaIa({ titulo, lugar, aoFechar, corpo, rodape }: GavetaIaProps) {
+export function GavetaIa({ titulo, lugar, aoFechar, quemAbriu, corpo, rodape }: GavetaIaProps) {
   const idTitulo = useId()
   const refTitulo = useRef<HTMLHeadingElement>(null)
   useEffect(() => {
     refTitulo.current?.focus()
   }, [titulo])
+  // D-1359: fechada (o X, "Fechar", "Usar como rascunho"…), o foco que ficou sem lugar volta ao botão que a abriu.
+  useEffect(
+    () => () => {
+      const ativo = globalThis.document?.activeElement
+      if (!ativo || ativo === globalThis.document.body) quemAbriu?.current?.focus()
+    },
+    [quemAbriu],
+  )
+  const devolverFoco = (evento: Event) => {
+    // A folha não tem gatilho do Radix (ela é controlada): sem isto, o foco cairia no corpo da página.
+    evento.preventDefault()
+    quemAbriu?.current?.focus()
+  }
 
   if (lugar === 'folha') {
     return (
       <Sheet open onOpenChange={(aberta) => !aberta && aoFechar()}>
-        <SheetContent side="bottom" className="gap-0 p-0" aria-describedby={undefined}>
+        <SheetContent side="bottom" className="gap-0 p-0" aria-describedby={undefined} onCloseAutoFocus={devolverFoco}>
           <div className="border-b border-bordersubtle px-4 pb-3 pt-4 pr-14">
             <SheetTitle className="text-base">{titulo}</SheetTitle>
           </div>

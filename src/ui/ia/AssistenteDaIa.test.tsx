@@ -343,3 +343,25 @@ describe('AssistenteDaIa: a gaveta no fluxo, de 640 a 1180 px (CA-2407, D-1357)'
     expect(screen.getByRole('complementary', { name: 'Sugerir plano com IA' }).contains(document.activeElement)).toBe(true)
   })
 })
+
+describe('AssistenteDaIa: o foco ao fechar (CA-2408, D-1359)', () => {
+  it('CA-2408: "Usar como rascunho" fecha a gaveta e o foco volta a "Sugerir plano com IA"', async () => {
+    const usuario = userEvent.setup()
+    montar(dependencias(), PLANO_VAZIO)
+    const botao = screen.getByRole('button', { name: 'Sugerir plano com IA' })
+    await usuario.click(botao)
+    await usuario.click(screen.getByRole('button', { name: 'Sugerir plano' }))
+    await usuario.click(await screen.findByRole('button', { name: 'Usar como rascunho' }))
+    expect(screen.queryByRole('complementary')).not.toBeInTheDocument()
+    await waitFor(() => expect(document.activeElement).toBe(botao))
+  })
+
+  it('CA-2408: o X fecha o adequar e o foco volta a "Adequar com IA"', async () => {
+    const usuario = userEvent.setup()
+    montar(dependencias(AJUSTES))
+    const botao = screen.getByRole('button', { name: 'Adequar com IA' })
+    await usuario.click(botao)
+    await usuario.click(within(screen.getByRole('complementary', { name: 'Adequar com IA' })).getAllByRole('button', { name: 'Fechar' })[0] as HTMLElement)
+    await waitFor(() => expect(document.activeElement).toBe(botao))
+  })
+})
