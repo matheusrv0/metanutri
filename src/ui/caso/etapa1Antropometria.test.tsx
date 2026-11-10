@@ -99,6 +99,19 @@ describe('a suprailíaca da etapa 1 é a da tela nova (spec antropometria-telas,
     expect(screen.getByText(/^13,7% de gordura/)).toBeInTheDocument()
   })
 
+  it('CB-1460: apagar a suprailíaca de um plano antigo mantém o foco no campo, e o que se digita depois entra na dobra nova', async () => {
+    const gravados: Caso[] = []
+    render(<Anfitriao inicial={comDobras('jackson-pollock-3', { tricipital: 20, suprailiaca: 18, coxa: 25 })} aoAbrirAvaliacao={() => undefined} aoGravar={(c) => gravados.push(c)} />)
+    const usuario = userEvent.setup()
+    const campo = screen.getByRole('textbox', { name: 'Suprailíaca · linha não informada' })
+    await usuario.click(campo)
+    await usuario.keyboard('{End}{Backspace}{Backspace}')
+    expect(document.activeElement).toBe(campo)
+    await usuario.keyboard('19')
+    expect(screen.getByRole('textbox', { name: 'Suprailíaca · axilar anterior' })).toHaveValue('19')
+    expect(gravados.at(-1)?.composicao.dobras).toMatchObject({ suprailiaca: null, suprailiacaAnt: 19 })
+  })
+
   it('no homem com JP 3, que não usa a suprailíaca, o campo continua o de linha não informada', () => {
     render(<Anfitriao inicial={comDobras('jackson-pollock-3', { peitoral: 10 }, 'M')} aoAbrirAvaliacao={() => undefined} />)
     expect(screen.getByRole('textbox', { name: 'Suprailíaca · linha não informada' })).toHaveValue('')

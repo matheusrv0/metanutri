@@ -89,7 +89,8 @@ export function CamposComposicao({ caso, aoAlterar, comDobras = true, aoAbrirAva
           <div className="grid gap-4 sm:grid-cols-3">
             {campos.map((chave) => (
               <CampoNumero
-                key={chave}
+                // D-1500: a suprailíaca tem uma posição só; quando a dobra usada muda, o campo fica (e o foco nele).
+                key={SUPRAILIACAS.includes(chave) ? 'suprailiaca-da-posicao' : chave}
                 rotulo={NOME_DOBRA[chave] ?? chave}
                 valor={composicao.dobras[chave]}
                 aoMudar={(v) => alterarDobra(chave, v)}
