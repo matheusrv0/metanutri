@@ -254,7 +254,8 @@ As decisões D-1261 a D-1263 da SPEC (seção 1.10), no código:
   "parar todos" desfeito e a data da confirmação quando há aviso, e a chave usada; responde `'confirmado'`. O link vem
   sempre antes da chave, como na troca e no gatilho `conferir_chave_do_aceite`: sem deadlock. No código, a porta
   `gravarEmailDoPaciente` passa a ser esse passo (recebe a chave, os avisos, o dia da semana, a oferta padrão e a hora e
-  devolve o resultado); `marcarConfirmado` sai da porta. Em `avisos-resposta`, `confirmar` confere o que já conferia,
+  devolve o resultado); `marcarConfirmado` e `criarAceite`, que só o "Confirmar" usava, saem da porta. No `'usada'` (outro
+  "Confirmar" da mesma chave chegou antes), a página responde como a chave usada, sem mandar o S1 de novo. Em `avisos-resposta`, `confirmar` confere o que já conferia,
   chama só a porta e responde "Este endereço não vale." (404) no `'nao-vale'`; o S1 sai só no `'confirmado'`.
   **Decisão:** o nome `gravarEmailDoPaciente` fica, porque a sonda `sonda-r3.mts` da revisão injeta a troca nele (G1).
 - **DP-LP-48** · **O remetente** (D-1262): em `nomeLimpoDoRemetente`, a regra da "palavra.palavra" passa a
