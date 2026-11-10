@@ -48,6 +48,7 @@ import type { ValorNegocio } from './estado/usarNegocio.ts'
 import type { ValorPedidoEstudante } from './estado/usarPedidoEstudante.ts'
 import type { ValorPerfilConta } from './estado/usarPerfilConta.ts'
 import type { ValorSegundoFator } from './estado/usarSegundoFator.ts'
+import { baixarTermoDeIa } from './exportar/baixar.ts'
 import { MenuExportar } from './exportar/MenuExportar.tsx'
 import { paginaDoSite } from './enderecos.ts'
 import { rotaDePlanos } from './fluxoConta.ts'
@@ -501,6 +502,7 @@ export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pe
                   aoEditarNaFicha={() => {
                     if (pacienteDoPlano) navegar({ tela: 'paciente', pacienteId: pacienteDoPlano.id })
                   }}
+                  aoBaixarTermo={() => void baixarTermoDeIa(quemAssina, pacienteDoPlano?.nome ?? '')}
                   conteudo={(extras) => (
                     <TelaPlano
                       plano={registro.plano}
