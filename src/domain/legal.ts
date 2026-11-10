@@ -23,9 +23,11 @@ export const CONTATO_EMAIL: string | null = 'metanutricontato@gmail.com'
  * 27/10/2026: a Política passou a dizer que o app fica em app.metanutri.com.br, entregue pela Cloudflare, e o site pelo
  * GitHub, e quando a sessão termina sozinha (spec separacao-site-app, D-522). É o dia em que o site da P2 foi ao
  * ar (DP-SA-34, que previa 28/10).
+ * 10/11/2026: a Política e os Termos ganharam os textos das sugestões com IA (spec assistente-ia, D-1323 e D-1353), aprovados
+ * pelo dono nesse dia.
  */
-export const VERSAO_TERMOS = '2026-10-27'
-export const DATA_TERMOS = '27 de outubro de 2026'
+export const VERSAO_TERMOS = '2026-11-10'
+export const DATA_TERMOS = '10 de novembro de 2026'
 
 /** Em quantos dias as cópias de segurança do banco somem depois da exclusão (a exclusão em si é na hora). */
 export const PRAZO_EXCLUSAO_DIAS = 90

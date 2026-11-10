@@ -318,6 +318,10 @@ antes de ser reduzida). A 9 roda depois de 1 a 8, e as 10 a 13 sobre o plano já
 Não publicados. Entram em `TelaPrivacidade.tsx`, `TelaTermos.tsx` e `legal.ts` (versão e data novas) só depois do "sim"
 do dono, no dia da publicação da P2. O termo de autorização é o da seção 7, que a ficha já baixa em Word.
 
+**Aprovados pelo dono em 10/11/2026**, sem mudança no texto abaixo. Entraram em `TelaPrivacidade.tsx` e `TelaTermos.tsx`,
+e `VERSAO_TERMOS`/`DATA_TERMOS` passaram a `2026-11-10` (CA-2378). Ainda não publicados: se a P2 for ao ar em outro dia,
+as duas constantes e o teste delas mudam para esse dia.
+
 **Política de privacidade**
 
 - *Que dados guardamos e para quê*, item novo: "Quando o nutricionista usa as sugestões com IA, o registro de cada uso
