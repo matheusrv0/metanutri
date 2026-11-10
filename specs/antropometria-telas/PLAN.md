@@ -1,7 +1,8 @@
 # PLAN — Antropometria completa: as telas
 
 **Spec de origem:** `./SPEC.md` (D-1400 a D-1460, CA-2400 a CA-2491, CB-1400 a CB-1417; correções da revisão r1:
-D-1520 a D-1529 e CB-1480 a CB-1489; da revisão r2: D-1500 a D-1502 e CB-1460 a CB-1462; da implementação da F2: D-1503 a D-1513 e CB-1463 a CB-1466).
+D-1520 a D-1529 e CB-1480 a CB-1489; da revisão r2: D-1500 a D-1502 e CB-1460 a CB-1462; da implementação da F2: D-1503 a D-1513 e CB-1463 a CB-1466; da revisão r1 da F2: D-1530 a D-1538 e CB-1467 a
+CB-1475).
 **Motor:** `specs/antropometria-completa/` (D-1000 a D-1042), na `main` desde o 8a96bc8.
 **Protótipo aprovado:** `AvaliacaoAntropometrica.dc.html`, `HistoricoAntropometrico.dc.html` e
 `DocumentoAvaliacao.dc.html` (canvas "MetaNutri Redesenho", 03/11/2026).
@@ -66,13 +67,16 @@ LEIA-ME (DP-AT-9). Na tela, um componente por arquivo, em `src/ui/antropometria/
 - **DP-AT-11** · **Foto reduzida no aparelho** (D-1453): `createImageBitmap` com `imageOrientation: 'from-image'`,
   `<canvas>` com o lado maior até 1600 px, `toBlob('image/jpeg', 0.85)`. O desenho mora na interface; a regra (tipos,
   limites, tamanhos) no domínio, testada com um desenhista falso, como a `marca-no-link`.
-- **DP-AT-12** · **Tamanho somado só no app.** A política do Storage não conhece o tamanho na hora do envio. O servidor
-  limita: tipo, 8 MB por arquivo (no balde), 5 fotos e 10 anexos por plano, 2.000 arquivos por conta (função
-  `security definer`, como `comprovantes_da_conta`). O teto de 8 MB por avaliação é do app.
+- **DP-AT-12** · **Tamanho somado também no servidor** (revisto pela D-1531). A política do Storage roda antes de o
+  arquivo chegar e não conhece o tamanho; o gatilho do 018 roda na gravação, já com `metadata->>'size'`, e soma a pasta
+  do plano (8 MB) e a da conta (500 MB). O servidor limita ainda: tipo (D-1535), 8 MB por arquivo (no balde), 5 fotos e
+  10 anexos por plano, 2.000 arquivos por conta (função `security definer`, como `comprovantes_da_conta`). O app confere
+  o teto antes de enviar, para dar a frase sem gastar o envio.
 - **DP-AT-13** · **URL assinada de 10 minutos** e `img-src` com a origem do Supabase (só quando o build tem Supabase). O
   anexo abre numa aba nova pela URL assinada.
-- **DP-AT-14** · **Excluir o plano apaga a pasta dele** no balde (melhor esforço: se falhar, o plano sai e a pasta fica até
-  a exclusão da conta, que limpa tudo). Excluir o paciente não apaga planos (regra de hoje) nem fotos.
+- **DP-AT-14** · **Excluir o plano apaga a pasta dele** no balde (revisto pela D-1503 e pela D-1534): a tela espera o
+  armazenamento; se falhar, o plano fica e o aviso diz. Excluir o paciente não apaga planos (regra de hoje), mas apaga as
+  fotos e os anexos deles, também esperando o armazenamento.
 - **DP-AT-15** · **Versão antiga do app** (PWA em cache) lendo um plano com protocolo novo: o `calcularComposicao` antigo
   cai no primeiro protocolo (JP 3) sem quebrar. Risco curto, até a versão nova chegar; registrado.
 - **DP-AT-16** · **Imagens**: as 15 do protótipo, em WebP, com até 800 px no lado maior (2× o maior desenho na ajuda) e
@@ -85,8 +89,12 @@ LEIA-ME (DP-AT-9). Na tela, um componente por arquivo, em `src/ui/antropometria/
 - **DP-AT-19** · **Script das imagens** (fora do repositório, rodado uma vez): Pillow 12, `Image.thumbnail((800, 800))`,
   `save(..., 'WEBP', quality=82, method=6)`. O resultado entra no commit; o script fica descrito aqui para o dono
   repetir.
-- **DP-AT-20** · **Caminho do arquivo**: `<conta>/<plano>/fotos/<uuid>.jpg` e `<conta>/<plano>/anexos/<uuid>.<pdf|jpg|png>`.
-  O nome original do anexo vai só na lista do plano (para a tela), nunca no caminho.
+- **DP-AT-20** · **Caminho do arquivo**: `<conta>/<plano>/fotos/<uuid>.jpg` e `<conta>/<plano>/anexos/<uuid>.pdf` (desde
+  a D-1530, a imagem anexada vira foto). O nome original do anexo não vai a lugar nenhum: a lista leva o nome neutro
+  "anexo-N.pdf" (D-1536).
+- **DP-AT-21** · **A porta lê a pasta do plano** (`listar`, no lugar de `contar`): devolve o caminho, o tamanho e a data
+  de cada arquivo de `fotos/` e de `anexos/`. Serve à recusa (D-1505 e D-1531: a contagem e a soma) e ao arquivo solto
+  (D-1534). O balde que não existe conta como vazio.
 
 ## Riscos
 
@@ -98,6 +106,11 @@ LEIA-ME (DP-AT-9). Na tela, um componente por arquivo, em `src/ui/antropometria/
   segurança: o merge tem conflito pequeno e previsível (linhas acrescentadas em pontos diferentes).
 - **R-AT-4** · Portas e `node_modules/.tmp` divididos com outros agentes: `npm run e2e` e `npm run test:seguranca` podem
   cair por porta ocupada; repetir.
+- **R-AT-5** · **A conta com 500 MB** (D-1531) recebe a frase de sessão ("Entre de novo para enviar fotos."): o app não soma
+  a conta inteira, e o armazenamento devolve a mesma resposta (500, código 23514) para toda recusa do gatilho. Raro (cerca
+  de 300 avaliações com 5 fotos); se acontecer, o dono vê o uso no painel do Supabase. Uma função de uso da conta resolve
+  depois, se precisar.
+- **R-AT-6** · **Cache do navegador** (D-1537) e **sem `nosniff`** (D-1535): riscos aceitos, escritos na spec.
 
 ## Ordem e dependências
 
@@ -141,6 +154,14 @@ LEIA-ME (DP-AT-9). Na tela, um componente por arquivo, em `src/ui/antropometria/
 | R7 | Revisão r2, B1-r2: o foco na suprailíaca da etapa 1 | `src/ui/caso/CamposComposicao.tsx` (`key` fixa da posição) (+ teste em `etapa1Antropometria.test.tsx`) | CB-1460, D-1500 | R1 |
 | R8 | Revisão r2, B2-r2: a meta de perda pelo sexo | `src/domain/metaDePerda.ts` (+ teste em `metaDePerda.test.ts`) | CB-1461, D-1501 | R4 |
 | R9 | Data local no gráfico de peso da ficha | `src/ui/pacientes/TelaPaciente.tsx` (+ teste) | CB-1462, D-1502 | R5 |
+| R10 | Revisão r1 da F2, M1: a imagem anexada entra como foto | `src/domain/fotosDaAvaliacao.ts` (`enviarAnexo`, a frase dos limites), `CartaoFotos.tsx` (+ testes; e2e `fotos-avaliacao.spec.ts`) | CB-1467, D-1530 | T25 |
+| R11 | Revisão r1 da F2, M2: os bytes no servidor e na recusa | `supabase/018-fotos-avaliacao.sql` (o gatilho), `src/data/sqlFotosAvaliacao.test.ts`, `testes/seguranca/fotos.test.ts`, `src/domain/fotosDaAvaliacao.ts` (a porta `listar`, DP-AT-21), `armazenamentoDeFotos.ts`, `e2e/apoio/servidorFalso.ts` (a lista com o tamanho) (+ testes e falsos) | CB-1468, D-1531 | R10 |
+| R12 | Revisão r1 da F2, B1: "Excluir" da foto com 44 px | `ListaDeFotos.tsx` (+ teste; e2e em 390 px) | CB-1469, D-1532 | T25 |
+| R13 | Revisão r1 da F2, B2: setas no seletor segmentado | `design-system/componentes/navigation/SeletorSegmentado.tsx` (+ `estilo.test.tsx`) | CB-1470, D-1533 | — |
+| R14 | Revisão r1 da F2, B5: nome neutro do anexo, com a data | `src/domain/fotosDaAvaliacao.ts`, `ListaDeAnexos.tsx` (+ testes; e2e) | CB-1474, D-1536 | R10 |
+| R15 | Revisão r1 da F2, B3: a exclusão espera o armazenamento; o arquivo solto volta à lista | `src/domain/fotosDaAvaliacao.ts` (`religarSoltos`), `CartaoFotos.tsx`, `armazenamentoDeFotos.ts`, `src/ui/casos/TelaCasos.tsx`, `src/ui/pacientes/TelaPaciente.tsx` (+ testes) | CB-1471, CB-1472, D-1534 | R11, R14 |
+| R16 | Revisão r1 da F2, B4: o tipo no servidor | `supabase/018-fotos-avaliacao.sql` (o caminho, o balde e o gatilho), `src/data/sqlFotosAvaliacao.test.ts`, `testes/seguranca/fotos.test.ts` | CB-1473, D-1535 | R11 |
+| R17 | Revisão r1 da F2, B7: "Comparar fotos" sem `aria-pressed` | `CartaoFotos.tsx` (+ teste) | CB-1475, D-1538 | T25 |
 | T26 | Validação | este plano (checklist e matriz), prints | todos | T3 a T25 |
 | T27 | **F3, bloqueada:** "Enviar por e-mail" | (quando o Resend do `lado-do-paciente` entrar) | D-1460 | infraestrutura do Resend |
 
@@ -269,6 +290,28 @@ sondas do revisor ficam fora do repositório e não mudam: provam o defeito, e o
 - **R4** · As frases do motor recebem o sexo do caso; o filtro do "Ponto de partida" aceita "Idoso:" e "Idosa:".
 - **R5** · `diaLocal(new Date(atualizadoEm))` no lugar do `slice(0, 10)`; o "Ver exemplo" com `diaLocal()`.
 - **R6** · `rotuloDaAvaliacao` no domínio: o sufixo "· Nª do dia" só quando o dia se repete, contado da alterada antes.
+
+### R10 a R17 · Correções da revisão r1 da F2 (10/11/2026)
+
+A revisão r1 da F2 reprovou por M1 e M2; os baixos B1 a B7 entram junto. B6 é só texto (D-1513 e D-1537), no commit
+`docs`. Cada correção é um commit, com o teste antes (TDD).
+
+- **R10** · `enviarAnexo` recebe o desenhista e o sexo: PDF segue como anexo; JPEG ou PNG, sem a autorização, devolve a
+  frase da D-1508; com ela, vai por `enviarFoto` com o ângulo "Outra" e volta com `campo: 'fotos'`. A tela lê até 20 MB
+  do anexo (o teto da foto) e acrescenta o resultado no campo que veio.
+- **R11** · O gatilho soma `metadata->>'size'` (só números; sem tamanho, 0) da pasta do plano e da conta, com a trava que
+  já existe. A porta troca `contar` por `listar` (DP-AT-21); a recusa conta e soma a pasta do plano. O servidor falso do
+  e2e devolve o tamanho na lista. Ataque: três arquivos de 3 MB juntos; a conta com 500 MB (linhas postas pelo banco).
+- **R12** · `min-w-11` no "Excluir"; o e2e mede em 390 px.
+- **R13** · `tabIndex` 0 só na marcada (ou na primeira), `onKeyDown` com as setas, Home e End; o foco vai junto.
+- **R14** · `proximoNomeDeAnexo` (o maior "anexo-N.pdf" mais 1); `EntradaDoAnexo` perde o `nome`; a lista mostra a data
+  local do envio e o tamanho.
+- **R15** · "Planos" e a ficha esperam `apagarArquivosDoPlano` e mostram a falha; a porta trata "Bucket not found" como
+  pasta vazia. `religarSoltos` (puro) devolve a lista com o que a pasta tem a mais; o cartão lê a pasta ao abrir e
+  aplica no plano como ele está na hora; a resposta de um envio substitui o item do mesmo caminho.
+- **R16** · A função da política aceita só `anexos/<uuid>.pdf`; o balde, só `image/jpeg` e `application/pdf`; o gatilho,
+  com o tipo na linha, exige `image/jpeg` em `fotos/` e `application/pdf` em `anexos/`, exatos.
+- **R17** · Sem `aria-pressed`; o rótulo continua trocando.
 
 ### T27 · F3 (bloqueada)
 
