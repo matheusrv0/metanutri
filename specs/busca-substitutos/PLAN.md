@@ -112,7 +112,9 @@ opção do item aparece embaixo dele no plano, na folha, no link e no Word.
    leite e as verduras", mas também manter o tofu com o tremoço (CA-2146, sonda `r4-1`). O tofu é de gordura e o tremoço,
    de carboidrato; com a regra (a) em toda a leguminosa, o tofu fica sem nenhum substituto (como em 10cabdd8). A saída
    foi dispensar a regra só para o derivado de soja (a lista de equivalentes põe a soja com os feijões), e não para as
-   leguminosas inteiras. A D-1137 junta as variedades da verdura e dois sinônimos (mexerica e tangerina; o tofu da TACO e
+   leguminosas inteiras. Com a regra (a) de volta, o cupim ainda trazia o contra-filé com gordura com 1,7 vez a proteína
+   (a sonda `r4-2` pede no máximo 1,5): a D-1136 ganhou a regra (d), a proteína até 1,5 vez a do item nas carnes, que
+   corta 11 listas de carne gorda e não esvazia nenhuma. A D-1137 junta as variedades da verdura e dois sinônimos (mexerica e tangerina; o tofu da TACO e
    o da base ampliada). A D-1138 põe a farinha de mandioca no `amido`: ela passa a aparecer também no lugar do arroz e da
    mandioca. A T36 não muda o componente: a chave já tem `min-h-11` (44 px), e o teste passa a medir com a gaveta parada.
 
