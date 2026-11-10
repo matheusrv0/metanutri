@@ -6,6 +6,7 @@ import {
   itensDoQueAjustar,
   lacunasMarcadas,
   lerRespostaDaFuncao,
+  motivoDoAdequar,
   perguntasQueFaltam,
   refeicoesDaGaveta,
   responderNaFicha,
@@ -164,5 +165,18 @@ describe('a resposta da função, conferida de novo no navegador', () => {
       expect(lida?.uso).toBeNull()
       expect(lida?.resposta.refeicoes[0]?.principal[0]).toEqual({ alimentoId: 53, gramas: 50 })
     }
+  })
+})
+
+describe('o motivo do "Sugerir ajustes" desligado (CA-2370 e CA-2412)', () => {
+  const itens = [{ id: 'energia', nome: 'Energia', valor: '122% da meta' }]
+  it('CA-2370: com pontos, todos desmarcados e sem texto: "Marque ao menos um ponto."', () => {
+    expect(motivoDoAdequar(itens, new Set(['energia']), '')).toBe('Marque ao menos um ponto.')
+    expect(motivoDoAdequar(itens, new Set(), '')).toBeNull()
+    expect(motivoDoAdequar(itens, new Set(['energia']), 'jantar leve')).toBeNull()
+  })
+  it('CA-2412 (D-1362): sem nenhum ponto, pede o "Outro pedido", com aspas tipográficas', () => {
+    expect(motivoDoAdequar([], new Set(), '  ')).toBe('Escreva em “Outro pedido” o que quer mudar.')
+    expect(motivoDoAdequar([], new Set(), 'jantar leve')).toBeNull()
   })
 })

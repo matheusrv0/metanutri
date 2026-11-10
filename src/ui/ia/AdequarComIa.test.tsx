@@ -29,4 +29,11 @@ describe('AdequarComIa (spec assistente-ia, D-1309)', () => {
     await userEvent.setup().type(screen.getByRole('textbox', { name: 'Outro pedido' }), '!')
     expect(aoMudarOutro).toHaveBeenCalledWith('jantar leve!')
   })
+
+  it('CA-2412 (D-1362): sem lacuna, "O que ajustar" só diz que o plano está dentro das metas', () => {
+    render(<AdequarComIa itens={[]} desmarcadas={new Set()} aoAlternar={vi.fn()} outro="" aoMudarOutro={vi.fn()} autorizacao={null} />)
+    expect(screen.getByText('O plano está dentro das metas.')).toBeInTheDocument()
+    expect(screen.queryAllByRole('checkbox')).toHaveLength(0)
+    expect(document.body.textContent).not.toContain('"')
+  })
 })

@@ -11,6 +11,7 @@ import {
   fichaNaGaveta,
   itensDoQueAjustar,
   lacunasMarcadas,
+  motivoDoAdequar,
   perguntasQueFaltam,
   refeicoesDaGaveta,
   responderNaFicha,
@@ -86,7 +87,6 @@ interface AssistenteDaIaProps {
 /** CA-2373: o plano mudou depois do pedido do adequar. */
 const PLANO_MUDOU: Erro = { frase: 'O plano mudou enquanto a IA respondia. Gere de novo.', acao: 'tentar' }
 const SEM_REFEICAO = 'Deixe ao menos uma refeição.'
-const SEM_PONTO = 'Marque ao menos um ponto.'
 const RASCUNHO = 'Sugestão da IA no plano, como rascunho.'
 
 const idNovo = () => globalThis.crypto.randomUUID()
@@ -464,8 +464,7 @@ export function AssistenteDaIa(p: AssistenteDaIaProps) {
         />
       )
     } else {
-      const nada = itensAjuste.every((i) => form.desmarcadas.has(i.id)) && form.outro.trim() === ''
-      const motivo = motivoDaGaveta ?? (nada ? SEM_PONTO : null)
+      const motivo = motivoDaGaveta ?? motivoDoAdequar(itensAjuste, form.desmarcadas, form.outro)
       corpo = (
         <AdequarComIa
           itens={itensAjuste}

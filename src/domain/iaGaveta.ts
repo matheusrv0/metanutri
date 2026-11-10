@@ -193,6 +193,16 @@ export function itensDoQueAjustar(lacunas: LacunasIa): readonly ItemDoQueAjustar
   return itens
 }
 
+/**
+ * CA-2370 e CA-2412 (D-1362): por que "Sugerir ajustes" está desligado; nulo quando pode pedir. Sem nenhum ponto para
+ * marcar, o pedido depende do "Outro pedido".
+ */
+export function motivoDoAdequar(itens: readonly ItemDoQueAjustar[], desmarcadas: ReadonlySet<string>, outro: string): string | null {
+  if (outro.trim() !== '') return null
+  if (itens.length === 0) return 'Escreva em “Outro pedido” o que quer mudar.'
+  return itens.every((i) => desmarcadas.has(i.id)) ? 'Marque ao menos um ponto.' : null
+}
+
 /** O pedido leva só o que ficou marcado; a energia desmarcada vai como nula (a IA não mexe nela). */
 export function lacunasMarcadas(lacunas: LacunasIa, desmarcadas: ReadonlySet<string>): LacunasIa {
   return {

@@ -29,7 +29,8 @@ export function AdequarComIa({ itens, desmarcadas, aoAlternar, outro, aoMudarOut
           <span className="text-xs text-muted-foreground">Calculado pelo app</span>
         </div>
         {itens.length === 0 ? (
-          <p className="text-sm text-muted-foreground">O plano está dentro das metas. Escreva em "Outro pedido" o que quer mudar.</p>
+          // D-1362: o que pedir fica no rodapé, ao lado do "Sugerir ajustes" desligado.
+          <p className="text-sm text-muted-foreground">O plano está dentro das metas.</p>
         ) : (
           <ul className="flex flex-col">
             {itens.map((l) => (
