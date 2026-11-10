@@ -265,6 +265,17 @@ describe('useConta', () => {
       expect(localStorage.getItem('metanutri:tema')).toBe('escuro')
     })
 
+    it('CA-2298 (D-1253): sair apaga os planos de paciente lembrados neste navegador', async () => {
+      localStorage.setItem('metanutri:meus-planos', JSON.stringify([{ token: 'k7q2mx9pla3r', primeiroNome: 'Juliana', nutricionista: 'Ana Lima', ultimoAcesso: '2026-11-03' }]))
+      comSessao()
+      const { result } = renderHook(() => useConta())
+      await waitFor(() => expect(result.current.sessao?.id).toBe('u1'))
+      await act(async () => {
+        await result.current.sair()
+      })
+      expect(localStorage.getItem('metanutri:meus-planos')).toBeNull()
+    })
+
     it('DP-10: sem sessão, sair não apaga nada', async () => {
       const { result } = renderHook(() => useConta())
       await waitFor(() => expect(result.current.carregando).toBe(false))

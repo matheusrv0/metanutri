@@ -72,6 +72,20 @@ describe('CA-2239: o último acesso', () => {
   })
 })
 
+describe('CA-2298: a nutricionista que abre o link (D-1253)', () => {
+  it('CA-2298: fora do papel de paciente, a tela não lembra o plano e não registra o acesso', async () => {
+    const { cliente, chamadas } = clienteFalso()
+    const aberto = link()
+    render(<TelaMissoesPaciente token={aberto.token} fonte={fonte(aberto)} hoje={HOJE} cliente={cliente} comoPaciente={false} />)
+    expect(await screen.findByRole('heading', { level: 1 })).toBeInTheDocument()
+    await act(async () => {
+      await new Promise((pronto) => setTimeout(pronto, 20))
+    })
+    expect(lerMeusPlanos(localStorage)).toEqual([])
+    expect(chamadas.filter((c) => c.nome === 'registrar_acesso')).toEqual([])
+  })
+})
+
 describe('D-1218 e CA-2221: o aparelho e a página', () => {
   it('CA-2227: o link aberto fica lembrado com "Juliana" e "Ana Lima"', async () => {
     const aberto = link()

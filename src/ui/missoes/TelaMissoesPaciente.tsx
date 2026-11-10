@@ -42,6 +42,11 @@ interface TelaMissoesPacienteProps {
   readonly cliente?: ClienteDosEmails | null
   /** Para onde "Esquecer neste aparelho" leva (o jsdom não navega). Por padrão, "Recuperar meu link". */
   readonly aoEsquecido?: () => void
+  /**
+   * D-1253: o link foi aberto como paciente (sem a sessão de nutricionista neste navegador). Falso, a tela não lembra o
+   * plano no aparelho e não registra o último acesso. Por padrão, verdadeiro.
+   */
+  readonly comoPaciente?: boolean
 }
 
 /** As folhas do link (D-1212): "Meu plano" e as que abrem a partir dela. */
@@ -127,7 +132,7 @@ interface Carga {
 
 const clientePadrao = (): ClienteDosEmails | null => obterSupabase() as unknown as ClienteDosEmails | null
 
-export function TelaMissoesPaciente({ token, fonte, hoje = diaLocal(), agora, cliente: clienteInjetado, aoEsquecido = () => irParaOApp('#/recuperar-link') }: TelaMissoesPacienteProps) {
+export function TelaMissoesPaciente({ token, fonte, hoje = diaLocal(), agora, cliente: clienteInjetado, aoEsquecido = () => irParaOApp('#/recuperar-link'), comoPaciente = true }: TelaMissoesPacienteProps) {
   // Guardar o token junto com o resultado deixa "carregando" ser derivado do render,
   // em vez de um segundo estado que o efeito teria de ligar e desligar.
   const [carga, setCarga] = useState<Carga | null>(null)
@@ -214,15 +219,17 @@ export function TelaMissoesPaciente({ token, fonte, hoje = diaLocal(), agora, cl
   // D-1218: o aparelho lembra o link aberto (sem a dieta e sem as missões).
   const nomeDaNutricionista = carregando ? '' : (carga.dados.nutricionista ?? '')
   const nomeDoPaciente = acompanhamento?.nome ?? ''
+  // D-1253: só como paciente; a nutricionista que abre o link para conferir não deixa o plano na tela de entrar.
   useEffect(() => {
-    if (tokenAberto === null) return
+    if (tokenAberto === null || !comoPaciente) return
     lembrarPlano(armazenamentoLocal(), { token: tokenAberto, primeiroNome: primeiroNomeDoLink(nomeDoPaciente), nutricionista: nomeDaNutricionista, ultimoAcesso: hoje })
-  }, [tokenAberto, nomeDoPaciente, nomeDaNutricionista, hoje])
+  }, [tokenAberto, nomeDoPaciente, nomeDaNutricionista, hoje, comoPaciente])
 
   // D-1223 e CA-2239: o link registra o dia em que foi aberto (a nuvem guarda uma vez por dia, só a data). Sem internet,
   // o registro fica para quando ela voltar (CB-1205).
+  // D-1253: o acesso da nutricionista não conta como o do paciente (o lembrete conta os dias sem abrir).
   useEffect(() => {
-    if (tokenAberto === null || cliente === null || !fonte.naNuvem) return
+    if (tokenAberto === null || cliente === null || !fonte.naNuvem || !comoPaciente) return
     let vivo = true
     const registrar = () => {
       void registrarAcesso(cliente, tokenAberto).then((ok) => {
@@ -234,7 +241,7 @@ export function TelaMissoesPaciente({ token, fonte, hoje = diaLocal(), agora, cl
       vivo = false
       globalThis.removeEventListener('online', registrar)
     }
-  }, [tokenAberto, cliente, fonte.naNuvem])
+  }, [tokenAberto, cliente, fonte.naNuvem, comoPaciente])
 
   /**
    * Marca na hora e grava. A gravação falhando (D-232, CA-756), a tela relê o link e fica com o que a nuvem guardou

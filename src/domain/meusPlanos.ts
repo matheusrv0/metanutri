@@ -80,6 +80,15 @@ export function esquecerPlano(armazenamento: Armazenamento | null, token: string
   if (antes.some((p) => p.token === token)) gravar(armazenamento, antes.filter((p) => p.token !== token))
 }
 
+/** D-1253: "Sair" da conta apaga os planos lembrados neste navegador (o computador da clínica não guarda nenhum). */
+export function esquecerTodosOsPlanos(armazenamento: Armazenamento | null): void {
+  try {
+    armazenamento?.removeItem(CHAVE_DOS_MEUS_PLANOS)
+  } catch {
+    // CB-1226: sem armazenamento, não há o que apagar.
+  }
+}
+
 /** O endereço antigo foi trocado pelo do link fixo (D-1217): a lembrança passa para o token novo. */
 export function trocarTokenLembrado(armazenamento: Armazenamento | null, antigo: string, novo: string): void {
   if (antigo === novo || !TOKEN.test(novo)) return

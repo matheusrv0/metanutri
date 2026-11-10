@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { contaEmDia } from '@/domain/contaEmDia.ts'
 import { ehIdPlano, nomeSugerido, soDigitos, type ErroConta, type IdPlano, type Sessao } from '@/domain/conta.ts'
 import { apagarDadosDaConta } from '@/domain/donoDosDados.ts'
+import { esquecerTodosOsPlanos } from '@/domain/meusPlanos.ts'
 import { ehSituacao, type Crn, type Situacao } from '@/domain/situacao.ts'
 import { desvioDoRelogio, lerToken, situacaoDaSessao } from '@/domain/tempoDeSessao.ts'
 import { contaDaExclusaoPedida, esquecerExclusaoPedida, exclusaoPedidaPor } from '../exclusaoPedida.ts'
@@ -441,6 +442,8 @@ export function useConta(): ValorConta {
         apagarDadosDaConta(armazenamento, usuarioId)
         apagarMarca(armazenamento)
         esquecerSaida(armazenamento)
+        // D-1253 e CA-2298: os planos de paciente lembrados neste navegador também saem.
+        esquecerTodosOsPlanos(armazenamento)
       }
       const c = obterSupabase()
       if (!c) return
