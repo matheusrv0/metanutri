@@ -44,7 +44,10 @@ async function abrirLinkDaJuliana(pagina: Page, parcial: Linha = {}): Promise<Se
     link: linkDaJuliana(parcial),
     funcoes: {
       'meu-link': (corpo) =>
-        corpo['acao'] === 'recuperar' ? { corpo: { ok: true } } : { corpo: { enviadoPara: MASCARADO, confirmar: Array.isArray(corpo['avisos']) && corpo['avisos'].length > 0 } },
+        corpo['acao'] === 'recuperar'
+          ? { corpo: { ok: true } }
+          : // D-1247: o e-mail digitado sempre pede o "Confirmar" do e-mail.
+            { corpo: { enviadoPara: MASCARADO, confirmar: typeof corpo['email'] === 'string' || (Array.isArray(corpo['avisos']) && corpo['avisos'].length > 0), confirmarEmail: typeof corpo['email'] === 'string' } },
     },
   })
   await pagina.goto(`/p/${TOKEN}`)
@@ -141,14 +144,14 @@ test('CA-2219, CA-2235, CA-2236 e CA-2240: Mais › "Receber meu link por e-mail
   await receber.getByRole('button', { name: 'juliana@gmail.com' }).click()
   await expect(receber.getByLabel('Seu e-mail')).toHaveValue('juliana@gmail.com')
 
-  // CA-2240: os avisos vêm desmarcados; com um marcado, a folha pede o Confirmar do e-mail.
+  // CA-2240 e CA-2291: os avisos vêm desmarcados; com o e-mail digitado, a folha pede o Confirmar do e-mail.
   const resumo = receber.getByRole('checkbox', { name: 'Resumo da semana' })
   await expect(receber.getByRole('checkbox')).toHaveCount(3)
   for (const caixa of await receber.getByRole('checkbox').all()) await expect(caixa).not.toBeChecked()
   await resumo.check()
   await receber.getByRole('button', { name: 'Enviar' }).click()
   await expect(receber.getByRole('status')).toContainText(`Enviamos o link para ${MASCARADO}.`)
-  await expect(receber.getByRole('status')).toContainText('Para receber os avisos, toque em Confirmar no e-mail.')
+  await expect(receber.getByRole('status')).toContainText('Para usar este e-mail no seu plano, toque em Confirmar no e-mail.')
   expect(servidor.pedidosDeFuncao.filter((p) => p.nome === 'meu-link').map((p) => p.corpo)).toEqual([
     { acao: 'receber', token: TOKEN, email: 'juliana@gmail.com', avisos: ['semana'] },
   ])
@@ -230,6 +233,33 @@ test('CA-2241: a página do aceite não aceita ao abrir; só o "Confirmar" regis
   await expect(page.getByText('Pronto. Você vai receber: Resumo da semana, Lembrete.')).toBeVisible()
   expect(servidor.pedidosDeFuncao.at(-1)?.corpo).toEqual({ acao: 'confirmar', chave, avisos: ['semana', 'lembrete'] })
   await semRolagemLateral(page)
+})
+
+test('CA-2295: em 390 px, com a letra normal, o seletor de opções do Plano e o "Você quis dizer…?" têm 44 px ou mais', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await abrirLinkDaJuliana(page)
+  /** Os botões e links à vista menores que 44 px (de altura ou de largura). */
+  const pequenos = (dentro: string) =>
+    page.evaluate(
+      (seletor) =>
+        [...document.querySelectorAll<HTMLElement>(`${seletor} button, ${seletor} a, ${seletor} [role="tab"]`)]
+          .filter((el) => el.offsetParent !== null)
+          .map((el) => ({ nome: (el.getAttribute('aria-label') ?? el.textContent ?? '').trim().slice(0, 40), altura: Math.round(el.getBoundingClientRect().height), largura: Math.round(el.getBoundingClientRect().width) }))
+          .filter((alvo) => alvo.altura < 44 || alvo.largura < 44),
+      dentro,
+    )
+
+  await barraDeBaixo(page).getByRole('link', { name: 'Plano' }).click()
+  await expect(page.getByRole('tab', { name: 'Opção 2' }).first()).toBeVisible()
+  expect(await pequenos('main')).toEqual([])
+
+  await page.getByRole('button', { name: 'Mais opções' }).click()
+  await page.getByRole('dialog', { name: 'Meu plano' }).getByRole('button', { name: 'Receber meu link por e-mail' }).click()
+  const receber = page.getByRole('dialog', { name: 'Receber por e-mail' })
+  await receber.getByRole('button', { name: 'Usar outro' }).click()
+  await receber.getByLabel('Seu e-mail').fill('juliana@gmial.com')
+  await expect(receber.getByRole('button', { name: 'juliana@gmail.com' })).toBeVisible()
+  expect(await pequenos('[role="dialog"]')).toEqual([])
 })
 
 for (const largura of [360, 390, 412] as const) {

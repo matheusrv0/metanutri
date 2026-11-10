@@ -122,7 +122,7 @@ export function FolhaReceberPorEmail({ aberta, aoFechar, cor, token, cliente, em
                       <button
                         type="button"
                         onClick={() => setDigitado(sugestao)}
-                        className="inline-flex min-h-9 items-center font-bold text-heading underline underline-offset-4 [overflow-wrap:anywhere] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        className="inline-flex min-h-11 items-center font-bold text-heading underline underline-offset-4 [overflow-wrap:anywhere] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       >
                         {sugestao}
                       </button>

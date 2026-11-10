@@ -191,7 +191,7 @@ export function MeuPlano({ dieta, primeiroNome, hoje, missaoDaRefeicao, aoAltern
                     <TabsTrigger
                       key={j}
                       value={String(j)}
-                      className="h-9 rounded-full px-3.5 font-bold text-muted-foreground data-[state=active]:bg-linkacao data-[state=active]:text-linkacaotexto data-[state=active]:after:hidden sm:pointer-coarse:h-11"
+                      className="h-11 rounded-full px-3.5 font-bold text-muted-foreground data-[state=active]:bg-linkacao data-[state=active]:text-linkacaotexto data-[state=active]:after:hidden sm:h-9 sm:pointer-coarse:h-11"
                     >
                       {`Opção ${j + 1}`}
                     </TabsTrigger>
