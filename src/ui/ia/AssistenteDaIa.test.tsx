@@ -413,3 +413,24 @@ describe('AssistenteDaIa: a meta de energia da gaveta (CA-2413, D-1363)', () => 
     expect(deps.chamar).not.toHaveBeenCalledWith('sugerir-plano', expect.objectContaining({ modo: 'gerar' }))
   })
 })
+
+describe('AssistenteDaIa: o erro numa região que já existe (CA-2410, D-1364)', () => {
+  it('CA-2410: a gaveta abre com a região viva vazia, e a frase do erro entra nela', async () => {
+    const usuario = userEvent.setup()
+    const deps: DependenciasDaSugestao = {
+      chamar: vi.fn(async (_n: string, c: Record<string, unknown>) =>
+        c['modo'] === 'uso' ? { dados: { uso: USO }, falha: null } : { dados: null, falha: { status: 503, codigo: 'indisponivel', erro: null } },
+      ),
+      salvarAgora: vi.fn(async () => true),
+      online: () => true,
+    }
+    montar(deps)
+    await usuario.click(screen.getByRole('button', { name: 'Sugerir plano com IA' }))
+    const gaveta = screen.getByRole('complementary', { name: 'Sugerir plano com IA' })
+    const regiao = within(gaveta).getByRole('status')
+    expect(regiao).toHaveTextContent(/^$/)
+    await usuario.click(within(gaveta).getByRole('button', { name: 'Sugerir plano' }))
+    await waitFor(() => expect(regiao).toHaveTextContent('As sugestões com IA estão indisponíveis agora. Tente mais tarde.'))
+    expect(regiao.isConnected).toBe(true)
+  })
+})

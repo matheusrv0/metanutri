@@ -330,6 +330,8 @@ export function AssistenteDaIa(p: AssistenteDaIaProps) {
 
   let corpo: ReactNode = null
   let rodape: ReactNode = null
+  // D-1364: a frase do erro vai para a região viva que a gaveta já tem.
+  let aviso: Erro | null = null
   if (aberta && form) {
     const limite = noLimite && sugestao.uso ? erroDaIa({ status: 429, codigo: 'limite-mes', erro: null }, sugestao.uso, agora) : null
     if (estado.fase === 'esperando') {
@@ -346,7 +348,7 @@ export function AssistenteDaIa(p: AssistenteDaIaProps) {
         />
       )
     } else if (erro) {
-      corpo = <ErroDaIa erro={erro} aoVerPlanos={p.aoVerPlanos} />
+      aviso = erro
       const acao =
         erro.acao === 'ver-planos' ? (
           <Button disabled>{aberta === 'gerar' ? 'Sugerir plano' : 'Sugerir ajustes'}</Button>
@@ -428,7 +430,7 @@ export function AssistenteDaIa(p: AssistenteDaIaProps) {
         />
       )
     } else if (limite) {
-      corpo = <ErroDaIa erro={limite} aoVerPlanos={p.aoVerPlanos} />
+      aviso = limite
       rodape = <RodapeDaIa acoes={<Button disabled>{aberta === 'gerar' ? 'Sugerir plano' : 'Sugerir ajustes'}</Button>} contador={contador} />
     } else if (aberta === 'gerar') {
       const semRefeicao = form.tiradas.size >= refeicoesDoPlano.length
@@ -504,7 +506,7 @@ export function AssistenteDaIa(p: AssistenteDaIaProps) {
   }
 
   const lugar: LugarDaGaveta | null = aberta === null ? null : estreito ? 'folha' : largo ? 'lado' : 'fluxo'
-  const gaveta = lugar && aberta ? <GavetaIa titulo={titulo} lugar={lugar} aoFechar={fechar} quemAbriu={quemAbriu} corpo={corpo} rodape={rodape} /> : null
+  const gaveta = lugar && aberta ? <GavetaIa titulo={titulo} lugar={lugar} aoFechar={fechar} quemAbriu={quemAbriu} aviso={<ErroDaIa erro={aviso} aoVerPlanos={p.aoVerPlanos} />} corpo={corpo} rodape={rodape} /> : null
 
   const vaiParaTextos = mudancas && lugar !== null ? textosDoVaiPara(mudancas, recusadas, buscarAlimento) : null
   const extras: ExtrasDoPlano = {

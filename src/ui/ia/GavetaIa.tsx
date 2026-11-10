@@ -17,6 +17,8 @@ interface GavetaIaProps {
   readonly aoFechar: () => void
   /** O botão que abriu a gaveta: o foco volta a ele quando ela fecha (D-1359). */
   readonly quemAbriu?: RefObject<HTMLElement | null> | undefined
+  /** A região viva dos erros, que fica no topo do corpo desde que a gaveta abre (D-1364). */
+  readonly aviso?: ReactNode
   readonly corpo: ReactNode
   readonly rodape: ReactNode
 }
@@ -25,7 +27,7 @@ interface GavetaIaProps {
  * D-1302: o título é o nome do botão que a abriu; o rodapé fica fixo embaixo, com a ação, o motivo e o contador. Ao lado
  * e no fluxo, o foco vai ao título quando ela abre (D-1357); a folha é um diálogo e leva o foco sozinha.
  */
-export function GavetaIa({ titulo, lugar, aoFechar, quemAbriu, corpo, rodape }: GavetaIaProps) {
+export function GavetaIa({ titulo, lugar, aoFechar, quemAbriu, aviso, corpo, rodape }: GavetaIaProps) {
   const idTitulo = useId()
   const refTitulo = useRef<HTMLHeadingElement>(null)
   useEffect(() => {
@@ -52,7 +54,10 @@ export function GavetaIa({ titulo, lugar, aoFechar, quemAbriu, corpo, rodape }: 
           <div className="border-b border-bordersubtle px-4 pb-3 pt-4 pr-14">
             <SheetTitle className="text-base">{titulo}</SheetTitle>
           </div>
-          <div className="min-h-0 flex-1 overflow-y-auto px-4">{corpo}</div>
+          <div className="min-h-0 flex-1 overflow-y-auto px-4">
+            {aviso}
+            {corpo}
+          </div>
           <div className="border-t border-bordersubtle bg-card px-4 pb-4 pt-3">{rodape}</div>
         </SheetContent>
       </Sheet>
@@ -72,7 +77,10 @@ export function GavetaIa({ titulo, lugar, aoFechar, quemAbriu, corpo, rodape }: 
           <X aria-hidden="true" />
         </Button>
       </div>
-      <div className="px-5">{corpo}</div>
+      <div className="px-5">
+        {aviso}
+        {corpo}
+      </div>
       {/* Como no protótipo: o rodapé fica preso ao pé da tela enquanto a gaveta passa por ela, e a ação não some. */}
       <div className={cn('rounded-b-xl border-t border-bordersubtle bg-card px-5 pb-4 pt-3', lugar === 'lado' && 'sticky bottom-0')}>{rodape}</div>
     </aside>
