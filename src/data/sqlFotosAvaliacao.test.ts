@@ -58,21 +58,35 @@ describe('banco: as fotos e os anexos da avaliação (018, spec antropometria-te
     expect(semComentarios).not.toMatch(/to anon/)
   })
 
-  it('D-1504: a função confere o caminho inteiro, trava a pasta da conta e só depois conta', () => {
+  it('D-1504: a função da política confere o caminho inteiro e conta', () => {
     expect(cabecalho).toMatch(/returns boolean\s+language plpgsql\s+volatile\s+security definer\s+set search_path = public/)
     expect(corpo).toContain('v_conta text := auth.uid()::text;')
     expect(corpo).toContain('if v_conta is null or p_nome is null then')
     const uuid = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
     expect(corpo).toContain(`'^' || v_conta || '/[A-Za-z0-9_-]{1,64}/(fotos/${uuid}\\.jpg|anexos/${uuid}\\.(pdf|jpg|png))$'`)
-    const trava = corpo.indexOf("perform pg_advisory_xact_lock(hashtext('fotos-avaliacao:' || v_conta));")
-    expect(trava).toBeGreaterThan(-1)
-    expect(trava).toBeLessThan(corpo.indexOf('select count(*)'))
     expect(corpo).toContain('if v_na_conta >= 2000 then')
     expect(corpo).toContain(`when 'fotos' then ${FOTOS_POR_AVALIACAO}`)
     expect(corpo).toContain(`else ${ANEXOS_POR_AVALIACAO}`)
     // O nome do plano pode ter "_", que no like é coringa: a pasta é conferida pelo começo exato do nome.
     expect(corpo).not.toMatch(/\blike\b/)
     expect(corpo).toContain('starts_with(o.name, v_pasta)')
+  })
+
+  it('D-1504 e CB-1416: o gatilho antes de gravar trava a pasta da conta, conta de novo e recusa o que passa do limite', () => {
+    const gatilho = semComentarios.split('create or replace function public.limite_de_arquivos_da_avaliacao()')[1]?.split('$$;')[0] ?? ''
+    expect(gatilho).toMatch(/returns trigger\s+language plpgsql\s+security definer\s+set search_path = public/)
+    expect(gatilho).toContain("if new.bucket_id is distinct from 'fotos-avaliacao' then")
+    const trava = gatilho.indexOf("perform pg_advisory_xact_lock(hashtext('fotos-avaliacao:' || v_conta));")
+    expect(trava).toBeGreaterThan(-1)
+    expect(trava).toBeLessThan(gatilho.indexOf('select count(*)'))
+    expect(gatilho).toContain(`v_limite integer := case split_part(new.name, '/', 3) when 'fotos' then ${FOTOS_POR_AVALIACAO} else ${ANEXOS_POR_AVALIACAO} end;`)
+    expect(gatilho).toContain('if v_na_conta >= 2000 or v_no_plano >= v_limite then')
+    expect(gatilho).toContain("raise exception 'Limite de arquivos da avaliação.' using errcode = 'check_violation';")
+    expect(semComentarios).toContain('before insert on storage.objects\n    for each row execute function public.limite_de_arquivos_da_avaliacao();')
+    expect(semComentarios).toContain('drop trigger if exists limite_de_arquivos_da_avaliacao on storage.objects;')
+    expect(semComentarios).toContain('revoke all on function public.limite_de_arquivos_da_avaliacao() from public, anon, authenticated;')
+    // Sem permissão no projeto, o resto do arquivo vale e o aviso diz o que ficou de fora.
+    expect(semComentarios).toContain('when insufficient_privilege then')
   })
 
   it('a função só para quem tem conta', () => {

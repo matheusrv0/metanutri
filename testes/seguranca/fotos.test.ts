@@ -188,7 +188,12 @@ describe('CA-2488: o servidor confere o arquivo e as contagens (D-1457, D-1504)'
     expect(r.ok, r.erro).toBe(true)
     expect(nomesNoBanco(id)).toHaveLength(2000)
     recusado(await enviar(c.atacante.cliente, caminhoDaFoto(id, 'plano-depois-do-teto')))
-    // As linhas de mentira saem pelo banco: não têm arquivo no armazenamento.
-    expect(sqlNoBancoLocal(`delete from storage.objects where bucket_id = '${BALDE}' and starts_with(name, '${id}/lote-');`).ok).toBe(true)
+    // As linhas de mentira ficam até o fim: a pilha local é apagada depois dos testes.
+  })
+
+  it('D-1504: o gatilho existe no banco local (o limite com dois envios juntos não depende só da política)', () => {
+    const r = sqlNoBancoLocal("select tgname from pg_trigger where tgrelid = 'storage.objects'::regclass and tgname = 'limite_de_arquivos_da_avaliacao';")
+    expect(r.ok, r.erro).toBe(true)
+    expect(r.saida).toBe('limite_de_arquivos_da_avaliacao')
   })
 })

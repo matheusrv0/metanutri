@@ -33,8 +33,8 @@ on conflict (id) do update
 
 -- Confere o caminho inteiro e as contagens. Roda como dono do banco (security definer) para contar os arquivos da
 -- própria conta sem cair na política que está sendo conferida (a mesma ideia do comprovantes_da_conta, 010).
--- A trava (pg_advisory_xact_lock) segura a pasta da conta até o fim do envio: duas abas enviando juntas não passam de
--- 5 fotos, porque a segunda só conta depois que a primeira terminou (CB-1416).
+-- O armazenamento confere a política antes de receber o arquivo e grava a linha depois: dois envios juntos passariam
+-- os dois por aqui. Quem segura o limite nesse caso é o gatilho mais abaixo (CB-1416).
 create or replace function public.pode_enviar_arquivo_da_avaliacao(p_nome text)
 returns boolean
 language plpgsql
@@ -60,8 +60,6 @@ begin
   v_plano := split_part(p_nome, '/', 2);
   v_tipo := split_part(p_nome, '/', 3);
   v_pasta := v_conta || '/' || v_plano || '/' || v_tipo || '/';
-
-  perform pg_advisory_xact_lock(hashtext('fotos-avaliacao:' || v_conta));
 
   select count(*)::integer into v_na_conta
     from storage.objects o
@@ -105,6 +103,58 @@ create policy "fotos da avaliacao: dono apaga" on storage.objects
 
 -- Sem política de alteração (update): ninguém sobrescreve nem move arquivo neste balde.
 
+
+-- ---------- O limite também com dois envios ao mesmo tempo (D-1504, CB-1416) ----------
+
+-- Antes de gravar a linha de um arquivo novo do balde, o gatilho trava a pasta da conta até o fim da gravação
+-- (pg_advisory_xact_lock) e só então conta: o segundo envio espera o primeiro terminar e já o vê. Passou de 5 fotos ou
+-- 10 anexos no plano, ou de 2.000 arquivos na conta, a gravação é recusada e nada fica.
+create or replace function public.limite_de_arquivos_da_avaliacao()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_conta text := split_part(new.name, '/', 1);
+  v_pasta text := split_part(new.name, '/', 1) || '/' || split_part(new.name, '/', 2) || '/' || split_part(new.name, '/', 3) || '/';
+  v_limite integer := case split_part(new.name, '/', 3) when 'fotos' then 5 else 10 end;
+  v_na_conta integer;
+  v_no_plano integer;
+begin
+  if new.bucket_id is distinct from 'fotos-avaliacao' then
+    return new;
+  end if;
+  perform pg_advisory_xact_lock(hashtext('fotos-avaliacao:' || v_conta));
+  select count(*)::integer into v_na_conta
+    from storage.objects o
+   where o.bucket_id = 'fotos-avaliacao' and starts_with(o.name, v_conta || '/') and o.name <> new.name;
+  select count(*)::integer into v_no_plano
+    from storage.objects o
+   where o.bucket_id = 'fotos-avaliacao' and starts_with(o.name, v_pasta) and o.name <> new.name;
+  if v_na_conta >= 2000 or v_no_plano >= v_limite then
+    raise exception 'Limite de arquivos da avaliação.' using errcode = 'check_violation';
+  end if;
+  return new;
+end;
+$$;
+
+revoke all on function public.limite_de_arquivos_da_avaliacao() from public, anon, authenticated;
+
+-- A tabela do armazenamento é do Supabase. Se o projeto não deixar criar o gatilho, o resto deste arquivo vale do mesmo
+-- jeito (o limite fica só pela política, que já recusa a 6ª foto enviada depois das outras) e o aviso diz isso.
+do $$
+begin
+  drop trigger if exists limite_de_arquivos_da_avaliacao on storage.objects;
+  create trigger limite_de_arquivos_da_avaliacao
+    before insert on storage.objects
+    for each row execute function public.limite_de_arquivos_da_avaliacao();
+exception
+  when insufficient_privilege then
+    raise warning 'Sem permissão para criar o gatilho em storage.objects: o limite de fotos vale pela política, sem a trava de dois envios juntos.';
+end;
+$$;
+
 commit;
 
 
@@ -116,3 +166,5 @@ commit;
 -- select has_function_privilege('anon', 'public.pode_enviar_arquivo_da_avaliacao(text)', 'execute') as anon_chama, p.prosecdef as definer
 --   from pg_proc p where p.oid = 'public.pode_enviar_arquivo_da_avaliacao(text)'::regprocedure;
 -- -- uma linha: false, true
+-- select tgname from pg_trigger where tgrelid = 'storage.objects'::regclass and tgname = 'limite_de_arquivos_da_avaliacao';
+-- -- uma linha: limite_de_arquivos_da_avaliacao (sem ela, o aviso do gatilho apareceu ao rodar; o resto vale)
