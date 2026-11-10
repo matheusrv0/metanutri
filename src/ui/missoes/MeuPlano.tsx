@@ -187,11 +187,12 @@ export function MeuPlano({ dieta, primeiroNome, hoje, missaoDaRefeicao, aoAltern
             {refeicao.opcoes.length > 1 ? (
               <Tabs value={opcoes[i] ?? '0'} onValueChange={(valor) => setOpcoes((atual) => ({ ...atual, [i]: valor }))}>
                 <TabsList aria-label={`Opções de ${refeicao.nome.toLocaleLowerCase('pt-BR')}`} className="flex max-w-full flex-wrap gap-1 self-start rounded-3xl border-0 bg-surfacesunken p-0.75">
+                  {/* D-1260 e CA-2307: 44 px em toda largura, com o dedo ou com o mouse. */}
                   {refeicao.opcoes.map((_, j) => (
                     <TabsTrigger
                       key={j}
                       value={String(j)}
-                      className="h-11 rounded-full px-3.5 font-bold text-muted-foreground data-[state=active]:bg-linkacao data-[state=active]:text-linkacaotexto data-[state=active]:after:hidden sm:h-9 sm:pointer-coarse:h-11"
+                      className="h-11 rounded-full px-3.5 font-bold text-muted-foreground data-[state=active]:bg-linkacao data-[state=active]:text-linkacaotexto data-[state=active]:after:hidden"
                     >
                       {`Opção ${j + 1}`}
                     </TabsTrigger>

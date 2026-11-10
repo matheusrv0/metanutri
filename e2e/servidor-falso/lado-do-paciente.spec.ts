@@ -262,6 +262,18 @@ test('CA-2295: em 390 px, com a letra normal, o seletor de opções do Plano e o
   expect(await pequenos('[role="dialog"]')).toEqual([])
 })
 
+test('CA-2307: em 1440 px, com o mouse, o seletor de opções do Plano também tem 44 px', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await abrirLinkDaJuliana(page)
+  await barraDeBaixo(page).getByRole('link', { name: 'Plano' }).click()
+  const opcoes = page.getByRole('tab', { name: /^Opção \d$/ })
+  await expect(opcoes.first()).toBeVisible()
+  for (const opcao of await opcoes.all()) {
+    if (!(await opcao.isVisible())) continue
+    expect(Math.round((await opcao.boundingBox())?.height ?? 0), (await opcao.textContent()) ?? '').toBeGreaterThanOrEqual(44)
+  }
+})
+
 for (const largura of [360, 390, 412] as const) {
   test(`CA-2218: em ${largura} px, com a letra a 200%, nada rola de lado, a barra de baixo não cobre a última missão e os alvos têm 44 px`, async ({ page }) => {
     await page.setViewportSize({ width: largura, height: 844 })
