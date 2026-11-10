@@ -801,3 +801,27 @@ T58 a T66 em cima de 578a6692. Rodada final, com as travas de sempre:
 - CA-2306: a resposta do e-mail bloqueado é igual no corpo, mas sai sem esperar o envio; a diferença de tempo é a de
   um envio ao Resend. O "Receber" pede o token, e o tempo fixo (D-1249) é só da recuperação.
 - A Política (D-1250 e D-1259) continua **PARA O DONO APROVAR**; a versão dos textos fica `2026-11-03`.
+
+### 10.3 A validação da correção da revisão r3 (10/11/2026)
+
+T68 a T71 em cima de f73f89c3. Rodada final, com as travas de sempre:
+- `npm run lint`: 0 erro (o aviso antigo de sempre). `npm run typecheck`: limpo. `npm run build`: limpo.
+- `npx vitest run --maxWorkers=4`: 399 arquivos verdes; em 9 deles o Windows não conseguiu abrir ou manter o processo
+  do teste (`spawn UNKNOWN`, a máquina cheia), e os 9, rodados de novo sozinhos, passaram (83 de 83). Nenhum teste
+  falhou.
+- e2e dos arquivos do paciente (`servidor-falso/lado-do-paciente`, `servidor-falso/marca-no-link`, `marca-no-link`,
+  `missoes`), com a `trava-e2e` e `--workers=2`: 34 de 34.
+- `npm run test:seguranca` (com a `trava-ataques`, pelo mesmo caminho da revisão, com as sondas na mesma pilha):
+  **363 de 363** em 11 arquivos, com as duas ordens da corrida do "Confirmar" (duas transações no banco local).
+- As sondas: `sonda-trocar-endereco.mts` (r1) `furo1=false furo2=false furo3=false`; `sonda-contornos-r2.mts` "nenhum
+  furo"; `sonda-r3.mts` "nenhum furo" (G1 e G2: o "Confirmar" responde 404, o link fica com o da ficha e "Recuperar"
+  não entrega nada; G3: 404; K: o 017 roda mais duas vezes); as duas do remetente saem "Ana Lima" em todo endereço; as
+  de tempo sem diferença (pior 17 ms).
+
+**Divergências que ficam:**
+- O nome da porta `gravarEmailDoPaciente` ficou, embora ela agora faça o "Confirmar" inteiro (também na chave do e-mail
+  que o link já tem): a sonda da r3 injeta a troca nela (DP-LP-47).
+- A lista de bloqueio, pelo motivo: o e-mail que **volta** não recebe nada; o **marcado como spam** ainda recebe o que
+  o próprio paciente pede no link (o S1 do "Receber", o S3 e a recuperação), e o resumo da adesão (N1) da conta só
+  confere o que volta. A Política diz isso (D-1263). Não mudei o código.
+- A Política (D-1250, D-1259 e D-1263) continua **PARA O DONO APROVAR**; a versão dos textos fica `2026-11-03`.
