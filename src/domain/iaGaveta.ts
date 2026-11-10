@@ -30,6 +30,10 @@ import { REFEICOES_PADRAO } from './plano.ts'
 import type { RestricoesDoPaciente } from './restricoes.ts'
 import type { BuscarAlimento, Caso, Plano } from './tipos.ts'
 
+/** Os dois modos da gaveta (D-1300) e o título de cada um, que é o nome do botão que a abre (D-1302). */
+export type ModoDaGaveta = 'gerar' | 'ajustar'
+export const TITULO_DA_GAVETA: Readonly<Record<ModoDaGaveta, string>> = { gerar: 'Sugerir plano com IA', ajustar: 'Adequar com IA' }
+
 /** AAAA-MM-DD em DD/MM/AAAA. */
 export const diaNaTela = (dia: string): string => dia.split('-').reverse().join('/')
 

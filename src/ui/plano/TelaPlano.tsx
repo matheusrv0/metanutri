@@ -41,6 +41,12 @@ interface TelaPlanoProps {
   readonly aoMudarModo?: ((modo: ModoQuantidade) => void) | undefined
   /** "+ Nova medida…" na linha do plano (D-387) e na entrada rápida (D-432). */
   readonly aoCriarMedida?: ((alimentoId: number, aoCriar: (medida: MedidaCaseira) => void, nomeInicial?: string) => void) | undefined
+  /** Spec assistente-ia, D-1350: a linha de "Modelos de plano" com os botões da IA. Sem ela, só "Modelos de plano". */
+  readonly ferramentas?: ((modelos: ReactNode) => ReactNode) | undefined
+  /** A faixa da IA com "Desfazer" (D-1308), acima das refeições. */
+  readonly topo?: ReactNode
+  /** "Vai para …" no item que a mudança aceita muda (spec assistente-ia, CA-2371). */
+  readonly vaiPara?: ((refeicao: number, opcao: OpcaoId, item: number) => string | null) | undefined
 }
 
 const idPadrao: GerarId = () => globalThis.crypto.randomUUID()
@@ -55,6 +61,9 @@ export function TelaPlano({
   modo,
   aoMudarModo,
   aoCriarMedida,
+  ferramentas,
+  topo,
+  vaiPara,
 }: TelaPlanoProps) {
   const [modelosAbertos, setModelosAbertos] = useState(false)
   const sugestoes = useSugestoes()
@@ -88,13 +97,17 @@ export function TelaPlano({
       {/* D-376: a escolha de como o paciente lê fica no topo da etapa, onde as quantidades são montadas. */}
       <div className="flex flex-wrap items-end justify-between gap-3">
         {modo && aoMudarModo ? <ModoDasQuantidades modo={modo} aoMudar={aoMudarModo} /> : <span />}
-        <Button variant="outline" size="sm" onClick={() => setModelosAbertos(true)}>
-          <LayoutTemplate aria-hidden="true" />
-          Modelos de plano
-        </Button>
+        {(ferramentas ?? ((m: ReactNode) => m))(
+          <Button variant="outline" size="sm" onClick={() => setModelosAbertos(true)}>
+            <LayoutTemplate aria-hidden="true" />
+            Modelos de plano
+          </Button>,
+        )}
       </div>
 
-      {plano.refeicoes.map((refeicao) => {
+      {topo}
+
+      {plano.refeicoes.map((refeicao, indice) => {
         const tipo = tipoDaRefeicao(refeicao.nome, refeicao.horario)
         return (
           <CartaoRefeicao
@@ -118,6 +131,7 @@ export function TelaPlano({
             aoMudarMedida={(opcao, itemId, medida) => aoAlterarPlano(escolherMedida(plano, refeicao.id, opcao, itemId, medida))}
             modo={modo ?? 'medida-caseira'}
             aoCriarMedida={criarMedida}
+            vaiPara={vaiPara ? (opcao, item) => vaiPara(indice, opcao, item) : undefined}
             {...(extraDaOpcao ? { extraDaOpcao: (opcao: OpcaoId) => extraDaOpcao(refeicao.id, opcao) } : {})}
           />
         )

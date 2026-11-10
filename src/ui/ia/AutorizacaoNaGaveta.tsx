@@ -10,7 +10,8 @@ interface AutorizacaoNaGavetaProps {
   /** AAAA-MM-DD da autorização gravada na ficha; nulo sem autorização. */
   readonly desde: string | null
   readonly aoMudar: (ligada: boolean) => void
-  readonly aoBaixarTermo: () => void
+  /** Sem ele, a linha fica sem o link do termo. */
+  readonly aoBaixarTermo?: (() => void) | undefined
 }
 
 /** D-1304 e CA-2365: a chave grava na ficha; desligar revoga. O termo em Word sai pelo link. */
@@ -28,10 +29,15 @@ export function AutorizacaoNaGaveta({ desde, aoMudar, aoBaixarTermo }: Autorizac
         <Switch checked={desde !== null} onCheckedChange={aoMudar} aria-labelledby={id} />
       </div>
       <p className="text-sm text-muted-foreground">
-        {O_QUE_VAI_A_IA}{' '}
-        <Button variant="link" size="sm" className="h-auto px-0 align-baseline text-sm max-sm:min-h-11" onClick={aoBaixarTermo}>
-          Termo de autorização
-        </Button>
+        {O_QUE_VAI_A_IA}
+        {aoBaixarTermo ? (
+          <>
+            {' '}
+            <Button variant="link" size="sm" className="h-auto px-0 align-baseline text-sm max-sm:min-h-11" onClick={aoBaixarTermo}>
+              Termo de autorização
+            </Button>
+          </>
+        ) : null}
       </p>
     </section>
   )

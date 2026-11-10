@@ -46,6 +46,8 @@ interface CartaoRefeicaoProps {
   readonly aoSalvarSugestoes: (lista: readonly SugestaoAlimento[]) => boolean
   /** Conteúdo extra no fim de uma opção de substituto (calculadora de equivalência). */
   readonly extraDaOpcao?: (opcao: OpcaoId) => ReactNode
+  /** Spec assistente-ia, CA-2371: "Vai para …" no item (pelo número dele na opção) que a mudança aceita muda. */
+  readonly vaiPara?: ((opcao: OpcaoId, item: number) => string | null) | undefined
 }
 
 /** CA-13, CA-14 e CA-334: refeição com horário, nome, kcal da opção aberta e três opções. */
@@ -65,6 +67,7 @@ export function CartaoRefeicao({
   sugestoes,
   aoSalvarSugestoes,
   extraDaOpcao,
+  vaiPara,
 }: CartaoRefeicaoProps) {
   const [opcaoAtiva, setOpcaoAtiva] = useState<OpcaoId>('principal')
   const [itemParaSubstituir, setItemParaSubstituir] = useState<ItemPlano | null>(null)
@@ -181,10 +184,11 @@ export function CartaoRefeicao({
           <p className="text-sm text-muted-foreground">Nenhum alimento nesta opção.</p>
         ) : (
           <ul aria-label={`Alimentos em ${ROTULO_OPCAO[opcaoAtiva]} de ${refeicao.nome}`} className="flex flex-col">
-            {itens.map((item) => (
+            {itens.map((item, numero) => (
               <LinhaItem
                 key={item.id}
                 item={item}
+                vaiPara={vaiPara?.(opcaoAtiva, numero) ?? null}
                 aoMudarGramas={(g) => aoMudarGramas(opcaoAtiva, item.id, g)}
                 aoRemover={() => aoRemoverItem(opcaoAtiva, item.id)}
                 aoSubstituir={opcaoAtiva === 'principal' ? () => setItemParaSubstituir(item) : undefined}

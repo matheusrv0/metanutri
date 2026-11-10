@@ -12,6 +12,7 @@ import { buscarAlimento } from '@/domain/tabelas.ts'
 import { totaisDeItens } from '@/domain/totais.ts'
 import type { ItemPlano, MedidaDoItem, ModoQuantidade } from '@/domain/tipos.ts'
 import { formatarNumero } from '@/export/copiar-tabela.ts'
+import { cn } from '@/lib/utils'
 import { CampoNumero } from '@ds/componentes/forms/CampoNumero.tsx'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { MarcaSemDado } from '../adequacao/MarcaSemDado.tsx'
@@ -33,6 +34,8 @@ interface LinhaItemProps {
   readonly modo?: ModoQuantidade | undefined
   /** "+ Nova medida…" no seletor (D-387). */
   readonly aoCriarMedida?: ((alimentoId: number, aoCriar: (medida: MedidaCaseira) => void) => void) | undefined
+  /** Spec assistente-ia, CA-2371: para onde a mudança aceita do adequar leva o item ("Vai para 50 g"). */
+  readonly vaiPara?: string | null | undefined
 }
 
 /**
@@ -49,7 +52,7 @@ function energiaDaReceita(item: ItemPlano): { readonly kcal: number | null; read
  * dela e "Receita · 1 unidade" embaixo, e não tem substituto. Spec alimentos-e-gramaturas (G2, G3, G5): quantidade +
  * medida = gramas, ligados, e "O paciente lê" no modo do plano.
  */
-export function LinhaItem({ item, aoMudarGramas, aoRemover, aoSubstituir, aoMudarMedida, modo = 'medida-caseira', aoCriarMedida }: LinhaItemProps) {
+export function LinhaItem({ item, aoMudarGramas, aoRemover, aoSubstituir, aoMudarMedida, modo = 'medida-caseira', aoCriarMedida, vaiPara = null }: LinhaItemProps) {
   const deReceita = ehItemDeReceita(item)
   const receita = receitaDoItem(item)
   const alimento = deReceita ? undefined : buscarAlimento(item.alimentoId)
@@ -69,6 +72,7 @@ export function LinhaItem({ item, aoMudarGramas, aoRemover, aoSubstituir, aoMuda
       {restricao}
     </p>
   ) : null
+  const marcaDaIa = vaiPara ? <p className="text-xs font-semibold text-infotext">{vaiPara}</p> : null
   const unidade = unidadeDo(alimento)
   const temOQueComer = deReceita ? receitaComOQueComer(receita, buscarAlimento) : alimento !== undefined
 
@@ -137,12 +141,13 @@ export function LinhaItem({ item, aoMudarGramas, aoRemover, aoSubstituir, aoMuda
       : (naLinha?.texto ?? null)
     return (
       // No celular o nome fica numa linha só e os controles descem; no desktop tudo na mesma linha.
-      <li className="flex flex-col gap-1 border-b border-border py-2 last:border-0 sm:flex-row sm:items-center sm:gap-3">
+      <li className={cn('flex flex-col gap-1 border-b border-border py-2 last:border-0 sm:flex-row sm:items-center sm:gap-3', vaiPara && 'bg-surfacerow')}>
         <div className="min-w-0 sm:flex-1">
           <p className="break-words text-sm text-foreground" title={incompleto ? `${descricao} — ${incompleto}` : descricao}>
             {descricao}
           </p>
           {medidaTexto ? <p className="break-words text-xs text-muted-foreground">{medidaTexto}</p> : null}
+          {marcaDaIa}
           {avisoDeRestricao}
           {modo && aoMudarMedida && leitura ? <p className="text-xs text-muted-foreground">{`O paciente lê: ${leitura}`}</p> : null}
           {/* D-248, revisão de 20/10/2026: a folha e o link deixam o item excluído de fora; a nutricionista fica sabendo aqui. */}
@@ -165,7 +170,7 @@ export function LinhaItem({ item, aoMudarGramas, aoRemover, aoSubstituir, aoMuda
 
   return (
     // G2: o nome; quantidade + medida = gramas; o que o paciente lê. No celular, as três linhas; nada passa de 360 px.
-    <li className="flex flex-col gap-2 border-b border-border py-3 last:border-0">
+    <li className={cn('flex flex-col gap-2 border-b border-border py-3 last:border-0', vaiPara && '-mx-2 rounded-md bg-surfacerow px-2')}>
       <div className="flex items-start gap-2">
         {/* D-481 (correção C): o nome quebra linha; "Ovo, de galinha, inteiro…" não dizia se era cozido ou frito. */}
         <p className="min-w-0 flex-1 break-words pt-0.5 text-sm font-medium text-foreground" title={incompleto ? `${descricao} — ${incompleto}` : descricao}>
@@ -174,6 +179,7 @@ export function LinhaItem({ item, aoMudarGramas, aoRemover, aoSubstituir, aoMuda
         {kcalTexto}
         {acoes}
       </div>
+      {marcaDaIa}
       {avisoDeRestricao}
 
       {/* D-481: no celular, quantidade e medida ocupam a linha (o nome da medida cabe inteiro) e "= gramas" desce. */}
