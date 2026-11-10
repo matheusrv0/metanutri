@@ -137,12 +137,18 @@ describe('a resposta da função, conferida de novo no navegador', () => {
   const ids = new Set([53, 488, 226])
   const resposta = { refeicoes: [{ refeicao: 0, principal: [{ alimentoId: 53, gramas: 50 }, { alimentoId: 99999, gramas: 30 }], opcao2: [] }], mudancas: [], pontosAConfirmar: [] }
 
-  it('lê o uso, o modelo e a resposta; o id fora do permitido sai e conta em foraDaBase', () => {
+  it('lê o uso, o modelo e a resposta; o id que o navegador não conhece fica para a conferência 1 retirar à vista (CB-1308)', () => {
     const lida = lerRespostaDaFuncao({ resposta, uso: { usados: 8, limite: 20, renovaEm: '2026-12-01' }, foraDaBase: 1, modelo: 'claude-opus-5-5' }, { modo: 'gerar', refeicoes: 1, idsPermitidos: ids, plano: null })
     expect(lida?.uso).toEqual({ usados: 8, limite: 20, renovaEm: '2026-12-01' })
     expect(lida?.modelo).toBe('claude-opus-5-5')
-    expect(lida?.resposta.refeicoes[0]?.principal).toEqual([{ alimentoId: 53, gramas: 50 }])
-    expect(lida?.foraDaBase).toBe(2)
+    expect(lida?.resposta.refeicoes[0]?.principal).toEqual([{ alimentoId: 53, gramas: 50 }, { alimentoId: 99999, gramas: 30 }])
+    expect(lida?.foraDaBase).toBe(1)
+  })
+
+  it('a forma e os limites valem: gramas fora de 1 a 1000 e refeição que não existe saem', () => {
+    const fora = { refeicoes: [{ refeicao: 0, principal: [{ alimentoId: 53, gramas: 5000 }], opcao2: [] }, { refeicao: 7, principal: [{ alimentoId: 53, gramas: 50 }], opcao2: [] }], mudancas: [], pontosAConfirmar: [] }
+    const lida = lerRespostaDaFuncao({ resposta: fora, uso: { usados: 8, limite: 20, renovaEm: '2026-12-01' }, foraDaBase: 0, modelo: 'm' }, { modo: 'gerar', refeicoes: 1, idsPermitidos: ids, plano: null })
+    expect(lida?.resposta.refeicoes.flatMap((r) => r.principal)).toEqual([])
   })
 
   it('fora da forma: nulo', () => {

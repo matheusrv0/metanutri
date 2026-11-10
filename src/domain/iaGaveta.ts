@@ -255,17 +255,17 @@ export function lerUso(valor: unknown): UsoDoMes | null {
   return { usados: usados as number, limite: limite as number, renovaEm }
 }
 
-/**
- * A resposta 200 da função (D-1320), conferida de novo pelo mesmo código da função: o navegador não confia na rede.
- * O que sai aqui por estar fora da base soma no `foraDaBase`.
- */
+/** A resposta 200 da função (D-1320), conferida de novo pelo mesmo código da função: o navegador não confia na rede. */
 export function lerRespostaDaFuncao(dados: unknown, contexto: ContextoDaResposta): RespostaDaFuncao | null {
   if (!ehObjeto(dados)) return null
   const uso = lerUso(dados['uso'])
   const modelo = typeof dados['modelo'] === 'string' ? dados['modelo'].slice(0, 64) : ''
   const fora = typeof dados['foraDaBase'] === 'number' && Number.isInteger(dados['foraDaBase']) ? dados['foraDaBase'] : 0
   if (!uso || !ehObjeto(dados['resposta'])) return null
-  const conferida = conferirResposta(JSON.stringify(dados['resposta']), contexto)
+  // O id que a função deixou passar e o navegador não conhece fica: a conferência 1 o retira à vista, com "Alimento fora
+  // da base" (CB-1308, CA-2380). Aqui vale a forma, as gramas, as refeições e os limites, pelo mesmo código da função.
+  const idsDaResposta = JSON.stringify(dados['resposta']).match(/"alimentoId":\s*(\d+)/g)?.map((t) => Number(t.replace(/\D/g, ''))) ?? []
+  const conferida = conferirResposta(JSON.stringify(dados['resposta']), { ...contexto, idsPermitidos: new Set([...contexto.idsPermitidos, ...idsDaResposta]) })
   if (!conferida.ok) return null
   return { resposta: conferida.resposta, uso, foraDaBase: fora + conferida.foraDaBase, modelo }
 }
