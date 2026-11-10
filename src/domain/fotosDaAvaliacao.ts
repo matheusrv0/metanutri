@@ -17,6 +17,8 @@ export const FOTOS_POR_AVALIACAO = 5
 export const ANEXOS_POR_AVALIACAO = 10
 /** D-1451: fotos e anexos somam até 8 MB por avaliação (o balde também recusa arquivo maior que isso). */
 export const TETO_DA_AVALIACAO = 8 * MEGA
+/** D-1531: a conta inteira soma até 500 MB no balde (o gatilho do 018 confere). */
+export const TETO_DA_CONTA = 500 * MEGA
 /** D-1452: a foto escolhida vai até 20 MB e 8000 px de lado, lidos antes de abrir. */
 export const FOTO_ENVIO_MAX_BYTES = 20 * MEGA
 export const LADO_MAXIMO_DA_FOTO = 8000
@@ -137,14 +139,23 @@ export function textosPeloSexo(sexo: Sexo | null): { readonly autorizou: string;
 /** `recusado`: o servidor respondeu e não aceitou; `sem-rede`: não respondeu. */
 export type ResultadoDoEnvio = 'ok' | 'recusado' | 'sem-rede'
 
+/** Um arquivo da pasta do plano, como o armazenamento diz (DP-AT-21). */
+export interface ArquivoNoArmazenamento {
+  /** `<conta>/<plano>/fotos/<id>.jpg` ou `<conta>/<plano>/anexos/<id>.pdf`. */
+  readonly caminho: string
+  readonly bytes: number
+  /** Data e hora do envio, ISO; nula quando o armazenamento não disse. */
+  readonly criadoEm: string | null
+}
+
 /** Quem guarda os arquivos: o armazenamento do Supabase na interface; um falso nos testes. */
 export interface ArmazenamentoDeFotos {
   /** O id da conta que está dentro (a primeira pasta do caminho); nulo sem sessão. */
   conta(): Promise<string | null>
   /** Envia sem sobrescrever (o balde não tem alteração, D-1504). */
   enviar(caminho: string, arquivo: Blob, tipo: TipoDoArquivo): Promise<ResultadoDoEnvio>
-  /** Quantos arquivos a pasta tem; nulo quando não deu para saber. */
-  contar(pasta: string): Promise<number | null>
+  /** Os arquivos de `fotos/` e de `anexos/` da pasta do plano (`<conta>/<plano>`); nula quando não deu para ler. */
+  listar(pastaDoPlano: string): Promise<readonly ArquivoNoArmazenamento[] | null>
   /** A URL assinada de 10 minutos; nula quando não deu. */
   assinar(caminho: string): Promise<string | null>
   /** Verdadeiro quando os arquivos não estão mais lá (o que já não existia conta como apagado). */
@@ -193,14 +204,26 @@ export interface EntradaDoAnexo extends EntradaComum {
 
 const erro = (mensagem: string): { readonly tipo: 'erro'; readonly mensagem: string } => ({ tipo: 'erro', mensagem })
 
-/** D-1505: depois do envio, a frase de cada resposta do servidor (a recusa é lida pela pasta). */
+interface FrasesDoEnvio {
+  readonly sessao: string
+  readonly rede: string
+  readonly cheio: string
+  readonly passa: string
+  readonly limite: number
+}
+
+/**
+ * D-1505 e D-1531: depois do envio, a frase de cada resposta do servidor. A recusa é lida pela pasta do plano: cheia
+ * (5 fotos ou 10 anexos), a frase do limite; somando mais de 8 MB com o arquivo novo, a do teto; senão, a de sessão.
+ */
 async function subir(
   porta: ArmazenamentoDeFotos,
   caminho: (conta: string) => string,
-  pasta: (conta: string) => string,
+  plano: string,
+  sub: 'fotos' | 'anexos',
   blob: Blob,
   tipo: TipoDoArquivo,
-  frases: { readonly sessao: string; readonly rede: string; readonly cheio: string; readonly limite: number },
+  frases: FrasesDoEnvio,
 ): Promise<{ readonly tipo: 'ok'; readonly caminho: string } | { readonly tipo: 'erro'; readonly mensagem: string }> {
   const conta = await porta.conta()
   if (conta === null) return { tipo: 'erro', mensagem: frases.sessao }
@@ -208,8 +231,12 @@ async function subir(
   const envio = await porta.enviar(destino, blob, tipo)
   if (envio === 'ok') return { tipo: 'ok', caminho: destino }
   if (envio === 'sem-rede') return { tipo: 'erro', mensagem: frases.rede }
-  const contagem = await porta.contar(pasta(conta)).catch(() => null)
-  return { tipo: 'erro', mensagem: contagem !== null && contagem >= frases.limite ? frases.cheio : frases.sessao }
+  const pasta = pastaDoPlano(conta, plano)
+  const lidos = await porta.listar(pasta).catch(() => null)
+  if (lidos === null) return { tipo: 'erro', mensagem: frases.sessao }
+  if (lidos.filter((a) => a.caminho.startsWith(`${pasta}/${sub}/`)).length >= frases.limite) return { tipo: 'erro', mensagem: frases.cheio }
+  const naPasta = lidos.reduce((soma, a) => soma + (Number.isFinite(a.bytes) && a.bytes > 0 ? a.bytes : 0), 0)
+  return { tipo: 'erro', mensagem: tetoPassa(naPasta, blob.size) ? frases.passa : frases.sessao }
 }
 
 /**
@@ -236,10 +263,11 @@ export async function enviarFoto(entrada: EntradaDaFoto, porta: ArmazenamentoDeF
   const r = await subir(
     porta,
     (conta) => caminhoDaFoto(conta, entrada.plano, id),
-    (conta) => `${pastaDoPlano(conta, entrada.plano)}/fotos`,
+    entrada.plano,
+    'fotos',
     blob,
     'image/jpeg',
-    { sessao: FRASES.sessaoFoto, rede: FRASES.redeFoto, cheio: FRASES.cincoFotos, limite: FOTOS_POR_AVALIACAO },
+    { sessao: FRASES.sessaoFoto, rede: FRASES.redeFoto, cheio: FRASES.cincoFotos, passa: FRASES.passaFoto, limite: FOTOS_POR_AVALIACAO },
   )
   if (r.tipo === 'erro') return r
   return {
@@ -274,10 +302,11 @@ export async function enviarAnexo(entrada: EntradaDoAnexo, porta: ArmazenamentoD
   const r = await subir(
     porta,
     (conta) => caminhoDoAnexo(conta, entrada.plano, id, tipo),
-    (conta) => `${pastaDoPlano(conta, entrada.plano)}/anexos`,
+    entrada.plano,
+    'anexos',
     blob,
     tipo,
-    { sessao: FRASES.sessaoAnexo, rede: FRASES.redeAnexo, cheio: FRASES.dezAnexos, limite: ANEXOS_POR_AVALIACAO },
+    { sessao: FRASES.sessaoAnexo, rede: FRASES.redeAnexo, cheio: FRASES.dezAnexos, passa: FRASES.passaAnexo, limite: ANEXOS_POR_AVALIACAO },
   )
   if (r.tipo === 'erro') return r
   const nome = entrada.nome.trim() || `Anexo.${EXTENSAO[tipo]}`

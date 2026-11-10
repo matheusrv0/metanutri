@@ -1,7 +1,7 @@
 // CA-2488 (spec antropometria-telas, D-1457 e D-1504): o balde das fotos e dos anexos da avaliação no Supabase LOCAL.
 // A dona envia, lê, assina e apaga na própria pasta; outra conta e quem não tem conta não fazem nada na pasta dela; o
 // servidor recusa o tipo, o tamanho, o caminho fora do formato, a 6ª foto, o 11º anexo e a conta com 2.000 arquivos,
-// também com duas abas enviando juntas.
+// também com duas abas enviando juntas; e soma os bytes: 8 MB por plano e 500 MB por conta (D-1531, CB-1468).
 import { randomUUID } from 'node:crypto'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { afterEach, beforeAll, describe, expect, it } from 'vitest'
@@ -29,6 +29,18 @@ function nomesNoBanco(pasta: string): string[] {
   if (!r.ok) throw new Error(r.erro)
   return r.saida ? r.saida.split('\n') : []
 }
+
+/** A soma de `metadata->>'size'` dos arquivos da pasta, lida pelo banco. */
+function bytesNoBanco(pasta: string): number {
+  const r = sqlNoBancoLocal(`select coalesce(sum((metadata->>'size')::bigint), 0) from storage.objects where bucket_id = '${BALDE}' and starts_with(name, '${pasta}/');`)
+  if (!r.ok) throw new Error(r.erro)
+  return Number(r.saida)
+}
+
+const MB = 1024 * 1024
+/** Um JPEG e um PDF com o tamanho pedido (o começo certo e zeros: o servidor confere o tipo dito e o tamanho). */
+const jpegDe = (bytes: number): Blob => new Blob([new Uint8Array([0xff, 0xd8, 0xff, 0xe0]), new Uint8Array(bytes - 6), new Uint8Array([0xff, 0xd9])], { type: 'image/jpeg' })
+const pdfDe = (bytes: number): Blob => new Blob([new TextEncoder().encode('%PDF-1.4\n'), new Uint8Array(bytes - 9)], { type: 'application/pdf' })
 
 async function enviar(cliente: SupabaseClient, caminho: string, arquivo: Blob = jpeg()) {
   return balde(cliente).upload(caminho, arquivo, { contentType: arquivo.type, upsert: false })
@@ -176,6 +188,57 @@ describe('CA-2488: o servidor confere o arquivo e as contagens (D-1457, D-1504)'
     const respostas = await Promise.all(Array.from({ length: 8 }, () => enviar(c.atacante.cliente, caminhoDaFoto(c.atacante.id, plano))))
     expect(respostas.filter((r) => r.error === null)).toHaveLength(5)
     expect(nomesNoBanco(`${c.atacante.id}/${plano}/fotos`)).toHaveLength(5)
+  })
+
+  it('CB-1468 e D-1531: três arquivos de 3 MB ao mesmo tempo no mesmo plano, fotos e anexos: só 2 ficam', async () => {
+    const plano = 'plano-tres-de-3mb'
+    const id = c.atacante.id
+    const respostas = await Promise.all([
+      enviar(c.atacante.cliente, caminhoDaFoto(id, plano), jpegDe(3 * MB)),
+      enviar(c.atacante.cliente, caminhoDoAnexo(id, plano), pdfDe(3 * MB)),
+      enviar(c.atacante.cliente, caminhoDaFoto(id, plano), jpegDe(3 * MB)),
+    ])
+    expect(respostas.filter((r) => r.error === null)).toHaveLength(2)
+    expect(nomesNoBanco(`${id}/${plano}`)).toHaveLength(2)
+    expect(bytesNoBanco(`${id}/${plano}`)).toBe(6 * MB)
+  })
+
+  it('D-1531: 8 MB exatos no plano passam; mais um arquivo, mesmo pequeno, não', async () => {
+    const plano = 'plano-8mb-exatos'
+    const id = c.atacante.id
+    expect((await enviar(c.atacante.cliente, caminhoDoAnexo(id, plano), pdfDe(4 * MB))).error).toBeNull()
+    expect((await enviar(c.atacante.cliente, caminhoDaFoto(id, plano), jpegDe(4 * MB))).error).toBeNull()
+    recusado(await enviar(c.atacante.cliente, caminhoDaFoto(id, plano)))
+    recusado(await enviar(c.atacante.cliente, caminhoDoAnexo(id, plano), pdf()))
+    expect(nomesNoBanco(`${id}/${plano}`)).toHaveLength(2)
+    expect(bytesNoBanco(`${id}/${plano}`)).toBe(8 * MB)
+  })
+
+  it('CB-1468 e D-1531: a conta que soma 500 MB tem o próximo arquivo recusado, em qualquer plano', async () => {
+    const id = c.atacante.id
+    // Linhas de mentira (sem arquivo), postas pelo banco, até a conta somar 500 MB: 8 MB em cada plano (o teto do plano
+    // vale também para elas) e o resto no último. O gatilho só soma o que o banco diz.
+    const faltam = 500 * MB - bytesNoBanco(id)
+    const cheios = Math.floor(faltam / (8 * MB))
+    const resto = faltam - cheios * 8 * MB
+    const r = sqlNoBancoLocal(
+      `insert into storage.objects (bucket_id, name, metadata)
+       select '${BALDE}', '${id}/plano-gordo-' || g || '/anexos/' || gen_random_uuid() || '.pdf',
+              jsonb_build_object('size', case when g <= ${cheios} then ${8 * MB} else ${resto} end, 'mimetype', 'application/pdf')
+         from generate_series(1, ${cheios + (resto > 0 ? 1 : 0)}) g;`,
+    )
+    expect(r.ok, r.erro).toBe(true)
+    try {
+      expect(bytesNoBanco(id)).toBe(500 * MB)
+      recusado(await enviar(c.atacante.cliente, caminhoDaFoto(id, 'plano-depois-dos-500')))
+      recusado(await enviar(c.atacante.cliente, caminhoDoAnexo(id, 'plano-depois-dos-500'), pdf()))
+      expect(nomesNoBanco(`${id}/plano-depois-dos-500`)).toEqual([])
+    } finally {
+      // As linhas ficam (a pilha local é apagada depois), mas sem peso: os testes seguintes usam a mesma conta.
+      const zera = sqlNoBancoLocal(`update storage.objects set metadata = jsonb_build_object('size', 0) where bucket_id = '${BALDE}' and starts_with(name, '${id}/plano-gordo-');`)
+      expect(zera.ok, zera.erro).toBe(true)
+    }
+    expect((await enviar(c.atacante.cliente, caminhoDaFoto(id, 'plano-depois-de-zerar'))).error).toBeNull()
   })
 
   it('D-1457: com 2.000 arquivos na conta, o próximo é recusado', async () => {

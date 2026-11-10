@@ -9,8 +9,9 @@
 -- <conta>/<plano>/fotos/<id>.jpg ou <conta>/<plano>/anexos/<id>.<pdf|jpg|png>. Cada conta envia, lê e apaga só na
 -- própria pasta; ninguém lista a pasta de outra; quem não tem conta não faz nada. Ninguém troca nem move arquivo.
 -- O servidor também confere: o tipo (JPEG, PNG ou PDF), até 8 MB por arquivo, até 5 fotos e 10 anexos por plano e até
--- 2.000 arquivos por conta. O teto de 8 MB somando a avaliação inteira fica com o app (DP-AT-12): o tamanho só chega
--- depois do envio.
+-- 2.000 arquivos por conta.
+-- O gatilho, que roda na gravação já com o tamanho, soma também os bytes: até 8 MB por plano (fotos e anexos) e até
+-- 500 MB por conta (D-1531).
 --
 -- CFN 599/2018, art. 58: as fotos são do prontuário. Nada aqui as torna públicas: o balde não tem endereço público, e a
 -- imagem só abre por um link assinado de 10 minutos, pedido pela própria conta.
@@ -104,11 +105,14 @@ create policy "fotos da avaliacao: dono apaga" on storage.objects
 -- Sem política de alteração (update): ninguém sobrescreve nem move arquivo neste balde.
 
 
--- ---------- O limite também com dois envios ao mesmo tempo (D-1504, CB-1416) ----------
+-- ---------- O limite também com dois envios ao mesmo tempo (D-1504, CB-1416) e os bytes (D-1531, CB-1468) ----------
 
 -- Antes de gravar a linha de um arquivo novo do balde, o gatilho trava a pasta da conta até o fim da gravação
--- (pg_advisory_xact_lock) e só então conta: o segundo envio espera o primeiro terminar e já o vê. Passou de 5 fotos ou
--- 10 anexos no plano, ou de 2.000 arquivos na conta, a gravação é recusada e nada fica.
+-- (pg_advisory_xact_lock) e só então conta e soma: o segundo envio espera o primeiro terminar e já o vê. Passou de 5
+-- fotos ou 10 anexos no plano, ou de 2.000 arquivos na conta, a gravação é recusada e nada fica. Passou de 8 MB somando
+-- o plano (fotos e anexos) ou de 500 MB somando a conta, também.
+-- O tamanho vem do armazenamento, em metadata->>'size'. Antes de receber o arquivo, o armazenamento confere a permissão
+-- gravando uma linha de teste sem o tamanho (que ele desfaz): ela conta 0. A gravação de verdade já traz o tamanho.
 create or replace function public.limite_de_arquivos_da_avaliacao()
 returns trigger
 language plpgsql
@@ -117,23 +121,36 @@ set search_path = public
 as $$
 declare
   v_conta text := split_part(new.name, '/', 1);
+  v_plano text := split_part(new.name, '/', 1) || '/' || split_part(new.name, '/', 2) || '/';
   v_pasta text := split_part(new.name, '/', 1) || '/' || split_part(new.name, '/', 2) || '/' || split_part(new.name, '/', 3) || '/';
   v_limite integer := case split_part(new.name, '/', 3) when 'fotos' then 5 else 10 end;
+  v_tamanho bigint := case when new.metadata->>'size' ~ '^[0-9]{1,15}$' then (new.metadata->>'size')::bigint else 0 end;
   v_na_conta integer;
   v_no_plano integer;
+  v_bytes_na_conta bigint;
+  v_bytes_no_plano bigint;
 begin
   if new.bucket_id is distinct from 'fotos-avaliacao' then
     return new;
   end if;
   perform pg_advisory_xact_lock(hashtext('fotos-avaliacao:' || v_conta));
-  select count(*)::integer into v_na_conta
+  select count(*)::integer, coalesce(sum(case when o.metadata->>'size' ~ '^[0-9]{1,15}$' then (o.metadata->>'size')::bigint else 0 end), 0)
+    into v_na_conta, v_bytes_na_conta
     from storage.objects o
    where o.bucket_id = 'fotos-avaliacao' and starts_with(o.name, v_conta || '/') and o.name <> new.name;
   select count(*)::integer into v_no_plano
     from storage.objects o
    where o.bucket_id = 'fotos-avaliacao' and starts_with(o.name, v_pasta) and o.name <> new.name;
+  select coalesce(sum(case when o.metadata->>'size' ~ '^[0-9]{1,15}$' then (o.metadata->>'size')::bigint else 0 end), 0)
+    into v_bytes_no_plano
+    from storage.objects o
+   where o.bucket_id = 'fotos-avaliacao' and starts_with(o.name, v_plano) and o.name <> new.name;
   if v_na_conta >= 2000 or v_no_plano >= v_limite then
     raise exception 'Limite de arquivos da avaliação.' using errcode = 'check_violation';
+  end if;
+  -- 8 MB = 8.388.608 bytes por plano; 500 MB = 524.288.000 bytes por conta (D-1506 e D-1531).
+  if v_bytes_no_plano + v_tamanho > 8388608 or v_bytes_na_conta + v_tamanho > 524288000 then
+    raise exception 'Espaço da avaliação ou da conta cheio.' using errcode = 'check_violation';
   end if;
   return new;
 end;
@@ -142,7 +159,8 @@ $$;
 revoke all on function public.limite_de_arquivos_da_avaliacao() from public, anon, authenticated;
 
 -- A tabela do armazenamento é do Supabase. Se o projeto não deixar criar o gatilho, o resto deste arquivo vale do mesmo
--- jeito (o limite fica só pela política, que já recusa a 6ª foto enviada depois das outras) e o aviso diz isso.
+-- jeito (o limite fica só pela política, que já recusa a 6ª foto enviada depois das outras, mas não soma bytes) e o
+-- aviso diz isso.
 do $$
 begin
   drop trigger if exists limite_de_arquivos_da_avaliacao on storage.objects;
@@ -151,7 +169,7 @@ begin
     for each row execute function public.limite_de_arquivos_da_avaliacao();
 exception
   when insufficient_privilege then
-    raise warning 'Sem permissão para criar o gatilho em storage.objects: o limite de fotos vale pela política, sem a trava de dois envios juntos.';
+    raise warning 'Sem permissão para criar o gatilho em storage.objects: o limite de fotos vale pela política, sem a trava de dois envios juntos e sem os tetos de 8 MB por avaliação e 500 MB por conta.';
 end;
 $$;
 
@@ -167,4 +185,6 @@ commit;
 --   from pg_proc p where p.oid = 'public.pode_enviar_arquivo_da_avaliacao(text)'::regprocedure;
 -- -- uma linha: false, true
 -- select tgname from pg_trigger where tgrelid = 'storage.objects'::regclass and tgname = 'limite_de_arquivos_da_avaliacao';
--- -- uma linha: limite_de_arquivos_da_avaliacao (sem ela, o aviso do gatilho apareceu ao rodar; o resto vale)
+-- -- uma linha: limite_de_arquivos_da_avaliacao (sem ela, o aviso do gatilho apareceu ao rodar; o resto vale, sem os tetos de bytes)
+-- select position('524288000' in prosrc) > 0 as soma_bytes from pg_proc where proname = 'limite_de_arquivos_da_avaliacao';
+-- -- uma linha: true (o gatilho é o desta versão, que soma os bytes)

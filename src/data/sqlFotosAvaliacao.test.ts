@@ -1,7 +1,7 @@
 // Spec antropometria-telas: o texto do 018 (D-1457, D-1504; CA-2488). O comportamento no banco de verdade está em
 // testes/seguranca/fotos.test.ts (npm run test:seguranca, Supabase local).
 import sql from '../../supabase/018-fotos-avaliacao.sql?raw'
-import { ANEXOS_POR_AVALIACAO, BALDE_DAS_FOTOS, FOTOS_POR_AVALIACAO, TETO_DA_AVALIACAO } from '@/domain/fotosDaAvaliacao.ts'
+import { ANEXOS_POR_AVALIACAO, BALDE_DAS_FOTOS, FOTOS_POR_AVALIACAO, TETO_DA_AVALIACAO, TETO_DA_CONTA } from '@/domain/fotosDaAvaliacao.ts'
 
 const semComentarios = sql
   .split('\n')
@@ -87,6 +87,29 @@ describe('banco: as fotos e os anexos da avaliação (018, spec antropometria-te
     expect(semComentarios).toContain('revoke all on function public.limite_de_arquivos_da_avaliacao() from public, anon, authenticated;')
     // Sem permissão no projeto, o resto do arquivo vale e o aviso diz o que ficou de fora.
     expect(semComentarios).toContain('when insufficient_privilege then')
+  })
+
+  it('CB-1468 e D-1531: o gatilho soma os bytes do plano (8 MB) e da conta (500 MB) com o arquivo novo, depois da trava', () => {
+    const gatilho = semComentarios.split('create or replace function public.limite_de_arquivos_da_avaliacao()')[1]?.split('$$;')[0] ?? ''
+    expect(TETO_DA_CONTA).toBe(524288000)
+    // O tamanho vem do armazenamento; só número entra na soma, e a linha sem tamanho (a conferência antes do envio) conta 0.
+    const tamanho = "case when o.metadata->>'size' ~ '^[0-9]{1,15}$' then (o.metadata->>'size')::bigint else 0 end"
+    expect(gatilho).toContain("v_tamanho bigint := case when new.metadata->>'size' ~ '^[0-9]{1,15}$' then (new.metadata->>'size')::bigint else 0 end;")
+    expect(gatilho).toContain(`coalesce(sum(${tamanho}), 0)`)
+    expect(gatilho).toContain("v_plano text := split_part(new.name, '/', 1) || '/' || split_part(new.name, '/', 2) || '/';")
+    expect(gatilho).toContain('starts_with(o.name, v_plano)')
+    expect(gatilho).toContain(`if v_bytes_no_plano + v_tamanho > ${TETO_DA_AVALIACAO} or v_bytes_na_conta + v_tamanho > ${TETO_DA_CONTA} then`)
+    expect(gatilho).toContain("raise exception 'Espaço da avaliação ou da conta cheio.' using errcode = 'check_violation';")
+    const trava = gatilho.indexOf('perform pg_advisory_xact_lock(')
+    expect(trava).toBeLessThan(gatilho.indexOf('sum('))
+    // O teto de 8 MB conta fotos e anexos juntos: a soma é da pasta do plano, não da subpasta.
+    expect(gatilho).not.toMatch(/sum\([^;]*v_pasta/)
+  })
+
+  it('D-1531: o cabeçalho e o aviso dizem o que o servidor soma e o que fica de fora sem o gatilho', () => {
+    expect(sql).not.toContain('o tamanho só chega')
+    expect(sql).toContain('-- O gatilho, que roda na gravação já com o tamanho, soma também os bytes: até 8 MB por plano (fotos e anexos)')
+    expect(semComentarios).toContain('sem a trava de dois envios juntos e sem os tetos de 8 MB por avaliação e 500 MB por conta')
   })
 
   it('a função só para quem tem conta', () => {

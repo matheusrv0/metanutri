@@ -23,6 +23,7 @@ import {
   textosPeloSexo,
   tipoDoAnexo,
   type ArmazenamentoDeFotos,
+  type ArquivoNoArmazenamento,
   type DesenhistaDeFoto,
   type ResultadoDoEnvio,
 } from './fotosDaAvaliacao.ts'
@@ -62,8 +63,12 @@ const arquivo = (bytes: number, p: Partial<ArquivoDaAvaliacao> = {}): ArquivoDaA
 })
 const avaliacao = (p: Partial<DadosDaAvaliacao> = {}): DadosDaAvaliacao => ({ ...criarCasoVazio('c').avaliacao, ...p })
 
-/** Uma porta falsa que guarda o que recebeu. */
-function portaFalsa(p: { envio?: ResultadoDoEnvio; conta?: string | null; contagem?: number | null } = {}) {
+/** `n` arquivos de `bytes` cada na subpasta do plano, como a porta lê (DP-AT-21). */
+const naPasta = (n: number, sub: 'fotos' | 'anexos', bytes = 1000): ArquivoNoArmazenamento[] =>
+  Array.from({ length: n }, (_, i) => ({ caminho: `${CONTA}/${PLANO}/${sub}/${i}.${sub === 'fotos' ? 'jpg' : 'pdf'}`, bytes, criadoEm: '2026-11-03T12:00:00.000Z' }))
+
+/** Uma porta falsa que guarda o que recebeu; `pasta` é o que a leitura da pasta do plano devolve. */
+function portaFalsa(p: { envio?: ResultadoDoEnvio; conta?: string | null; pasta?: readonly ArquivoNoArmazenamento[] | null } = {}) {
   const enviados: { caminho: string; tipo: string; bytes: number }[] = []
   const porta: ArmazenamentoDeFotos = {
     conta: async () => (p.conta === undefined ? CONTA : p.conta),
@@ -71,7 +76,7 @@ function portaFalsa(p: { envio?: ResultadoDoEnvio; conta?: string | null; contag
       enviados.push({ caminho, tipo, bytes: blob.size })
       return p.envio ?? 'ok'
     },
-    contar: async () => (p.contagem === undefined ? 0 : p.contagem),
+    listar: async () => (p.pasta === undefined ? [] : p.pasta),
     assinar: async () => null,
     apagar: async () => true,
     apagarPasta: async () => true,
@@ -237,15 +242,23 @@ describe('enviar a foto (D-1453, D-1505)', () => {
   })
 
   it('CB-1415: recusado sem as 5 fotos na pasta, ou sem sessão: "Entre de novo para enviar fotos."', async () => {
-    expect(await enviarFoto(entrada(), portaFalsa({ envio: 'recusado', contagem: 2 }).porta, desenhistaFalso().desenhista)).toEqual({ tipo: 'erro', mensagem: 'Entre de novo para enviar fotos.' })
-    expect(await enviarFoto(entrada(), portaFalsa({ envio: 'recusado', contagem: null }).porta, desenhistaFalso().desenhista)).toEqual({ tipo: 'erro', mensagem: 'Entre de novo para enviar fotos.' })
+    expect(await enviarFoto(entrada(), portaFalsa({ envio: 'recusado', pasta: naPasta(2, 'fotos') }).porta, desenhistaFalso().desenhista)).toEqual({ tipo: 'erro', mensagem: 'Entre de novo para enviar fotos.' })
+    expect(await enviarFoto(entrada(), portaFalsa({ envio: 'recusado', pasta: null }).porta, desenhistaFalso().desenhista)).toEqual({ tipo: 'erro', mensagem: 'Entre de novo para enviar fotos.' })
     const semConta = portaFalsa({ conta: null })
     expect(await enviarFoto(entrada(), semConta.porta, desenhistaFalso().desenhista)).toEqual({ tipo: 'erro', mensagem: 'Entre de novo para enviar fotos.' })
     expect(semConta.enviados).toEqual([])
   })
 
+  it('CB-1468 e D-1531: recusado com a pasta do plano somando mais de 8 MB com a foto nova: a frase do teto', async () => {
+    // 2 anexos de 3,9 MB na pasta (outra aba) e a foto reduzida de 300.000 bytes: 8,1 MB.
+    const pasta = naPasta(2, 'anexos', 3.9 * MEGA)
+    expect(await enviarFoto(entrada(), portaFalsa({ envio: 'recusado', pasta }).porta, desenhistaFalso(300_000).desenhista)).toEqual({ tipo: 'erro', mensagem: 'Passa de 8 MB somando fotos e anexos. Reduza a foto.' })
+    // A mesma pasta com a foto de 100.000 bytes cabe: a recusa não foi pelo tamanho.
+    expect(await enviarFoto(entrada(), portaFalsa({ envio: 'recusado', pasta }).porta, desenhistaFalso(100_000).desenhista)).toEqual({ tipo: 'erro', mensagem: 'Entre de novo para enviar fotos.' })
+  })
+
   it('CB-1416: recusado com 5 fotos na pasta (outra aba): "Já há 5 fotos nesta avaliação."', async () => {
-    expect(await enviarFoto(entrada(), portaFalsa({ envio: 'recusado', contagem: 5 }).porta, desenhistaFalso().desenhista)).toEqual({ tipo: 'erro', mensagem: 'Já há 5 fotos nesta avaliação.' })
+    expect(await enviarFoto(entrada(), portaFalsa({ envio: 'recusado', pasta: naPasta(5, 'fotos') }).porta, desenhistaFalso().desenhista)).toEqual({ tipo: 'erro', mensagem: 'Já há 5 fotos nesta avaliação.' })
   })
 })
 
@@ -330,9 +343,11 @@ describe('enviar o anexo (D-1452, D-1505, D-1511, D-1530)', () => {
     const dez = Array.from({ length: 10 }, (_, i) => arquivo(10, { id: String(i), tipo: 'application/pdf' }))
     const { desenhista } = desenhistaFalso()
     expect(await enviarAnexo(entrada(PDF, { avaliacao: avaliacao({ anexos: dez }) }), portaFalsa().porta, desenhista)).toEqual({ tipo: 'erro', mensagem: 'Já há 10 anexos nesta avaliação.' })
-    expect(await enviarAnexo(entrada(PDF), portaFalsa({ envio: 'recusado', contagem: 10 }).porta, desenhista)).toEqual({ tipo: 'erro', mensagem: 'Já há 10 anexos nesta avaliação.' })
-    expect(await enviarAnexo(entrada(PDF), portaFalsa({ envio: 'recusado', contagem: 3 }).porta, desenhista)).toEqual({ tipo: 'erro', mensagem: 'Entre de novo para enviar anexos.' })
+    expect(await enviarAnexo(entrada(PDF), portaFalsa({ envio: 'recusado', pasta: naPasta(10, 'anexos') }).porta, desenhista)).toEqual({ tipo: 'erro', mensagem: 'Já há 10 anexos nesta avaliação.' })
+    expect(await enviarAnexo(entrada(PDF), portaFalsa({ envio: 'recusado', pasta: naPasta(3, 'anexos') }).porta, desenhista)).toEqual({ tipo: 'erro', mensagem: 'Entre de novo para enviar anexos.' })
     expect(await enviarAnexo(entrada(PDF), portaFalsa({ envio: 'sem-rede' }).porta, desenhista)).toEqual({ tipo: 'erro', mensagem: 'O anexo não subiu. Confira a internet e tente de novo.' })
+    // CB-1468 e D-1531: a pasta com 8 MB (outra aba) e o anexo novo: a frase do teto.
+    expect(await enviarAnexo(entrada(PDF), portaFalsa({ envio: 'recusado', pasta: naPasta(2, 'fotos', 4 * MEGA) }).porta, desenhista)).toEqual({ tipo: 'erro', mensagem: 'Passa de 8 MB somando fotos e anexos.' })
   })
 })
 

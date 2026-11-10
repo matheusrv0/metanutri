@@ -5,7 +5,7 @@
 // A tela recebe a porta por contexto: o teste de componente passa uma falsa, e o app usa esta, criada uma vez.
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { createContext, useContext } from 'react'
-import { BALDE_DAS_FOTOS, VALIDADE_DA_URL_S, type ArmazenamentoDeFotos } from '@/domain/fotosDaAvaliacao.ts'
+import { BALDE_DAS_FOTOS, VALIDADE_DA_URL_S, type ArmazenamentoDeFotos, type ArquivoNoArmazenamento } from '@/domain/fotosDaAvaliacao.ts'
 import { obterSupabase } from '../estado/supabase.ts'
 
 /** O servidor respondeu (recusou) quando o erro traz o status HTTP; sem ele, o pedido nem chegou (sem internet). */
@@ -14,8 +14,27 @@ const respondeu = (erro: unknown): boolean => typeof erro === 'object' && erro !
 /** As duas subpastas de um plano (DP-AT-20): a lista do armazenamento não entra em subpasta sozinha. */
 const SUBPASTAS = ['fotos', 'anexos'] as const
 
+/** O tamanho que o armazenamento diz (`metadata.size`); sem ele, 0. */
+const tamanhoDe = (metadados: unknown): number => {
+  const tamanho = typeof metadados === 'object' && metadados !== null && 'size' in metadados ? metadados.size : null
+  return typeof tamanho === 'number' && Number.isFinite(tamanho) && tamanho > 0 ? tamanho : 0
+}
+
 export function criarArmazenamentoDeFotos(cliente: SupabaseClient): ArmazenamentoDeFotos {
   const balde = () => cliente.storage.from(BALDE_DAS_FOTOS)
+  /** DP-AT-21: os arquivos de `fotos/` e de `anexos/` da pasta do plano; nula quando uma das leituras falhou. */
+  const listar = async (pasta: string): Promise<ArquivoNoArmazenamento[] | null> => {
+    const lidos: ArquivoNoArmazenamento[] = []
+    for (const sub of SUBPASTAS) {
+      const { data, error } = await balde().list(`${pasta}/${sub}`, { limit: 100 })
+      if (error) return null
+      for (const item of data ?? []) {
+        // Sem `id`, é uma subpasta, não um arquivo.
+        if (item.id) lidos.push({ caminho: `${pasta}/${sub}/${item.name}`, bytes: tamanhoDe(item.metadata), criadoEm: item.created_at || null })
+      }
+    }
+    return lidos
+  }
   return {
     async conta() {
       try {
@@ -37,11 +56,9 @@ export function criarArmazenamentoDeFotos(cliente: SupabaseClient): Armazenament
         return 'sem-rede'
       }
     },
-    async contar(pasta) {
+    async listar(pasta) {
       try {
-        const { data, error } = await balde().list(pasta, { limit: 100 })
-        if (error) return null
-        return (data ?? []).filter((item) => item.id).length
+        return await listar(pasta)
       } catch {
         return null
       }
@@ -65,14 +82,10 @@ export function criarArmazenamentoDeFotos(cliente: SupabaseClient): Armazenament
     },
     async apagarPasta(pasta) {
       try {
-        const caminhos: string[] = []
-        for (const sub of SUBPASTAS) {
-          const { data, error } = await balde().list(`${pasta}/${sub}`, { limit: 100 })
-          if (error) return false
-          for (const item of data ?? []) if (item.id) caminhos.push(`${pasta}/${sub}/${item.name}`)
-        }
-        if (caminhos.length === 0) return true
-        const { error } = await balde().remove(caminhos)
+        const lidos = await listar(pasta)
+        if (lidos === null) return false
+        if (lidos.length === 0) return true
+        const { error } = await balde().remove(lidos.map((a) => a.caminho))
         return error === null
       } catch {
         return false

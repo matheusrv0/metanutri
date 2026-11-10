@@ -100,6 +100,8 @@ export interface ServidorFalso {
 export interface ArquivoGuardado {
   readonly tipo: string
   readonly bytes: Buffer
+  /** Data e hora do envio, ISO; o teste que põe o arquivo direto pode deixar sem. */
+  readonly criadoEm?: string
 }
 
 /** O arquivo de um envio do supabase-js: o Blob vai num formulário (multipart), na parte sem nome. */
@@ -202,7 +204,7 @@ export async function ligarServidorFalso(pagina: Page, cenario: Cenario = {}): P
       const arquivo = arquivoDoFormulario(pedido.postDataBuffer() ?? Buffer.alloc(0), (await pedido.allHeaders())['content-type'] ?? '')
       if (!arquivo) return json(route, { statusCode: '400', error: 'Bad Request', message: 'Sem arquivo' }, 400)
       if (nuvem.arquivos.has(nome)) return json(route, { statusCode: '409', error: 'Duplicate', message: 'The resource already exists' }, 400)
-      nuvem.arquivos.set(nome, arquivo)
+      nuvem.arquivos.set(nome, { ...arquivo, criadoEm: new Date().toISOString() })
       return json(route, { Key: `${BALDE_DAS_FOTOS}/${nome}`, Id: `id-${nuvem.arquivos.size}` })
     }
     if (caminho.startsWith(assinado) && pedido.method() === 'POST') {
@@ -218,7 +220,11 @@ export async function ligarServidorFalso(pagina: Page, cenario: Cenario = {}): P
     if (caminho === `/storage/v1/object/list/${BALDE_DAS_FOTOS}`) {
       const prefixo = String(corpoDoPedido(pedido.postDataJSON())['prefix'] ?? '')
       const dentro = [...nuvem.arquivos.keys()].filter((nome) => nome.startsWith(`${prefixo}/`) && !nome.slice(prefixo.length + 1).includes('/'))
-      return json(route, dentro.map((nome, i) => ({ name: nome.slice(prefixo.length + 1), id: `id-${i}` })))
+      // Como o Supabase: o tamanho em `metadata.size` e a data do envio (DP-AT-21).
+      return json(
+        route,
+        dentro.map((nome, i) => ({ name: nome.slice(prefixo.length + 1), id: `id-${i}`, created_at: nuvem.arquivos.get(nome)?.criadoEm ?? null, metadata: { size: nuvem.arquivos.get(nome)?.bytes.length ?? 0 } })),
+      )
     }
     if (caminho === `/storage/v1/object/${BALDE_DAS_FOTOS}` && pedido.method() === 'DELETE') {
       const nomes = corpoDoPedido(pedido.postDataJSON())['prefixes']

@@ -1,7 +1,7 @@
 // "Fotos e anexos" na vista Avaliação (spec antropometria-telas, F2: D-1450 a D-1459, D-1503 a D-1513; CA-2480 a
 // CA-2487, CA-2490, CB-1412 a CB-1416, CB-1466). O armazenamento e o desenhista são falsos; a tela é a de verdade.
 import { act, fireEvent, screen, within } from '@testing-library/react'
-import { MEGA, type ArmazenamentoDeFotos, type DesenhistaDeFoto, type ResultadoDoEnvio } from '@/domain/fotosDaAvaliacao.ts'
+import { MEGA, type ArmazenamentoDeFotos, type ArquivoNoArmazenamento, type DesenhistaDeFoto, type ResultadoDoEnvio } from '@/domain/fotosDaAvaliacao.ts'
 import type { Paciente } from '@/domain/pacientes.ts'
 import type { ArquivoDaAvaliacao, Caso } from '@/domain/tipos.ts'
 import { casoDe } from './apoioDaVista.test-utils.tsx'
@@ -33,7 +33,8 @@ interface Falsos {
   readonly assinados: string[]
 }
 
-function falsos(p: { envio?: ResultadoDoEnvio; contagem?: number; apagar?: boolean } = {}): Falsos {
+/** `contagem`: quantas fotos a pasta do plano tem; `pasta`: o que a leitura da pasta devolve (vale mais que a contagem). */
+function falsos(p: { envio?: ResultadoDoEnvio; contagem?: number; pasta?: readonly ArquivoNoArmazenamento[] | null; apagar?: boolean } = {}): Falsos {
   const enviados: { caminho: string; tipo: string }[] = []
   const apagados: string[][] = []
   const assinados: string[] = []
@@ -43,7 +44,8 @@ function falsos(p: { envio?: ResultadoDoEnvio; contagem?: number; apagar?: boole
       enviados.push({ caminho, tipo })
       return p.envio ?? 'ok'
     },
-    contar: async () => p.contagem ?? 0,
+    listar: async (pasta) =>
+      p.pasta !== undefined ? p.pasta : Array.from({ length: p.contagem ?? 0 }, (_, i) => ({ caminho: `${pasta}/fotos/${i}.jpg`, bytes: 1000, criadoEm: null })),
     assinar: async (caminho) => {
       assinados.push(caminho)
       return `https://falso.supabase.co/assinada/${caminho}?vez=${assinados.length}`
