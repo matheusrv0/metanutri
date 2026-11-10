@@ -244,6 +244,18 @@ describe('documentos legais', () => {
     expect(texto).toContain('um resumo (hash) do e-mail e do endereço de internet de quem pede, por 2 dias')
   })
 
+  it('CA-2310 (spec lado-do-paciente, D-1263): o histórico guarda o resumo do endereço, até do não confirmado, e a lista de bloqueio diz o que cada caso deixa de receber', () => {
+    render(<TelaPrivacidade />)
+    const texto = document.body.textContent ?? ''
+    expect(texto).toContain(
+      'o histórico dos e-mails enviados (tipo, assunto, situação, data e um resumo do endereço, o hash), por 6 meses, inclusive dos enviados a um e-mail que não foi confirmado.',
+    )
+    expect(texto).toContain(
+      'O que volta não recebe mais nenhum e-mail do MetaNutri; o marcado como spam não recebe mais avisos nem os e-mails do nutricionista, só o que o próprio paciente pedir no link.',
+    )
+    expect(texto).not.toContain('para não receber mais avisos')
+  })
+
   it('CA-2286 (spec lado-do-paciente): a política diz para que serve o e-mail do paciente, que o link registra o dia do acesso e que o Resend manda os e-mails', () => {
     render(<TelaPrivacidade />)
     const texto = document.body.textContent ?? ''
