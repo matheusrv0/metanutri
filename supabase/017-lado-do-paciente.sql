@@ -1051,7 +1051,8 @@ as $$
 $$;
 
 -- DP-LP-26 e CA-2284: excluir o paciente apaga o e-mail, os aceites, as chaves e os envios do link, antes de o link sair.
--- A supressão fica.
+-- A supressão fica. D-1264 (revisão r4, DP-LP-50): o link vem primeiro, como na troca e no "Confirmar"; o "Confirmar"
+-- que chegar no meio espera e, sem a chave, responde 'nao-vale'. Sem isso, os dois esperavam um pelo outro (deadlock).
 create or replace function public.apagar_emails_do_link(p_link uuid)
 returns void
 language plpgsql
@@ -1061,6 +1062,7 @@ as $$
 declare
   v_dono uuid := public.dono_do_link(p_link);
 begin
+  perform 1 from public.acompanhamentos where id = p_link for update;
   delete from public.aceites where link_id = p_link and nutricionista_id = v_dono;
   delete from public.envios where link_id = p_link and nutricionista_id = v_dono;
   delete from public.chaves_de_aviso where link_id = p_link and nutricionista_id = v_dono;

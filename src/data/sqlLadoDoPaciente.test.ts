@@ -368,3 +368,15 @@ describe('banco: o "Confirmar" num passo só (017, revisão r3, D-1261)', () => 
     expect(sql).toContain(`grant execute on function ${ASSINATURA} to service_role;`)
   })
 })
+
+describe('banco: apagar os e-mails do link segura o link primeiro (017, revisão r4, D-1264)', () => {
+  it('CA-2311 (DP-LP-50): o link vem antes dos aceites, dos envios, das chaves e do e-mail, como no "Confirmar" e na troca', () => {
+    const corpo = funcao('create or replace function public.apagar_emails_do_link(p_link uuid)')
+    const link = corpo.search(/perform 1 from public\.acompanhamentos where id = p_link for update;/)
+    expect(link).toBeGreaterThan(0)
+    for (const tabela of ['aceites', 'envios', 'chaves_de_aviso', 'emails_dos_links']) {
+      const apagar = corpo.indexOf(`delete from public.${tabela} where link_id = p_link`)
+      expect(apagar, tabela).toBeGreaterThan(link)
+    }
+  })
+})

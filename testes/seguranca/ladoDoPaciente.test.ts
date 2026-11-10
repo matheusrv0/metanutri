@@ -672,4 +672,57 @@ describe('a confirmação presa ao endereço do link (revisão r2: CA-2300, CB-1
       expect((await c.servico.from('emails_dos_links').select('email_hash').eq('link_id', link.id).single()).data?.['email_hash']).toBe(fichaHash)
     })
   })
+
+  describe('apagar os e-mails do link e o "Confirmar" ao mesmo tempo (revisão r4: D-1264, CA-2311)', () => {
+    const ficha = 'juliana.r4.lp@gmail.com'
+
+    /** Um link com o e-mail da ficha, um aceite ativo dele, um envio e a confirmação aberta do mesmo aviso e endereço. */
+    async function comAceiteEConfirmacaoDaFicha(paciente: string) {
+      const link = await novoLink(c.vitima, paciente)
+      const fichaHash = await hashDoEmail(ficha)
+      sem(
+        'o e-mail da ficha',
+        (await c.servico.from('emails_dos_links').upsert({ link_id: link.id, nutricionista_id: c.vitima.id, email: ficha, email_hash: fichaHash, origem: 'ficha', email_ficha: ficha })).error,
+      )
+      await aceitar(c.vitima, link.id, 'semana', ficha)
+      sem('o envio', (await c.servico.from('envios').insert({ link_id: link.id, nutricionista_id: c.vitima.id, tipo: 'S2', email_hash: fichaHash, assunto: 'x', estado: 'entregue' })).error)
+      const chave = novaChave()
+      sem(
+        'a confirmação da ficha',
+        (
+          await c.servico.from('chaves_de_aviso').insert({
+            chave,
+            link_id: link.id,
+            nutricionista_id: c.vitima.id,
+            tipo: 'aceite',
+            avisos: ['semana'],
+            email_hash: fichaHash,
+            token_hash: resumoDoToken(link.token),
+            vence_em: new Date(Date.now() + MES_MS).toISOString(),
+          })
+        ).error,
+      )
+      return { link, chave }
+    }
+
+    it('CA-2311: o apagar parado no meio (outra transação segura o envio) e o "Confirmar" da mesma chave: os dois terminam sem erro, o "Confirmar" responde "nao-vale" e o link fica vazio', async () => {
+      const { link, chave } = await comAceiteEConfirmacaoDaFicha('paciente-r4-a')
+      // A terceira transação para o apagar logo depois dos aceites, que é onde a ordem de antes cruzava com o "Confirmar".
+      const segura = sqlAoMesmoTempo(['begin;', `select 1 from public.envios where link_id = '${link.id}' for update;`, 'select pg_sleep(2.5);', 'commit;'].join('\n'))
+      await esperar(600)
+      const apagar = Promise.resolve(c.vitima.cliente.rpc('apagar_emails_do_link', { p_link: link.id }))
+      await esperar(600)
+      const confirmar = Promise.resolve(
+        c.servico.rpc('confirmar_email_do_paciente', { p_chave: chave, p_avisos: ['semana'], p_dia_da_semana: 2, p_ofertas_padrao: true, p_agora: new Date().toISOString() }),
+      )
+      const [ra, rc, rs] = await Promise.all([apagar, confirmar, segura])
+      expect(rs.ok).toBe(true)
+      expect(ra.error?.message ?? null).toBeNull()
+      expect(rc.error?.message ?? null).toBeNull()
+      expect(rc.data).toBe('nao-vale')
+      for (const tabela of ['aceites', 'envios', 'chaves_de_aviso', 'emails_dos_links']) {
+        barradoOuVazio(await c.servico.from(tabela).select('*').eq('link_id', link.id))
+      }
+    })
+  })
 })
