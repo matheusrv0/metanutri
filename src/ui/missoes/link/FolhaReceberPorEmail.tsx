@@ -20,12 +20,13 @@ interface FolhaReceberPorEmailProps {
   readonly avisos: AvisosDoLink
 }
 
-type Envio = { readonly tipo: 'formulario' } | { readonly tipo: 'enviado'; readonly para: string; readonly confirmar: boolean }
+type Envio = { readonly tipo: 'formulario' } | { readonly tipo: 'enviado'; readonly para: string; readonly confirmar: boolean; readonly confirmarEmail: boolean }
 
 /**
  * "Receber meu link por e-mail" (D-1221, D-1226, CA-2235 a CA-2237, CA-2240 e CB-1216): o e-mail da ficha mascarado, com
  * "Usar outro"; o erro comum de digitação vira uma pergunta com a correção; os avisos oferecidos vêm desmarcados. O link
- * vai na hora (S1); com algum aviso marcado, chega também a confirmação (S3).
+ * vai na hora (S1); com algum aviso marcado, chega também a confirmação (S3). O e-mail digitado só passa a valer no
+ * plano depois do "Confirmar" do e-mail (D-1247, CA-2291).
  */
 export function FolhaReceberPorEmail({ aberta, aoFechar, cor, token, cliente, emailMascarado, avisos }: FolhaReceberPorEmailProps) {
   const id = useId()
@@ -64,7 +65,12 @@ export function FolhaReceberPorEmail({ aberta, aoFechar, cor, token, cliente, em
       setErro(resultado.erro)
       return
     }
-    setEnvio({ tipo: 'enviado', para: resultado.enviadoPara || (email ? mascararEmail(email) : (emailMascarado ?? '')), confirmar: resultado.confirmar || escolhidos.length > 0 })
+    setEnvio({
+      tipo: 'enviado',
+      para: resultado.enviadoPara || (email ? mascararEmail(email) : (emailMascarado ?? '')),
+      confirmar: resultado.confirmar || escolhidos.length > 0,
+      confirmarEmail: resultado.confirmarEmail || email !== null,
+    })
   }
 
   const alternar = (tipo: TipoDeAviso, marcar: boolean) =>
@@ -79,7 +85,11 @@ export function FolhaReceberPorEmail({ aberta, aoFechar, cor, token, cliente, em
               <Mail className="size-6" />
             </span>
             <p className="text-base text-foreground [overflow-wrap:anywhere]">{`Enviamos o link para ${envio.para}.`}</p>
-            {envio.confirmar ? <p className="text-sm text-muted-foreground">Para receber os avisos, toque em Confirmar no e-mail.</p> : null}
+            {envio.confirmarEmail ? (
+              <p className="text-sm text-muted-foreground">Para usar este e-mail no seu plano, toque em Confirmar no e-mail.</p>
+            ) : envio.confirmar ? (
+              <p className="text-sm text-muted-foreground">Para receber os avisos, toque em Confirmar no e-mail.</p>
+            ) : null}
           </div>
           <Button size="lg" block variant="outline" onClick={fechar}>
             Fechar

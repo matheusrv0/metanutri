@@ -28,10 +28,10 @@ import { ehTipoDeAviso, type TipoDeEmail } from './tipos.ts'
 const PAGINA = 1000
 
 const COLUNAS_DO_LINK = 'id, nutricionista_id, token, nome, criado_em, plano_em, ultimo_acesso, a1_para, substituido_por, uso_nao_comercial, marcacoes, missoes'
-const COLUNAS_DO_EMAIL = 'link_id, nutricionista_id, email, email_hash, origem, oferta_plano, oferta_semana, oferta_lembrete, parou_tudo_em, convite_em'
+const COLUNAS_DO_EMAIL = 'link_id, nutricionista_id, email, email_hash, origem, confirmado_em, oferta_plano, oferta_semana, oferta_lembrete, parou_tudo_em, convite_em'
 const COLUNAS_DO_ACEITE = 'id, link_id, nutricionista_id, tipo, email_hash, aceito_em, dia_da_semana, saiu_em, pausado_em'
 const COLUNAS_DO_ENVIO = 'link_id, nutricionista_id, tipo, email_hash, estado, resend_id, chave_unica, dia, extra, criado_em'
-const COLUNAS_DA_CHAVE = 'chave, link_id, nutricionista_id, tipo, avisos, email_hash, criado_em, vence_em, usado_em, desfazer'
+const COLUNAS_DA_CHAVE = 'chave, link_id, nutricionista_id, tipo, avisos, email_hash, email, criado_em, vence_em, usado_em, desfazer'
 
 type Linha = Readonly<Record<string, unknown>>
 
@@ -78,6 +78,7 @@ function paraEmail(l: Linha): EmailDoLink {
     email: texto(l['email']),
     emailHash: texto(l['email_hash']),
     origem: origem === 'ficha' || origem === 'paciente' ? origem : null,
+    confirmadoEm: texto(l['confirmado_em']),
     ofertas: { plano: l['oferta_plano'] !== false, semana: l['oferta_semana'] !== false, lembrete: l['oferta_lembrete'] !== false },
     parouTudoEm: texto(l['parou_tudo_em']),
     conviteEm: texto(l['convite_em']),
@@ -126,6 +127,7 @@ function paraChave(l: Linha): ChaveDeAviso {
     tipo,
     avisos: Array.isArray(l['avisos']) ? (l['avisos'] as AvisoDaChave[]) : [],
     emailHash: texto(l['email_hash']),
+    email: texto(l['email']),
     criadoEm: String(l['criado_em']),
     venceEm: texto(l['vence_em']),
     usadoEm: texto(l['usado_em']),
@@ -202,9 +204,11 @@ export function criarBancoDosAvisos(cliente: SupabaseClient, aleatorio: (tamanho
       return linhas(dados(await de('emails_dos_links').select(COLUNAS_DO_EMAIL).in('link_id', [...ids]), 'e-mails dos links')).map(paraEmail)
     },
     async emailsPorHash(hash) {
-      return linhas(dados(await de('emails_dos_links').select(COLUNAS_DO_EMAIL).eq('email_hash', hash), 'e-mails pelo resumo')).map(paraEmail)
+      // D-1247: o e-mail que o paciente deu no link só vale confirmado.
+      const lidas = linhas(dados(await de('emails_dos_links').select(COLUNAS_DO_EMAIL).eq('email_hash', hash).or('origem.eq.ficha,confirmado_em.not.is.null'), 'e-mails pelo resumo'))
+      return lidas.map(paraEmail)
     },
-    async gravarEmailDoPaciente(link, email, emailHash, oferece) {
+    async gravarEmailDoPaciente(link, email, emailHash, oferece, confirmadoEm) {
       // A linha nasce com as ofertas da conta; existindo, só o endereço muda (as ofertas são da nutricionista).
       dados(
         await de('emails_dos_links').upsert(
@@ -215,7 +219,7 @@ export function criarBancoDosAvisos(cliente: SupabaseClient, aleatorio: (tamanho
       )
       dados(
         await de('emails_dos_links')
-          .update({ email, email_hash: emailHash, origem: 'paciente', confirmado_em: null, atualizado_em: new Date().toISOString() })
+          .update({ email, email_hash: emailHash, origem: 'paciente', confirmado_em: confirmadoEm.toISOString(), atualizado_em: new Date().toISOString() })
           .eq('link_id', link.id),
         'gravar o e-mail do paciente',
       )
@@ -275,6 +279,7 @@ export function criarBancoDosAvisos(cliente: SupabaseClient, aleatorio: (tamanho
           tipo: c.tipo,
           avisos: [...c.avisos],
           email_hash: c.emailHash,
+          email: c.email,
           criado_em: c.criadoEm.toISOString(),
           vence_em: c.venceEm,
         }),
@@ -293,6 +298,9 @@ export function criarBancoDosAvisos(cliente: SupabaseClient, aleatorio: (tamanho
     async lerChave(chave) {
       const l = dados(await de('chaves_de_aviso').select(COLUNAS_DA_CHAVE).eq('chave', chave).maybeSingle(), 'ler a chave')
       return l ? paraChave(l as Linha) : null
+    },
+    async apagarChave(chave) {
+      dados(await de('chaves_de_aviso').delete().eq('chave', chave), 'apagar a chave')
     },
     async marcarChave(chave, m) {
       dados(await de('chaves_de_aviso').update({ usado_em: m.usadoEm ? m.usadoEm.toISOString() : null, desfazer: m.desfazer }).eq('chave', chave), 'marcar a chave')
@@ -400,6 +408,9 @@ export function criarBancoDosAvisos(cliente: SupabaseClient, aleatorio: (tamanho
 
     async anotarLimite(chave, limite, desde) {
       return dados(await cliente.rpc('anotar_limite', { p_chave: chave, p_limite: limite, p_desde: desde.toISOString() }), 'anotar o limite') === true
+    },
+    async devolverLimite(chave) {
+      dados(await cliente.rpc('devolver_limite', { p_chave: chave }), 'devolver o limite')
     },
     async nutricionista(id) {
       const config = dados(await de('config_de_emails').select('nome, responder_para, resumo_da_adesao, oferecer_aos_novos').eq('nutricionista_id', id).maybeSingle(), 'configuração') as Linha | null

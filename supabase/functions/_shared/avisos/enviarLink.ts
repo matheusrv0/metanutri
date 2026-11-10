@@ -126,6 +126,7 @@ async function planoEnviado(link: LinkDoBanco, nutri: DadosDaNutricionista, linh
       tipo: 'aceite',
       avisos: convite,
       emailHash,
+      email: null,
       criadoEm: agora,
       venceEm: new Date(agora.getTime() + VALIDADE_DO_CONVITE_MS).toISOString(),
     })

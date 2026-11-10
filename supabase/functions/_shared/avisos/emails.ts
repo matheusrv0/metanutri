@@ -380,6 +380,32 @@ export function emailConfirmeOsAvisos(dados: {
   })
 }
 
+/**
+ * S3 do e-mail digitado no link (D-1247): o endereço só passa a valer no plano com o "Confirmar"; com avisos marcados, a
+ * confirmação também os liga.
+ */
+export function emailConfirmeOEmail(dados: {
+  readonly primeiroNome: string | null
+  readonly remetente: Remetente
+  readonly avisos: readonly TipoDeAviso[]
+  readonly diaDaSemana: number
+  readonly urlConfirmar: string
+}): EmailMontado {
+  const comAvisos: readonly Peca[] = dados.avisos.length > 0 ? [paragrafo('Com a confirmação, você recebe:'), lista(dados.avisos.map((a) => avisoNoS3(a, dados.diaDaSemana)))] : []
+  return montar({
+    assunto: 'Confirme o seu e-mail',
+    preCabecalho: 'Sem a confirmação, este e-mail não recebe avisos.',
+    topo: topo(dados.remetente),
+    corpo: [
+      paragrafo(comNome(dados.primeiroNome, `confirme que este e-mail é seu para usá-lo no seu plano com ${quem(dados.remetente)}.`)),
+      ...comAvisos,
+      botao('Confirmar', dados.urlConfirmar, corDoBotao(dados.remetente.cor)),
+      nota('Sem a confirmação, este e-mail não recebe avisos nem serve para recuperar o link.'),
+    ],
+    rodape: { linhas: [`Alguém deu este e-mail no link do seu plano com ${quem(dados.remetente)}. Se não foi você, ignore este e-mail.`] },
+  })
+}
+
 /** S4, "Seu link do plano mudou" (D-1215). */
 export function emailEnderecoTrocado(dados: { readonly primeiroNome: string | null; readonly remetente: Remetente; readonly url: string }): EmailMontado {
   return montar({

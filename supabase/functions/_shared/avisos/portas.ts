@@ -38,6 +38,8 @@ export interface EmailDoLink {
   readonly email: string | null
   readonly emailHash: string | null
   readonly origem: 'ficha' | 'paciente' | null
+  /** Quando o paciente confirmou o e-mail que deu no link (D-1247); nulo no da ficha. */
+  readonly confirmadoEm: string | null
   readonly ofertas: Ofertas
   readonly parouTudoEm: string | null
   readonly conviteEm: string | null
@@ -77,6 +79,11 @@ export interface ChaveDeAviso {
   readonly tipo: 'aceite' | 'sair'
   readonly avisos: readonly AvisoDaChave[]
   readonly emailHash: string | null
+  /**
+   * D-1247 (DP-LP-34): o e-mail que o paciente digitou no link, normalizado, à espera do "Confirmar" (só na chave do
+   * aceite). Nulo: a chave é do e-mail que o link já tem.
+   */
+  readonly email: string | null
   readonly criadoEm: string
   readonly venceEm: string | null
   readonly usadoEm: string | null
@@ -161,13 +168,14 @@ export interface BancoDosAvisos {
   // ---- O e-mail do link ----
   emailDoLink(linkId: string): Promise<EmailDoLink | null>
   emailsDosLinks(ids: readonly string[]): Promise<readonly EmailDoLink[]>
-  /** Os links com este endereço (a recuperação, D-1220), só os que contam. */
+  /** Os links com este endereço (a recuperação, D-1220): só o e-mail da ficha ou o confirmado pelo paciente (D-1247). */
   emailsPorHash(emailHash: string): Promise<readonly EmailDoLink[]>
   /**
-   * O e-mail que o paciente deu no link (D-1221): cria a linha, se faltar, com as ofertas padrão da conta; troca o
-   * endereço, a origem vira "paciente" e o aceite do endereço antigo deixa de valer (CA-2257).
+   * O e-mail que o paciente confirmou no link (D-1247): cria a linha, se faltar, com as ofertas padrão da conta; troca o
+   * endereço, a origem vira "paciente", com a data da confirmação, e o aceite do endereço antigo deixa de valer
+   * (CA-2257).
    */
-  gravarEmailDoPaciente(link: LinkDoBanco, email: string, emailHash: string, ofertasPadrao: boolean): Promise<void>
+  gravarEmailDoPaciente(link: LinkDoBanco, email: string, emailHash: string, ofertasPadrao: boolean, confirmadoEm: Date): Promise<void>
   marcarConfirmado(linkId: string, quando: Date): Promise<void>
   marcarConvite(linkId: string, quando: Date): Promise<void>
   /** "Parar todos os e-mails deste plano" (CA-2254); nulo desfaz. */
@@ -192,6 +200,8 @@ export interface BancoDosAvisos {
   /** A chave de descadastro de um link e de um aviso (uma só, sem prazo); com `criar`, ela nasce se faltar. */
   chaveDeSair(linkId: string | null, nutricionistaId: string, aviso: AvisoDaChave): Promise<string | null>
   lerChave(chave: string): Promise<ChaveDeAviso | null>
+  /** A chave de um pedido que não saiu (D-1247: o pedido que falhou não muda nada). */
+  apagarChave(chave: string): Promise<void>
   marcarChave(chave: string, mudanca: { readonly usadoEm: Date | null; readonly desfazer: Desfazer | null }): Promise<void>
 
   // ---- Os envios ----
@@ -222,6 +232,8 @@ export interface BancoDosAvisos {
   // ---- Os limites e a conta ----
   /** Conta e anota num passo (`anotar_limite`): verdadeiro, coube e foi anotado. */
   anotarLimite(chave: string, limite: number, desde: Date): Promise<boolean>
+  /** Tira a anotação mais nova da chave (`devolver_limite`): o pedido que não saiu não conta (CA-2292). */
+  devolverLimite(chave: string): Promise<void>
   nutricionista(id: string): Promise<DadosDaNutricionista | null>
   /** A chave do cofre do agendamento (`conferir_chave_dos_avisos`). */
   chaveDaRodadaConfere(chave: string): Promise<boolean>

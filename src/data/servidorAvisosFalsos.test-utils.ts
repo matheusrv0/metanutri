@@ -110,8 +110,12 @@ export function bancoFalso(inicio: Partial<Pick<EstadoFalso, 'chaveDaRodada'>> =
     emailDoLink: (id) => ok(() => estado.emails.get(id) ?? null),
     emailsDosLinks: (ids) => ok(() => ids.map((id) => estado.emails.get(id)).filter((e): e is EmailDoLink => e !== undefined)),
     emailsPorHash: (hash) =>
-      ok(() => [...estado.emails.values()].filter((e) => e.emailHash === hash && (estado.links.get(e.linkId)?.substituidoPor ?? null) === null)),
-    gravarEmailDoPaciente: (link, email, emailHash, oferece) =>
+      ok(() =>
+        [...estado.emails.values()].filter(
+          (e) => e.emailHash === hash && (e.origem === 'ficha' || e.confirmadoEm !== null) && (estado.links.get(e.linkId)?.substituidoPor ?? null) === null,
+        ),
+      ),
+    gravarEmailDoPaciente: (link, email, emailHash, oferece, confirmadoEm) =>
       ok(() => {
         const atual = estado.emails.get(link.id)
         estado.emails.set(link.id, {
@@ -120,12 +124,17 @@ export function bancoFalso(inicio: Partial<Pick<EstadoFalso, 'chaveDaRodada'>> =
           email,
           emailHash,
           origem: 'paciente',
+          confirmadoEm: confirmadoEm.toISOString(),
           ofertas: atual?.ofertas ?? { plano: oferece, semana: oferece, lembrete: oferece },
           parouTudoEm: atual?.parouTudoEm ?? null,
           conviteEm: atual?.conviteEm ?? null,
         })
       }),
-    marcarConfirmado: () => ok(() => undefined),
+    marcarConfirmado: (id, quando) =>
+      ok(() => {
+        const e = estado.emails.get(id)
+        if (e) estado.emails.set(id, { ...e, confirmadoEm: quando.toISOString() })
+      }),
     marcarConvite: (id, quando) =>
       ok(() => {
         const e = estado.emails.get(id)
@@ -157,10 +166,11 @@ export function bancoFalso(inicio: Partial<Pick<EstadoFalso, 'chaveDaRodada'>> =
         const achada = [...estado.chaves.values()].find((c) => c.tipo === 'sair' && c.linkId === linkId && c.nutricionistaId === nutricionistaId && c.avisos[0] === aviso)
         if (achada) return achada.chave
         const chave = `sair${aviso}${linkId ?? nutricionistaId}`.replace(/[^A-Za-z0-9]/g, '').padEnd(32, 'x').slice(0, 32)
-        estado.chaves.set(chave, { chave, linkId, nutricionistaId, tipo: 'sair', avisos: [aviso], emailHash: null, criadoEm: new Date().toISOString(), venceEm: null, usadoEm: null, desfazer: null })
+        estado.chaves.set(chave, { chave, linkId, nutricionistaId, tipo: 'sair', avisos: [aviso], emailHash: null, email: null, criadoEm: new Date().toISOString(), venceEm: null, usadoEm: null, desfazer: null })
         return chave
       }),
     lerChave: (chave) => ok(() => estado.chaves.get(chave) ?? null),
+    apagarChave: (chave) => ok(() => void estado.chaves.delete(chave)),
     marcarChave: (chave, m) =>
       ok(() => {
         const c = estado.chaves.get(chave)
@@ -213,6 +223,11 @@ export function bancoFalso(inicio: Partial<Pick<EstadoFalso, 'chaveDaRodada'>> =
         if (n >= limite) return false
         estado.limites.push({ chave, quando: agoraDoFalso().getTime() })
         return true
+      }),
+    devolverLimite: (chave) =>
+      ok(() => {
+        const i = estado.limites.map((l) => l.chave).lastIndexOf(chave)
+        if (i >= 0) estado.limites.splice(i, 1)
       }),
     nutricionista: (id) => ok(() => estado.nutris.get(id) ?? null),
     chaveDaRodadaConfere: (chave) => ok(() => chave === estado.chaveDaRodada),
@@ -280,6 +295,7 @@ export async function comLink(
     email,
     emailHash,
     origem: email === null ? null : 'ficha',
+    confirmadoEm: null,
     ofertas: { plano: true, semana: true, lembrete: true, ...sobre.ofertas },
     parouTudoEm: null,
     conviteEm: null,

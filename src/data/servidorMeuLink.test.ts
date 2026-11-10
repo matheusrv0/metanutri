@@ -107,7 +107,7 @@ describe('Recuperar meu link (D-1220)', () => {
 describe('Receber meu link por e-mail (D-1221)', () => {
   it('CA-2235: "Usar este" manda o S1 na hora para o e-mail do link e responde mascarado', async () => {
     await comLink(estado)
-    expect(await pedir({ acao: 'receber', token: 'k7q2mx9pla3r', usarDaFicha: true, avisos: [] })).toEqual({ status: 200, corpo: { enviadoPara: 'j•••s@gmail.com', confirmar: false } })
+    expect(await pedir({ acao: 'receber', token: 'k7q2mx9pla3r', usarDaFicha: true, avisos: [] })).toEqual({ status: 200, corpo: { enviadoPara: 'j•••s@gmail.com', confirmar: false, confirmarEmail: false } })
     const [s1] = resend.lotes[0]?.emails ?? []
     expect(s1).toMatchObject({ tipo: 'S1', para: 'juliana.martins@gmail.com', nomeDoRemetente: 'Ana Lima via MetaNutri', responderPara: 'ana@nutricaoclinica.com.br' })
     expect(s1?.texto.split('\n').slice(0, 2)).toEqual(['Ana Lima', 'Nutricionista · CRN-3 12345'])
@@ -146,7 +146,7 @@ describe('Receber meu link por e-mail (D-1221)', () => {
     await comLink(estado)
     expect(await pedir({ acao: 'receber', token: 'k7q2mx9pla3r', usarDaFicha: true, avisos: ['semana', 'lembrete'] })).toEqual({
       status: 200,
-      corpo: { enviadoPara: 'j•••s@gmail.com', confirmar: true },
+      corpo: { enviadoPara: 'j•••s@gmail.com', confirmar: true, confirmarEmail: false },
     })
     const emails = resend.lotes[0]?.emails ?? []
     expect(emails.map((e) => e.tipo)).toEqual(['S1', 'S3'])
@@ -170,13 +170,75 @@ describe('Receber meu link por e-mail (D-1221)', () => {
     expect(resend.lotes[0]?.emails.map((e) => e.tipo)).toEqual(['S1'])
   })
 
-  it('CA-2257: outro e-mail troca o do link (origem paciente), e o aceite do antigo deixa de valer', async () => {
+  it('CA-2291: o e-mail digitado recebe o S1 e o "Confirme o seu e-mail", e o link continua com o e-mail de antes', async () => {
     const { emailHash } = await comLink(estado, { aceites: ['semana'] })
-    await pedir({ acao: 'receber', token: 'k7q2mx9pla3r', email: 'Juliana.Nova@Gmail.com', avisos: [] })
+    expect(await pedir({ acao: 'receber', token: 'k7q2mx9pla3r', email: 'Pedro.Novo@Gmail.com', avisos: ['lembrete'] })).toEqual({
+      status: 200,
+      corpo: { enviadoPara: 'p•••o@gmail.com', confirmar: true, confirmarEmail: true },
+    })
+    const emails = resend.lotes[0]?.emails ?? []
+    expect(emails.map((e) => [e.tipo, e.para, e.assunto])).toEqual([
+      ['S1', 'pedro.novo@gmail.com', 'Seu link do plano'],
+      ['S3', 'pedro.novo@gmail.com', 'Confirme o seu e-mail'],
+    ])
+    expect(emails[1]?.texto).toContain('Juliana, confirme que este e-mail é seu para usá-lo no seu plano com Ana Lima.')
+    expect(emails[1]?.texto).toContain('Com a confirmação, você recebe:\n- Lembrete depois de 3 dias sem marcar')
+    // O link não muda: nem o endereço, nem a origem, nem o aceite do e-mail de antes.
+    expect(estado.emails.get('link-juliana')).toMatchObject({ email: 'juliana.martins@gmail.com', origem: 'ficha', emailHash })
+    expect(estado.aceites.filter((a) => a.saiuEm === null).map((a) => a.tipo)).toEqual(['semana'])
+    const [chave] = [...estado.chaves.values()]
+    expect(chave).toMatchObject({ tipo: 'aceite', email: 'pedro.novo@gmail.com', emailHash: await hashDoEmail('pedro.novo@gmail.com'), avisos: ['lembrete'] })
+  })
+
+  it('CA-2291: sem aviso marcado, o "Confirme o seu e-mail" sai do mesmo jeito', async () => {
+    await comLink(estado)
+    expect((await pedir({ acao: 'receber', token: 'k7q2mx9pla3r', email: 'pedro.novo@gmail.com', avisos: [] })).corpo).toEqual({ enviadoPara: 'p•••o@gmail.com', confirmar: true, confirmarEmail: true })
+    expect(resend.lotes[0]?.emails.map((e) => e.assunto)).toEqual(['Seu link do plano', 'Confirme o seu e-mail'])
+    expect([...estado.chaves.values()][0]?.avisos).toEqual([])
+  })
+
+  it('D-1247: o e-mail digitado igual ao do link também pede confirmação (a resposta não revela se ele acertou)', async () => {
+    await comLink(estado)
+    expect((await pedir({ acao: 'receber', token: 'k7q2mx9pla3r', email: 'juliana.martins@gmail.com', avisos: [] })).corpo).toMatchObject({ confirmarEmail: true })
+    expect(resend.lotes[0]?.emails.map((e) => e.assunto)).toEqual(['Seu link do plano', 'Confirme o seu e-mail'])
+  })
+
+  it('CA-2291: o e-mail que o paciente deu e não confirmou não serve para "Usar este", "Recuperar" nem ligar aviso', async () => {
+    await comLink(estado)
     const linha = estado.emails.get('link-juliana')
-    expect(linha).toMatchObject({ email: 'juliana.nova@gmail.com', origem: 'paciente', emailHash: await hashDoEmail('juliana.nova@gmail.com') })
-    expect(linha?.emailHash).not.toBe(emailHash)
-    expect(resend.lotes[0]?.emails[0]?.para).toBe('juliana.nova@gmail.com')
+    if (linha) estado.emails.set('link-juliana', { ...linha, email: 'pedro.velho@gmail.com', emailHash: await hashDoEmail('pedro.velho@gmail.com'), origem: 'paciente', confirmadoEm: null })
+    expect((await pedir({ acao: 'receber', token: 'k7q2mx9pla3r', usarDaFicha: true, avisos: [] })).status).toBe(422)
+    expect((await pedir({ acao: 'ligar', token: 'k7q2mx9pla3r', tipo: 'semana' })).status).toBe(422)
+    await pedir({ acao: 'recuperar', email: 'pedro.velho@gmail.com', turnstile: 'tok' })
+    expect(resend.lotes).toHaveLength(0)
+  })
+
+  it('CA-2291: o e-mail confirmado pelo paciente vale para "Usar este" e para "Recuperar"', async () => {
+    await comLink(estado)
+    const linha = estado.emails.get('link-juliana')
+    if (linha) estado.emails.set('link-juliana', { ...linha, email: 'pedro.novo@gmail.com', emailHash: await hashDoEmail('pedro.novo@gmail.com'), origem: 'paciente', confirmadoEm: '2026-11-02T10:00:00Z' })
+    expect((await pedir({ acao: 'receber', token: 'k7q2mx9pla3r', usarDaFicha: true, avisos: [] })).corpo).toMatchObject({ enviadoPara: 'p•••o@gmail.com', confirmarEmail: false })
+    await pedir({ acao: 'recuperar', email: 'pedro.novo@gmail.com', turnstile: 'tok' })
+    expect(resend.lotes.map((l) => l.emails[0]?.para)).toEqual(['pedro.novo@gmail.com', 'pedro.novo@gmail.com'])
+  })
+
+  it('CA-2292: o Resend fora não muda nada e não conta nos 3 do dia', async () => {
+    await comLink(estado)
+    resend.modo = 'fora'
+    for (let i = 0; i < 4; i++) expect(await pedir({ acao: 'receber', token: 'k7q2mx9pla3r', email: 'pedro.novo@gmail.com', avisos: ['semana'] })).toEqual({ status: 503, corpo: { erro: NAO_ENVIOU } })
+    expect(estado.chaves.size).toBe(0)
+    expect(estado.emails.get('link-juliana')?.email).toBe('juliana.martins@gmail.com')
+    resend.modo = 'ok'
+    for (let i = 0; i < 3; i++) expect((await pedir({ acao: 'receber', token: 'k7q2mx9pla3r', usarDaFicha: true, avisos: [] })).status).toBe(200)
+  })
+
+  it('CA-2292: o teto cheio também não conta', async () => {
+    await comLink(estado)
+    const tetos = deps.tetos
+    deps = { ...deps, tetos: () => ({ ...TETOS_PADRAO, dia: 0 }) }
+    expect((await pedir({ acao: 'receber', token: 'k7q2mx9pla3r', email: 'pedro.novo@gmail.com', avisos: [] })).status).toBe(503)
+    expect(estado.limites).toHaveLength(0)
+    deps = { ...deps, tetos }
   })
 
   it('D-1239: endereço devolvido antes não recebe de novo', async () => {
@@ -215,7 +277,7 @@ describe('Receber meu link por e-mail (D-1221)', () => {
 describe('Ligar um aviso no link (CA-2256)', () => {
   it('CA-2256: ligar manda o S3 daquele aviso', async () => {
     await comLink(estado)
-    expect(await pedir({ acao: 'ligar', token: 'k7q2mx9pla3r', tipo: 'lembrete' })).toEqual({ status: 200, corpo: { enviadoPara: 'j•••s@gmail.com', confirmar: true } })
+    expect(await pedir({ acao: 'ligar', token: 'k7q2mx9pla3r', tipo: 'lembrete' })).toEqual({ status: 200, corpo: { enviadoPara: 'j•••s@gmail.com', confirmar: true, confirmarEmail: false } })
     expect(resend.lotes[0]?.emails.map((e) => e.tipo)).toEqual(['S3'])
     expect([...estado.chaves.values()][0]?.avisos).toEqual(['lembrete'])
   })

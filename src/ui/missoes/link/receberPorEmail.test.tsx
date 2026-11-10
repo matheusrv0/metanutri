@@ -25,6 +25,18 @@ describe('CA-2235: o e-mail', () => {
     expect(screen.queryByText('Para receber os avisos, toque em Confirmar no e-mail.')).not.toBeInTheDocument()
   })
 
+  it('CA-2291: com um e-mail digitado, a folha diz que falta confirmar para ele valer no plano', async () => {
+    const { cliente } = clienteDasFolhas(() => ({ status: 200, corpo: { enviadoPara: 'p•••o@gmail.com', confirmar: true, confirmarEmail: true } }))
+    const { usuario } = await abrirReceber({ cliente })
+    await usuario.click(screen.getByRole('button', { name: 'Usar outro' }))
+    await usuario.type(screen.getByRole('textbox', { name: 'Seu e-mail' }), 'pedro.novo@gmail.com')
+    await usuario.click(screen.getByRole('button', { name: 'Enviar' }))
+    const status = await screen.findByRole('status')
+    expect(status).toHaveTextContent('Enviamos o link para p•••o@gmail.com.')
+    expect(status).toHaveTextContent('Para usar este e-mail no seu plano, toque em Confirmar no e-mail.')
+    expect(screen.queryByText('Para receber os avisos, toque em Confirmar no e-mail.')).not.toBeInTheDocument()
+  })
+
   it('CA-2235: sem e-mail na ficha, o campo vem vazio', async () => {
     await abrirReceber({ dados: { ...DADOS, emailMascarado: null } })
     expect(screen.getByRole('textbox', { name: 'Seu e-mail' })).toHaveValue('')

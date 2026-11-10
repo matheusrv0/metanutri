@@ -344,12 +344,27 @@ create table if not exists public.chaves_de_aviso (
   link_id uuid references public.acompanhamentos (id) on delete cascade,
   nutricionista_id uuid not null references auth.users (id) on delete cascade,
   tipo text not null check (tipo in ('aceite', 'sair')),
-  avisos text[] not null check (cardinality(avisos) between 1 and 6 and avisos <@ array['plano', 'semana', 'lembrete', 's2', 'todos', 'n1']::text[]),
+  avisos text[] not null,
   email_hash text check (email_hash is null or email_hash ~ '^[0-9a-f]{64}$'),
   criado_em timestamptz not null default now(),
   vence_em timestamptz,
   usado_em timestamptz,
   desfazer jsonb check (desfazer is null or pg_column_size(desfazer) <= 4096)
+);
+-- D-1247 (DP-LP-34, revisão de 04/11): o e-mail que o paciente digitou no link espera a confirmação aqui, na chave do
+-- aceite, e só o "Confirmar" o leva ao link. Com ele, a chave vale sem nenhum aviso marcado.
+alter table public.chaves_de_aviso add column if not exists email text;
+alter table public.chaves_de_aviso drop constraint if exists chaves_de_aviso_avisos_check;
+alter table public.chaves_de_aviso add constraint chaves_de_aviso_avisos_check check (
+  cardinality(avisos) <= 6
+  and avisos <@ array['plano', 'semana', 'lembrete', 's2', 'todos', 'n1']::text[]
+  and (cardinality(avisos) >= 1 or (tipo = 'aceite' and email is not null))
+);
+alter table public.chaves_de_aviso drop constraint if exists chaves_de_aviso_email_formato;
+alter table public.chaves_de_aviso add constraint chaves_de_aviso_email_formato check (
+  email is null
+  or (tipo = 'aceite' and email_hash is not null and char_length(email) <= 254 and email = lower(email)
+      and email ~ '^[^@[:space:]]+@[^@[:space:].]+(\.[^@[:space:].]+)+$')
 );
 create index if not exists chaves_de_aviso_por_link on public.chaves_de_aviso (link_id);
 create index if not exists chaves_de_aviso_por_conta on public.chaves_de_aviso (nutricionista_id);
@@ -1064,10 +1079,26 @@ begin
 end;
 $$;
 
+-- D-1247 e CA-2292: o pedido do paciente que não saiu (o Resend fora ou o teto) não conta nos 3 do dia. Tira a anotação
+-- mais nova da chave.
+create or replace function public.devolver_limite(p_chave text)
+returns void
+language plpgsql
+set search_path = public
+as $$
+begin
+  perform pg_advisory_xact_lock(hashtext('limite:' || p_chave));
+  delete from public.limites_de_envio
+   where id = (select max(l.id) from public.limites_de_envio l where l.chave = p_chave);
+end;
+$$;
+
 revoke all on function public.anotar_limite(text, integer, timestamptz) from public, anon, authenticated;
+revoke all on function public.devolver_limite(text) from public, anon, authenticated;
 revoke all on function public.conferir_chave_dos_avisos(text) from public, anon, authenticated;
 revoke all on function public.limpar_emails_antigos(timestamptz) from public, anon, authenticated;
 grant execute on function public.anotar_limite(text, integer, timestamptz) to service_role;
+grant execute on function public.devolver_limite(text) to service_role;
 grant execute on function public.conferir_chave_dos_avisos(text) to service_role;
 grant execute on function public.limpar_emails_antigos(timestamptz) to service_role;
 

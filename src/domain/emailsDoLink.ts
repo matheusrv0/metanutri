@@ -80,10 +80,16 @@ async function chamarBanco(cliente: ClienteDosEmails | null, nome: string, param
 
 // ---------- O paciente, no link ----------
 
-export type ResultadoDoEnvio = Resultado<{ readonly enviadoPara: string; readonly confirmar: boolean }>
+/**
+ * `confirmar`: falta tocar em Confirmar no e-mail. `confirmarEmail`: o e-mail foi digitado e só vale no plano depois de
+ * confirmado (D-1247, CA-2291).
+ */
+export type ResultadoDoEnvio = Resultado<{ readonly enviadoPara: string; readonly confirmar: boolean; readonly confirmarEmail: boolean }>
 
 const doEnvio = (r: Resultado<{ readonly dados: Record<string, unknown> }>): ResultadoDoEnvio =>
-  r.ok ? { ok: true, enviadoPara: textoOuNulo(r.dados['enviadoPara']) ?? '', confirmar: r.dados['confirmar'] === true } : r
+  r.ok
+    ? { ok: true, enviadoPara: textoOuNulo(r.dados['enviadoPara']) ?? '', confirmar: r.dados['confirmar'] === true, confirmarEmail: r.dados['confirmarEmail'] === true }
+    : r
 
 /**
  * D-1221 e CA-2235: "Receber meu link por e-mail". `email` nulo usa o e-mail que o link já tem (o da ficha, mascarado na
@@ -137,6 +143,8 @@ export interface PaginaDoAviso {
   readonly escolhidos: readonly TipoDeAviso[]
   /** Descadastro: o que a chave tira ('plano', 'semana', 'lembrete', 's2' ou 'n1'). */
   readonly aviso: string | null
+  /** D-1247: o e-mail digitado no link, mascarado, que esta chave confirma ("Confirmar o seu e-mail"). */
+  readonly emailNovo: string | null
   /** A ação já foi feita com esta chave (a página mostra o "Pronto."). */
   readonly feito: boolean
 }
@@ -156,6 +164,7 @@ export async function responderAviso(
       avisos: tipos(d['avisos']),
       escolhidos: tipos(d['escolhidos']),
       aviso: textoOuNulo(d['aviso']),
+      emailNovo: textoOuNulo(d['emailNovo']),
       feito: d['feito'] === true,
     },
   }

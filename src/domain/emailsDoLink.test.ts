@@ -70,7 +70,7 @@ function falso(opcoes: OpcoesDoFalso = {}) {
 describe('o paciente pede o link e os avisos', () => {
   it('CA-2235: "Usar este" manda o pedido sem o endereço; o servidor usa o do link', async () => {
     const { cliente, chamadas } = falso({ funcao: { status: 200, corpo: { enviadoPara: 'j•••a@gmail.com', confirmar: false } } })
-    expect(await receberLinkPorEmail(cliente, { token: 'k7q2mx9pla3r', email: null, avisos: [] })).toEqual({ ok: true, enviadoPara: 'j•••a@gmail.com', confirmar: false })
+    expect(await receberLinkPorEmail(cliente, { token: 'k7q2mx9pla3r', email: null, avisos: [] })).toEqual({ ok: true, enviadoPara: 'j•••a@gmail.com', confirmar: false, confirmarEmail: false })
     expect(chamadas[0]).toEqual({ tipo: 'funcao', nome: 'meu-link', corpo: { acao: 'receber', token: 'k7q2mx9pla3r', usarDaFicha: true, avisos: [] } })
   })
 
@@ -120,7 +120,7 @@ describe('as páginas do aceite e do descadastro', () => {
     const { cliente } = falso({ funcao: { status: 200, corpo: { tipo: 'aceite', nutricionista: 'Ana Lima', avisos: ['plano', 'semana', 'lembrete'], escolhidos: ['semana', 'lembrete'], feito: false } } })
     expect(await responderAviso(cliente, { acao: 'ler', chave: 'x'.repeat(32) })).toEqual({
       ok: true,
-      pagina: { tipo: 'aceite', nutricionista: 'Ana Lima', avisos: ['plano', 'semana', 'lembrete'], escolhidos: ['semana', 'lembrete'], aviso: null, feito: false },
+      pagina: { tipo: 'aceite', nutricionista: 'Ana Lima', avisos: ['plano', 'semana', 'lembrete'], escolhidos: ['semana', 'lembrete'], aviso: null, emailNovo: null, feito: false },
     })
   })
 

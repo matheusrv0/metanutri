@@ -2,7 +2,8 @@
 //   - 'recuperar': "Recuperar meu link", com a verificação contra robôs. A resposta é sempre a mesma (CA-2233, CA-2234);
 //     com cadastro, o S1 leva um link por nutricionista, e sai como "MetaNutri" (D-1225).
 //   - 'receber': "Receber meu link por e-mail", de dentro do link (o token é a chave): o S1 na hora e, com avisos
-//     marcados, o S3 do aceite (CA-2235, CA-2240). Até 3 pedidos por dia por link (CA-2237).
+//     marcados, o S3 do aceite (CA-2235, CA-2240); o e-mail digitado só vale no link depois de confirmado (D-1247).
+//     Até 3 pedidos por dia por link (CA-2237).
 //   - 'ligar': ligar um aviso na folha "Avisos por e-mail" manda o S3 daquele aviso (CA-2256).
 // Puro: o banco, o envio, a verificação e o DNS chegam de fora.
 import {
@@ -31,8 +32,8 @@ import {
   type ItemDeServico,
 } from './comum.ts'
 import { dominioDoEmail, emailValido, mascararEmail, normalizarEmail } from './email.ts'
-import { emailConfirmeOsAvisos, emailLinkDoPlano, type PlanoDoEmail } from './emails.ts'
-import type { DadosDaNutricionista, LinkDoBanco, RespostaDaFuncao } from './portas.ts'
+import { emailConfirmeOEmail, emailConfirmeOsAvisos, emailLinkDoPlano, type PlanoDoEmail } from './emails.ts'
+import type { DadosDaNutricionista, EmailDoLink, LinkDoBanco, RespostaDaFuncao } from './portas.ts'
 import { emBrasilia } from './regras.ts'
 import { ehTipoDeAviso, TIPOS_DE_AVISO, type TipoDeAviso } from './tipos.ts'
 
@@ -77,8 +78,25 @@ async function abrir(token: unknown, deps: DependenciasComuns): Promise<{ readon
   return nutri === null ? null : { link, nutri }
 }
 
-/** O S3 do aceite: a chave da página (vale 7 dias e uma vez, CB-1222) e o e-mail. */
-async function pedidoDeAceite(link: LinkDoBanco, nutri: DadosDaNutricionista, email: string, emailHash: string, avisos: readonly TipoDeAviso[], deps: DependenciasComuns): Promise<ItemDeServico> {
+interface PedidoDeAceite {
+  readonly item: ItemDeServico
+  /** A chave criada para este pedido: sai de novo se o e-mail não sair (D-1247). */
+  readonly chave: string
+}
+
+/**
+ * O S3: a chave da página (vale 7 dias e uma vez, CB-1222) e o e-mail. Com `emailNovo`, é o e-mail que o paciente
+ * digitou no link: a chave guarda o endereço, e o S3 é o "Confirme o seu e-mail" (D-1247), que vale sem aviso marcado.
+ */
+async function pedidoDeAceite(
+  link: LinkDoBanco,
+  nutri: DadosDaNutricionista,
+  email: string,
+  emailHash: string,
+  avisos: readonly TipoDeAviso[],
+  emailNovo: boolean,
+  deps: DependenciasComuns,
+): Promise<PedidoDeAceite> {
   const agora = deps.agora()
   const chave = gerarChave(deps.aleatorio)
   await deps.banco.criarChave({
@@ -88,21 +106,42 @@ async function pedidoDeAceite(link: LinkDoBanco, nutri: DadosDaNutricionista, em
     tipo: 'aceite',
     avisos,
     emailHash,
+    email: emailNovo ? email : null,
     criadoEm: agora,
     venceEm: new Date(agora.getTime() + VALIDADE_DO_ACEITE_MS).toISOString(),
   })
-  const montado = emailConfirmeOsAvisos({
+  const dados = {
     primeiroNome: primeiroNomeDoLink(link),
     remetente: remetenteDoLink(nutri, link),
     avisos,
     diaDaSemana: emBrasilia(agora).diaDaSemana,
     urlConfirmar: urlDaPagina(deps.ambiente, chave),
-  })
+  }
+  const montado = emailNovo ? emailConfirmeOEmail(dados) : emailConfirmeOsAvisos(dados)
   return {
-    email: { ...montado, nomeDoRemetente: nomeDoRemetente(nutri), para: email, responderPara: responderPara(nutri), tipo: 'S3' },
-    envios: [{ linkId: link.id, nutricionistaId: link.nutricionistaId, emailHash, contaNoTeto: true, extra: { avisos } }],
+    chave,
+    item: {
+      email: { ...montado, nomeDoRemetente: nomeDoRemetente(nutri), para: email, responderPara: responderPara(nutri), tipo: 'S3' },
+      envios: [{ linkId: link.id, nutricionistaId: link.nutricionistaId, emailHash, contaNoTeto: true, extra: { avisos } }],
+    },
   }
 }
+
+const chaveDoLimite = (link: LinkDoBanco): string => `link:${link.id}`
+
+/**
+ * Manda o pedido do paciente. O que não sai (o Resend fora, o teto) não muda nada (D-1247, CA-2292): a chave criada
+ * sai, e o pedido não conta nos 3 do dia.
+ */
+async function mandarPedido(link: LinkDoBanco, itens: readonly ItemDeServico[], chaves: readonly string[], deps: DependenciasComuns): Promise<boolean> {
+  if ((await enviarServico(itens, deps)) === 'enviado') return true
+  for (const chave of chaves) await deps.banco.apagarChave(chave)
+  await deps.banco.devolverLimite(chaveDoLimite(link))
+  return false
+}
+
+/** D-1247: o e-mail do link que vale para mandar e recuperar: o da ficha, ou o que o paciente já confirmou. */
+const emailQueVale = (linha: EmailDoLink): boolean => linha.origem === 'ficha' || Boolean(linha.confirmadoEm)
 
 /** O S1 de um link só (D-1221). */
 function linkDoPlano(link: LinkDoBanco, nutri: DadosDaNutricionista, email: string, emailHash: string, deps: DependenciasComuns): ItemDeServico {
@@ -133,7 +172,8 @@ async function recuperar(corpo: Readonly<Record<string, unknown>>, ip: string | 
   const cabeNoIp = ip === null ? true : await deps.banco.anotarLimite(`rec-ip:${await deps.hash(`ip:${ip}`)}`, RECUPERACOES_POR_HORA, desde)
   if (!cabeNoEmail || !cabeNoIp) return RESPOSTA_IGUAL
 
-  const linhas = (await deps.banco.emailsPorHash(emailHash)).filter((l) => l.email === email)
+  // D-1247: só o e-mail da ficha ou o confirmado pelo paciente recupera o link.
+  const linhas = (await deps.banco.emailsPorHash(emailHash)).filter((l) => l.email === email && emailQueVale(l))
   if (linhas.length === 0) return RESPOSTA_IGUAL
   if ((await deps.banco.suprimidos([emailHash])).get(emailHash) === 'devolvido') return RESPOSTA_IGUAL
   const links = (await deps.banco.linksPorIds(linhas.map((l) => l.linkId))).filter((l) => l.substituidoPor === null)
@@ -168,17 +208,25 @@ async function recuperar(corpo: Readonly<Record<string, unknown>>, ip: string | 
 /** Os avisos pedidos no corpo, só os conhecidos. */
 const avisosDoCorpo = (valor: unknown): readonly TipoDeAviso[] => (Array.isArray(valor) ? TIPOS_DE_AVISO.filter((t) => valor.includes(t)) : [])
 
-/** D-1221, CA-2235 a CA-2237 e CA-2240. */
+/**
+ * D-1221, D-1247, CA-2235 a CA-2237, CA-2240, CA-2291 e CA-2292. O e-mail que o link já tem e vale (mascarado na tela)
+ * recebe o S1 na hora e, com avisos marcados, o S3 do aceite. O e-mail digitado recebe o S1 e o S3 "Confirme o seu
+ * e-mail", sempre, mesmo igual ao do link (a resposta não revela se ele acertou o da ficha); o link continua com o
+ * e-mail de antes até o "Confirmar".
+ */
 async function receber(corpo: Readonly<Record<string, unknown>>, deps: DependenciasDoMeuLink): Promise<RespostaDaFuncao> {
   const aberto = await abrir(corpo['token'], deps)
   if (aberto === null) return erro(LINK_QUE_NAO_ABRE, 404)
   const { link, nutri } = aberto
   const linha = await deps.banco.emailDoLink(link.id)
+  const ofertas = linha?.ofertas ?? ofertasPadrao(nutri.oferecerAosNovos)
+  const marcados = avisosOferecidos(avisosDoCorpo(corpo['avisos']), ofertas)
 
+  const usarDoLink = corpo['usarDaFicha'] === true
   let email: string
-  if (corpo['usarDaFicha'] === true) {
-    // "Usar este": o e-mail que o link já tem (o da ficha, mascarado na tela).
-    if (!linha?.email) return erro(CONFIRA_O_EMAIL, 422)
+  if (usarDoLink) {
+    // O e-mail que o link já tem (o da ficha ou um confirmado, mascarado na tela).
+    if (!linha?.email || !emailQueVale(linha)) return erro(CONFIRA_O_EMAIL, 422)
     email = linha.email
   } else {
     email = typeof corpo['email'] === 'string' ? normalizarEmail(corpo['email']) : ''
@@ -188,18 +236,19 @@ async function receber(corpo: Readonly<Record<string, unknown>>, deps: Dependenc
   }
   const emailHash = await deps.hash(email)
   if ((await deps.banco.suprimidos([emailHash])).get(emailHash) === 'devolvido') return erro(CONFIRA_O_EMAIL, 422)
-  if (!(await deps.banco.anotarLimite(`link:${link.id}`, PEDIDOS_POR_DIA_NO_LINK, inicioDoDiaDeBrasilia(deps.agora())))) return erro(PEDIDOS_DEMAIS_NO_DIA, 429)
+  if (!(await deps.banco.anotarLimite(chaveDoLimite(link), PEDIDOS_POR_DIA_NO_LINK, inicioDoDiaDeBrasilia(deps.agora())))) return erro(PEDIDOS_DEMAIS_NO_DIA, 429)
 
-  // CA-2257: o endereço novo vale para o link, e os avisos esperam ele confirmar.
-  if (linha?.email !== email) await deps.banco.gravarEmailDoPaciente(link, email, emailHash, nutri.oferecerAosNovos)
-  const ofertas = linha?.ofertas ?? ofertasPadrao(nutri.oferecerAosNovos)
   const ativos = new Set((await deps.banco.aceitesDoLink(link.id)).filter((a) => a.saiuEm === null && a.emailHash === emailHash).map((a) => a.tipo))
-  const pedir = avisosOferecidos(avisosDoCorpo(corpo['avisos']), ofertas).filter((t) => !ativos.has(t))
-
+  const pedir = marcados.filter((t) => !ativos.has(t))
   const itens: ItemDeServico[] = [linkDoPlano(link, nutri, email, emailHash, deps)]
-  if (pedir.length > 0) itens.push(await pedidoDeAceite(link, nutri, email, emailHash, pedir, deps))
-  if ((await enviarServico(itens, deps)) === 'fora') return erro(NAO_ENVIOU, 503)
-  return { status: 200, corpo: { enviadoPara: mascararEmail(email), confirmar: pedir.length > 0 } }
+  const chaves: string[] = []
+  if (!usarDoLink || pedir.length > 0) {
+    const aceite = await pedidoDeAceite(link, nutri, email, emailHash, pedir, !usarDoLink, deps)
+    itens.push(aceite.item)
+    chaves.push(aceite.chave)
+  }
+  if (!(await mandarPedido(link, itens, chaves, deps))) return erro(NAO_ENVIOU, 503)
+  return { status: 200, corpo: { enviadoPara: mascararEmail(email), confirmar: chaves.length > 0, confirmarEmail: !usarDoLink } }
 }
 
 /** CA-2256: ligar um aviso manda o S3 dele para o e-mail do link. */
@@ -210,14 +259,14 @@ async function ligar(corpo: Readonly<Record<string, unknown>>, deps: Dependencia
   if (aberto === null) return erro(LINK_QUE_NAO_ABRE, 404)
   const { link, nutri } = aberto
   const linha = await deps.banco.emailDoLink(link.id)
-  if (!linha?.email || !linha.emailHash) return erro(CONFIRA_O_EMAIL, 422)
+  if (!linha?.email || !linha.emailHash || !emailQueVale(linha)) return erro(CONFIRA_O_EMAIL, 422)
   // CA-2242: o aviso que a nutricionista não oferece não liga.
   if (!linha.ofertas[tipo]) return erro('Este aviso não está disponível.', 409)
   if ((await deps.banco.suprimidos([linha.emailHash])).get(linha.emailHash) === 'devolvido') return erro(CONFIRA_O_EMAIL, 422)
   const ativo = (await deps.banco.aceitesDoLink(link.id)).some((a) => a.saiuEm === null && a.emailHash === linha.emailHash && a.tipo === tipo)
-  if (ativo) return { status: 200, corpo: { enviadoPara: mascararEmail(linha.email), confirmar: false } }
-  if (!(await deps.banco.anotarLimite(`link:${link.id}`, PEDIDOS_POR_DIA_NO_LINK, inicioDoDiaDeBrasilia(deps.agora())))) return erro(PEDIDOS_DEMAIS_NO_DIA, 429)
-  const item = await pedidoDeAceite(link, nutri, linha.email, linha.emailHash, [tipo], deps)
-  if ((await enviarServico([item], deps)) === 'fora') return erro(NAO_ENVIOU, 503)
-  return { status: 200, corpo: { enviadoPara: mascararEmail(linha.email), confirmar: true } }
+  if (ativo) return { status: 200, corpo: { enviadoPara: mascararEmail(linha.email), confirmar: false, confirmarEmail: false } }
+  if (!(await deps.banco.anotarLimite(chaveDoLimite(link), PEDIDOS_POR_DIA_NO_LINK, inicioDoDiaDeBrasilia(deps.agora())))) return erro(PEDIDOS_DEMAIS_NO_DIA, 429)
+  const aceite = await pedidoDeAceite(link, nutri, linha.email, linha.emailHash, [tipo], false, deps)
+  if (!(await mandarPedido(link, [aceite.item], [aceite.chave], deps))) return erro(NAO_ENVIOU, 503)
+  return { status: 200, corpo: { enviadoPara: mascararEmail(linha.email), confirmar: true, confirmarEmail: false } }
 }

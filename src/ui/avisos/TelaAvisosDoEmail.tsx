@@ -119,8 +119,17 @@ export function TelaAvisosDoEmail({ chave, cliente: clienteInjetado, aoAbrirPlan
   const { pagina, paraTudo } = estado
   const aviso = paraTudo ? null : pagina.aviso
 
-  // O aceite (D-1226, CA-2241 e CA-2243): os avisos oferecidos, com os escolhidos marcados; só "Confirmar" aceita.
+  // O aceite (D-1226, CA-2241 e CA-2243): os avisos oferecidos, com os escolhidos marcados; só "Confirmar" aceita. Com
+  // o e-mail digitado no link (D-1247), é "Confirmar o seu e-mail", que vale sem nenhum aviso marcado.
   if (pagina.tipo === 'aceite') {
+    const doEmail = pagina.emailNovo !== null
+    const pronto = doEmail
+      ? pagina.escolhidos.length > 0
+        ? `Pronto. Este e-mail vale no seu plano. Você vai receber: ${lista(pagina.escolhidos)}.`
+        : 'Pronto. Este e-mail vale no seu plano.'
+      : pagina.escolhidos.length > 0
+        ? `Pronto. Você vai receber: ${lista(pagina.escolhidos)}.`
+        : 'Pronto.'
     return (
       <Moldura>
         {pagina.feito ? (
@@ -128,7 +137,7 @@ export function TelaAvisosDoEmail({ chave, cliente: clienteInjetado, aoAbrirPlan
             <span aria-hidden="true" className="grid size-11 place-content-center rounded-full bg-lightsuccess text-successtext">
               <Check className="size-5" strokeWidth={3} />
             </span>
-            <p className="text-lg text-heading">{pagina.escolhidos.length > 0 ? `Pronto. Você vai receber: ${lista(pagina.escolhidos)}.` : 'Pronto.'}</p>
+            <p className="text-lg text-heading">{pronto}</p>
             <Button size="lg" block onClick={() => aoAbrirPlano(pagina.nutricionista)}>
               Abrir meu plano
             </Button>
@@ -142,9 +151,17 @@ export function TelaAvisosDoEmail({ chave, cliente: clienteInjetado, aoAbrirPlan
             className="flex flex-col gap-5"
           >
             <h1 id={id} className="font-titulo text-2xl font-extrabold tracking-tight text-heading [overflow-wrap:anywhere]">
-              {`Avisos de ${pagina.nutricionista} por e-mail`}
+              {doEmail ? 'Confirmar o seu e-mail' : `Avisos de ${pagina.nutricionista} por e-mail`}
             </h1>
-            <fieldset aria-labelledby={id} className="flex flex-col">
+            {doEmail ? (
+              <p className="-mt-2 text-base text-foreground [overflow-wrap:anywhere]">{`${pagina.emailNovo ?? ''} passa a valer no seu plano com ${pagina.nutricionista}.`}</p>
+            ) : null}
+            <fieldset aria-labelledby={doEmail ? `${id}-avisos` : id} className="flex flex-col">
+              {doEmail && pagina.avisos.length > 0 ? (
+                <legend id={`${id}-avisos`} className="mb-1.5 text-sm font-bold text-heading">
+                  Avisos
+                </legend>
+              ) : null}
               {pagina.avisos.map((tipo) => (
                 <label key={tipo} className="flex min-h-12 cursor-pointer items-center gap-3 text-base text-foreground">
                   <input
@@ -162,7 +179,7 @@ export function TelaAvisosDoEmail({ chave, cliente: clienteInjetado, aoAbrirPlan
                 {erro}
               </Alert>
             ) : null}
-            <Button type="submit" size="lg" block loading={ocupado} disabled={marcados.length === 0}>
+            <Button type="submit" size="lg" block loading={ocupado} disabled={!doEmail && marcados.length === 0}>
               Confirmar
             </Button>
           </form>

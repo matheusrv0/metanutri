@@ -4,6 +4,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { responderAosAvisos, type PedidoDaResposta } from '../../supabase/functions/_shared/avisos/avisosResposta.ts'
 import { CHAVE_QUE_NAO_VALE, type DependenciasComuns } from '../../supabase/functions/_shared/avisos/comum.ts'
+import { hashDoEmail } from '../../supabase/functions/_shared/avisos/email.ts'
 import { acertarRelogio, ANA, bancoFalso, comLink, dependencias, resendFalso, type EstadoFalso } from './servidorAvisosFalsos.test-utils.ts'
 
 let estado: EstadoFalso
@@ -30,6 +31,7 @@ async function comPedidoDeAceite(sobre: { readonly vence?: string; readonly avis
     tipo: 'aceite',
     avisos: sobre.avisos ?? ['semana', 'lembrete'],
     emailHash,
+    email: null,
     criadoEm: '2026-11-03T12:43:00.000Z',
     venceEm: sobre.vence ?? '2026-11-10T12:43:00.000Z',
     usadoEm: null,
@@ -49,7 +51,7 @@ describe('o aceite em dois passos (D-1226)', () => {
   it('CA-2241: abrir o endereço (a página lê a chave) não aceita nada', async () => {
     await comPedidoDeAceite()
     const r = await pedir({ acao: 'ler', chave: ACEITE })
-    expect(r).toEqual({ status: 200, corpo: { tipo: 'aceite', nutricionista: 'Ana Lima', avisos: ['plano', 'semana', 'lembrete'], escolhidos: ['semana', 'lembrete'], aviso: null, feito: false } })
+    expect(r).toEqual({ status: 200, corpo: { tipo: 'aceite', nutricionista: 'Ana Lima', avisos: ['plano', 'semana', 'lembrete'], escolhidos: ['semana', 'lembrete'], aviso: null, emailNovo: null, feito: false } })
     expect(estado.aceites).toHaveLength(0)
     // O GET (o antivírus que abre todo link) nem chega à regra.
     expect((await responderAosAvisos({ metodo: 'GET', chaveDaUrl: ACEITE, corpo: null, umClique: false }, deps)).status).toBe(405)
@@ -108,6 +110,80 @@ describe('o aceite em dois passos (D-1226)', () => {
     await comPedidoDeAceite()
     estado.links.clear()
     expect((await pedir({ acao: 'ler', chave: ACEITE })).status).toBe(404)
+  })
+})
+
+describe('o e-mail digitado no link só vale confirmado (D-1247)', () => {
+  const NOVO = 'pedro.novo@gmail.com'
+  const DO_EMAIL = 'B'.repeat(32)
+
+  /** O S3 "Confirme o seu e-mail": a chave guarda o endereço digitado. */
+  async function comEmailPorConfirmar(sobre: { readonly avisos?: readonly ('plano' | 'semana' | 'lembrete')[]; readonly email?: string; readonly chave?: string } = {}) {
+    const { link, emailHash } = await comLink(estado, { aceites: ['plano'] })
+    const email = sobre.email ?? NOVO
+    estado.chaves.set(sobre.chave ?? DO_EMAIL, {
+      chave: sobre.chave ?? DO_EMAIL,
+      linkId: link.id,
+      nutricionistaId: ANA.id,
+      tipo: 'aceite',
+      avisos: sobre.avisos ?? [],
+      emailHash: await hashDoEmail(email),
+      email,
+      criadoEm: '2026-11-03T12:43:00.000Z',
+      venceEm: '2026-11-10T12:43:00.000Z',
+      usadoEm: null,
+      desfazer: null,
+    })
+    return { link, emailHashDaFicha: emailHash }
+  }
+
+  it('CA-2291: a página mostra o endereço digitado, mascarado, e abrir não muda o e-mail do link', async () => {
+    await comEmailPorConfirmar({ avisos: ['semana'] })
+    expect((await pedir({ acao: 'ler', chave: DO_EMAIL })).corpo).toMatchObject({ tipo: 'aceite', emailNovo: 'p•••o@gmail.com', escolhidos: ['semana'], feito: false })
+    expect(estado.emails.get('link-juliana')).toMatchObject({ email: 'juliana.martins@gmail.com', origem: 'ficha' })
+  })
+
+  it('CA-2291: "Confirmar" leva o endereço ao link (origem paciente, com a data) e liga os avisos marcados', async () => {
+    const { emailHashDaFicha } = await comEmailPorConfirmar({ avisos: ['semana'] })
+    const r = await pedir({ acao: 'confirmar', chave: DO_EMAIL, avisos: ['semana'] })
+    expect(r.corpo).toMatchObject({ feito: true, escolhidos: ['semana'] })
+    const hash = await hashDoEmail(NOVO)
+    expect(estado.emails.get('link-juliana')).toMatchObject({ email: NOVO, emailHash: hash, origem: 'paciente', confirmadoEm: '2026-11-05T12:43:00.000Z' })
+    expect(estado.aceites.filter((a) => a.saiuEm === null).map((a) => [a.tipo, a.emailHash])).toEqual([
+      ['plano', emailHashDaFicha],
+      ['semana', hash],
+    ])
+  })
+
+  it('CA-2291: confirma mesmo sem nenhum aviso marcado', async () => {
+    await comEmailPorConfirmar()
+    expect((await pedir({ acao: 'confirmar', chave: DO_EMAIL, avisos: [] })).corpo).toMatchObject({ feito: true, escolhidos: [] })
+    expect(estado.emails.get('link-juliana')).toMatchObject({ email: NOVO, origem: 'paciente' })
+  })
+
+  it('D-1247: o endereço igual ao que o link já tem só fica confirmado', async () => {
+    await comEmailPorConfirmar({ email: 'juliana.martins@gmail.com' })
+    await pedir({ acao: 'confirmar', chave: DO_EMAIL, avisos: [] })
+    expect(estado.emails.get('link-juliana')).toMatchObject({ email: 'juliana.martins@gmail.com', origem: 'ficha', confirmadoEm: '2026-11-05T12:43:00.000Z' })
+  })
+
+  it('CB-1229: dois e-mails por confirmar: vale o último confirmado, e o outro continua valendo até ser usado', async () => {
+    await comEmailPorConfirmar()
+    const outra = 'C'.repeat(32)
+    const segundo = 'pedro.outro@gmail.com'
+    estado.chaves.set(outra, { ...(estado.chaves.get(DO_EMAIL) ?? ({} as never)), chave: outra, email: segundo, emailHash: await hashDoEmail(segundo) })
+    await pedir({ acao: 'confirmar', chave: outra, avisos: [] })
+    expect(estado.emails.get('link-juliana')?.email).toBe(segundo)
+    await pedir({ acao: 'confirmar', chave: DO_EMAIL, avisos: [] })
+    expect(estado.emails.get('link-juliana')?.email).toBe(NOVO)
+  })
+
+  it('a chave com o endereço mexido (o resumo não bate) não vale', async () => {
+    await comEmailPorConfirmar()
+    const chave = estado.chaves.get(DO_EMAIL)
+    if (chave) estado.chaves.set(DO_EMAIL, { ...chave, email: 'outro@gmail.com' })
+    expect((await pedir({ acao: 'confirmar', chave: DO_EMAIL, avisos: [] })).status).toBe(404)
+    expect(estado.emails.get('link-juliana')?.email).toBe('juliana.martins@gmail.com')
   })
 })
 

@@ -385,27 +385,32 @@ describe('o paciente pede sem conta (função meu-link)', () => {
     link = await novoLink('Pedro Alves', daFicha)
   })
 
-  it('CA-2235, CA-2240 e CB-1211: "Receber meu link" manda o S1 e o S3 para o endereço novo, guardado em minúsculas', async () => {
+  it('CA-2235, CA-2291 e CB-1211: "Receber meu link" com um e-mail digitado manda o S1 e o "Confirme o seu e-mail"; o link fica com o da ficha', async () => {
     const r = await meuLink({ metodo: 'POST', ip: null, corpo: { acao: 'receber', token: link.token, email: ` ${novo.toUpperCase()} `, avisos: ['semana', 'lembrete'] } }, dependenciasDoMeuLink())
-    expect(r).toEqual({ status: 200, corpo: { enviadoPara: mascararEmail(novo), confirmar: true } })
+    expect(r).toEqual({ status: 200, corpo: { enviadoPara: mascararEmail(novo), confirmar: true, confirmarEmail: true } })
     const recebidos = para(novo)
-    expect(recebidos.map((e) => e.email.subject)).toEqual(['Seu link do plano', 'Confirme os avisos do seu plano'])
+    expect(recebidos.map((e) => e.email.subject)).toEqual(['Seu link do plano', 'Confirme o seu e-mail'])
     expect(recebidos[0]?.email.html).toContain(`${APP}/p/${link.token}`)
     expect(para(daFicha)).toHaveLength(0)
-    const linha = await c.servico.from('emails_dos_links').select('email, email_hash, origem, confirmado_em').eq('link_id', link.id).single()
-    expect(linha.data).toEqual({ email: novo, email_hash: await hashDoEmail(novo), origem: 'paciente', confirmado_em: null })
-    const chaves = await c.servico.from('chaves_de_aviso').select('tipo, avisos, vence_em, usado_em').eq('link_id', link.id).eq('tipo', 'aceite')
-    expect(chaves.data).toEqual([expect.objectContaining({ tipo: 'aceite', avisos: ['semana', 'lembrete'], usado_em: null })])
+    // D-1247: até o "Confirmar", o link continua com o e-mail da ficha, e o digitado não recupera o link.
+    const linha = await c.servico.from('emails_dos_links').select('email, origem, confirmado_em').eq('link_id', link.id).single()
+    expect(linha.data).toEqual({ email: daFicha, origem: 'ficha', confirmado_em: null })
+    const antes = para(novo).length
+    expect(await meuLink({ metodo: 'POST', ip: '203.0.113.90', corpo: { acao: 'recuperar', email: novo, turnstile: 'turnstile-certo' } }, dependenciasDoMeuLink())).toEqual({ status: 200, corpo: { ok: true } })
+    expect(para(novo)).toHaveLength(antes)
+    const chaves = await c.servico.from('chaves_de_aviso').select('tipo, avisos, email, email_hash, vence_em, usado_em').eq('link_id', link.id).eq('tipo', 'aceite')
+    expect(chaves.data).toEqual([expect.objectContaining({ tipo: 'aceite', avisos: ['semana', 'lembrete'], email: novo, email_hash: await hashDoEmail(novo), usado_em: null })])
     // CB-1222: a chave do aceite vale 7 dias.
     const vence = Date.parse(String(chaves.data?.[0]?.vence_em))
     expect(Math.abs(vence - (Date.now() + 7 * 24 * 60 * 60 * 1000))).toBeLessThan(5 * 60 * 1000)
   })
 
-  it('CA-2241: abrir a página do aceite não aceita nada; só o "Confirmar" grava, com a versão avisos-v1', async () => {
+  it('CA-2241 e CA-2291: abrir a página não aceita nada; só o "Confirmar" leva o e-mail ao link e grava os aceites, com a versão avisos-v1', async () => {
     const chave = chaveDe(para(novo)[1]?.email.html, CHAVE_DA_PAGINA)
     const lida = await responderAosAvisos({ metodo: 'POST', chaveDaUrl: null, corpo: { acao: 'ler', chave }, umClique: false }, dependencias())
-    expect(lida).toMatchObject({ status: 200, corpo: { tipo: 'aceite', escolhidos: ['semana', 'lembrete'], feito: false } })
+    expect(lida).toMatchObject({ status: 200, corpo: { tipo: 'aceite', escolhidos: ['semana', 'lembrete'], emailNovo: mascararEmail(novo), feito: false } })
     expect((await c.servico.from('aceites').select('id').eq('link_id', link.id)).data).toEqual([])
+    expect((await c.servico.from('emails_dos_links').select('email').eq('link_id', link.id).single()).data?.email).toBe(daFicha)
 
     const confirmada = await responderAosAvisos({ metodo: 'POST', chaveDaUrl: null, corpo: { acao: 'confirmar', chave, avisos: ['semana', 'lembrete'] }, umClique: false }, dependencias())
     expect(confirmada).toMatchObject({ status: 200, corpo: { escolhidos: ['semana', 'lembrete'], feito: true } })
@@ -418,7 +423,26 @@ describe('o paciente pede sem conta (função meu-link)', () => {
       { tipo: 'semana', versao: 'avisos-v1', email_hash: hash, saiu_em: null },
     ])
     expect(await avisosNoLink(link)).toEqual({ plano: 'desligado', semana: 'ligado', lembrete: 'ligado' })
-    expect((await c.servico.from('emails_dos_links').select('confirmado_em').eq('link_id', link.id).single()).data?.confirmado_em).not.toBeNull()
+    const linha = await c.servico.from('emails_dos_links').select('email, email_hash, origem, confirmado_em').eq('link_id', link.id).single()
+    expect(linha.data).toMatchObject({ email: novo, email_hash: hash, origem: 'paciente' })
+    expect(linha.data?.confirmado_em).not.toBeNull()
+  })
+
+  it('CA-2292: o pedido que não sai (o Resend recusa) não muda o e-mail, não deixa chave e não conta nos 3 do dia', async () => {
+    const outro = await novoLink('Otávio Reis', endereco('otavio'))
+    resendResponde = 'limite'
+    try {
+      for (let i = 0; i < 4; i++) {
+        const r = await meuLink({ metodo: 'POST', ip: null, corpo: { acao: 'receber', token: outro.token, email: endereco('otavio.novo'), avisos: ['semana'] } }, dependenciasDoMeuLink())
+        expect(r.status).toBe(503)
+      }
+    } finally {
+      resendResponde = 'ok'
+    }
+    expect((await c.servico.from('chaves_de_aviso').select('chave').eq('link_id', outro.id)).data).toEqual([])
+    expect((await c.servico.from('limites_de_envio').select('id').eq('chave', `link:${outro.id}`)).data).toEqual([])
+    expect((await c.servico.from('emails_dos_links').select('email').eq('link_id', outro.id).single()).data?.email).toBe(endereco('otavio'))
+    expect((await meuLink({ metodo: 'POST', ip: null, corpo: { acao: 'receber', token: outro.token, usarDaFicha: true, avisos: [] } }, dependenciasDoMeuLink())).status).toBe(200)
   })
 
   it('CA-2289: depois da troca, o endereço do plano anterior não pede o link por e-mail nem liga aviso', async () => {

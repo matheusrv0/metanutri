@@ -283,6 +283,22 @@ describe('banco: a troca do endereço corta quem tinha o link (017, revisão r1,
     expect(sql).toContain('grant execute on function public.link_trocado(text) to anon, authenticated;')
   })
 
+  it('CA-2291 (DP-LP-34): o e-mail digitado espera na chave do aceite, que vale sem aviso marcado', () => {
+    expect(sql).toContain('alter table public.chaves_de_aviso add column if not exists email text;')
+    expect(sql).toContain('alter table public.chaves_de_aviso drop constraint if exists chaves_de_aviso_avisos_check;')
+    expect(sql).toContain("and (cardinality(avisos) >= 1 or (tipo = 'aceite' and email is not null))")
+    expect(sql).toContain('alter table public.chaves_de_aviso drop constraint if exists chaves_de_aviso_email_formato;')
+    expect(sql).toContain("or (tipo = 'aceite' and email_hash is not null and char_length(email) <= 254 and email = lower(email)")
+  })
+
+  it('CA-2292: o pedido que não saiu devolve a anotação do limite, só pela chave de serviço', () => {
+    const devolver = funcao('create or replace function public.devolver_limite(p_chave text)')
+    expect(devolver).toContain("perform pg_advisory_xact_lock(hashtext('limite:' || p_chave));")
+    expect(devolver).toContain('where id = (select max(l.id) from public.limites_de_envio l where l.chave = p_chave);')
+    expect(sql).toContain('revoke all on function public.devolver_limite(text) from public, anon, authenticated;')
+    expect(sql).toContain('grant execute on function public.devolver_limite(text) to service_role;')
+  })
+
   it('DP-LP-6: o link cortado não conta no limite', () => {
     expect(funcao('create or replace function public.conferir_link_do_paciente()')).toContain('substituido_por is null and cortado_em is null')
   })

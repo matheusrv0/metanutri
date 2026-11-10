@@ -83,6 +83,33 @@ describe('CA-2241 e CA-2243: o aceite', () => {
   })
 })
 
+describe('CA-2291: confirmar o e-mail digitado no link (D-1247)', () => {
+  const DO_EMAIL: Pagina = { ...ACEITE, escolhidos: ['semana'], emailNovo: 'p•••o@gmail.com' }
+
+  it('CA-2291: "Confirmar o seu e-mail", o endereço mascarado e os avisos marcados; depois, "Pronto. Este e-mail vale no seu plano."', async () => {
+    const { cliente, acoes } = servidor(DO_EMAIL)
+    render(<TelaAvisosDoEmail chave={CHAVE} cliente={cliente} />)
+    expect(await screen.findByRole('heading', { level: 1, name: 'Confirmar o seu e-mail' })).toBeInTheDocument()
+    expect(screen.getByText('p•••o@gmail.com passa a valer no seu plano com Ana Lima.')).toBeInTheDocument()
+    expect(screen.getByRole('group', { name: 'Avisos' })).toBeInTheDocument()
+    expect(screen.getByRole('checkbox', { name: 'Resumo da semana' })).toBeChecked()
+    const usuario = userEvent.setup()
+    await usuario.click(screen.getByRole('button', { name: 'Confirmar' }))
+    expect(acoes.at(-1)).toEqual({ acao: 'confirmar', chave: CHAVE, avisos: ['semana'] })
+    expect(await screen.findByRole('status')).toHaveTextContent('Pronto. Este e-mail vale no seu plano. Você vai receber: Resumo da semana.')
+  })
+
+  it('CA-2291: sem nenhum aviso marcado, "Confirmar" vale do mesmo jeito', async () => {
+    const { cliente, acoes } = servidor({ ...DO_EMAIL, escolhidos: [] })
+    render(<TelaAvisosDoEmail chave={CHAVE} cliente={cliente} />)
+    const confirmar = await screen.findByRole('button', { name: 'Confirmar' })
+    expect(confirmar).toBeEnabled()
+    await userEvent.setup().click(confirmar)
+    expect(acoes.at(-1)).toEqual({ acao: 'confirmar', chave: CHAVE, avisos: [] })
+    expect(await screen.findByRole('status')).toHaveTextContent(/^Pronto\. Este e-mail vale no seu plano\.Abrir meu plano$/)
+  })
+})
+
 describe('CA-2253 e CA-2254: o descadastro', () => {
   it('CA-2253: abrir não descadastra; o botão descadastra e mostra "Pronto.", "Parar todos" e "Desfazer"', async () => {
     const { cliente, acoes } = servidor(SAIR_DO_RESUMO)
