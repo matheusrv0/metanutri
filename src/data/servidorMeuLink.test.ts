@@ -169,6 +169,25 @@ describe('Receber meu link por e-mail (D-1221)', () => {
     expect((await pedir({ acao: 'receber', token: 'k7q2mx9pla3r', email: 'juliana@empresa.com.br', avisos: [] })).status).toBe(200)
   })
 
+  it('CA-2301: o pedido conta nos 3 do dia antes da consulta do domínio, e o recusado por ela continua contando', async () => {
+    await comLink(estado)
+    let consultas = 0
+    deps = {
+      ...deps,
+      temServidorDeEmail: async () => {
+        consultas++
+        // Na hora da consulta, o pedido já está anotado.
+        expect(estado.limites.filter((l) => l.chave === 'link:link-juliana')).toHaveLength(consultas)
+        return false
+      },
+    }
+    for (let i = 0; i < 3; i++) expect(await pedir({ acao: 'receber', token: 'k7q2mx9pla3r', email: 'quem.pegou@golpe.org', avisos: [] })).toEqual({ status: 422, corpo: { erro: CONFIRA_O_EMAIL } })
+    expect(await pedir({ acao: 'receber', token: 'k7q2mx9pla3r', email: 'quem.pegou@golpe.org', avisos: [] })).toEqual({ status: 429, corpo: { erro: PEDIDOS_DEMAIS_NO_DIA } })
+    // O quarto nem chega a consultar o domínio.
+    expect(consultas).toBe(3)
+    expect(resend.lotes).toHaveLength(0)
+  })
+
   it('CA-2236: e-mail sem formato também', async () => {
     await comLink(estado)
     expect(await pedir({ acao: 'receber', token: 'k7q2mx9pla3r', email: 'juliana', avisos: [] })).toEqual({ status: 422, corpo: { erro: CONFIRA_O_EMAIL } })

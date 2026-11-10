@@ -258,13 +258,16 @@ async function receber(corpo: Readonly<Record<string, unknown>>, deps: Dependenc
     email = linha.email
   } else {
     email = typeof corpo['email'] === 'string' ? normalizarEmail(corpo['email']) : ''
-    const dominio = dominioDoEmail(email)
-    // CA-2236: domínio sem servidor de e-mail é recusado na hora; a consulta que falha não recusa.
-    if (dominio === null || (await deps.temServidorDeEmail(dominio)) === false) return erro(CONFIRA_O_EMAIL, 422)
   }
+  const dominio = usarDoLink ? null : dominioDoEmail(email)
+  if (!usarDoLink && dominio === null) return erro(CONFIRA_O_EMAIL, 422)
+  // D-1256 e CA-2301: o pedido conta nos 3 do dia antes de qualquer consulta de fora, que pode demorar o quanto o dono
+  // do domínio quiser; o recusado por ela continua contando (só o que não sai volta, em `mandarPedido`).
+  if (!(await deps.banco.anotarLimite(chaveDoLimite(link), PEDIDOS_POR_DIA_NO_LINK, inicioDoDiaDeBrasilia(deps.agora())))) return erro(PEDIDOS_DEMAIS_NO_DIA, 429)
+  // CA-2236: domínio sem servidor de e-mail é recusado na hora; a consulta que falha não recusa.
+  if (dominio !== null && (await deps.temServidorDeEmail(dominio)) === false) return erro(CONFIRA_O_EMAIL, 422)
   const emailHash = await deps.hash(email)
   if ((await deps.banco.suprimidos([emailHash])).get(emailHash) === 'devolvido') return erro(CONFIRA_O_EMAIL, 422)
-  if (!(await deps.banco.anotarLimite(chaveDoLimite(link), PEDIDOS_POR_DIA_NO_LINK, inicioDoDiaDeBrasilia(deps.agora())))) return erro(PEDIDOS_DEMAIS_NO_DIA, 429)
 
   const ativos = new Set((await deps.banco.aceitesDoLink(link.id)).filter((a) => a.saiuEm === null && a.emailHash === emailHash).map((a) => a.tipo))
   const pedir = marcados.filter((t) => !ativos.has(t))

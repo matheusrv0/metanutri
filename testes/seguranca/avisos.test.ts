@@ -477,11 +477,13 @@ describe('o paciente pede sem conta (função meu-link)', () => {
     expect(enviados.length).toBe(antes)
   })
 
-  it('CA-2236: o domínio sem servidor de e-mail é recusado, e nada sai', async () => {
+  it('CA-2236 e CA-2301: o domínio sem servidor de e-mail é recusado, nada sai, e o pedido conta nos 3 do dia', async () => {
+    const outro = await novoLink('Sara Lins', endereco('sara'))
     const antes = enviados.length
-    const r = await meuLink({ metodo: 'POST', ip: null, corpo: { acao: 'receber', token: link.token, email: 'pedro@semservidor.com.br', avisos: [] } }, dependenciasDoMeuLink())
+    const r = await meuLink({ metodo: 'POST', ip: null, corpo: { acao: 'receber', token: outro.token, email: 'pedro@semservidor.com.br', avisos: [] } }, dependenciasDoMeuLink())
     expect(r).toEqual({ status: 422, corpo: { erro: 'Confira o e-mail.' } })
     expect(enviados.length).toBe(antes)
+    expect((await c.servico.from('limites_de_envio').select('id').eq('chave', `link:${outro.id}`)).data).toHaveLength(1)
   })
 
   it('CA-2237: o quarto pedido do dia no mesmo link não sai', async () => {
