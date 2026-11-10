@@ -8,6 +8,8 @@ critérios da seção 2.7 (CA-2289 a CA-2299) e os casos CB-1228 a CB-1231. A re
 decisões da seção 1.9 (D-1256 a D-1260), os critérios da seção 2.8 (CA-2300 a CA-2307) e os casos CB-1232 e CB-1233.
 A revisão nº 3 (10/11/2026, r3) trouxe as decisões da seção 1.10 (D-1261 a D-1263) e os critérios da seção 2.9
 (CA-2308 a CA-2310).
+A revisão nº 4 (10/11/2026, r4) trouxe as decisões da seção 1.11 (D-1264 e D-1265) e os critérios da seção 2.10
+(CA-2311 e CA-2312).
 
 **Pedido do dono (03/11/2026):** "vamos melhorar a visualização da tela que o paciente vê no link que o nutri manda,
 vamos continuar por ali e manter a ideia do link, vamos melhorar os avisos, por email, se o paciente deixar de abrir ou
@@ -178,6 +180,17 @@ ainda não rodou. As decisões abaixo valem por cima das de antes.
 | D-1262 | **O remetente sem "golpe-.com", "golpe_.com" nem sinal combinante junto do ponto** (leve 3 da r3; completa o D-1257). A "palavra.palavra" que sai também vale com hífen, sublinhado ou um sinal combinante (como o traço que risca a letra, U+0338) antes do ponto, e com o sinal combinante logo depois dele. "Dra. Ana Lima", "A.C. Lima", "Ltda." e "Nutri. Ana" ficam inteiros | Não são domínios válidos, mas o nome do remetente não deve ter nada com cara de endereço |
 | D-1263 | **A Política diz o que o histórico e a lista de bloqueio fazem** (leves 1 e 2 da r3; corrige a descrição do D-1243 e do D-1250). O histórico dos e-mails enviados guarda também o resumo (*hash*) do endereço, por 6 meses, inclusive dos enviados a um e-mail que não foi confirmado. Na lista de bloqueio, o e-mail que volta não recebe mais nenhum e-mail do MetaNutri; o marcado como spam não recebe mais avisos nem os e-mails do nutricionista, só o que o próprio paciente pedir no link (o link do plano, a confirmação do e-mail e a recuperação). O texto volta para o dono aprovar, como correção de precisão | A Política diz o que o código faz (D-1250). Ela dizia "fica guardado por até 8 dias" sem citar o resumo de 6 meses, e "para não receber mais avisos", quando o e-mail que volta deixa de receber todos |
 
+### 1.11 A revisão de 10/11/2026 (r4)
+
+A revisão independente nº 4 aprovou o ramo e deixou dois achados leves (L-r4-1 e L-r4-2), corrigidos antes de publicar
+porque mexem no 017, que ainda não rodou, e no que a Política nova promete. As decisões abaixo valem por cima das de
+antes.
+
+| # | Decisão | Motivo |
+|---|---|---|
+| D-1264 | **Apagar os e-mails do link segura o link primeiro** (L-r4-1; completa o D-1261). Ao excluir o paciente, o banco segura o link antes de apagar os aceites, os envios, as chaves e o e-mail, na mesma ordem da troca do endereço e do "Confirmar". O "Confirmar" que chegar no meio espera e responde "Este endereço não vale."; o que chegou antes termina, e o apagar leva o que ele gravou. Nenhum dos dois cai por *deadlock* (duas transações esperando uma pela outra) | Na ordem de antes (os aceites e depois as chaves), o apagar e o "Confirmar" do mesmo link, com um aceite ativo igual, esperavam um pelo outro, e o banco derrubava um deles com erro |
+| D-1265 | **O "Confirmar" não manda o link do plano para o e-mail que volta** (L-r4-2; completa o D-1258). Se o endereço confirmado está na lista de bloqueio por devolução, o e-mail passa a valer no link do mesmo jeito, mas o S1 não sai. O marcado como spam continua recebendo o S1, porque foi o próprio paciente que pediu no link (D-1263) | A Política diz que o e-mail que volta não recebe mais nenhum e-mail do MetaNutri (D-1263) |
+
 ## 2. Critérios de aceite
 
 ### 2.1 A tela do link
@@ -317,6 +330,11 @@ ainda não rodou. As decisões abaixo valem por cima das de antes.
 - **CA-2308** · Dado uma confirmação de e-mail aberta e a página já lida, quando a nutricionista troca o endereço antes de o "Confirmar" gravar (ou enquanto a troca segura o link), então o "Confirmar" responde "Este endereço não vale.", o e-mail do link continua o da ficha, nenhum aceite nasce e "Recuperar meu link" com o e-mail digitado não manda nada; quando o "Confirmar" grava antes da troca, então a troca espera, devolve o link ao e-mail da ficha e encerra os aceites do outro endereço (D-1261, CB-1232).
 - **CA-2309** · Dado o nome do Perfil com "golpe-.com", "golpe_.com" ou um sinal combinante junto do ponto ("golpe̸.com"), então o remetente e o corpo do e-mail saem sem eles; e "Dra. Ana Lima", "A.C. Lima", "Ana Lima Ltda." e "Nutri. Ana" saem inteiros (D-1262).
 - **CA-2310** · Dado a Política, então ela diz que o histórico dos e-mails enviados guarda um resumo (hash) do endereço por 6 meses, inclusive dos enviados a um e-mail que não foi confirmado; que o e-mail que volta não recebe mais nenhum e-mail do MetaNutri; e que o marcado como spam não recebe mais avisos nem os e-mails do nutricionista, só o que o próprio paciente pedir no link (D-1263).
+
+### 2.10 A revisão de 10/11/2026 (r4)
+
+- **CA-2311** · Dado um link com um aceite ativo e a confirmação aberta do mesmo aviso e do mesmo endereço, quando a nutricionista exclui o paciente (apagar os e-mails do link) e o paciente toca em "Confirmar" ao mesmo tempo, então os dois terminam sem erro; se o apagar chegou antes, o "Confirmar" responde "Este endereço não vale."; e no fim o link fica sem aceites, envios, chaves e e-mail (D-1264).
+- **CA-2312** · Dado um e-mail digitado no link que entrou na lista de bloqueio por devolução depois do pedido, quando o paciente toca em "Confirmar", então o e-mail passa a valer no link e nenhum e-mail sai para ele; se ele foi marcado como spam, o S1 sai (D-1265).
 
 ## 3. Casos de borda
 

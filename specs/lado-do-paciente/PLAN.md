@@ -263,6 +263,20 @@ As decisões D-1261 a D-1263 da SPEC (seção 1.10), no código:
 - **DP-LP-49** · **A Política** (D-1263): duas frases do item do e-mail do paciente mudam (seção 8). A versão dos textos
   continua `2026-11-03`.
 
+### 2.4 A correção da revisão r4 (10/11/2026)
+
+As decisões D-1264 e D-1265 da SPEC (seção 1.11), no código:
+
+- **DP-LP-50** · **O apagar segura o link primeiro** (D-1264). No 017, `apagar_emails_do_link` passa a começar por
+  `perform 1 from public.acompanhamentos where id = p_link for update;`, antes dos `delete`. O `for update` espera o
+  `for share` do "Confirmar" e a troca, e faz os dois esperarem por ele. A ordem fica a mesma em todo o 017: o link,
+  depois a chave, o e-mail e os aceites. O `create or replace` com a mesma assinatura mantém os grants, e o 017 continua
+  podendo rodar de novo.
+- **DP-LP-51** · **O S1 do "Confirmar" consulta a lista de bloqueio** (D-1265). Em `avisos-resposta`, `mandarOLink`
+  pergunta `suprimidos([emailHash])` antes de montar o S1 e não manda quando a resposta é `'devolvido'`, como o
+  "Recuperar" e o "Receber" do `meuLink`. A consulta fica dentro do mesmo `try`: o banco que falha não manda e não
+  desfaz a confirmação (CB-1233).
+
 ## 3. O contrato (banco, funções e tipos)
 
 ### 3.1 `supabase/017-lado-do-paciente.sql` (uma transação, pode rodar de novo)
@@ -494,6 +508,10 @@ dependência está entre colchetes.
 | T70 | `fix(avisos)`: o remetente sem hífen, sublinhado nem sinal combinante junto do ponto (DP-LP-48) | T68 |
 | T71 | `fix(lgpd)`: a Política diz o resumo do histórico e o que o bloqueio impede (DP-LP-49, PARA O DONO APROVAR) | T68 |
 | T72 | `docs`: a validação da correção r3 | todas |
+| T73 | `docs`: as decisões da revisão r4 (D-1264, D-1265, DP-LP-50, DP-LP-51) | — |
+| T74 | `fix(banco)`: apagar os e-mails do link segura o link primeiro (DP-LP-50) | T73 |
+| T75 | `fix(avisos)`: o "Confirmar" não manda o S1 para o e-mail que volta (DP-LP-51) | T73 |
+| T76 | `docs`: a validação da correção r4 | todas |
 
 ## 6. Matriz CA/CB × teste
 
@@ -580,6 +598,8 @@ Todo teste leva o ID no nome. "Dono" é conferência que só ele faz (seção 9)
 | CA-2308, CB-1232 | `src/data/sqlLadoDoPaciente.test.ts` (texto); `servidorAvisosResposta.test.ts`; `testes/seguranca/ladoDoPaciente.test.ts` (as duas ordens no banco local, com duas transações); `testes/seguranca/avisos.test.ts`; as partes G1, G2 e G3 da sonda `sonda-r3.mts` da revisão |
 | CA-2309 | `servidorEnviarLink.test.ts`; a sonda `sonda-nome-remetente-r3.mts` da revisão |
 | CA-2310 | `src/ui/publico/legal.test.tsx` |
+| CA-2311 | `src/data/sqlLadoDoPaciente.test.ts` (texto); `testes/seguranca/ladoDoPaciente.test.ts` (o apagar de verdade e o "Confirmar" ao mesmo tempo, com o apagar parado no meio por uma terceira transação); a parte G5 da sonda da revisão r4 |
+| CA-2312 | `src/data/servidorAvisosResposta.test.ts`; a parte G6 da sonda da revisão r4 |
 | CA-2299 | `servidorAvisosTetos.test.ts`, `servidorEnviarLink.test.ts` (o teto e o remetente limpo), `servidorAvisosRodada.test.ts`, `servidorMeuLink.test.ts`; `testes/seguranca/avisos.test.ts` |
 | CA-587 (B6), CB-1228 | `src/ui/pacientes/excluirPaciente.test.tsx` |
 | D-1255 (B10) | `src/domain/conta.test.ts` |
