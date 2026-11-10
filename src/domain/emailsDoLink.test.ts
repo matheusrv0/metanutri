@@ -68,7 +68,7 @@ function falso(opcoes: OpcoesDoFalso = {}) {
 }
 
 describe('o paciente pede o link e os avisos', () => {
-  it('CA-2235: "Usar este" manda o pedido sem o endereço; o servidor usa o do link', async () => {
+  it('CA-2235: o e-mail mascarado (sem "Usar outro") manda o pedido sem o endereço; o servidor usa o do link', async () => {
     const { cliente, chamadas } = falso({ funcao: { status: 200, corpo: { enviadoPara: 'j•••a@gmail.com', confirmar: false } } })
     expect(await receberLinkPorEmail(cliente, { token: 'k7q2mx9pla3r', email: null, avisos: [] })).toEqual({ ok: true, enviadoPara: 'j•••a@gmail.com', confirmar: false, confirmarEmail: false })
     expect(chamadas[0]).toEqual({ tipo: 'funcao', nome: 'meu-link', corpo: { acao: 'receber', token: 'k7q2mx9pla3r', usarDaFicha: true, avisos: [] } })

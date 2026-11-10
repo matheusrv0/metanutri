@@ -93,7 +93,7 @@ const doEnvio = (r: Resultado<{ readonly dados: Record<string, unknown> }>): Res
 
 /**
  * D-1221 e CA-2235: "Receber meu link por e-mail". `email` nulo usa o e-mail que o link já tem (o da ficha, mascarado na
- * tela, "Usar este"). Com avisos marcados, sai também o S3 (CA-2240).
+ * tela, já escolhido; B9: não há "Usar este"). Com avisos marcados, sai também o S3 (CA-2240).
  */
 export async function receberLinkPorEmail(
   cliente: ClienteDosEmails | null,

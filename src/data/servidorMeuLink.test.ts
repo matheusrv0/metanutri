@@ -147,7 +147,7 @@ describe('Recuperar meu link (D-1220)', () => {
 })
 
 describe('Receber meu link por e-mail (D-1221)', () => {
-  it('CA-2235: "Usar este" manda o S1 na hora para o e-mail do link e responde mascarado', async () => {
+  it('CA-2235: o e-mail mascarado que já vale manda o S1 na hora para o e-mail do link e responde mascarado', async () => {
     await comLink(estado)
     expect(await pedir({ acao: 'receber', token: 'k7q2mx9pla3r', usarDaFicha: true, avisos: [] })).toEqual({ status: 200, corpo: { enviadoPara: 'j•••s@gmail.com', confirmar: false, confirmarEmail: false } })
     const [s1] = resend.lotes[0]?.emails ?? []
@@ -155,7 +155,7 @@ describe('Receber meu link por e-mail (D-1221)', () => {
     expect(s1?.texto.split('\n').slice(0, 2)).toEqual(['Ana Lima', 'Nutricionista · CRN-3 12345'])
   })
 
-  it('CA-2235: sem e-mail no link, "Usar este" não vale', async () => {
+  it('CA-2235: sem e-mail no link, o mascarado não vale', async () => {
     await comLink(estado, { email: null })
     expect(await pedir({ acao: 'receber', token: 'k7q2mx9pla3r', usarDaFicha: true, avisos: [] })).toEqual({ status: 422, corpo: { erro: CONFIRA_O_EMAIL } })
   })
@@ -245,7 +245,7 @@ describe('Receber meu link por e-mail (D-1221)', () => {
     expect(resend.lotes[0]?.emails.map((e) => e.assunto)).toEqual(['Seu link do plano', 'Confirme o seu e-mail'])
   })
 
-  it('CA-2291: o e-mail que o paciente deu e não confirmou não serve para "Usar este", "Recuperar" nem ligar aviso', async () => {
+  it('CA-2291: o e-mail que o paciente deu e não confirmou não serve como o mascarado, para "Recuperar" nem ligar aviso', async () => {
     await comLink(estado)
     const linha = estado.emails.get('link-juliana')
     if (linha) estado.emails.set('link-juliana', { ...linha, email: 'pedro.velho@gmail.com', emailHash: await hashDoEmail('pedro.velho@gmail.com'), origem: 'paciente', confirmadoEm: null })
@@ -255,7 +255,7 @@ describe('Receber meu link por e-mail (D-1221)', () => {
     expect(resend.lotes).toHaveLength(0)
   })
 
-  it('CA-2291: o e-mail confirmado pelo paciente vale para "Usar este" e para "Recuperar"', async () => {
+  it('CA-2291: o e-mail confirmado pelo paciente vale como o mascarado e para "Recuperar"', async () => {
     await comLink(estado)
     const linha = estado.emails.get('link-juliana')
     if (linha) estado.emails.set('link-juliana', { ...linha, email: 'pedro.novo@gmail.com', emailHash: await hashDoEmail('pedro.novo@gmail.com'), origem: 'paciente', confirmadoEm: '2026-11-02T10:00:00Z' })
