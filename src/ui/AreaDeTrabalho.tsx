@@ -14,6 +14,7 @@ import { casoComFicha, pesoAnterior, restricoesDaFicha } from '@/domain/fichaNoP
 import { idadeDe, type Paciente } from '@/domain/pacientes.ts'
 import { comCuidadosDaFase, SEM_RESTRICOES } from '@/domain/restricoes.ts'
 import { avisoDoEstudante } from '@/domain/pedidoEstudante.ts'
+import { propostaNaDieta } from '@/domain/documentoDoPaciente.ts'
 import { assinaturaDoPlano, camposDeEstagioIniciais } from '@/domain/assinaturaDoPlano.ts'
 import { lerPerfil } from '@/domain/perfil.ts'
 import { exportacaoBloqueada, MOTIVO_EXPORTACAO_BLOQUEADA } from '@/domain/situacao.ts'
@@ -540,7 +541,7 @@ export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pe
                   // D-409 (spec textos-e-promessas): o link saúda o paciente pelo nome dele, não pelo nome do plano.
                   nome={nomeDoPacienteDoPlano(caso, pacienteDoPlano) ?? ''}
                   missoes={missoesDoPlano(registro.plano, { aguaL: aguaDoCaso(caso).litros })}
-                  dieta={dietaDoPlano(caso, registro.plano)}
+                  dieta={dietaDoPlano(caso, registro.plano, undefined, { estagio: propostaNaDieta(quemAssina, caso) })}
                   aoVerPlanos={() => navegar(rotaDePlanos(assinatura.plano))}
                   aoCadastrarTelefone={cadastrarTelefone}
                   situacao={perfil?.situacao ?? null}

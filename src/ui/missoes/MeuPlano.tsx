@@ -4,6 +4,7 @@
 // seguem as regras da folha, aplicadas na hora sobre a cópia guardada (spec revisao-geral-publica, D-231).
 import { useId } from 'react'
 import type { DietaDoLink, ItemDaDieta, ReceitaDaDieta } from '@/domain/dietaDoLink.ts'
+import { FRASE_APOIO_IA, FRASE_APOIO_IA_ESTAGIO } from '@/domain/documentoDoPaciente.ts'
 import { modoDaCopia, paraOPaciente } from '@/domain/dietaParaPaciente.ts'
 import { dataPorExtenso } from '@/domain/formatarData.ts'
 import { textoDaQuantidade, type QuantidadeNaFolha } from '@/domain/quantidadeNaFolha.ts'
@@ -131,7 +132,9 @@ export function MeuPlano({ dieta, primeiroNome }: MeuPlanoProps) {
       {dieta.orientacoes ? <Texto titulo="Orientações" texto={dieta.orientacoes} /> : null}
       {(dieta.receitasDoPlano?.length ?? 0) > 0 || dieta.receitas ? <Receitas receitas={dieta.receitasDoPlano ?? []} texto={dieta.receitas} modo={modo} /> : null}
 
-      {dia ? <p className="mt-5 text-center text-xs text-muted-foreground">{`Atualizado em ${dia}.`}</p> : null}
+      {/* Spec assistente-ia, CA-2377: o plano que recebeu sugestão da IA diz isso ao paciente. */}
+      {dieta.apoioDeIa ? <p className="mt-5 text-center text-xs text-muted-foreground">{dieta.apoioDeIa === 'estagio' ? FRASE_APOIO_IA_ESTAGIO : FRASE_APOIO_IA}</p> : null}
+      {dia ? <p className={dieta.apoioDeIa ? 'text-center text-xs text-muted-foreground' : 'mt-5 text-center text-xs text-muted-foreground'}>{`Atualizado em ${dia}.`}</p> : null}
     </div>
   )
 }

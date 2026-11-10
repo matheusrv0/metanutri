@@ -78,6 +78,11 @@ export interface DietaDoPlano {
    * igual à de antes.
    */
   readonly quantidades?: 'gramas' | 'medida-e-gramas'
+  /**
+   * Spec assistente-ia, D-1322 e CA-2377: o plano recebeu sugestão da IA; o link diz isso ao paciente ("estagio" na conta
+   * de estudante). Só existe no plano com a marca: a cópia de antes fica igual.
+   */
+  readonly apoioDeIa?: 'plano' | 'estagio'
 }
 
 /** A cópia que mora no link. */
@@ -137,9 +142,10 @@ function receitaDaDieta(r: ReceitaDoPlano, buscar: BuscarAlimento, modo: ModoQua
 
 /** A dieta de agora, com a mesma regra da folha impressa (CA-531 a CA-534) e a escolha de quantidade do plano. */
 export function dietaDoPlano(
-  caso: Pick<Caso, 'orientacoes' | 'receitas'> & { readonly quantidades?: ModoQuantidade },
+  caso: Pick<Caso, 'orientacoes' | 'receitas'> & { readonly quantidades?: ModoQuantidade; readonly origemIa?: Caso['origemIa'] },
   plano: Plano,
   buscar: BuscarAlimento = buscarAlimento,
+  opcoes: { readonly estagio?: boolean } = {},
 ): DietaDoPlano {
   const modo = modoDeQuantidade(caso)
   const refeicoes = plano.refeicoes
@@ -165,17 +171,19 @@ export function dietaDoPlano(
     receitas: caso.receitas.trim(),
     ...(receitasDoPlano.length > 0 ? { receitasDoPlano } : {}),
     ...(modo === 'medida-caseira' ? {} : { quantidades: modo }),
+    ...(caso.origemIa ? { apoioDeIa: opcoes.estagio === true ? ('estagio' as const) : ('plano' as const) } : {}),
   }
 }
 
 export function copiarDieta(dieta: DietaDoPlano, dia: string): DietaDoLink {
-  const { refeicoes, orientacoes, receitas, receitasDoPlano, quantidades } = dieta
+  const { refeicoes, orientacoes, receitas, receitasDoPlano, quantidades, apoioDeIa } = dieta
   return {
     refeicoes,
     orientacoes,
     receitas,
     ...(receitasDoPlano && receitasDoPlano.length > 0 ? { receitasDoPlano } : {}),
     ...(quantidades === 'gramas' || quantidades === 'medida-e-gramas' ? { quantidades } : {}),
+    ...(apoioDeIa === 'plano' || apoioDeIa === 'estagio' ? { apoioDeIa } : {}),
     copiadaEm: dia,
   }
 }
@@ -189,6 +197,8 @@ const conteudo = (dieta: DietaDoPlano): string =>
     ...(dieta.receitasDoPlano && dieta.receitasDoPlano.length > 0 ? [dieta.receitasDoPlano] : []),
     // D-319 (integracao-rodada-1910) e D-376 (alimentos-e-gramaturas): trocar o modo muda o que o paciente vê.
     ...(dieta.quantidades === 'gramas' || dieta.quantidades === 'medida-e-gramas' ? [dieta.quantidades] : []),
+    // Spec assistente-ia, CA-2377: a linha de apoio de IA é parte do que o paciente vê.
+    ...(dieta.apoioDeIa ? [`ia:${dieta.apoioDeIa}`] : []),
   ])
 
 /** O plano mudou em algo que o paciente vê desde a cópia (CA-545, CA-546). */
@@ -263,6 +273,7 @@ export function lerDieta(v: unknown): DietaDoLink | null {
     // D-319 (integracao-rodada-1910) e D-376: "gramas" e "medida-e-gramas" valem; link de antes não tem o campo e é
     // "Só medida".
     ...(o['quantidades'] === 'gramas' || o['quantidades'] === 'medida-e-gramas' ? { quantidades: o['quantidades'] } : {}),
+    ...(o['apoioDeIa'] === 'plano' || o['apoioDeIa'] === 'estagio' ? { apoioDeIa: o['apoioDeIa'] } : {}),
     copiadaEm: typeof o['copiadaEm'] === 'string' ? o['copiadaEm'] : '',
   }
 }

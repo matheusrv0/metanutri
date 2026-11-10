@@ -4,7 +4,7 @@ import { Document, Paragraph, TextRun } from 'docx'
 import { comSinalDeMenos, type ResultadoAntropometria } from '../domain/antropometria.ts'
 import { modoDeQuantidade } from '../domain/caso.ts'
 import { nomeSemAlimento } from '../domain/produtos.ts'
-import { FRASE_PROPOSTA } from '../domain/documentoDoPaciente.ts'
+import { FRASE_PROPOSTA, fraseDeApoioDeIa } from '../domain/documentoDoPaciente.ts'
 import { dataCompleta } from '../domain/formatarData.ts'
 import { quantidadeNaFolha, textoDoPeso, type QuantidadeNaFolha } from '../domain/quantidadeNaFolha.ts'
 import { ehItemDeReceita, nomeDaReceita, receitaDoItem, receitasDoPlano, textoDaPorcao, textoDoRendimento } from '../domain/receitaNoPlano.ts'
@@ -32,6 +32,11 @@ export interface DadosAconselhamento {
   readonly suplementos?: readonly Suplemento[] | undefined
   /** CA-584: plano de estágio; a seção de suplementos leva a frase de proposta. */
   readonly propostaDeEstagio?: boolean | undefined
+}
+
+function apoioDeIa(caso: Caso, estagio: boolean): Paragraph[] {
+  const frase = fraseDeApoioDeIa(caso, estagio)
+  return frase ? [new Paragraph({ spacing: { before: 360 }, children: [new TextRun({ text: frase, size: 18 })] })] : []
 }
 
 const NOME_OPCAO: Readonly<Record<OpcaoId, string>> = {
@@ -214,6 +219,8 @@ export function criarAconselhamento(dados: DadosAconselhamento): Document {
           ...blocoSuplementos(dados.suplementos, dados.propostaDeEstagio === true),
           ...receitas,
           ...assinaturas,
+          // Spec assistente-ia, CA-2377: o plano que recebeu sugestão da IA diz isso ao paciente.
+          ...apoioDeIa(caso, dados.propostaDeEstagio === true),
         ],
       },
     ],

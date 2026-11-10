@@ -9,6 +9,16 @@ import type { Caso } from './tipos.ts'
 
 export const FRASE_PROPOSTA = 'Proposta do estágio para avaliação do(a) preceptor(a). Só vale com a assinatura do(a) preceptor(a).'
 
+/** Spec assistente-ia, D-1322: o plano que recebeu sugestão da IA diz isso ao paciente, no PDF, no Word e no link. */
+export const FRASE_APOIO_IA = 'Plano elaborado com apoio de inteligência artificial e revisado pela nutricionista.'
+/** D-1322: na conta de estudante, a frase da proposta do estágio. */
+export const FRASE_APOIO_IA_ESTAGIO =
+  'Proposta do estágio, elaborada com apoio de inteligência artificial, para avaliação do(a) preceptor(a). Só vale com a assinatura do(a) preceptor(a).'
+
+/** CA-2377: a frase do documento do plano com `origemIa`; nula no plano feito sem a IA. */
+export const fraseDeApoioDeIa = (caso: Pick<Caso, 'origemIa'>, estagio: boolean): string | null =>
+  caso.origemIa ? (estagio ? FRASE_APOIO_IA_ESTAGIO : FRASE_APOIO_IA) : null
+
 /** CA-576, CA-582 e CA-583: nutricionista com nome e CRN; estudante com o nome da conta e o responsável técnico. */
 export function assinaturaDoDocumento(assinatura: AssinaturaDoPlano | null): AssinaturaDaFolha {
   if (assinatura?.situacao === 'nutricionista') return { tipo: 'nutricionista', linha: assinatura.linhaNutricionista ?? '' }

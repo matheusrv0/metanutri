@@ -6,7 +6,7 @@ import { useCallback, useRef, useState } from 'react'
 import type { ContextoDaResposta, CorpoDoPedidoIa, UsoDoMes } from '../../../supabase/functions/_shared/iaContrato.ts'
 import { erroDaIa, lerRespostaDaFuncao, lerUso, type ErroDaIa, type FalhaDaIa, type RespostaDaFuncao } from '@/domain/iaGaveta.ts'
 import { useNuvem } from './contextoNuvem.ts'
-import { chamar as chamarFuncao } from './usarAssinatura.ts'
+import { obterSupabase } from './supabase.ts'
 
 export const FUNCAO_DA_IA = 'sugerir-plano'
 
@@ -41,6 +41,33 @@ const SEM_CONEXAO: FalhaDaIa = { status: null, codigo: null, erro: null }
 const RESPOSTA_INVALIDA: FalhaDaIa = { status: 502, codigo: 'resposta-invalida', erro: null }
 
 const online = () => globalThis.navigator?.onLine !== false
+
+const ehResposta = (v: unknown): v is { readonly status: number; json(): Promise<unknown> } =>
+  typeof v === 'object' && v !== null && typeof (v as { readonly status?: unknown }).status === 'number' && typeof (v as { readonly json?: unknown }).json === 'function'
+
+/**
+ * A chamada à função com a sessão da conta, como as de cobrança (`{ erro, codigo }` no corpo do erro). Sem servidor
+ * configurado, status 0; sem resposta (sem internet), status nulo. Nunca lança.
+ */
+async function chamarFuncao(nome: string, corpo: Record<string, unknown>): Promise<{ readonly dados: unknown; readonly falha: FalhaDaIa | null }> {
+  try {
+    const cliente = obterSupabase()
+    if (!cliente) return { dados: null, falha: { status: 0, codigo: null, erro: null } }
+    const { data, error } = await cliente.functions.invoke<unknown>(nome, { body: corpo })
+    if (!error) return { dados: data, falha: null }
+    const contexto: unknown = typeof error === 'object' && error !== null && 'context' in error ? (error as { readonly context: unknown }).context : null
+    if (!ehResposta(contexto)) return { dados: null, falha: SEM_CONEXAO }
+    try {
+      const lido: unknown = await contexto.json()
+      const o = typeof lido === 'object' && lido !== null ? (lido as Record<string, unknown>) : {}
+      return { dados: null, falha: { status: contexto.status, codigo: typeof o['codigo'] === 'string' ? o['codigo'] : null, erro: typeof o['erro'] === 'string' ? o['erro'] : null } }
+    } catch {
+      return { dados: null, falha: { status: contexto.status, codigo: null, erro: null } }
+    }
+  } catch {
+    return { dados: null, falha: SEM_CONEXAO }
+  }
+}
 
 function useDependenciasPadrao(): DependenciasDaSugestao {
   const nuvem = useNuvem()
