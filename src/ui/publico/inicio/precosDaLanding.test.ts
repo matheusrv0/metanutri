@@ -6,9 +6,10 @@ import { cartoesDosPlanos, extrasDosPlanos, planoIndicado, REGUA_DE_PACIENTES, t
 describe('cartoesDosPlanos', () => {
   it('CA-1677: Free, Solo e Pro com o nome, a descrição, os limites e "Todas as funções", de PLANOS', () => {
     expect(cartoesDosPlanos().map((c) => [c.id, c.nome, c.descricao, c.itens])).toEqual([
-      ['free', 'Free', 'Para testar com um paciente real, sem cartão.', ['2 pacientes ativos', '2 pacientes com link', 'Todas as funções']],
-      ['solo', 'Solo', 'Para quem está começando a atender.', ['25 pacientes ativos', '25 pacientes com link', 'Todas as funções']],
-      ['pro', 'Pro', 'Para quem já tem agenda cheia.', ['Pacientes ilimitados', 'Pacientes com link ilimitados', 'Todas as funções']],
+      // D-1255 (spec lado-do-paciente): os dois limites iguais viram uma linha só.
+      ['free', 'Free', 'Para testar com um paciente real, sem cartão.', ['2 pacientes com link', 'Todas as funções']],
+      ['solo', 'Solo', 'Para quem está começando a atender.', ['25 pacientes com link', 'Todas as funções']],
+      ['pro', 'Pro', 'Para quem já tem agenda cheia.', ['Pacientes ilimitados', 'Todas as funções']],
     ])
   })
 
