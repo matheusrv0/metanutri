@@ -302,6 +302,10 @@ enorme, avaliação vazia, 350 kg e dobra de 90 mm, duas avaliações no mesmo d
 gestante e diagnóstico longo, em 360, 390 e 1440 px. Os achados viraram CB-1454 e CB-1455. Falta a F2 (T21 a T25) e a
 T26.
 
+**Correções da revisão r2 e F2 (10/11/2026, ramo `antropometria-fotos`):** R7 a R9 e T21 a T25 feitas, um commit cada
+(mais a correção do gatilho do 018, que o ataque de 8 envios juntos mostrou). Falta o "Enviar por e-mail" (T27, F3,
+bloqueada).
+
 **Correções da revisão r1 (04/11/2026, ramo `antropometria-com-main`):** R1 a R6 feitas, um commit cada, depois do
 commit `docs` das decisões. As sondas do revisor que afirmavam o defeito (S4, S10 e S12) agora falham na asserção do
 defeito, e as contraprovas (os mesmos cenários com a asserção corrigida, fora do repositório) passam.
@@ -324,3 +328,18 @@ e `src/ui/antropometria/dobras.test.tsx`; CB-1482 em `protocolosDeDobras.test.ts
 `e2e/antropometria.spec.ts` (390 px); CB-1487 em `prioridadeClinica.test.ts`, `metaDePerda.test.ts`,
 `pontoDePartida.test.ts` e `textosDaAvaliacao.test.ts`; CB-1488 em `avaliacoesDoPaciente.test.ts` e `src/App.test.tsx`;
 CB-1489 em `avaliacoesDoPaciente.test.ts` e `telaAntropometria.test.tsx`.
+
+Revisão r2: CB-1460 em `src/ui/caso/etapa1Antropometria.test.tsx`; CB-1461 em `src/domain/metaDePerda.test.ts`; CB-1462 em
+`src/ui/pacientes/pacientes.test.tsx`.
+
+F2 (fotos e anexos): CA-2480 em `src/ui/antropometria/fotos.test.tsx` e `e2e/servidor-falso/fotos-avaliacao.spec.ts`;
+CA-2481 em `src/domain/fotosDaAvaliacao.test.ts`, `fotos.test.tsx` e o e2e (o <canvas> de verdade); CA-2482 a CA-2484 em
+`fotosDaAvaliacao.test.ts` e `fotos.test.tsx`; CA-2485 em `fotos.test.tsx` e o e2e; CA-2486 em `fotosDaAvaliacao.test.ts`,
+`fotos.test.tsx` e o e2e; CA-2487 em `fotos.test.tsx` e o e2e; CA-2488 em `src/data/sqlFotosAvaliacao.test.ts` e
+`testes/seguranca/fotos.test.ts`; CA-2489 em `src/data/servidorExcluirLigacao.test.ts`, `testes/seguranca/exclusao.test.ts`,
+`fotosDaAvaliacao.test.ts` e `src/ui/casos/TelaCasos.test.tsx`; CA-2490 em `fotos.test.tsx`; CA-2491 em
+`src/seguranca/csp.test.ts` e o e2e (a imagem abre com a CSP do app, sem violação no console); CB-1412 (Comparar fotos)
+em `fotos.test.tsx`; CB-1413 a CB-1416 em `fotosDaAvaliacao.test.ts` e `fotos.test.tsx` (CB-1416 no servidor:
+`testes/seguranca/fotos.test.ts`, 8 envios juntos); CB-1463: o fundo branco do <canvas> (`reduzirFoto.ts`), sem teste
+automático (o jsdom não desenha; o e2e usa JPEG); CB-1464 em `fotosDaAvaliacao.test.ts` e `pacientes.test.tsx`; CB-1465
+no e2e; CB-1466 em `fotosDaAvaliacao.test.ts` e `fotos.test.tsx`.
