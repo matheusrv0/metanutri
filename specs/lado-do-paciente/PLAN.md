@@ -210,6 +210,35 @@ As decisões D-1246 a D-1255 da SPEC (seção 1.8), no código:
   (`bancoDosAvisosSupabase.nutricionista`) já devolve o nome limpo.
 - **DP-LP-41** · **Os planos** (D-1255): `textoDosLimites` junta as duas linhas quando os números são iguais.
 
+### 2.2 A correção da revisão r2 (10/11/2026)
+
+As decisões D-1256 a D-1260 da SPEC (seção 1.9), no código:
+
+- **DP-LP-42** · **A chave do aceite presa ao endereço** (D-1256). `chaves_de_aviso` ganha `token_hash` (SHA-256 do
+  token do link com que a chave foi pedida, o mesmo `hash_do_token` do DP-LP-32), obrigatório na chave de aceite (a
+  regra entra `not valid`: vale para toda chave nova sem conferir as velhas, e o 017 continua rodando de novo). Um
+  gatilho antes de gravar (`conferir_chave_do_aceite`, `security definer`) lê o token do link com `for share` e recusa
+  a chave cujo resumo não é o do token de agora ("O endereço do link mudou."). O `for share` espera a troca que esteja
+  no meio; depois dela, a releitura vê o token novo. Se a chave grava antes, a troca espera e a apaga (DP-LP-35). No
+  código: `ChaveDeAviso.tokenHash`, `hashDoToken` (comum.ts, igual ao `hash_do_token`), e `criarChave` devolve
+  `false` quando o banco recusou por isso. `meuLink` (`receber`, `ligar`) responde "Este link não abre mais." (404) sem
+  mandar nada; `enviarLink` manda o S2 sem o convite. Em `avisos-resposta`, a chave de aceite ainda não usada cujo
+  `tokenHash` não é o do token de agora do link não vale (`carregar`: "Este endereço não vale.").
+- **DP-LP-43** · **O limite antes da consulta** (D-1256): em `receber`, `anotarLimite` vem logo depois de abrir o link e
+  ler o e-mail que vale, antes do `temServidorDeEmail`; os 422 de depois não devolvem a anotação. Só `mandarPedido`
+  devolve (CA-2292).
+- **DP-LP-44** · **O remetente** (D-1257): `nomeLimpoDoRemetente` passa por `normalize('NFKC')`, tira `\p{Cf}`, troca
+  os pontos de outros alfabetos (`。｡۔։።܁܂` e, entre duas letras, `·•‧∙⋅・･`) por ".", junta o espaço antes de um
+  ponto e tira, além do de antes, todo `\S*[letra ou número].[2+ letras]\S*` e os números de IP. A lista de
+  terminações sai.
+- **DP-LP-45** · **O link só depois do "Confirmar"** (D-1258). Em `receber` com e-mail digitado, os itens são só o S3
+  "Confirme o seu e-mail". O S1 de um link (`itemDoLinkDoPlano`) passa para `comum.ts`. Em `avisos-resposta`, o
+  `confirmar` da chave com e-mail grava o endereço e manda o S1 para ele (`enviarServico`); o que não sai fica no
+  registro (CB-1233), e a página responde igual. A folha "Receber por e-mail" e o S3 ganham os textos da SPEC.
+- **DP-LP-46** · **As leves** (D-1260): `sairPorTempo` (`usarConta.ts`) chama `esquecerTodosOsPlanos` como o `sair`; em
+  `receber`, o e-mail digitado na supressão por devolução responde como enviado e não manda nada (o usado da ficha
+  continua com "Confira o e-mail."); o `TabsTrigger` do seletor de opção fica `h-11` em toda largura.
+
 ## 3. O contrato (banco, funções e tipos)
 
 ### 3.1 `supabase/017-lado-do-paciente.sql` (uma transação, pode rodar de novo)
@@ -348,6 +377,14 @@ recebia correções; com ela na `main` (3d3428ae), a regra foi ajustada aqui.
 `src/ui/publico/TelaPrivacidade.tsx`; `src/seguranca/csp.test.ts`; `e2e/servidor-falso/lado-do-paciente.spec.ts` e
 `e2e/apoio/servidorFalso.ts`; e os testes desses arquivos.
 
+**Acrescentados na correção da revisão r2** (T58 a T67), na ordem: `supabase/017-lado-do-paciente.sql`,
+`src/data/sqlLadoDoPaciente.test.ts` e `testes/seguranca/ladoDoPaciente.test.ts` e `avisos.test.ts`;
+`supabase/functions/_shared/avisos/` (`portas.ts`, `comum.ts`, `bancoDosAvisosSupabase.ts`, `meuLink.ts`,
+`avisosResposta.ts`, `enviarLink.ts`, `emails.ts`) e o banco de mentira (`servidorAvisosFalsos.test-utils.ts`), com os
+testes `src/data/servidor*.test.ts`; `src/ui/missoes/link/FolhaReceberPorEmail.tsx`; `src/ui/publico/TelaPrivacidade.tsx`
+e `legal.test.tsx`; `src/ui/estado/usarConta.ts`; `src/ui/missoes/MeuPlano.tsx`; `e2e/servidor-falso/lado-do-paciente.spec.ts`;
+e os testes desses arquivos.
+
 ## 5. Tarefas (uma por commit)
 
 Cada tarefa termina com os testes dela verdes (`npx vitest run <arquivos>`), lint e tipos dos arquivos tocados. A
@@ -417,6 +454,16 @@ dependência está entre colchetes.
 | T55 | `fix(lgpd)`: a Política diz o que o código faz (D-1250, PARA O DONO APROVAR) | T45 |
 | T56 | `test(seguranca)`: o token do caminho não sai no `Referer` (R-LP-6) | — |
 | T57 | `docs`: a validação da correção | todas |
+| T58 | `docs`: as decisões da revisão r2 (D-1256 a D-1260, DP-LP-42 a DP-LP-46) | — |
+| T59 | `fix(avisos)`: a chave do aceite presa ao endereço do link, no banco e no "Confirmar" (DP-LP-42) | T58 |
+| T60 | `fix(avisos)`: o pedido do paciente conta antes da consulta do domínio (DP-LP-43) | T59 |
+| T61 | `fix(avisos)`: o remetente sem nada com cara de endereço web (DP-LP-44) | — |
+| T62 | `fix(avisos)`: o e-mail digitado recebe o link só no "Confirmar" (DP-LP-45) | T59 |
+| T63 | `fix(lgpd)`: a Política cobre a recuperação e o e-mail por confirmar (D-1259, PARA O DONO APROVAR) | T62 |
+| T64 | `fix(conta)`: a saída por tempo apaga os planos lembrados (DP-LP-46) | — |
+| T65 | `fix(avisos)`: "Receber" não revela o e-mail bloqueado (DP-LP-46) | T62 |
+| T66 | `fix(link)`: o seletor de opção com 44 px em toda largura (DP-LP-46) | — |
+| T67 | `docs`: a validação da correção r2 | todas |
 
 ## 6. Matriz CA/CB × teste
 
@@ -492,6 +539,14 @@ Todo teste leva o ID no nome. "Dono" é conferência que só ele faz (seção 9)
 | CA-2296 | `servidorAvisosResend.test.ts` (o `turnstileConfere`) |
 | CA-2297 | `servidorAvisosResposta.test.ts`; `testes/seguranca/avisos.test.ts` |
 | CA-2298 | `src/ui/missoes/ultimoAcesso.test.tsx`; `src/ui/estado/usarConta.test.ts` |
+| CA-2300, CB-1232 | `src/data/sqlLadoDoPaciente.test.ts` (texto); `servidorMeuLink.test.ts`, `servidorAvisosResposta.test.ts`, `servidorEnviarLink.test.ts`; `testes/seguranca/ladoDoPaciente.test.ts` (a corrida no banco local, com duas transações); a parte F da sonda `sonda-contornos-r2.mts` da revisão |
+| CA-2301 | `servidorMeuLink.test.ts`; `testes/seguranca/avisos.test.ts` |
+| CA-2302 | `servidorEnviarLink.test.ts`; a sonda `sonda-nome-remetente.mts` da revisão |
+| CA-2303, CB-1233 | `servidorMeuLink.test.ts`, `servidorAvisosResposta.test.ts`; `link/receberPorEmail.test.tsx`; `testes/seguranca/avisos.test.ts`; `e2e/servidor-falso/lado-do-paciente.spec.ts` |
+| CA-2304 | `src/ui/publico/legal.test.tsx` |
+| CA-2305 | `src/ui/estado/usarConta.test.ts` |
+| CA-2306 | `servidorMeuLink.test.ts` |
+| CA-2307 | `e2e/servidor-falso/lado-do-paciente.spec.ts` (1440 px) |
 | CA-2299 | `servidorAvisosTetos.test.ts`, `servidorEnviarLink.test.ts` (o teto e o remetente limpo), `servidorAvisosRodada.test.ts`, `servidorMeuLink.test.ts`; `testes/seguranca/avisos.test.ts` |
 | CA-587 (B6), CB-1228 | `src/ui/pacientes/excluirPaciente.test.tsx` |
 | D-1255 (B10) | `src/domain/conta.test.ts` |
@@ -524,7 +579,8 @@ Todo teste leva o ID no nome. "Dono" é conferência que só ele faz (seção 9)
 
 > - O e-mail do paciente, quando o nutricionista o registra na ficha ou o próprio paciente o informa no link: para mandar
 >   o link do plano, os avisos que o paciente aceitou e os e-mails que o nutricionista envia pelo MetaNutri. O e-mail que
->   o paciente informa no link só passa a valer depois que ele toca em Confirmar no e-mail que recebe. Guardamos também o
+>   o paciente informa no link só passa a valer depois que ele toca em Confirmar no e-mail que recebe. Até lá, esse
+>   e-mail recebe só o pedido de confirmação e fica guardado com ele por até 8 dias. Guardamos também o
 >   aceite (o aviso, a data e a hora e a versão do texto) enquanto o link existir e por mais 6 meses depois que ele sai, e
 >   o histórico dos e-mails enviados (tipo, assunto, situação e data), por 6 meses. O e-mail que volta (o endereço não
 >   existe) ou que é marcado como spam entra numa lista de bloqueio, que guarda só um resumo do endereço (hash), para não
@@ -534,7 +590,9 @@ Todo teste leva o ID no nome. "Dono" é conferência que só ele faz (seção 9)
 
 (Revisão r1, D-1250: o texto acima substitui o de 03/11, que dizia "resumo cifrado", punha quem sai de um aviso na lista
 de bloqueio e guardava o aceite só "enquanto o link existir". **PARA O DONO APROVAR.** A versão dos textos continua
-`2026-11-03`: a de 03/11 nunca foi publicada.)
+`2026-11-03`: a de 03/11 nunca foi publicada.) (Revisão r2, D-1259: a frase "Até lá, esse e-mail recebe só o pedido
+de confirmação e fica guardado com ele por até 8 dias." entrou, e o item do Turnstile, abaixo, passou a falar de
+"Recuperar meu link". **PARA O DONO APROVAR.**)
 > - O dia em que o paciente abriu o link (só a data, sem a hora): para o nutricionista saber se o paciente está abrindo o
 >   plano.
 
@@ -543,6 +601,11 @@ Em "Onde os dados ficam", o item do Resend passa a ser:
 > - Os e-mails de confirmação e de troca de senha, e os e-mails ao paciente e ao nutricionista (o link do plano, os
 >   avisos aceitos e o resumo da adesão), são enviados pelo Resend, sem imagem e sem rastreio de abertura ou de clique. O
 >   e-mail do paciente é usado só para isso: nunca para propaganda do MetaNutri e nunca em lista de contatos.
+
+E o item do Turnstile passa a ser (D-1259):
+
+> - Nas telas de conta e em "Recuperar meu link", o Cloudflare Turnstile recebe dados técnicos do navegador, como o
+>   endereço IP, para separar pessoas de robôs.
 
 Em "Seus direitos", uma frase no fim:
 
