@@ -96,6 +96,15 @@ um `Label` ao lado, não uma prop.
 <Switch id="crus" checked={v} onCheckedChange={setV} />
 ```
 
+### ChipAlternavel
+Ficha que liga e desliga, para escolher **vários** de uma lista curta (os nutrientes da busca de
+substitutos). O desenho do `GrupoOpcoes`; o "+" vira "✓" e o estado sai em `aria-pressed`.
+*Nasceu na spec `busca-substitutos` (03/11/2026).*
+
+```tsx
+<ChipAlternavel ligado={marcado} aoAlternar={alternar}>Carboidratos</ChipAlternavel>
+```
+
 ### GrupoOpcoes
 Escolha única entre 2 a 4 opções curtas (sexo, preset, fórmula), todas visíveis — mais
 rápido que uma lista suspensa. `valor={null}` é o estado vazio.
@@ -342,6 +351,27 @@ nunca no laranja. *Nasceu no painel do dono (spec painel-do-dono).*
 ```
 
 O `CartaoNumero` ganhou `extra`: o que vai entre o valor e o rótulo (uma barra de progresso, por exemplo).
+
+### GraficoLinha
+Linha de uma série só, um ponto por valor, num eixo só (duas medidas são dois gráficos, nunca dois eixos). O eixo x é
+proporcional à posição de cada ponto (os dias entre as avaliações); o eixo y escolhe marcas redondas com folga
+(`escalaDoEixo`). Valor `null` não vira ponto nem zero: a linha liga os que têm. O último valor vai escrito ao lado do
+último ponto; cada ponto é um botão com a dica inteira no nome, e o mouse ou o teclado mostram a dica e a mira. No
+celular, só a primeira e a última data ficam embaixo do eixo. A linha é `--chart-1` (teal; teal claro no escuro),
+nunca o laranja, e o texto fica na tinta do texto. *Nasceu no Histórico da antropometria (spec antropometria-telas,
+D-1426, D-1487 e DP-AT-9).*
+
+```tsx
+<GraficoLinha
+  descricao="Peso, kg"
+  formatarMarca={(v) => String(v)}
+  rotuloDoUltimo="71,5 kg"
+  pontos={[
+    { chave: 'mai', x: 0, valor: 75.8, rotulo: '12/05', dica: { titulo: '12/05/2026', valor: '75,8 kg', detalhe: 'Primeira avaliação' } },
+    { chave: 'nov', x: 175, valor: 71.5, rotulo: '03/11', dica: { titulo: '03/11/2026', valor: '71,5 kg', detalhe: '−4,3 kg desde 12/05' } },
+  ]}
+/>
+```
 
 ### IconeMarca
 Os ícones da marca, no traço da logo: linha arredondada de 1,8 e um ponto. Só no checkout, em

@@ -79,7 +79,7 @@ describe('documentos legais', () => {
     render(<TelaPrivacidade />)
     const dados = screen.getByRole('heading', { name: 'Que dados guardamos e para quê' }).nextElementSibling
     expect(dados).toHaveTextContent(
-      'Da ficha do paciente, guardamos também a data da próxima consulta, as respostas da anamnese, os suplementos e os pedidos de exame que o nutricionista registra: para o atendimento, os lembretes e os documentos que ele imprime. São dados de saúde, com o mesmo cuidado dos outros.',
+      'Da ficha do paciente, guardamos também a data da próxima consulta, as respostas da anamnese, os suplementos e os pedidos de exame que o nutricionista registra, e a autorização do paciente para o uso de IA, com a data: para o atendimento, os lembretes e os documentos que ele imprime. São dados de saúde, com o mesmo cuidado dos outros.',
     )
   })
 
@@ -266,5 +266,44 @@ describe('documentos legais', () => {
     expect(texto).toContain('nunca para propaganda do MetaNutri e nunca em lista de contatos')
     expect(texto).toContain('são enviados pelo Resend')
     expect(texto).toContain('como deixar de receber, num toque e sem login')
+  })
+
+  const textoDaSecao = (nome: string): string => {
+    const secao: string[] = []
+    for (let atual = screen.getByRole('heading', { name: nome }).nextElementSibling; atual && atual.tagName !== 'H2'; atual = atual.nextElementSibling) {
+      secao.push(atual.textContent ?? '')
+    }
+    return secao.join(' ')
+  }
+
+  it('CA-2378 (spec assistente-ia, seção 11): a política diz o registro de uso, a base legal, a Anthropic nos EUA, o que não vai e por quanto tempo', () => {
+    render(<TelaPrivacidade />)
+    expect(textoDaSecao('Que dados guardamos e para quê')).toContain(
+      'Quando o nutricionista usa as sugestões com IA, o registro de cada uso (data, tipo, quantidade de texto processado e custo), sem dado do paciente: para aplicar o limite do plano e controlar o custo.',
+    )
+    expect(textoDaSecao('Que dados guardamos e para quê')).toContain(
+      'As sugestões com IA usam dados de saúde do paciente. O envio, que é uma transferência internacional, depende da autorização específica do paciente, registrada pelo nutricionista na ficha (LGPD, art. 11 e art. 33, VIII).',
+    )
+    const onde = textoDaSecao('Onde os dados ficam')
+    expect(onde).toContain(
+      'As sugestões com IA são geradas pela Anthropic, nos Estados Unidos, que atua como suboperadora do MetaNutri. Vão só os dados necessários para a sugestão: idade, sexo, medidas, gestação ou lactação, condições de saúde, medicamentos, restrições, preferências, rotina e as metas do plano. Nunca vão o nome, o contato (telefone, e-mail, endereço) ou a data de nascimento. A Anthropic não usa esses dados para treinar modelos e os apaga em até 30 dias, salvo o conteúdo retido por violar a política de uso dela. O MetaNutri não guarda o texto enviado nem a resposta da IA.',
+    )
+    expect(onde).toContain('Não vendemos dados, não usamos para publicidade e não treinamos modelos de inteligência artificial com eles. A Anthropic também não.')
+    expect(textoDaSecao('Por quanto tempo')).toContain('O registro de uso das sugestões com IA fica 13 meses e é apagado com a conta.')
+  })
+
+  it('CA-2378 (spec assistente-ia, seção 11): os termos dizem o que a IA faz, que é rascunho, a autorização, o limite e o preceptor', () => {
+    render(<TelaTermos />)
+    expect(textoDaSecao('O que é o MetaNutri')).toContain(
+      'sugere alimentos e porções, sugere um plano alimentar com inteligência artificial quando o nutricionista pede e acompanha o paciente por missões diárias.',
+    )
+    expect(textoDaSecao('Quem prescreve é o nutricionista')).toContain(
+      'A sugestão com IA é um rascunho: o nutricionista revisa, muda o que precisar e responde pelo plano que entrega (Lei 8.234/1991). O MetaNutri confere a sugestão contra a ficha e as regras de prescrição, e essa conferência não substitui a do nutricionista. O documento de um plano feito com apoio de IA informa isso ao paciente.',
+    )
+    expect(textoDaSecao('Os dados dos pacientes')).toContain(
+      'Para usar as sugestões com IA, o nutricionista colhe a autorização do paciente e a registra na ficha. Sem ela, a IA não é usada para aquele paciente.',
+    )
+    expect(textoDaSecao('Assinaturas e pagamento')).toContain('Cada plano tem um limite mensal de sugestões com IA, mostrado em Planos e preços.')
+    expect(textoDaSecao('Plano Estudante')).toContain('Na conta de estudante, a sugestão com IA é proposta do estágio e só vale revisada e assinada pelo preceptor.')
   })
 })

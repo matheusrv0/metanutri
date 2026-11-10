@@ -8,7 +8,8 @@ export function TelaTermos() {
       <h2>O que é o MetaNutri</h2>
       <p>
         Um software de planejamento alimentar para nutricionistas: monta o plano alimentar, mostra o que ficou abaixo da meta em vitaminas e minerais,
-        sugere alimentos e porções e acompanha o paciente por missões diárias. É oferecido por {RESPONSAVEL ?? ''}.
+        sugere alimentos e porções, sugere um plano alimentar com inteligência artificial quando o nutricionista pede e acompanha o paciente por missões
+        diárias. É oferecido por {RESPONSAVEL ?? ''}.
       </p>
 
       <h2>Quem prescreve é o nutricionista</h2>
@@ -17,11 +18,18 @@ export function TelaTermos() {
         privativa de nutricionista com registro no CRN (Lei 8.234/1991). Os cálculos seguem tabelas públicas de composição de alimentos e de referências
         nutricionais.
       </p>
+      <p>
+        A sugestão com IA é um rascunho: o nutricionista revisa, muda o que precisar e responde pelo plano que entrega (Lei 8.234/1991). O MetaNutri
+        confere a sugestão contra a ficha e as regras de prescrição, e essa conferência não substitui a do nutricionista. O documento de um plano feito
+        com apoio de IA informa isso ao paciente.
+      </p>
 
       <h2>Os dados dos pacientes</h2>
       <p>
         O nutricionista é o controlador dos dados dos pacientes e o MetaNutri é o operador (LGPD, art. 39). Cabe ao nutricionista colher o consentimento do
-        paciente antes de registrar os dados dele. O MetaNutri não usa esses dados para nenhuma finalidade própria. Detalhes na Política de privacidade.
+        paciente antes de registrar os dados dele. O MetaNutri não usa esses dados para nenhuma finalidade própria. Para usar as sugestões com IA, o
+        nutricionista colhe a autorização do paciente e a registra na ficha. Sem ela, a IA não é usada para aquele paciente. Detalhes na Política de
+        privacidade.
       </p>
 
       <h2>Conta</h2>
@@ -42,13 +50,15 @@ export function TelaTermos() {
           A assinatura começa quando o banco autoriza o cartão. Se as cobranças continuarem sendo recusadas, a assinatura é cancelada e a conta
           volta para o Free.
         </li>
+        <li>Cada plano tem um limite mensal de sugestões com IA, mostrado em Planos e preços.</li>
       </ul>
 
       <h2>Plano Estudante</h2>
       <p>
         Para estudante de nutrição, com conta criada com o e-mail da faculdade e comprovante de matrícula aprovado pelo MetaNutri. Vale 12 meses ou até a
         formatura prevista, o que vier antes, e renova com um comprovante novo. É de uso não comercial: serve para casos de estudo e estágio
-        supervisionado, não para atender por conta própria. A tela do paciente avisa que não é atendimento profissional.
+        supervisionado, não para atender por conta própria. A tela do paciente avisa que não é atendimento profissional. Na conta de estudante, a
+        sugestão com IA é proposta do estágio e só vale revisada e assinada pelo preceptor.
       </p>
 
       <h2>Nutricionista e CRN</h2>

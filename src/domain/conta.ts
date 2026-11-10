@@ -27,6 +27,11 @@ export interface PlanoAssinatura {
    */
   readonly limiteLinksPaciente: number | null
   /**
+   * Quantas sugestões com IA a conta pode pedir no mês do calendário de Brasília (spec assistente-ia, D-1318 e D-1354).
+   * A função sugerir-plano tem a mesma tabela (`LIMITE_DE_SUGESTOES_IA`), e um teste confere que as duas batem.
+   */
+  readonly limiteSugestoesIa: number
+  /**
    * Conta de estudante: pode usar, mas não para atender comercialmente. A tela do
    * paciente avisa e os documentos saem como proposta do estágio — é o modelo do
    * WebDiet, e o que a Lei 8.234/1991 pede de quem ainda não tem CRN.
@@ -81,6 +86,7 @@ export const PLANOS: readonly PlanoAssinatura[] = [
     acaoTexto: 'Começar grátis',
     limitePacientesAtivos: 2,
     limiteLinksPaciente: 2,
+    limiteSugestoesIa: 3,
     usoNaoComercial: false,
     exigeEmailDeFaculdade: false,
     porContato: false,
@@ -96,6 +102,7 @@ export const PLANOS: readonly PlanoAssinatura[] = [
     acaoTexto: 'Criar conta de estudante',
     limitePacientesAtivos: 10,
     limiteLinksPaciente: 3,
+    limiteSugestoesIa: 5,
     usoNaoComercial: true,
     exigeEmailDeFaculdade: true,
     porContato: false,
@@ -111,6 +118,7 @@ export const PLANOS: readonly PlanoAssinatura[] = [
     acaoTexto: 'Assinar',
     limitePacientesAtivos: 25,
     limiteLinksPaciente: 25,
+    limiteSugestoesIa: 20,
     usoNaoComercial: false,
     exigeEmailDeFaculdade: false,
     porContato: false,
@@ -126,6 +134,7 @@ export const PLANOS: readonly PlanoAssinatura[] = [
     acaoTexto: 'Assinar',
     limitePacientesAtivos: null,
     limiteLinksPaciente: null,
+    limiteSugestoesIa: 40,
     usoNaoComercial: false,
     exigeEmailDeFaculdade: false,
     porContato: false,
@@ -141,6 +150,7 @@ export const PLANOS: readonly PlanoAssinatura[] = [
     acaoTexto: 'Fale com a gente',
     limitePacientesAtivos: null,
     limiteLinksPaciente: null,
+    limiteSugestoesIa: 40,
     usoNaoComercial: false,
     exigeEmailDeFaculdade: false,
     porContato: true,
@@ -411,6 +421,8 @@ export function comparativoDosPlanos(): readonly LinhaComparativo[] {
       detalhe: 'O endereço que o paciente abre no celular para marcar as missões.',
       valores: porPlano((p) => numeroOuIlimitado(p.limiteLinksPaciente)),
     },
+    // Spec assistente-ia, CA-2375: o Estudante (5) fica na nota dele; a Clínica é por contrato.
+    { rotulo: 'Sugestões com IA por mês', valores: porPlano((p) => String(p.limiteSugestoesIa)) },
     ...RECURSOS_EM_TODOS_OS_PLANOS.map((recurso) => ({ rotulo: recurso.texto, valores: porPlano(() => true) })),
   ]
 }

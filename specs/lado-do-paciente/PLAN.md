@@ -674,7 +674,9 @@ sensível. Cabe a você, nutricionista, obter a autorização do paciente; o Met
 > Com o e-mail do paciente na ficha, o MetaNutri manda o link por e-mail quando você pedir e oferece os avisos, que só
 > chegam se ele aceitar.
 
-A versão dos textos sobe (`VERSAO_TERMOS = '2026-11-03'`), e o aviso de termos novos aparece como hoje (CA-2286).
+A versão dos textos sobe, e o aviso de termos novos aparece como hoje (CA-2286). **Aprovado pelo dono em 10/11/2026**, junto
+com os textos da IA (spec assistente-ia): na junção com a `main`, a versão ficou `VERSAO_TERMOS = '2026-11-10'` e a
+data mostrada, "10 de novembro de 2026".
 
 ## 9. O que o dono faz, na ordem
 
@@ -710,8 +712,8 @@ Secrets das Edge Functions.
 
    Copie o **Signing secret** (`whsec_…`) e guarde em Supabase › Edge Functions › Secrets como `RESEND_WEBHOOK_SECRET`.
    Sem ele, a função recusa todo evento com 401 (CA-2277), e as devoluções não entram na supressão.
-5. **Aprovar a Política** (seção 8). O texto já está no código (commit `PARA O DONO APROVAR`); a data de
-   `VERSAO_TERMOS` troca para o dia da publicação.
+5. **Aprovar a Política** (seção 8): feito em 10/11/2026. A versão é `2026-11-10`, a mesma dos textos da IA; quem
+   publicar em outro dia troca as duas constantes de `src/domain/legal.ts` e o teste delas.
 6. **Publicar o site** depois do 017 (R-LP-1), pelo `publicar.yml` de sempre.
 7. **Conferências que só o dono faz:** o ícone "Meu plano" num iPhone e num Android de verdade (CA-2221); o "Verify"
    do domínio no Resend, com o DKIM (CA-2279); um S1 de teste aberto no Gmail, no Outlook e no Apple Mail (CA-2288); a

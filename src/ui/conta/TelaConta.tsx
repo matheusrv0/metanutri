@@ -27,6 +27,7 @@ import { DialogoMeFormei } from './DialogoMeFormei.tsx'
 import { DialogoSair } from './DialogoSair.tsx'
 import { DialogoTrocarCartao } from './DialogoTrocarCartao.tsx'
 import { MiniCartao } from './MiniCartao.tsx'
+import { UsoDaIa } from './UsoDaIa.tsx'
 
 interface TelaContaProps {
   readonly conta: ValorConta
@@ -201,6 +202,9 @@ export function TelaConta({
             <span className="numeros font-titulo text-xl font-bold text-heading">{(plano?.mensal ?? 0) === 0 ? 'Grátis' : `${emReais(plano?.mensal ?? 0)}/mês`}</span>
           </div>
         )}
+
+        {/* Spec assistente-ia, D-1321: o uso do mês das sugestões com IA, só com a conta aberta. */}
+        {conta.sessao ? <UsoDaIa agora={new Date()} /> : null}
 
         {assinatura.plano === 'estudante' && assinatura.expiraEm ? (
           <p className="text-sm text-muted-foreground">{`Vale até ${formatarDataLonga(assinatura.expiraEm)}.`}</p>

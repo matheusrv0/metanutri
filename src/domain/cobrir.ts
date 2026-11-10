@@ -2,7 +2,7 @@
 // O que pode ser sugerido é decidido pela regra prescritível (spec sugestoes-com-criterio).
 import type { ResultadoAdequacao } from './adequacao.ts'
 import { MAXIMO_DE_PEDACOS, MEDIDAS_DE_CONTAR, medidaParaMostrar, medidasDoAlimento } from './busca.ts'
-import { ehCorteGordo, ehDeUsoComum, ehSegundaEscolha } from './prescritivel.ts'
+import { CAFE_OU_CHA, ehCorteGordo, ehDeUsoComum, ehSegundaEscolha } from './prescritivel.ts'
 import { casaRestricao, comoRestricoes, ehNaoGosta, type RestricoesDoPaciente } from './restricoes.ts'
 import { ehPrescritivelParaSugerir } from './sugestaoDoProprio.ts'
 import { tipoDaRefeicao, type TipoRefeicao } from './sugestoes.ts'
@@ -57,13 +57,6 @@ export interface ResultadoCobrir {
   readonly sugestoes: readonly Sugestao[]
   readonly motivoSemSugestao: string | null
 }
-
-/**
- * Café e chá são prescritíveis, mas não são fonte (spec sugestoes-com-criterio, D-193): infusão quase sem caloria
- * passa na frente de qualquer alimento pelo critério de kcal, e a TACO traz para chá B1 e B2 que não se sustentam.
- * Vale em qualquer forma: o café em pó também não entra, nem com a chave ligada (revisão I1).
- */
-const CAFE_OU_CHA = /^(Café|Chá),/i
 
 export const SODIO_NAO_SE_COBRE = 'O sódio não se cobre com alimento: o sal de cozinha e os temperos já completam o dia.'
 
@@ -265,7 +258,7 @@ export function porcaoMinima(alimento: Alimento, idadeAnos?: number | null): num
  * unidade em qualquer idade (D-477). O alimento próprio com porção do rótulo não passa dela (spec alimentos-e-gramaturas,
  * D-494): a rosquinha ganhava a porção de um prato de cereal.
  */
-function porcaoMaximaNaIdade(alimento: Alimento, idadeAnos: number | null | undefined): number {
+export function porcaoMaximaNaIdade(alimento: Alimento, idadeAnos: number | null | undefined): number {
   const grupo = porcaoDoGrupo(alimento)
   const doGrupo = grupo?.maxima ?? PORCAO_MAXIMA_PADRAO_G
   const porcao = alimento.proprio ? alimento.porcaoPadrao : undefined

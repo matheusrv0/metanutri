@@ -1,0 +1,160 @@
+// O 016 (spec assistente-ia, D-1318 e D-1319) conferido pelo texto. O comportamento no banco de verdade (RLS, as duas
+// abas ao mesmo tempo e a cascata) é atacado no Supabase local (testes/seguranca/ia.test.ts, `npm run test:seguranca`).
+import sql from '../../supabase/016-assistente-ia.sql?raw'
+
+const semComentarios = sql
+  .split('\n')
+  .filter((linha) => !linha.trimStart().startsWith('--'))
+  .join('\n')
+const corpoDa = (nome: string) => semComentarios.split(`create or replace function public.${nome}(`)[1]?.split('$$;')[0] ?? ''
+/** O que roda direto quando o arquivo roda: o SQL sem comentários e sem o corpo das funções. */
+const foraDasFuncoes = semComentarios.replace(/\$\$[\s\S]*?\$\$/g, '')
+const tabela = semComentarios.split('create table if not exists public.uso_da_ia (')[1]?.split(');')[0] ?? ''
+
+const FUNCOES = [
+  'reservar_uso_da_ia(uuid, text, boolean, integer, timestamptz, integer)',
+  'concluir_uso_da_ia(bigint, text, text, integer, integer, integer, integer, bigint, integer, boolean)',
+  'uso_da_ia_no_mes(uuid, timestamptz)',
+  'custo_da_ia_desde(timestamptz)',
+  'consentimento_ia_do_paciente(uuid, text)',
+] as const
+
+describe('banco: assistente de IA (016)', () => {
+  it('roda numa transação só, pode rodar de novo e não apaga nada fora das funções', () => {
+    expect(semComentarios.trim().startsWith('begin;')).toBe(true)
+    expect(semComentarios.trim().endsWith('commit;')).toBe(true)
+    expect(foraDasFuncoes).not.toMatch(/\b(drop table|truncate|delete from)\b/i)
+    expect(semComentarios).toContain("notify pgrst, 'reload schema';")
+    expect(sql).toContain('-- Rode DEPOIS do 001 ao 015.')
+    expect(sql).toContain('-- Rode ANTES de publicar a função sugerir-plano')
+  })
+
+  describe('D-1319: a tabela uso_da_ia', () => {
+    it('guarda conta, modo, modelo, resultado, consentimento, tokens, custo e duração; nenhum dado do paciente', () => {
+      expect(tabela).toContain('nutricionista_id uuid not null references auth.users (id) on delete cascade')
+      expect(tabela).toContain("modo text not null check (modo in ('gerar', 'ajustar'))")
+      expect(tabela).toContain("status text not null default 'reservado' check (status in ('reservado', 'ok', 'recusa', 'erro'))")
+      expect(tabela).toContain('consentimento_declarado boolean not null check (consentimento_declarado)')
+      for (const coluna of ['tokens_entrada', 'tokens_cache_gravados', 'tokens_cache_lidos', 'tokens_saida', 'duracao_ms']) {
+        expect(tabela).toContain(`${coluna} integer check (${coluna} >= 0)`)
+      }
+      expect(tabela).toContain('custo_microdolares bigint check (custo_microdolares >= 0)')
+      expect(tabela).toContain('custo_estimado boolean not null default false')
+      expect(tabela).toContain('criado_em timestamptz not null default now()')
+      expect(tabela).toContain('concluido_em timestamptz')
+      expect(tabela).not.toMatch(/nome|email|telefone|nascimento|paciente|pedido|resposta|texto/i)
+    })
+
+    it('CA-2322: RLS ligado e nenhum acesso de anon e authenticated', () => {
+      expect(semComentarios).toContain('alter table public.uso_da_ia enable row level security;')
+      expect(semComentarios).toContain('revoke all on public.uso_da_ia from anon, authenticated;')
+      expect(semComentarios).not.toMatch(/create policy[^;]*uso_da_ia/i)
+      expect(semComentarios).toContain('create index if not exists uso_da_ia_por_conta on public.uso_da_ia (nutricionista_id, criado_em);')
+      expect(semComentarios).toContain('create index if not exists uso_da_ia_por_data on public.uso_da_ia (criado_em);')
+    })
+  })
+
+  describe('as funções do servidor', () => {
+    it.each(FUNCOES)('CA-2322: %s só roda com a chave de serviço e sem security definer', (assinatura) => {
+      expect(semComentarios).toContain(`revoke all on function public.${assinatura} from public, anon, authenticated;`)
+      expect(semComentarios).toContain(`grant execute on function public.${assinatura} to service_role;`)
+      const nome = assinatura.split('(')[0] ?? ''
+      const cabecalho = semComentarios.split(`create or replace function public.${nome}(`)[1]?.split('as $$')[0] ?? ''
+      expect(cabecalho).toContain('set search_path = public')
+      expect(cabecalho).not.toContain('security definer')
+    })
+
+    it('CA-2323: reservar trava a conta e conta e anota num passo só', () => {
+      const corpo = corpoDa('reservar_uso_da_ia')
+      expect(semComentarios).toMatch(/returns table \(reserva bigint, motivo text\)/)
+      const trava = corpo.indexOf("perform pg_advisory_xact_lock(hashtext('uso_da_ia:' || p_conta::text));")
+      expect(trava).toBeGreaterThan(-1)
+      expect(trava).toBeLessThan(corpo.indexOf('select count(*)'))
+      expect(corpo.indexOf('insert into public.uso_da_ia')).toBeGreaterThan(corpo.lastIndexOf('select count(*)'))
+    })
+
+    it('D-1318 e CA-2308: o mês conta os usos ok e as reservas de menos de 10 minutos desde o início do mês', () => {
+      const corpo = corpoDa('reservar_uso_da_ia')
+      expect(corpo).toContain('u.nutricionista_id = p_conta and u.criado_em >= p_inicio_mes')
+      expect(corpo).toContain("(u.status = 'ok' or (u.status = 'reservado' and u.criado_em > now() - interval '10 minutes'))")
+      expect(corpo).toContain("if v_mes >= p_limite_mes then")
+      expect(corpo).toContain("return query select null::bigint, 'limite-mes'::text;")
+      // O contador da gaveta conta igual.
+      expect(corpoDa('uso_da_ia_no_mes')).toContain("(u.status = 'ok' or (u.status = 'reservado' and u.criado_em > now() - interval '10 minutes'))")
+    })
+
+    it('DP-IA-7 e CA-2309: a hora conta todo pedido à IA, com qualquer resultado', () => {
+      const corpo = corpoDa('reservar_uso_da_ia')
+      expect(corpo).toContain("u.nutricionista_id = p_conta and u.criado_em > now() - interval '1 hour';")
+      expect(corpo).toContain("return query select null::bigint, 'limite-hora'::text;")
+    })
+
+    it('D-1304: sem a autorização do paciente, nada é anotado', () => {
+      const corpo = corpoDa('reservar_uso_da_ia')
+      expect(corpo.indexOf("if p_consentimento is not true then raise exception 'Sem a autorização do paciente.' using errcode = '22023'; end if;")).toBeLessThan(
+        corpo.indexOf('insert into public.uso_da_ia'),
+      )
+    })
+
+    it('CA-2324: cada reserva apaga os usos de mais de 13 meses', () => {
+      expect(corpoDa('reservar_uso_da_ia')).toContain("delete from public.uso_da_ia u where u.criado_em < now() - interval '13 months';")
+    })
+
+    it('CA-2324: concluir só muda o uso que ainda está reservado, e diz se mudou', () => {
+      const corpo = corpoDa('concluir_uso_da_ia')
+      expect(semComentarios).toMatch(/concluir_uso_da_ia\([^)]*\)\s+returns boolean/)
+      expect(corpo).toContain("if p_status not in ('ok', 'recusa', 'erro') then raise exception 'Resultado de uso desconhecido.' using errcode = '22023'; end if;")
+      expect(corpo).toContain("where u.id = p_reserva and u.status = 'reservado';")
+      expect(corpo).toContain('concluido_em = now()')
+      expect(corpo).toContain('return found;')
+    })
+
+    it('CA-2382: concluir guarda se o custo é estimado (a chamada cortada), sem nulo', () => {
+      expect(corpoDa('concluir_uso_da_ia')).toContain('custo_estimado = coalesce(p_custo_estimado, false)')
+      expect(semComentarios).toMatch(/p_duracao integer,\s+p_custo_estimado boolean\s+\)\s+returns boolean/)
+    })
+
+    it('CA-2399 e D-1347: a autorização é lida da ficha na cópia da conta; só sai sim ou não', () => {
+      const corpo = corpoDa('consentimento_ia_do_paciente')
+      expect(semComentarios).toMatch(/consentimento_ia_do_paciente\(p_conta uuid, p_paciente text\)\s+returns boolean/)
+      expect(corpo).toContain("if p_paciente is null or p_paciente !~ '^[A-Za-z0-9_-]{1,64}$' then return false; end if;")
+      expect(corpo).toContain("select c.dados -> 'dados' ->> 'metanutri:pacientes' into v_fichas from public.copias c where c.nutricionista_id = p_conta;")
+      // O texto que não é JSON dá falso, sem erro.
+      expect(corpo).toMatch(/v_lista := v_fichas::jsonb;\s+exception when others then\s+return false;/)
+      expect(corpo).toContain("and f ->> 'id' = p_paciente")
+      expect(corpo).toContain("and jsonb_typeof(f -> 'consentimentoIa') = 'object'")
+      expect(corpo).toContain(String.raw`and coalesce(f -> 'consentimentoIa' ->> 'em', '') ~ '^\d{4}-\d{2}-\d{2}$'`)
+      expect(corpo).not.toMatch(/insert|update|delete/i)
+    })
+
+    it('CA-2310: o custo das últimas 24 h soma todas as contas, sem nulo', () => {
+      const corpo = corpoDa('custo_da_ia_desde')
+      expect(corpo).toContain('select coalesce(sum(u.custo_microdolares), 0)::bigint from public.uso_da_ia u where u.criado_em > p_desde;')
+    })
+  })
+
+  describe('CA-2391 e D-1338: roda de novo por cima da versão anterior do 016', () => {
+    const ADICIONA_A_COLUNA = 'alter table public.uso_da_ia add column if not exists custo_estimado boolean not null default false;'
+    const TIRA_A_ANTIGA = 'drop function if exists public.concluir_uso_da_ia(bigint, text, text, integer, integer, integer, integer, bigint, integer);'
+
+    it('a tabela da versão anterior, sem custo_estimado, ganha a coluna antes das funções', () => {
+      const posicao = semComentarios.indexOf(ADICIONA_A_COLUNA)
+      expect(posicao).toBeGreaterThan(semComentarios.indexOf('create table if not exists public.uso_da_ia ('))
+      expect(posicao).toBeLessThan(semComentarios.indexOf('create or replace function public.reservar_uso_da_ia('))
+    })
+
+    it('a concluir_uso_da_ia de 9 parâmetros sai antes de a de 10 ser criada; fica uma só', () => {
+      const posicao = semComentarios.indexOf(TIRA_A_ANTIGA)
+      expect(posicao).toBeGreaterThan(-1)
+      expect(posicao).toBeLessThan(semComentarios.indexOf('create or replace function public.concluir_uso_da_ia('))
+      expect(semComentarios.match(/create or replace function public\.concluir_uso_da_ia\(/g)).toHaveLength(1)
+      // A antiga não volta a ganhar permissão.
+      expect(semComentarios).not.toMatch(/(grant|revoke)[^;]*concluir_uso_da_ia\(bigint, text, text, integer, integer, integer, integer, bigint, integer\)/)
+    })
+  })
+
+  it('a conferência no fim mostra a tabela fechada e as funções só do servidor', () => {
+    expect(sql).toContain("-- select relname, relrowsecurity from pg_class where oid = 'public.uso_da_ia'::regclass;")
+    expect(sql).toContain("-- select has_function_privilege('authenticated', 'public.reservar_uso_da_ia(uuid, text, boolean, integer, timestamptz, integer)', 'execute') as logado_reserva;")
+  })
+})

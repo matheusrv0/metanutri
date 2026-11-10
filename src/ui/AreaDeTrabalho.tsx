@@ -14,10 +14,12 @@ import { casoComFicha, pesoAnterior, restricoesDaFicha } from '@/domain/fichaNoP
 import { idadeDe, type Paciente } from '@/domain/pacientes.ts'
 import { comCuidadosDaFase, SEM_RESTRICOES } from '@/domain/restricoes.ts'
 import { avisoDoEstudante } from '@/domain/pedidoEstudante.ts'
+import { propostaNaDieta } from '@/domain/documentoDoPaciente.ts'
 import { assinaturaDoPlano, camposDeEstagioIniciais } from '@/domain/assinaturaDoPlano.ts'
 import { lerPerfil } from '@/domain/perfil.ts'
+import { avaliacaoMaisRecente } from '@/domain/avaliacoesDoPaciente.ts'
 import { exportacaoBloqueada, MOTIVO_EXPORTACAO_BLOQUEADA } from '@/domain/situacao.ts'
-import type { ModoPlano } from '@/domain/tipos.ts'
+import type { Caso, ModoPlano } from '@/domain/tipos.ts'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { Card } from '@ds/componentes/display/card.tsx'
 import { EtapasDoCaso } from '@ds/componentes/navigation/EtapasDoCaso.tsx'
@@ -48,6 +50,7 @@ import type { ValorNegocio } from './estado/usarNegocio.ts'
 import type { ValorPedidoEstudante } from './estado/usarPedidoEstudante.ts'
 import type { ValorPerfilConta } from './estado/usarPerfilConta.ts'
 import type { ValorSegundoFator } from './estado/usarSegundoFator.ts'
+import { baixarTermoDeIa } from './exportar/baixar.ts'
 import { MenuExportar } from './exportar/MenuExportar.tsx'
 import { paginaDoSite } from './enderecos.ts'
 import { rotaDePlanos } from './fluxoConta.ts'
@@ -61,6 +64,7 @@ import { TelaNegocio } from './negocio/TelaNegocio.tsx'
 import { TelaSegundoFator } from './segundoFator/TelaSegundoFator.tsx'
 import { TelaPaciente } from './pacientes/TelaPaciente.tsx'
 import { TelaPacientes } from './pacientes/TelaPacientes.tsx'
+import { AssistenteDaIa } from './ia/AssistenteDaIa.tsx'
 
 // Spec importar-pacientes, DP-IP-1: a tela de importar e os leitores de planilha num pedaço separado do JavaScript,
 // pedido só quando a rota abre (o service worker o guarda com o resto do app).
@@ -76,6 +80,11 @@ import { TelaReceitas } from './receitas/TelaReceitas.tsx'
 import { Redirecionar } from './Redirecionar.tsx'
 import { FaixaResumo } from './resumo/FaixaResumo.tsx'
 import { ResumoDoDia } from './resumo/ResumoDoDia.tsx'
+import type { CabecaDaTela } from './antropometria/TelaAntropometria.tsx'
+
+// Spec antropometria-telas, DP-AT-10: a antropometria (o motor, as tabelas de Frisancho e as telas) num pedaço separado
+// do JavaScript, pedido quando o endereço abre.
+const TelaAntropometria = lazy(() => import('./antropometria/TelaAntropometria.tsx').then((m) => ({ default: m.TelaAntropometria })))
 
 interface AreaDeTrabalhoProps {
   readonly rota: Rota
@@ -124,14 +133,15 @@ export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pe
       ? { id: recente.id, nome: recente.nome }
       : null
 
-  const novoCaso = (modo: ModoPlano, pacienteId: string | null = null) => {
+  /** Cria o plano e devolve o id; `ajustar` mexe no plano novo antes de gravar (a avaliação nova, D-1405). */
+  const criarPlano = (modo: ModoPlano, pacienteId: string | null, ajustar: (caso: Caso) => Caso = (caso) => caso): string => {
     const criado = repositorio.criar('')
     const paciente = pacienteId ? pacientes.find((p) => p.id === pacienteId) ?? null : null
     const idade = paciente ? idadeDe(paciente.nascimento) : null
     // D-356: o nível de atividade já vem sugerido pela anamnese.
     const sugestao = paciente ? nivelSugerido(paciente.respostasAnamnese) : null
     const salvo = repositorio.salvar({
-      caso: {
+      caso: ajustar({
         ...criado.caso,
         modo,
         pacienteId,
@@ -145,11 +155,26 @@ export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pe
         idadeAnos: idade?.anos ?? criado.caso.idadeAnos,
         idadeMesesAdicionais: idade?.meses ?? criado.caso.idadeMesesAdicionais,
         energia: sugestao ? { ...criado.caso.energia, fator: sugestao.fator } : criado.caso.energia,
-      },
+      }),
       plano: criado.plano,
     })
     atualizar()
-    navegar({ tela: 'planejador', casoId: salvo.caso.id, aba: 'caso' })
+    return salvo.caso.id
+  }
+
+  const novoCaso = (modo: ModoPlano, pacienteId: string | null = null) => navegar({ tela: 'planejador', casoId: criarPlano(modo, pacienteId), aba: 'caso' })
+
+  // Spec antropometria-telas, D-1405: a avaliação nova começa do retorno da mais recente (D-367); sem nenhuma, de um
+  // plano completo novo com a cintura no ponto médio.
+  const novaAvaliacao = (pacienteId: string) => {
+    const doPaciente = casos.filter((c) => c.pacienteId === pacienteId && c.modo === 'completo').flatMap((c) => repositorio.obter(c.id) ?? [])
+    const recente = avaliacaoMaisRecente(pacienteId, doPaciente)
+    const nascimento = pacientes.find((p) => p.id === pacienteId)?.nascimento ?? null
+    const casoId = recente
+      ? repositorio.duplicar(recente.casoId, { nascimento }).caso.id
+      : criarPlano('completo', pacienteId, (caso) => ({ ...caso, medidasCorporais: { ...caso.medidasCorporais, pontoDaCintura: 'ponto-medio' } }))
+    atualizar()
+    navegar({ tela: 'antropometria', casoId, vista: 'avaliacao' })
   }
 
   // O WhatsApp sem telefone leva à ficha, com o cursor no campo (spec whatsapp-e-retorno, CA-505).
@@ -157,7 +182,8 @@ export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pe
 
   // Primeiro acesso: um dia inteiro montado, para entender o sistema mexendo nele.
   const verExemplo = () => {
-    const salvo = repositorio.salvar(criarExemplo(() => globalThis.crypto.randomUUID(), new Date().toISOString().slice(0, 10)))
+    // Spec antropometria-telas, D-1528: o dia de quem usa, não o do UTC (que depois das 21h de Brasília já é amanhã).
+    const salvo = repositorio.salvar(criarExemplo(() => globalThis.crypto.randomUUID(), diaLocal(new Date())))
     atualizar()
     navegar({ tela: 'planejador', casoId: salvo.caso.id, aba: 'plano' })
   }
@@ -257,8 +283,30 @@ export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pe
           aoVoltar={() => navegar({ tela: 'pacientes' })}
           focar={rota.campo}
           aoCadastrarTelefone={cadastrarTelefone}
+          aoAbrirAntropometria={() => navegar({ tela: 'antropometria-do-paciente', pacienteId: rota.pacienteId })}
         />
       </Estrutura>
+    )
+  }
+
+  if (rota.tela === 'antropometria' || rota.tela === 'antropometria-do-paciente') {
+    // Uma função, não um componente: o elemento é sempre a Estrutura, e a tela não remonta a cada desenho daqui.
+    const moldura = (cabeca: CabecaDaTela, conteudo: ReactNode) => (
+      <Estrutura {...base} titulo={cabeca.titulo} trilha={cabeca.trilha} acoes={cabeca.acoes}>
+        {conteudo}
+      </Estrutura>
+    )
+    return (
+      <Suspense
+        fallback={moldura(
+          { titulo: 'Avaliação antropométrica', trilha: [], acoes: null },
+          <p role="status" className="text-sm text-muted-foreground">
+            Abrindo…
+          </p>,
+        )}
+      >
+        <TelaAntropometria rota={rota} navegar={navegar} moldura={moldura} aoNovaAvaliacao={novaAvaliacao} assinatura={quemAssina} bloqueio={bloqueio} />
+      </Suspense>
     )
   }
 
@@ -483,41 +531,67 @@ export function AreaDeTrabalho({ rota, navegar, conta, cobranca, perfilConta, pe
                 sugestaoNivel={pacienteDoPlano ? nivelSugerido(pacienteDoPlano.respostasAnamnese) : null}
                 lembreteAgua={pacienteDoPlano ? lembreteDaHidratacao(pacienteDoPlano.respostasAnamnese) : null}
                 lateral={<ResumoDoDia caso={caso} plano={registro.plano} aoAlterar={alterarCaso} />}
+                aoAbrirAvaliacao={() => navegar({ tela: 'antropometria', casoId: rota.casoId, vista: 'avaliacao' })}
               />
             ) : rota.aba === 'plano' ? (
               <div className="flex flex-col gap-6">
-                <div className="grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
-                  <TelaPlano
-                    plano={registro.plano}
-                    aoAlterarPlano={alterarPlano}
-                    modo={modoDeQuantidade(caso)}
-                    aoMudarModo={(quantidades) => alterarCaso({ quantidades })}
-                  />
-                  <div className="flex flex-col gap-6">
-                    <ResumoDoDia caso={caso} plano={registro.plano} aoAlterar={alterarCaso} />
-                    <MicrosDoDia
-                      key={registro.caso.id}
-                      caso={caso}
+                {/* Spec assistente-ia (D-1350): os botões da IA ao lado de "Modelos de plano"; a gaveta no lugar da coluna da direita.
+                    A `key` pelo caso e pelo paciente (D-1356): o estado da IA de um plano não passa para outro. */}
+                <AssistenteDaIa
+                  key={JSON.stringify([registro.caso.id, pacienteDoPlano?.id ?? null])}
+                  caso={caso}
+                  aoAlterarCaso={alterarCaso}
+                  plano={registro.plano}
+                  aoAlterarPlano={alterarPlano}
+                  paciente={pacienteDoPlano}
+                  aoAlterarPaciente={alterarPaciente}
+                  restricoes={restricoesDoPaciente}
+                  perfil={perfil}
+                  estudanteAprovado={pedidoEstudante.pedido?.status === 'aprovado'}
+                  basePronta={baseAmpliada.estado === 'pronta'}
+                  aoVerPlanos={() => navegar(rotaDePlanos(assinatura.plano))}
+                  aoEditarNaFicha={() => {
+                    if (pacienteDoPlano) navegar({ tela: 'paciente', pacienteId: pacienteDoPlano.id })
+                  }}
+                  aoBaixarTermo={() => void baixarTermoDeIa(quemAssina, pacienteDoPlano?.nome ?? '')}
+                  conteudo={(extras) => (
+                    <TelaPlano
                       plano={registro.plano}
-                      gastoEnergetico={gastoEnergetico}
-                      restricoes={restricoesDoPaciente}
-                      aoAlterarCaso={alterarCaso}
                       aoAlterarPlano={alterarPlano}
-                      aoVerTodos={() => {
-                        setFocarAdequacao(true)
-                        navegar({ tela: 'planejador', casoId: rota.casoId, aba: 'adequacao' })
-                      }}
-                      aoVerSuplementos={verSuplementos}
+                      modo={modoDeQuantidade(caso)}
+                      aoMudarModo={(quantidades) => alterarCaso({ quantidades })}
+                      ferramentas={extras.ferramentas}
+                      topo={extras.topo}
+                      vaiPara={extras.vaiPara}
                     />
-                  </div>
-                </div>
+                  )}
+                  lateral={
+                    <div className="flex flex-col gap-6">
+                      <ResumoDoDia caso={caso} plano={registro.plano} aoAlterar={alterarCaso} />
+                      <MicrosDoDia
+                        key={registro.caso.id}
+                        caso={caso}
+                        plano={registro.plano}
+                        gastoEnergetico={gastoEnergetico}
+                        restricoes={restricoesDoPaciente}
+                        aoAlterarCaso={alterarCaso}
+                        aoAlterarPlano={alterarPlano}
+                        aoVerTodos={() => {
+                          setFocarAdequacao(true)
+                          navegar({ tela: 'planejador', casoId: rota.casoId, aba: 'adequacao' })
+                        }}
+                        aoVerSuplementos={verSuplementos}
+                      />
+                    </div>
+                  }
+                />
                 <CartaoLinkMissoes
                   casoId={registro.caso.id}
                   pacienteId={registro.caso.pacienteId}
                   // D-409 (spec textos-e-promessas): o link saúda o paciente pelo nome dele, não pelo nome do plano.
                   nome={nomeDoPacienteDoPlano(caso, pacienteDoPlano) ?? ''}
                   missoes={missoesDoPlano(registro.plano, { aguaL: aguaDoCaso(caso).litros })}
-                  dieta={dietaDoPlano(caso, registro.plano)}
+                  dieta={dietaDoPlano(caso, registro.plano, undefined, { estagio: propostaNaDieta(quemAssina, caso) })}
                   aoVerPlanos={() => navegar(rotaDePlanos(assinatura.plano))}
                   aoCadastrarTelefone={cadastrarTelefone}
                   situacao={perfil?.situacao ?? null}

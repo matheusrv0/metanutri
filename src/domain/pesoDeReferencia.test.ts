@@ -100,7 +100,7 @@ describe('peso ajustado e peso de referência (spec antropometria-completa, CA-2
   })
 
   it('CA-2050: IMC < 30 → o peso atual; IMC ≥ 30 → peso ideal, ajustado e massa magra, sem escolha', () => {
-    expect(pesoDeReferencia(caso())).toEqual({ sugerido: 'peso-atual', opcoes: [{ base: 'peso-atual', pesoKg: 70, motivo: null }] })
+    expect(pesoDeReferencia(caso())).toEqual({ sugerido: 'peso-atual', opcoes: [{ base: 'peso-atual', pesoKg: 70, motivo: null }], origemDoPercentual: null, avisos: [] })
     const obeso = pesoDeReferencia(caso({ pesoKg: 100 }))
     expect(obeso?.sugerido).toBeNull()
     expect(obeso?.opcoes.map((o) => o.base)).toEqual(['peso-ideal', 'peso-ajustado', 'massa-magra'])

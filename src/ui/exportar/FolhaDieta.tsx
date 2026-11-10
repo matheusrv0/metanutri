@@ -1,7 +1,7 @@
 import { Fragment, useId } from 'react'
 import type { AssinaturaDoPlano } from '@/domain/assinaturaDoPlano.ts'
 import { modoDeQuantidade } from '@/domain/caso.ts'
-import { FRASE_PROPOSTA, propostaNaDieta } from '@/domain/documentoDoPaciente.ts'
+import { FRASE_PROPOSTA, fraseDeApoioDeIa, propostaNaDieta } from '@/domain/documentoDoPaciente.ts'
 import {
   assinaturaDaFolha,
   comprasDaSemana,
@@ -10,6 +10,7 @@ import {
   linhaFinaDaFolha,
   OPCOES_IMPRESSAO_PADRAO,
   opcoesDaRefeicao,
+  opcoesNaFolha,
   receitasDaFolha,
   TROCAS_PEDIDAS_PELA_FOLHA,
   trocasDaFolha,
@@ -77,6 +78,19 @@ function Itens({ itens, modo }: { readonly itens: readonly ItemPlano[]; readonly
             <span className="font-medium text-heading">{linha.nome}</span>
             <span className="sr-only">, </span>
             <Quantidade quantidade={linha.quantidade} />
+            {/* Spec busca-substitutos, D-1115: as opções do item, com "ou", nas mesmas colunas, logo abaixo dele. */}
+            {opcoesNaFolha(item, buscarAlimento, modo).map((opcao, n) => (
+              <Fragment key={n}>
+                <span className="pl-3 max-sm:mt-1">
+                  <span className="text-muted-foreground">ou </span>
+                  {opcao.nome}
+                </span>
+                <span className="sr-only">, </span>
+                <span className="pl-3 sm:pl-0">
+                  <Quantidade quantidade={opcao.quantidade} />
+                </span>
+              </Fragment>
+            ))}
           </li>
         )
       })}
@@ -129,6 +143,7 @@ function RotuloDaOpcao({ numero }: { readonly numero: number }) {
  */
 export function FolhaDieta({ caso, plano, restricoes, assinatura = null, opcoes = OPCOES_IMPRESSAO_PADRAO, suplementos = [] }: FolhaDietaProps) {
   const quem = assinaturaDaFolha(assinatura, caso)
+  const apoioDeIa = fraseDeApoioDeIa(caso, propostaNaDieta(assinatura, caso))
   const refeicoesDaFolha = plano.refeicoes.map((refeicao) => ({ refeicao, opcoes: opcoesDaRefeicao(refeicao, buscarAlimento) })).filter((r) => r.opcoes.length > 0)
   // D-409 (spec textos-e-promessas): o paciente vinculado dá o nome da folha; o nome do plano é da nutricionista.
   const paciente = usePacientesOpcional()?.pacientes.find((p) => p.id === caso.pacienteId)
@@ -250,6 +265,8 @@ export function FolhaDieta({ caso, plano, restricoes, assinatura = null, opcoes 
             avaliação (CA-634; spec prescricao-rapida-e-base, princípio 4). */}
         <div className="fecho-da-folha flex break-before-avoid break-inside-avoid flex-col gap-5">
           <LinhasDeAssinatura assinatura={quem} />
+          {/* Spec assistente-ia, CA-2377: o plano que recebeu sugestão da IA diz isso ao paciente. */}
+          {apoioDeIa ? <p className="text-xs text-muted-foreground">{apoioDeIa}</p> : null}
           {caso.modo === 'rapido' ? <p className="text-xs text-muted-foreground">Plano montado em prescrição rápida, sem avaliação antropométrica.</p> : null}
         </div>
       </div>

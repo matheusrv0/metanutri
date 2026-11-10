@@ -24,11 +24,13 @@ export const CONTATO_EMAIL: string | null = 'metanutricontato@gmail.com'
  * GitHub, e quando a sessão termina sozinha (spec separacao-site-app, D-522). É o dia em que o site da P2 foi ao
  * ar (DP-SA-34, que previa 28/10).
  * 03/11/2026: a Política passou a dizer para que serve o e-mail do paciente, que o link registra o dia do acesso e que o
- * Resend manda os e-mails ao paciente (spec lado-do-paciente, D-1244 e DP-LP-28). PARA O DONO APROVAR; quem publica em
- * outro dia troca as duas constantes e o teste delas para o dia em que o site vai ao ar.
+ * Resend manda os e-mails ao paciente (spec lado-do-paciente, D-1244 e DP-LP-28). Essa versão nunca foi publicada.
+ * 10/11/2026: a Política e os Termos ganharam os textos das sugestões com IA (spec assistente-ia, D-1323 e D-1353), aprovados
+ * pelo dono nesse dia, e a Política ficou com os textos do lado do paciente, aprovados no mesmo dia (spec
+ * lado-do-paciente, D-1244, D-1259 e D-1263).
  */
-export const VERSAO_TERMOS = '2026-11-03'
-export const DATA_TERMOS = '3 de novembro de 2026'
+export const VERSAO_TERMOS = '2026-11-10'
+export const DATA_TERMOS = '10 de novembro de 2026'
 
 /** Em quantos dias as cópias de segurança do banco somem depois da exclusão (a exclusão em si é na hora). */
 export const PRAZO_EXCLUSAO_DIAS = 90

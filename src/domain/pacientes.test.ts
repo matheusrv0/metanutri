@@ -1,5 +1,5 @@
 import { CHAVE_MUDANCAS, lerMudancas, registrarMudanca } from './copiaDaConta.ts'
-import { criarPacienteVazio, criarRepositorioPacientes, idadeNaData } from './pacientes.ts'
+import { autorizacaoDeIa, criarPacienteVazio, criarRepositorioPacientes, idadeNaData, VERSAO_DO_CONSENTIMENTO_IA } from './pacientes.ts'
 import type { Armazenamento } from './persistencia.ts'
 
 class Memoria implements Armazenamento {
@@ -228,6 +228,8 @@ describe('Os campos da ficha única (spec ficha-unica, D-359, D-365)', () => {
       'examesRecentes',
       // Spec importar-pacientes, D-912 e DP-IP-28: o campo da importação entra depois, no fim.
       'importacao',
+      // Spec assistente-ia, D-1304: a autorização para o uso de IA vem por último.
+      'consentimentoIa',
     ])
   })
 
@@ -351,7 +353,7 @@ describe('Os campos da ficha única (spec ficha-unica, D-359, D-365)', () => {
 describe('A importação de onde o paciente veio (spec importar-pacientes, D-912, D-910, D-913)', () => {
   it('CA-1937: o campo da importação é o último do paciente, depois dos que já existem (DP-34); paciente novo nasce sem ela', () => {
     const vazio = criarPacienteVazio('p1', '2026-10-29T12:00:00.000Z')
-    expect(Object.keys(vazio).at(-1)).toBe('importacao')
+    expect(Object.keys(vazio).at(-2)).toBe('importacao')
     expect(vazio.importacao).toBeNull()
   })
 
@@ -403,5 +405,40 @@ describe('A importação de onde o paciente veio (spec importar-pacientes, D-912
     repo.excluirVarios(['p1', 'p3', 'nao-existe'])
     expect(gravacoes).toBe(1)
     expect(repo.listar().map((p) => p.id)).toEqual(['p2'])
+  })
+})
+
+describe('A autorização do paciente para o uso de IA (spec assistente-ia, D-1304)', () => {
+  it('CA-2365: paciente novo nasce sem autorização; ligar grava o dia e a versão do termo', () => {
+    const vazio = criarPacienteVazio('p1', '2026-11-03T12:00:00.000Z')
+    expect(Object.keys(vazio).at(-1)).toBe('consentimentoIa')
+    expect(vazio.consentimentoIa).toBeNull()
+    expect(autorizacaoDeIa('2026-11-03')).toEqual({ em: '2026-11-03', versao: 'ia-1' })
+    expect(VERSAO_DO_CONSENTIMENTO_IA).toBe('ia-1')
+  })
+
+  it('CA-2365: a autorização guardada é lida; estragada, de outra forma ou de antes vira nula', () => {
+    const arm = new Memoria()
+    arm.setItem(
+      'metanutri:pacientes',
+      JSON.stringify([
+        { id: 'p1', nome: 'Ana', consentimentoIa: { em: '2026-11-03', versao: 'ia-1' } },
+        { id: 'p2', nome: 'Bia', consentimentoIa: { em: 'ontem', versao: 'ia-1' } },
+        { id: 'p3', nome: 'Caio', consentimentoIa: true },
+        { id: 'p4', nome: 'Duda' },
+      ]),
+    )
+    const repo = criarRepositorioPacientes(arm)
+    expect(repo.obter('p1')?.consentimentoIa).toEqual({ em: '2026-11-03', versao: 'ia-1' })
+    for (const id of ['p2', 'p3', 'p4']) expect(repo.obter(id)?.consentimentoIa).toBeNull()
+  })
+
+  it('CA-2365: desligar revoga e é gravado na ficha', () => {
+    const arm = new Memoria()
+    const repo = criarRepositorioPacientes(arm, { agora: relogio(), gerarId: () => 'ana' })
+    const ana = repo.salvar({ ...repo.criar('Ana'), consentimentoIa: autorizacaoDeIa('2026-11-03') })
+    expect(repo.obter('ana')?.consentimentoIa?.em).toBe('2026-11-03')
+    repo.salvar({ ...ana, consentimentoIa: null })
+    expect(repo.obter('ana')?.consentimentoIa).toBeNull()
   })
 })

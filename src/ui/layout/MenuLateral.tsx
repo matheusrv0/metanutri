@@ -92,7 +92,7 @@ export function MenuLateral({ rota, casoAtual, navegar, aoNovoCaso, aoEscolher, 
           <ItemMenu
             icone={<UserRound aria-hidden="true" />}
             rotulo="Pacientes"
-            ativo={rota.tela === 'pacientes' || rota.tela === 'paciente' || rota.tela === 'importar-pacientes'}
+            ativo={rota.tela === 'pacientes' || rota.tela === 'paciente' || rota.tela === 'antropometria' || rota.tela === 'antropometria-do-paciente' || rota.tela === 'importar-pacientes'}
             aoClicar={() => ir({ tela: 'pacientes' })}
           />
           <ItemMenu icone={<ListChecks aria-hidden="true" />} rotulo="Adesão" ativo={rota.tela === 'adesao'} aoClicar={() => ir({ tela: 'adesao' })} />

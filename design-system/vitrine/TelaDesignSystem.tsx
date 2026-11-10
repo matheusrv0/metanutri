@@ -12,6 +12,7 @@ import { CartaoNumero } from '@ds/componentes/display/CartaoNumero.tsx'
 import { Fontes } from '@ds/componentes/display/Fontes.tsx'
 import { Recolhivel } from '@ds/componentes/display/Recolhivel.tsx'
 import { GraficoBarras } from '@ds/componentes/display/GraficoBarras.tsx'
+import { GraficoLinha, type PontoDaLinha } from '@ds/componentes/display/GraficoLinha.tsx'
 import { IconeMarca, NOMES_ICONE_MARCA } from '@ds/componentes/display/IconeMarca.tsx'
 import { PlacaLogo } from '@ds/componentes/display/PlacaLogo.tsx'
 import { PontosDaMarca } from '@ds/componentes/display/PontosDaMarca.tsx'
@@ -74,6 +75,14 @@ function Linha({ estado, children }: { estado: string; children: React.ReactNode
     </div>
   )
 }
+
+/** A evolução do peso da paciente de exemplo do protótipo (inventada), para a vitrine do `GraficoLinha`. */
+const PESO_DA_VITRINE: readonly PontoDaLinha[] = [
+  { chave: 'mai', x: 0, valor: 75.8, rotulo: '12/05', dica: { titulo: '12/05/2026', valor: '75,8 kg', detalhe: 'Primeira avaliação' } },
+  { chave: 'jul', x: 56, valor: 74.1, rotulo: '07/07', dica: { titulo: '07/07/2026', valor: '74,1 kg', detalhe: '−1,7 kg desde 12/05' } },
+  { chave: 'set', x: 119, valor: null, rotulo: '08/09', dica: { titulo: '08/09/2026', valor: '', detalhe: '' } },
+  { chave: 'nov', x: 175, valor: 71.5, rotulo: '03/11', dica: { titulo: '03/11/2026', valor: '71,5 kg', detalhe: '−2,6 kg desde 07/07' } },
+]
 
 const MACRO_DENTRO: ResultadoMacro = {
   gramas: 78.4,
@@ -435,6 +444,11 @@ export function TelaDesignSystem() {
               { chave: 'out', rotulo: 'out', valor: 123585, dica: 'out · R$ 1.235,85', destaque: true, valorEscrito: 'R$ 1.235,85' },
             ]}
           />
+        </Secao>
+        <Secao nome="GraficoLinha" arquivo="display/GraficoLinha.tsx" descricao="Uma série num eixo só, x pelos dias, o último valor escrito e a dica no mouse ou no teclado">
+          <Linha estado="Com uma avaliação sem peso (não vira ponto)">
+            <GraficoLinha descricao="Peso, kg" pontos={PESO_DA_VITRINE} formatarMarca={(v) => String(v)} rotuloDoUltimo="71,5 kg" className="w-full max-w-xl" />
+          </Linha>
         </Secao>
         <Secao nome="IconeMarca · PontosDaMarca" arquivo="display/" descricao="Traço arredondado e um ponto, como a logo; só no checkout, em Conta e plano e na volta do pagamento">
           <Linha estado="Os nove ícones">

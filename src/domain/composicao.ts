@@ -1,5 +1,6 @@
 // Composição corporal por dobras cutâneas e por bioimpedância.
 // Fórmulas clássicas, com a fonte junto de cada uma. Nenhuma foi conferida por nutricionista ainda.
+import { NOME_DA_DOBRA, dobraUsada, valoresDasDobras } from './protocolosDeDobras.ts'
 import type { ComposicaoCorporal, Sexo } from './tipos.ts'
 
 export type ProtocoloDobras = 'jackson-pollock-3' | 'faulkner-4'
@@ -26,7 +27,11 @@ export interface Protocolo {
   readonly id: ProtocoloDobras
   readonly nome: string
   readonly fonte: string
-  /** Quais dobras esse protocolo usa, por sexo. */
+  /**
+   * Quais dobras esse protocolo usa, por sexo. A suprailíaca da mulher em Jackson e Pollock é a da linha axilar anterior
+   * (Jackson, Pollock e Ward, 1980; spec antropometria-completa, D-1039): a mesma que a avaliação completa grava
+   * (spec antropometria-telas, D-1520). A conta acha o valor pela regra do motor (`valoresDasDobras`).
+   */
   readonly necessarias: (sexo: Sexo) => readonly (keyof Dobras)[]
 }
 
@@ -36,7 +41,7 @@ export const PROTOCOLOS: readonly Protocolo[] = [
     nome: 'Jackson e Pollock, 3 dobras',
     fonte:
       'Jackson AS, Pollock ML. Generalized equations for predicting body density of men. Br J Nutr 1978;40:497-504 · Jackson AS, Pollock ML, Ward A. Generalized equations for predicting body density of women. Med Sci Sports Exerc 1980;12:175-81. Percentual por Siri WE (1961).',
-    necessarias: (sexo) => (sexo === 'M' ? ['peitoral', 'abdominal', 'coxa'] : ['tricipital', 'suprailiaca', 'coxa']),
+    necessarias: (sexo) => (sexo === 'M' ? ['peitoral', 'abdominal', 'coxa'] : ['tricipital', 'suprailiacaAnt', 'coxa']),
   },
   {
     id: 'faulkner-4',
@@ -93,10 +98,13 @@ export function calcularComposicao(entrada: EntradaComposicao): ResultadoComposi
   if (idadeAnos === null && protocolo.id === 'jackson-pollock-3') return vazio('Jackson e Pollock usa a idade na equação.')
 
   const necessarias = protocolo.necessarias(sexo)
-  const faltando = necessarias.filter((k) => dobras[k] === null || (dobras[k] ?? 0) <= 0)
-  if (faltando.length > 0) return vazio(`Faltam dobras: ${faltando.join(', ')}.`)
+  // D-1039 (spec antropometria-completa): a suprailíaca da linha do protocolo; sem ela, a de linha não informada dos
+  // planos de antes (o número de antes não muda, CB-1400 da spec antropometria-telas), depois a da outra linha.
+  const { valores } = valoresDasDobras(necessarias, dobras)
+  const faltando = necessarias.filter((_, i) => valores[i] === null)
+  if (faltando.length > 0) return vazio(`Faltam dobras: ${faltando.map((k) => NOME_DA_DOBRA[dobraUsada(k, dobras)]).join(', ')}.`)
 
-  const soma = necessarias.reduce((total, k) => total + (dobras[k] ?? 0), 0)
+  const soma = valores.reduce<number>((total, v) => total + (v ?? 0), 0)
 
   const gorduraPct =
     protocolo.id === 'jackson-pollock-3'

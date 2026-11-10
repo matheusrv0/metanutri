@@ -404,8 +404,12 @@ const LINHA = { suprailiacaAnt: 'axilar anterior', suprailiacaMed: 'axilar médi
 
 interface DobraResolvida {
   readonly valor: number | null
+  /** A dobra de onde veio o valor; `null` sem valor. */
+  readonly chave: DobraCutanea | null
   readonly aviso: string | null
 }
+
+const SEM_VALOR: DobraResolvida = { valor: null, chave: null, aviso: null }
 
 /**
  * O valor da dobra pedida pelo protocolo (D-1039). A suprailíaca vem pela linha do protocolo; sem ela, a de linha não
@@ -415,27 +419,49 @@ interface DobraResolvida {
 function resolverDobra(pedida: DobraCutanea, dobras: Dobras): DobraResolvida {
   if (pedida === 'suprailiacaAnt' || pedida === 'suprailiacaMed') {
     const certa = medidaValida(dobras[pedida])
-    if (certa !== null) return { valor: certa, aviso: null }
+    if (certa !== null) return { valor: certa, chave: pedida, aviso: null }
     const semLinha = medidaValida(dobras.suprailiaca)
-    if (semLinha !== null) return { valor: semLinha, aviso: `Suprailíaca sem a linha informada (plano de antes da antropometria completa): o protocolo pede a da linha ${LINHA[pedida]}.` }
+    if (semLinha !== null) {
+      return { valor: semLinha, chave: 'suprailiaca', aviso: `Suprailíaca sem a linha informada (plano de antes da antropometria completa): o protocolo pede a da linha ${LINHA[pedida]}.` }
+    }
     const outra = pedida === 'suprailiacaAnt' ? 'suprailiacaMed' : 'suprailiacaAnt'
     const daOutra = medidaValida(dobras[outra])
     if (daOutra !== null) {
-      return { valor: daOutra, aviso: `Só há a suprailíaca da linha ${LINHA[outra]}; o protocolo pede a da linha ${LINHA[pedida]}: o resultado pode estar deslocado.` }
+      return { valor: daOutra, chave: outra, aviso: `Só há a suprailíaca da linha ${LINHA[outra]}; o protocolo pede a da linha ${LINHA[pedida]}: o resultado pode estar deslocado.` }
     }
-    return { valor: null, aviso: null }
+    return SEM_VALOR
   }
   if (pedida === 'suprailiaca') {
     const semRegistro = 'A pesquisa não registra a linha da suprailíaca deste protocolo'
     const semLinha = medidaValida(dobras.suprailiaca)
-    if (semLinha !== null) return { valor: semLinha, aviso: `${semRegistro}.` }
+    if (semLinha !== null) return { valor: semLinha, chave: 'suprailiaca', aviso: `${semRegistro}.` }
     for (const linha of ['suprailiacaMed', 'suprailiacaAnt'] as const) {
       const v = medidaValida(dobras[linha])
-      if (v !== null) return { valor: v, aviso: `${semRegistro}: usada a da linha ${LINHA[linha]}.` }
+      if (v !== null) return { valor: v, chave: linha, aviso: `${semRegistro}: usada a da linha ${LINHA[linha]}.` }
     }
-    return { valor: null, aviso: null }
+    return SEM_VALOR
   }
-  return { valor: medidaValida(dobras[pedida]), aviso: null }
+  const valor = medidaValida(dobras[pedida])
+  return { valor, chave: valor === null ? null : pedida, aviso: null }
+}
+
+/**
+ * A dobra que entra na conta no lugar da pedida (D-1039); sem valor em nenhuma, a que a tela pede para digitar: a da
+ * linha do protocolo e, no protocolo sem linha registrada (Guedes, Faulkner), a da axilar média (spec antropometria-telas,
+ * D-1413 e D-1521).
+ */
+export function dobraUsada(pedida: DobraCutanea, dobras: Dobras): DobraCutanea {
+  return resolverDobra(pedida, dobras).chave ?? (pedida === 'suprailiaca' ? 'suprailiacaMed' : pedida)
+}
+
+/**
+ * As dobras do protocolo que entram na conta, na ordem dele (spec antropometria-telas, D-1521): a tela marca estas, o
+ * documento põe o "●" nelas e a etapa 1 mostra a suprailíaca daqui. Sem sexo ou com um id desconhecido, nenhuma.
+ */
+export function dobrasUsadas(id: IdProtocolo, sexo: Sexo | null, dobras: Dobras): readonly DobraCutanea[] {
+  const protocolo = protocoloPorId(id)
+  if (!protocolo || sexo === null) return []
+  return protocolo.porSexo[sexo].dobras.map((d) => dobraUsada(d, dobras))
 }
 
 /** Os valores das dobras exigidas, na ordem do protocolo, e os avisos da escolha da linha (D-1039). */

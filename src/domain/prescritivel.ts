@@ -75,6 +75,14 @@ const LIBERADOS_PELA_CONDUTA: ReadonlyMap<string, { readonly segundaEscolha: boo
 
 /** A descrição como a regra compara: sem espaço nas pontas nem repetido (CA-677). */
 const limpar = (descricao: string): string => descricao.trim().replace(/\s+/g, ' ')
+
+/**
+ * Café e chá são prescritíveis, mas não são fonte (spec sugestoes-com-criterio, D-193): infusão quase sem caloria
+ * passa na frente de qualquer alimento pelo critério de kcal, e a TACO traz para chá B1 e B2 que não se sustentam.
+ * Vale em qualquer forma: o café em pó também não entra, nem com a chave ligada (revisão I1). O Cobrir e a busca de
+ * substitutos usam esta mesma constante (spec busca-substitutos, D-1120).
+ */
+export const CAFE_OU_CHA = /^(Café|Chá),/i
 const chaveDoNome = (descricao: string): string => limpar(descricao).toLowerCase()
 
 const BEBIDA_ADOCADA =
@@ -104,6 +112,23 @@ const ULTRAPROCESSADO =
   /^(Caldo de (carne|galinha)|Macarr(ã|a)o, instant(â|a)neo|Cereal matinal|Cereais, (mingau|mistura para vitamina)|Farinha, l(á|a)ctea|Empada|Biscoito, polvilho|Azeitona|Tremo(ç|c)o, em conserva|Mingau tradicional|Creme de milho)|enriquecid/i
 
 const PO = /(^|[\s,])pó($|[\s,])|desidratad/i
+/** Sem acento: o nome livre do alimento próprio escreve "Leite em po". */
+const PO_SEM_ACENTO = /(^|[\s,])po($|[\s,])|desidratad/
+/** A fruta seca e a uva-passa ("Damasco, seco", "Uva-passa"); o que volta cozido já não é desidratado. */
+const SECO = /(^|[\s,-])(sec[oa]s?|passas?)($|[\s,])/
+const COZIDO = /(^|[\s,])cozid[oa]s?($|[\s,])/
+const semAcento = (s: string): string => s.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase()
+
+/**
+ * Concentrado, em pó ou desidratado (spec busca-substitutos, D-1125, regra c): leite em pó, fruta seca, uva-passa. Na
+ * busca de substitutos ele só entra no lugar de outro: pela gordura, o leite em pó pedia 526 g no lugar de um copo de
+ * leite. "Carne, bovina, seca, cozida" e "Ervilha, seca, partida, cozida" voltaram cozidas e não contam.
+ */
+export function ehPoOuDesidratado(alimento: Pick<Alimento, 'descricao' | 'preparo'>): boolean {
+  const nome = semAcento(limpar(alimento.descricao))
+  if (PO_SEM_ACENTO.test(nome)) return true
+  return SECO.test(nome) && !COZIDO.test(nome) && alimento.preparo !== 'cozido'
+}
 const FARINHA = palavra('farinha|amido|fubá|fécula|polvilho')
 const COM_FARINHA = palavra('com farinha')
 /** Farinha que se come como está, com o feijão. */

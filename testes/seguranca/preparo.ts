@@ -285,6 +285,11 @@ export async function prepararCenario(): Promise<Cenario> {
   falhou('gravar a reserva da vítima', (await servico.from('assinando_agora').insert({ nutricionista_id: contaVitima.id })).error)
   falhou('gravar a tentativa da vítima', (await servico.from('tentativas_de_cartao').insert({ nutricionista_id: contaVitima.id, recusada: false })).error)
   falhou('gravar a chamada da vítima', (await servico.from('chamadas_da_cobranca').insert({ nutricionista_id: contaVitima.id, tipo: 'cartao' })).error)
+  // Spec assistente-ia (D-1319): um uso da IA, já concluído, como a função anota.
+  falhou(
+    'gravar o uso da IA da vítima',
+    (await servico.from('uso_da_ia').insert({ nutricionista_id: contaVitima.id, modo: 'gerar', status: 'ok', consentimento_declarado: true, modelo: 'claude-opus-5-5', custo_microdolares: 140_000 })).error,
+  )
   falhou('gravar um aviso da operadora', (await servico.from('avisos_da_operadora').insert({ topico: 'teste', recurso_id: marcador, resultado: 'anotado' })).error)
 
   // O atacante tem as mesmas coisas, na conta dele.
@@ -326,6 +331,7 @@ export const TABELAS_DA_CONTA: readonly { readonly tabela: string; readonly dono
   { tabela: 'assinando_agora', dono: 'nutricionista_id' },
   { tabela: 'tentativas_de_cartao', dono: 'nutricionista_id' },
   { tabela: 'chamadas_da_cobranca', dono: 'nutricionista_id' },
+  { tabela: 'uso_da_ia', dono: 'nutricionista_id' },
   // Spec marca-no-link (DP-ML-1): a marca publicada.
   { tabela: 'marcas', dono: 'nutricionista_id' },
   // Spec lado-do-paciente (017): a configuração de e-mail, o e-mail do link, os aceites, as chaves e os envios.

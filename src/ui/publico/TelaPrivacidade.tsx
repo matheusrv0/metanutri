@@ -33,14 +33,15 @@ export function TelaPrivacidade() {
         <li>Dados do paciente (nome, sexo, idade, medidas, restrições e condições clínicas): para calcular o plano alimentar.</li>
         <li>
           Da ficha do paciente, guardamos também a data da próxima consulta, as respostas da anamnese, os suplementos e os pedidos de exame que o
-          nutricionista registra: para o atendimento, os lembretes e os documentos que ele imprime. São dados de saúde, com o mesmo cuidado dos outros.
+          nutricionista registra, e a autorização do paciente para o uso de IA, com a data: para o atendimento, os lembretes e os documentos que ele
+          imprime. São dados de saúde, com o mesmo cuidado dos outros.
         </li>
         <li>Missões marcadas pelo paciente e as datas: para mostrar a adesão ao nutricionista.</li>
         <li>
           O plano alimentar do paciente (refeições, quantidades, substitutos, orientações e receitas), quando o nutricionista ativa “Mostrar o plano
           alimentar no link”: para o paciente consultar o plano.
         </li>
-        {/* PARA O DONO APROVAR (spec lado-do-paciente, D-1250, D-1259 e D-1263): o texto diz o que o código faz. */}
+        {/* Aprovado pelo dono em 10/11/2026 (spec lado-do-paciente, D-1250, D-1259 e D-1263): o texto diz o que o código faz. */}
         <li>
           O e-mail do paciente, quando o nutricionista o registra na ficha ou o próprio paciente o informa no link: para mandar o link do plano,
           os avisos que o paciente aceitou e os e-mails que o nutricionista envia pelo MetaNutri. O e-mail que o paciente informa no link só passa
@@ -57,10 +58,18 @@ export function TelaPrivacidade() {
           abuso.
         </li>
         <li>O dia em que o paciente abriu o link (só a data, sem a hora): para o nutricionista saber se o paciente está abrindo o plano.</li>
+        <li>
+          Quando o nutricionista usa as sugestões com IA, o registro de cada uso (data, tipo, quantidade de texto processado e custo), sem dado do
+          paciente: para aplicar o limite do plano e controlar o custo.
+        </li>
       </ul>
       <p>
         Os dados de saúde são dados pessoais sensíveis. Eles são tratados para a tutela da saúde por profissional de saúde e com o consentimento do
         paciente, colhido pelo nutricionista (LGPD, art. 11).
+      </p>
+      <p>
+        As sugestões com IA usam dados de saúde do paciente. O envio, que é uma transferência internacional, depende da autorização específica do
+        paciente, registrada pelo nutricionista na ficha (LGPD, art. 11 e art. 33, VIII).
       </p>
 
       <h2>Onde os dados ficam</h2>
@@ -85,7 +94,7 @@ export function TelaPrivacidade() {
           resumo da adesão), são enviados pelo Resend, sem imagem e sem rastreio de abertura ou de clique. O e-mail do paciente é usado só para
           isso: nunca para propaganda do MetaNutri e nunca em lista de contatos.
         </li>
-        {/* PARA O DONO APROVAR (spec lado-do-paciente, D-1259): "Recuperar meu link" também passa pelo Turnstile. */}
+        {/* Aprovado pelo dono em 10/11/2026 (spec lado-do-paciente, D-1259): "Recuperar meu link" também passa pelo Turnstile. */}
         <li>
           Nas telas de conta e em “Recuperar meu link”, o Cloudflare Turnstile recebe dados técnicos do navegador, como o endereço IP, para separar
           pessoas de robôs.
@@ -94,8 +103,15 @@ export function TelaPrivacidade() {
           O app do MetaNutri fica em app.metanutri.com.br e é entregue pela Cloudflare; o site público, em metanutri.com.br, é entregue pelo GitHub.
           Os dois recebem dados técnicos do navegador, como o endereço IP, para entregar as páginas.
         </li>
+        <li>
+          As sugestões com IA são geradas pela Anthropic, nos Estados Unidos, que atua como suboperadora do MetaNutri. Vão só os dados necessários
+          para a sugestão: idade, sexo, medidas, gestação ou lactação, condições de saúde, medicamentos, restrições, preferências, rotina e as metas do
+          plano. Nunca vão o nome, o contato (telefone, e-mail, endereço) ou a data de nascimento. A Anthropic não usa esses dados para treinar
+          modelos e os apaga em até 30 dias, salvo o conteúdo retido por violar a política de uso dela. O MetaNutri não guarda o texto enviado nem a
+          resposta da IA.
+        </li>
       </ul>
-      <p>Não vendemos dados, não usamos para publicidade e não treinamos modelos de inteligência artificial com eles.</p>
+      <p>Não vendemos dados, não usamos para publicidade e não treinamos modelos de inteligência artificial com eles. A Anthropic também não.</p>
 
       <h2>Por quanto tempo</h2>
       <p>
@@ -117,7 +133,7 @@ export function TelaPrivacidade() {
       </ul>
       <p>
         Os registros de acesso (data, hora, endereço IP e o e-mail usado para entrar) ficam 6 meses, como manda o Marco Civil da Internet (art.
-        15), e depois são apagados. As cópias de segurança do banco são apagadas automaticamente em até {PRAZO_EXCLUSAO_DIAS} dias. A cópia de
+        15), e depois são apagados. O registro de uso das sugestões com IA fica 13 meses e é apagado com a conta. As cópias de segurança do banco são apagadas automaticamente em até {PRAZO_EXCLUSAO_DIAS} dias. A cópia de
         trabalho no navegador é apagada quando você sai da conta.
       </p>
 

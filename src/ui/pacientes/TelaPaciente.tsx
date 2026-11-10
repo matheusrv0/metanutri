@@ -32,8 +32,10 @@ import { CartaoLinkDoPaciente, type PlanoNoLink } from './CartaoLinkDoPaciente.t
 import { CartaoProximaConsulta } from './CartaoProximaConsulta.tsx'
 import { CartaoProximoEmail } from './CartaoProximoEmail.tsx'
 import { CartaoSuplementos } from './CartaoSuplementos.tsx'
+import { baixarTermoDeIa } from '../exportar/baixar.ts'
 import type { CampoDaFicha } from '../navegacao.ts'
 import { EvolucaoPeso, type PontoEvolucao } from './EvolucaoPeso.tsx'
+import { AbasDaFicha } from '../antropometria/AbasDaFicha.tsx'
 
 interface TelaPacienteProps {
   readonly pacienteId: string
@@ -50,6 +52,8 @@ interface TelaPacienteProps {
   readonly agora?: Date | undefined
   /** Abre a ficha com o cursor no Telefone, quando o WhatsApp do link não tem número (spec whatsapp-e-retorno, CA-505). */
   readonly aoCadastrarTelefone?: ((pacienteId: string) => void) | undefined
+  /** A aba "Antropometria" (spec antropometria-telas, D-1402); sem ela, a ficha abre sem as abas. */
+  readonly aoAbrirAntropometria?: (() => void) | undefined
 }
 
 /**
@@ -66,6 +70,7 @@ export function TelaPaciente({
   focar,
   agora = new Date(),
   aoCadastrarTelefone,
+  aoAbrirAntropometria,
 }: TelaPacienteProps) {
   const { repositorio, atualizar } = usePacientes()
   const { casos, repositorio: repoCasos, atualizar: atualizarCasos } = useCasos()
@@ -198,12 +203,20 @@ export function TelaPaciente({
     campo.focus()
   }
 
-  return (
-    // Spec lado-do-paciente: a coluna da direita ganha os e-mails do link, depois do histórico e do peso; abaixo da tela
-    // larga, eles vêm depois da ficha (o histórico e o peso continuam antes, CA-587).
+  // Spec lado-do-paciente: a coluna da direita ganha os e-mails do link, depois do histórico e do peso; abaixo da tela
+  // larga, eles vêm depois da ficha (o histórico e o peso continuam antes, CA-587).
+  const ficha = (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[minmax(0,1fr)_360px] xl:grid-rows-[auto_1fr]">
       <div className="flex flex-col gap-6 xl:row-span-2">
-        <CartaoDadosDoPaciente paciente={paciente} perfil={perfil} hoje={hoje} aoAlterar={alterar} focarTelefone={focar === 'telefone'} focarEmail={focar === 'email'} />
+        <CartaoDadosDoPaciente
+          paciente={paciente}
+          perfil={perfil}
+          hoje={hoje}
+          aoAlterar={alterar}
+          focarTelefone={focar === 'telefone'}
+          focarEmail={focar === 'email'}
+          aoBaixarTermoIa={() => void baixarTermoDeIa(assinatura, paciente.nome)}
+        />
 
         <AnamneseDaFicha key={paciente.id} paciente={paciente} aoAlterar={alterar} perfil={perfil} hoje={hoje} adesao={adesao} />
 
@@ -336,6 +349,14 @@ export function TelaPaciente({
           )}
         </Card>
       </div>
+    </div>
+  )
+
+  if (!aoAbrirAntropometria) return ficha
+  return (
+    <div className="flex flex-col gap-6">
+      <AbasDaFicha atual="ficha" aoIrPara={(aba) => (aba === 'antropometria' ? aoAbrirAntropometria() : undefined)} />
+      {ficha}
     </div>
   )
 }

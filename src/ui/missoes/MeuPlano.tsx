@@ -6,6 +6,7 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import type { MissaoDoDia } from '@/domain/acompanhamento.ts'
 import type { DietaDoLink, ItemDaDieta, ReceitaDaDieta } from '@/domain/dietaDoLink.ts'
+import { FRASE_APOIO_IA, FRASE_APOIO_IA_ESTAGIO } from '@/domain/documentoDoPaciente.ts'
 import { modoDaCopia, paraOPaciente } from '@/domain/dietaParaPaciente.ts'
 import { textoDaQuantidade } from '@/domain/quantidadeNaFolha.ts'
 import type { RotuloDaRefeicao } from '@/domain/refeicaoDaHora.ts'
@@ -43,6 +44,19 @@ function Itens({ itens, modo }: { readonly itens: readonly ItemDaDieta[]; readon
             <span className="text-base leading-snug font-semibold text-heading [overflow-wrap:anywhere]">{paciente.nome}</span>
             <span className="numeros text-right text-base font-extrabold whitespace-nowrap text-heading">{direita}</span>
             {embaixo ? <span className="col-start-1 text-sm text-muted-foreground">{embaixo}</span> : null}
+            {/* Spec busca-substitutos, D-1115: as opções do item, com "ou", logo abaixo dele, na mesma linha de nome e gramas. */}
+            {(item.ou ?? []).map((opcao, n) => {
+              const daOpcao = paraOPaciente(opcao, modo)
+              const daQuantidade = quantidadeNoPlano(daOpcao.quantidade)
+              return (
+                <span key={`${n}-${opcao.alimento}`} className="col-span-2 mt-1.5 grid grid-cols-[minmax(0,1fr)_auto] gap-x-3.5 gap-y-0.5 border-l border-border pl-3">
+                  <span className="col-span-2 text-sm font-semibold text-muted-foreground">ou</span>
+                  <span className="text-base leading-snug font-semibold text-heading [overflow-wrap:anywhere]">{daOpcao.nome}</span>
+                  <span className="numeros text-right text-base font-extrabold whitespace-nowrap text-heading">{daQuantidade.direita}</span>
+                  {daQuantidade.embaixo ? <span className="col-start-1 text-sm text-muted-foreground">{daQuantidade.embaixo}</span> : null}
+                </span>
+              )
+            })}
           </li>
         )
       })}
@@ -216,7 +230,9 @@ export function MeuPlano({ dieta, primeiroNome, hoje, missaoDaRefeicao, aoAltern
       {dieta.orientacoes ? <Texto titulo="Orientações" texto={dieta.orientacoes} /> : null}
       {(dieta.receitasDoPlano?.length ?? 0) > 0 || dieta.receitas ? <Receitas receitas={dieta.receitasDoPlano ?? []} texto={dieta.receitas} modo={modo} /> : null}
 
-      {atualizado ? <p className="mt-2 text-center text-sm text-muted-foreground">{atualizado}</p> : null}
+      {/* Spec assistente-ia, CA-2377: o plano que recebeu sugestão da IA diz isso ao paciente. */}
+      {dieta.apoioDeIa ? <p className="mt-2 text-center text-sm text-muted-foreground">{dieta.apoioDeIa === 'estagio' ? FRASE_APOIO_IA_ESTAGIO : FRASE_APOIO_IA}</p> : null}
+      {atualizado ? <p className={dieta.apoioDeIa ? 'text-center text-sm text-muted-foreground' : 'mt-2 text-center text-sm text-muted-foreground'}>{atualizado}</p> : null}
     </div>
   )
 }

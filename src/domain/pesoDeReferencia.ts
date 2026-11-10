@@ -3,7 +3,7 @@
 import { IDADE_ADULTO, IDADE_IDOSO, calcularImc } from './antropometria.ts'
 import { FONTES, type Fonte } from './fontesAntropometria.ts'
 import { CAMPOS } from './indicadoresCorporais.ts'
-import { gorduraDoCaso, type OpcoesDaGordura } from './indicadoresDeGordura.ts'
+import { gorduraDoCaso, origemDoPercentual, type OpcoesDaGordura, type OrigemDoPercentual } from './indicadoresDeGordura.ts'
 import { dentroDoIntervalo, idadeValida, linhaSemValor, medidaValida, naPrecisao, situacaoNaFaixa, type CampoQueFalta, type FaixaRotulada, type Intervalo, type LinhaDoResultado } from './linhaDoResultado.ts'
 import type { Caso, Sexo } from './tipos.ts'
 
@@ -125,6 +125,10 @@ export interface PesoDeReferencia {
   /** IMC < 30: o peso atual; IMC ≥ 30: `null`, a nutricionista escolhe (R4.3a; D-1027). */
   readonly sugerido: BaseDoPeso | null
   readonly opcoes: readonly OpcaoDePeso[]
+  /** De onde veio o % da base "massa magra"; abaixo de IMC 30, ou sem %, `null` (spec antropometria-telas, D-1422). */
+  readonly origemDoPercentual: OrigemDoPercentual | null
+  /** Os avisos do % da base "massa magra", inclusive o da D-1042 (D-1423). */
+  readonly avisos: readonly string[]
 }
 
 /** O peso de referência das contas (proteína): o atual abaixo de IMC 30; acima, peso ideal, ajustado ou massa magra. */
@@ -132,12 +136,17 @@ export function pesoDeReferencia(caso: Caso, opcoes: { readonly imcAlvo?: number
   const peso = medidaValida(caso.pesoKg)
   const estatura = medidaValida(caso.estaturaCm)
   if (peso === null || estatura === null) return null
-  if (naPrecisao(calcularImc(peso, estatura), 2) < 30) return { sugerido: 'peso-atual', opcoes: [{ base: 'peso-atual', pesoKg: peso, motivo: null }] }
+  if (naPrecisao(calcularImc(peso, estatura), 2) < 30) {
+    return { sugerido: 'peso-atual', opcoes: [{ base: 'peso-atual', pesoKg: peso, motivo: null }], origemDoPercentual: null, avisos: [] }
+  }
   const ideal = pesoIdeal(caso, opcoes.imcAlvo ?? null)
   const ajustado = pesoAjustado(caso)
-  const massaMagra = gorduraDoCaso(caso, opcoes.gordura)?.massaMagraKg ?? null
+  const gordura = gorduraDoCaso(caso, opcoes.gordura)
+  const massaMagra = gordura?.massaMagraKg ?? null
   return {
     sugerido: null,
+    origemDoPercentual: origemDoPercentual(gordura),
+    avisos: gordura?.avisos ?? [],
     opcoes: [
       { base: 'peso-ideal', pesoKg: ideal?.calculou ? ideal.pesoKg : null, motivo: ideal?.calculou ? null : 'O peso ideal vale de 20 anos em diante, com a estatura.' },
       { base: 'peso-ajustado', pesoKg: ajustado?.calculou ? ajustado.pesoKg : null, motivo: ajustado?.calculou ? null : 'O peso ajustado vale de 20 anos em diante, com IMC de 30 ou mais.' },

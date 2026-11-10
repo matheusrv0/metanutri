@@ -76,8 +76,10 @@ export function nivelDePrioridade(e: EntradaDaPrioridade): Prioridade {
   const cinturaAlta = cintura !== null && (e.sexo === 'M' ? cintura > 102 : cintura > 88)
   // Revisão (item 1): no idoso, o sobrepeso do SISVAN começa em 27 (Quadro 18), e a matriz do NHLBI segue esse começo.
   const idoso = e.idadeAnos >= IDADE_IDOSO
+  // Spec antropometria-telas, D-1527: o texto que vai à tela segue o sexo da pessoa.
+  const idosoNoTexto = e.sexo === 'F' ? 'idosa' : 'idoso'
   const sobrepeso = idoso ? 27 : 25
-  const faixaDoSobrepeso = idoso ? 'IMC de 27 a 29,99 (idoso)' : 'IMC de 25 a 29,99'
+  const faixaDoSobrepeso = idoso ? `IMC de 27 a 29,99 (${idosoNoTexto})` : 'IMC de 25 a 29,99'
 
   const gatilhos: Gatilho[] = []
   const se = (condicao: boolean, nivel: NivelDePrioridade, descricao: string, fonte: Fonte) => {
@@ -106,9 +108,11 @@ export function nivelDePrioridade(e: EntradaDaPrioridade): Prioridade {
   if (cinturaValida === null) avisos.push(AVISO_SEM_CINTURA)
   else if (!cinturaVale) avisos.push('A cintura no menor perímetro não entra na prioridade: ela pode estar subestimada.')
   if (imcBaixo) avisos.push('IMC baixo pelo GLIM (critério fenotípico): preservar ou recuperar a massa magra vem antes de qualquer meta de perda de peso.')
-  if (panturrilhaBaixa) avisos.push('Panturrilha abaixo do corte do idoso (redução de massa muscular): preservar ou recuperar a massa magra vem antes de qualquer meta de perda de peso.')
-  if (idoso) avisos.push('Idoso: a faixa de referência do IMC é > 22 e < 27 kg/m² (SISVAN).')
-  avisos.push('Risco pelas medidas antropométricas; o risco do paciente depende também de doenças e fatores de risco.')
+  if (panturrilhaBaixa) {
+    avisos.push(`Panturrilha abaixo do corte ${e.sexo === 'F' ? 'da idosa' : 'do idoso'} (redução de massa muscular): preservar ou recuperar a massa magra vem antes de qualquer meta de perda de peso.`)
+  }
+  if (idoso) avisos.push(`${e.sexo === 'F' ? 'Idosa' : 'Idoso'}: a faixa de referência do IMC é > 22 e < 27 kg/m² (SISVAN).`)
+  avisos.push(`Risco pelas medidas antropométricas; o risco ${e.sexo === 'F' ? 'da paciente' : 'do paciente'} depende também de doenças e fatores de risco.`)
   avisos.push(`${PROPOSTA_DO_APP}: a escala de 0 a 4 é uma classificação proposta pelo app; junta cortes publicados, e cada gatilho cita a sua fonte.`)
   return { nivel, rotulo: ROTULO_DA_PRIORIDADE[nivel], gatilhos, riscoNutricional, evidencia: 'proposta-do-app', avisos }
 }
