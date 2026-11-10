@@ -216,6 +216,15 @@ export function CartaoFotos({ bruto, sexo, atual, anterior, aoAlterar, agora }: 
 
   const fotoDesligada = autorizadaEm === null || fotosCheias || enviando !== null
 
+  // D-1548: marcada a autorização, o alerta que pedia a marca sai (das fotos e dos anexos); os outros ficam.
+  const mudarAutorizacao = (marcada: boolean) => {
+    alterarAvaliacao(() => ({ fotosAutorizadasEm: marcada ? diaLocal(agora) : null }))
+    if (!marcada) return
+    const semPedido = (texto: string | null) => (texto === textos.marque ? null : texto)
+    setErroDaFoto(semPedido)
+    setErroDoAnexo(semPedido)
+  }
+
   return (
     <section aria-labelledby={idTitulo}>
       <Card className="gap-4">
@@ -238,7 +247,7 @@ export function CartaoFotos({ bruto, sexo, atual, anterior, aoAlterar, agora }: 
             </>
           }
           marcada={autorizadaEm !== null}
-          aoMudar={(marcada) => alterarAvaliacao(() => ({ fotosAutorizadasEm: marcada ? diaLocal(agora) : null }))}
+          aoMudar={mudarAutorizacao}
         />
 
         <div className="flex flex-wrap items-end gap-2">

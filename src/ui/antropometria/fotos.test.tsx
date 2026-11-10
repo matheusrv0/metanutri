@@ -343,6 +343,24 @@ describe('anexos e espaço (CA-2482, CA-2483, D-1511)', () => {
     expect(gravado()?.fotos ?? []).toEqual([])
   })
 
+  it('CB-1498 e D-1548: marcar a autorização tira o alerta "Marque a autorização…" junto dos anexos', async () => {
+    const { usuario, cartao } = abrir()
+    await usuario.upload(campoDoAnexo(), arquivoDe(jpeg(1200, 1600), 'IMG_0001.jpg', 'image/jpeg'))
+    expect(await cartao().findByRole('alert')).toHaveTextContent('Marque a autorização da paciente para adicionar fotos.')
+    await usuario.click(cartao().getByRole('checkbox', { name: /A paciente autorizou fotos para o prontuário/ }))
+    expect(cartao().queryByRole('alert')).not.toBeInTheDocument()
+    expect(cartao().queryByText('Marque a autorização da paciente para adicionar fotos.')).not.toBeInTheDocument()
+  })
+
+  it('D-1548: o alerta que não é da autorização fica ao marcar e desmarcar', async () => {
+    const { usuario, cartao } = abrir({ porta: falsos({ envio: 'sem-rede' }).porta, avaliacao: { fotosAutorizadasEm: '2026-11-03' } })
+    await usuario.upload(campoDoAnexo(), arquivoDe(PDF, 'exame.pdf', 'application/pdf'))
+    expect(await cartao().findByRole('alert')).toHaveTextContent('O anexo não subiu. Confira a internet e tente de novo.')
+    await usuario.click(cartao().getByRole('checkbox', { name: /autorizou/ }))
+    await usuario.click(cartao().getByRole('checkbox', { name: /autorizou/ }))
+    expect(cartao().getByRole('alert')).toHaveTextContent('O anexo não subiu. Confira a internet e tente de novo.')
+  })
+
   it('CB-1467 e D-1530: com 5 fotos, a imagem anexada não sobe: "Já há 5 fotos nesta avaliação."', async () => {
     const f = falsos()
     const cinco = (['frente', 'lado', 'costas', 'outra', 'outra'] as const).map((a, i) => foto(`f${i}`, a, 'av', 200 * 1024))
