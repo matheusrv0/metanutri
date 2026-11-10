@@ -1,0 +1,194 @@
+// CA-2488 (spec antropometria-telas, D-1457 e D-1504): o balde das fotos e dos anexos da avaliação no Supabase LOCAL.
+// A dona envia, lê, assina e apaga na própria pasta; outra conta e quem não tem conta não fazem nada na pasta dela; o
+// servidor recusa o tipo, o tamanho, o caminho fora do formato, a 6ª foto, o 11º anexo e a conta com 2.000 arquivos,
+// também com duas abas enviando juntas.
+import { randomUUID } from 'node:crypto'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import { afterEach, beforeAll, describe, expect, it } from 'vitest'
+import { sqlNoBancoLocal } from './bancoLocal.ts'
+import { negadoOuVazio, prepararCenario, recusado, type Cenario } from './preparo.ts'
+
+const BALDE = 'fotos-avaliacao'
+const PLANO = 'plano-da-vitima'
+
+let c: Cenario
+let foto: string
+let fotoDaVitima: string
+let anexoDaVitima: string
+
+/** Um JPEG pequeno (só o começo e o fim: o servidor não abre a imagem, confere o tipo dito e o tamanho). */
+const jpeg = (texto = 'foto'): Blob => new Blob([new Uint8Array([0xff, 0xd8, 0xff, 0xe0]), new TextEncoder().encode(texto), new Uint8Array([0xff, 0xd9])], { type: 'image/jpeg' })
+const pdf = (texto = 'exame'): Blob => new Blob([new TextEncoder().encode(`%PDF-1.4\n% ${texto}\n%%EOF\n`)], { type: 'application/pdf' })
+const caminhoDaFoto = (conta: string, plano = PLANO) => `${conta}/${plano}/fotos/${randomUUID()}.jpg`
+const caminhoDoAnexo = (conta: string, plano = PLANO, ext = 'pdf') => `${conta}/${plano}/anexos/${randomUUID()}.${ext}`
+const balde = (cliente: SupabaseClient) => cliente.storage.from(BALDE)
+
+/** Todos os nomes do balde que começam pela pasta, lidos pelo banco (a lista do armazenamento não entra em subpasta). */
+function nomesNoBanco(pasta: string): string[] {
+  const r = sqlNoBancoLocal(`select name from storage.objects where bucket_id = '${BALDE}' and starts_with(name, '${pasta}/') order by name;`)
+  if (!r.ok) throw new Error(r.erro)
+  return r.saida ? r.saida.split('\n') : []
+}
+
+async function enviar(cliente: SupabaseClient, caminho: string, arquivo: Blob = jpeg()) {
+  return balde(cliente).upload(caminho, arquivo, { contentType: arquivo.type, upsert: false })
+}
+
+/** A pasta da vítima neste balde, com o conteúdo de cada arquivo: igual antes e depois = o ataque não mudou nada. */
+async function fotografarFotos(): Promise<string> {
+  const nomes = nomesNoBanco(c.vitima.id)
+  const conteudos: string[] = []
+  for (const nome of nomes) {
+    const r = await balde(c.servico).download(nome)
+    conteudos.push(`${nome}:${r.data ? await r.data.text() : 'sem arquivo'}`)
+  }
+  const b = await c.servico.storage.getBucket(BALDE)
+  return JSON.stringify({ conteudos, publico: b.data?.public, tipos: b.data?.allowed_mime_types, limite: b.data?.file_size_limit })
+}
+
+beforeAll(async () => {
+  c = await prepararCenario()
+  fotoDaVitima = caminhoDaFoto(c.vitima.id)
+  anexoDaVitima = caminhoDoAnexo(c.vitima.id)
+  expect((await enviar(c.vitima.cliente, fotoDaVitima, jpeg(`foto ${c.marcador}`))).error).toBeNull()
+  expect((await enviar(c.vitima.cliente, anexoDaVitima, pdf(c.marcador))).error).toBeNull()
+  foto = await fotografarFotos()
+})
+
+describe('controle: a dona usa a própria pasta (CA-2488)', () => {
+  it('CA-2488: envia, lê, lista, assina e apaga na própria pasta', async () => {
+    const baixado = await balde(c.vitima.cliente).download(fotoDaVitima)
+    expect(baixado.error).toBeNull()
+    expect(await baixado.data?.text()).toContain(c.marcador)
+    const lista = await balde(c.vitima.cliente).list(`${c.vitima.id}/${PLANO}/fotos`)
+    expect(lista.error).toBeNull()
+    expect((lista.data ?? []).length).toBe(1)
+    const link = await balde(c.vitima.cliente).createSignedUrl(fotoDaVitima, 600)
+    expect(link.error).toBeNull()
+    const pelaUrl = await fetch(link.data?.signedUrl ?? '')
+    expect(pelaUrl.ok).toBe(true)
+
+    const outra = caminhoDaFoto(c.vitima.id, 'plano-de-apagar')
+    expect((await enviar(c.vitima.cliente, outra)).error).toBeNull()
+    expect((await balde(c.vitima.cliente).remove([outra])).error).toBeNull()
+    expect(nomesNoBanco(`${c.vitima.id}/plano-de-apagar`)).toEqual([])
+  })
+})
+
+describe('CA-2488: outra conta e quem não tem conta não mexem na pasta da dona', () => {
+  afterEach(async () => {
+    expect(await fotografarFotos(), 'o ataque mudou a pasta da vítima ou o balde').toBe(foto)
+  })
+
+  const quem = (): readonly SupabaseClient[] => [c.atacante.cliente, c.anonimo]
+
+  it('CA-2488: não envia na pasta da dona', async () => {
+    for (const cliente of quem()) {
+      recusado(await enviar(cliente, caminhoDaFoto(c.vitima.id)))
+      recusado(await enviar(cliente, caminhoDoAnexo(c.vitima.id), pdf()))
+    }
+  })
+
+  it('CA-2488: não lê, não assina e não abre pelo endereço público', async () => {
+    for (const cliente of quem()) {
+      recusado(await balde(cliente).download(fotoDaVitima))
+      recusado(await balde(cliente).createSignedUrl(fotoDaVitima, 600))
+      const varios = await balde(cliente).createSignedUrls([fotoDaVitima, anexoDaVitima], 600)
+      expect((varios.data ?? []).map((l) => l.signedUrl).filter((u) => typeof u === 'string' && u.length > 0)).toEqual([])
+    }
+    const publico = balde(c.anonimo).getPublicUrl(fotoDaVitima).data.publicUrl
+    expect((await fetch(publico)).ok).toBe(false)
+  })
+
+  it('CA-2488: não lista a pasta da dona nem a raiz', async () => {
+    for (const cliente of quem()) {
+      negadoOuVazio(await balde(cliente).list(c.vitima.id))
+      negadoOuVazio(await balde(cliente).list(`${c.vitima.id}/${PLANO}/fotos`))
+      const raiz = await balde(cliente).list('', { limit: 1000 })
+      expect(JSON.stringify(raiz.data ?? [])).not.toContain(c.vitima.id)
+    }
+  })
+
+  it('CA-2488: não apaga, não sobrescreve, não move e não copia', async () => {
+    for (const cliente of quem()) {
+      negadoOuVazio(await balde(cliente).remove([fotoDaVitima, anexoDaVitima]))
+      recusado(await balde(cliente).upload(fotoDaVitima, jpeg('trocada'), { contentType: 'image/jpeg', upsert: true }))
+      recusado(await balde(cliente).update(fotoDaVitima, jpeg('trocada'), { contentType: 'image/jpeg' }))
+    }
+    recusado(await balde(c.atacante.cliente).move(fotoDaVitima, caminhoDaFoto(c.atacante.id)))
+    recusado(await balde(c.atacante.cliente).copy(fotoDaVitima, caminhoDaFoto(c.atacante.id)))
+    expect(nomesNoBanco(c.atacante.id)).toEqual([])
+  })
+
+  it('D-1504: nem a dona sobrescreve ou move a própria foto (sem política de alteração)', async () => {
+    recusado(await balde(c.vitima.cliente).upload(fotoDaVitima, jpeg('trocada'), { contentType: 'image/jpeg', upsert: true }))
+    recusado(await balde(c.vitima.cliente).move(fotoDaVitima, caminhoDaFoto(c.vitima.id)))
+  })
+
+  it('quem não tem conta não chama a função da política', async () => {
+    recusado(await c.anonimo.rpc('pode_enviar_arquivo_da_avaliacao', { p_nome: caminhoDaFoto(c.vitima.id) }))
+  })
+})
+
+describe('CA-2488: o servidor confere o arquivo e as contagens (D-1457, D-1504)', () => {
+  it('CA-2488: tipo fora de JPEG, PNG e PDF é recusado', async () => {
+    const plano = 'plano-tipos'
+    recusado(await enviar(c.atacante.cliente, caminhoDaFoto(c.atacante.id, plano), new Blob(['GIF89a'], { type: 'image/gif' })))
+    recusado(await enviar(c.atacante.cliente, caminhoDoAnexo(c.atacante.id, plano), new Blob(['<html>'], { type: 'text/html' })))
+    expect((await enviar(c.atacante.cliente, caminhoDoAnexo(c.atacante.id, plano, 'png'), new Blob([new Uint8Array([0x89, 0x50])], { type: 'image/png' }))).error).toBeNull()
+  })
+
+  it('CA-2488: arquivo acima de 8 MB é recusado', async () => {
+    const grande = new Blob([new Uint8Array(8 * 1024 * 1024 + 1)], { type: 'application/pdf' })
+    recusado(await enviar(c.atacante.cliente, caminhoDoAnexo(c.atacante.id, 'plano-grande'), grande))
+    expect(nomesNoBanco(`${c.atacante.id}/plano-grande`)).toEqual([])
+  })
+
+  it('D-1504: caminho fora do formato é recusado, mesmo na própria pasta', async () => {
+    const id = c.atacante.id
+    for (const caminho of [
+      `${id}/foto.jpg`,
+      `${id}/${PLANO}/fotos/nome-qualquer.jpg`,
+      `${id}/${PLANO}/fotos/${randomUUID()}.png`,
+      `${id}/${PLANO}/outra/${randomUUID()}.jpg`,
+      `${id}/${PLANO}/anexos/${randomUUID()}.exe`,
+      `${id}/${PLANO}/fotos/${randomUUID()}.jpg/mais`,
+      `${id}/plano com espaço/fotos/${randomUUID()}.jpg`,
+    ]) {
+      recusado(await enviar(c.atacante.cliente, caminho))
+    }
+    expect(nomesNoBanco(`${id}/${PLANO}`)).toEqual([])
+  })
+
+  it('CA-2488: a 6ª foto e o 11º anexo de um plano são recusados; outro plano continua aceitando', async () => {
+    const plano = 'plano-cheio'
+    for (let i = 0; i < 5; i++) expect((await enviar(c.atacante.cliente, caminhoDaFoto(c.atacante.id, plano))).error).toBeNull()
+    recusado(await enviar(c.atacante.cliente, caminhoDaFoto(c.atacante.id, plano)))
+    for (let i = 0; i < 10; i++) expect((await enviar(c.atacante.cliente, caminhoDoAnexo(c.atacante.id, plano), pdf())).error).toBeNull()
+    recusado(await enviar(c.atacante.cliente, caminhoDoAnexo(c.atacante.id, plano), pdf()))
+    expect(nomesNoBanco(`${c.atacante.id}/${plano}/fotos`)).toHaveLength(5)
+    expect(nomesNoBanco(`${c.atacante.id}/${plano}/anexos`)).toHaveLength(10)
+    expect((await enviar(c.atacante.cliente, caminhoDaFoto(c.atacante.id, 'plano-vizinho'))).error).toBeNull()
+  })
+
+  it('CB-1416 e D-1504: oito envios ao mesmo tempo no mesmo plano: só 5 fotos ficam', async () => {
+    const plano = 'plano-duas-abas'
+    const respostas = await Promise.all(Array.from({ length: 8 }, () => enviar(c.atacante.cliente, caminhoDaFoto(c.atacante.id, plano))))
+    expect(respostas.filter((r) => r.error === null)).toHaveLength(5)
+    expect(nomesNoBanco(`${c.atacante.id}/${plano}/fotos`)).toHaveLength(5)
+  })
+
+  it('D-1457: com 2.000 arquivos na conta, o próximo é recusado', async () => {
+    const id = c.atacante.id
+    const ja = nomesNoBanco(id).length
+    const faltam = 2000 - ja
+    const r = sqlNoBancoLocal(
+      `insert into storage.objects (bucket_id, name) select '${BALDE}', '${id}/lote-' || g || '/fotos/' || gen_random_uuid() || '.jpg' from generate_series(1, ${faltam}) g;`,
+    )
+    expect(r.ok, r.erro).toBe(true)
+    expect(nomesNoBanco(id)).toHaveLength(2000)
+    recusado(await enviar(c.atacante.cliente, caminhoDaFoto(id, 'plano-depois-do-teto')))
+    // As linhas de mentira saem pelo banco: não têm arquivo no armazenamento.
+    expect(sqlNoBancoLocal(`delete from storage.objects where bucket_id = '${BALDE}' and starts_with(name, '${id}/lote-');`).ok).toBe(true)
+  })
+})
