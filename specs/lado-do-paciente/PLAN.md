@@ -485,14 +485,14 @@ Todo teste leva o ID no nome. "Dono" é conferência que só ele faz (seção 9)
 | CB-1225 | `servidorEnviarLink.test.ts` |
 | CB-1226 | `meusPlanos.test.ts`, `link/instalar.test.tsx` |
 | CA-2289, CA-2290, CB-1231 | `src/data/sqlLadoDoPaciente.test.ts` (texto); `testes/seguranca/ladoDoPaciente.test.ts` (no banco local); `src/domain/fonteSupabase*.test.ts` e `src/ui/missoes/linkQueNaoAbre.test.tsx` (a tela e a cópia que sai); a sonda `sonda-trocar-endereco.mts` da revisão |
-| CA-2291, CA-2292, CB-1229 | `servidorMeuLink.test.ts`, `servidorAvisosResposta.test.ts`, `servidorAvisosEmails.test.ts`; `link/receberPorEmail.test.tsx`; `telaAvisosDoEmail.test.tsx`; `testes/seguranca/avisos.test.ts` |
+| CA-2291, CA-2292, CB-1229 | `servidorMeuLink.test.ts` (o S3 "Confirme o seu e-mail" e o pedido que não sai), `servidorAvisosResposta.test.ts`; `src/domain/emailsDoLink.test.ts`; `link/receberPorEmail.test.tsx`; `telaAvisosDoEmail.test.tsx`; `sqlLadoDoPaciente.test.ts`; `testes/seguranca/avisos.test.ts` |
 | CA-2293, CB-1230 | `servidorEnviarLink.test.ts`; `src/ui/missoes/linkFixo.test.tsx`; `testes/seguranca/ladoDoPaciente.test.ts` e `avisos.test.ts` |
 | CA-2294 | `servidorMeuLink.test.ts`; a sonda `sonda-tempo-recuperar.mts` da revisão |
 | CA-2295 | `e2e/servidor-falso/lado-do-paciente.spec.ts` (390 px) |
 | CA-2296 | `servidorAvisosResend.test.ts` (o `turnstileConfere`) |
 | CA-2297 | `servidorAvisosResposta.test.ts`; `testes/seguranca/avisos.test.ts` |
-| CA-2298 | `src/ui/missoes/ultimoAcesso.test.tsx`; `src/ui/estado/usarConta*.test.ts` |
-| CA-2299 | `servidorAvisosTetos.test.ts`, `servidorEnviarLink.test.ts`, `servidorAvisosRodada.test.ts`, `servidorAvisosEmails.test.ts` |
+| CA-2298 | `src/ui/missoes/ultimoAcesso.test.tsx`; `src/ui/estado/usarConta.test.ts` |
+| CA-2299 | `servidorAvisosTetos.test.ts`, `servidorEnviarLink.test.ts` (o teto e o remetente limpo), `servidorAvisosRodada.test.ts`, `servidorMeuLink.test.ts`; `testes/seguranca/avisos.test.ts` |
 | CA-587 (B6), CB-1228 | `src/ui/pacientes/excluirPaciente.test.tsx` |
 | D-1255 (B10) | `src/domain/conta.test.ts` |
 | R-LP-6 (B5) | `src/seguranca/csp.test.ts` |
@@ -568,7 +568,11 @@ Secrets das Edge Functions.
    projeto que o 014 guardou no cofre (`metanutri_url_do_projeto`); a conferência mostra as duas linhas do cofre.
 2. **`TURNSTILE_SECRET_KEY`.** Cloudflare › **Turnstile** › o widget do app › **Settings** › copie a **Secret key**.
    Supabase › **Edge Functions** › **Secrets** › **Add new secret**: nome `TURNSTILE_SECRET_KEY`, valor a chave. Sem
-   ela, "Recuperar meu link" responde a frase de sempre e não manda nada (DP-LP-19).
+   ela, "Recuperar meu link" responde a frase de sempre e não manda nada (DP-LP-19). Desde a revisão r1 (D-1251), o
+   token só vale com a ação `recuperar-link` e o host `app.metanutri.com.br`: confira, no mesmo widget, que
+   `app.metanutri.com.br` está em **Hostnames**. Se um dia o app mudar de endereço, o secret `ENDERECO_DO_APP` das
+   funções diz o novo (sem ele, vale `https://app.metanutri.com.br`).
+   Opcional (D-1254): o secret `TETO_CONTA_DIA` muda o teto de e-mails por conta por dia (sem ele, 30).
 3. **As cinco funções.** Na pasta do projeto, com a `main` atualizada:
    ```
    npx supabase functions deploy meu-link --no-verify-jwt --project-ref qmpljfjbdcrdbqutuvmg
@@ -591,7 +595,9 @@ Secrets das Edge Functions.
 6. **Publicar o site** depois do 017 (R-LP-1), pelo `publicar.yml` de sempre.
 7. **Conferências que só o dono faz:** o ícone "Meu plano" num iPhone e num Android de verdade (CA-2221); o "Verify"
    do domínio no Resend, com o DKIM (CA-2279); um S1 de teste aberto no Gmail, no Outlook e no Apple Mail (CA-2288); a
-   Adesão depois da publicação, para aprovar a migração do link fixo (D-1217).
+   Adesão depois da publicação, para aprovar a migração do link fixo (D-1217); e (R-LP-6) Cloudflare ›
+   **Web Analytics**: o `app.metanutri.com.br` sem o Web Analytics ligado, para o token do caminho não ir para as
+   estatísticas.
 
 Nada aqui é preciso para o link abrir: publicado antes do 017, o link e a ficha funcionam como hoje (DP-LP-30), e os
 e-mails respondem "Não foi possível enviar agora.".
@@ -645,3 +651,29 @@ conflito).
   e **CA-2288** (Gmail, Outlook e Apple Mail) têm a parte do código testada; o resto é conferência do dono (seção 9).
 - O lint tem um aviso antigo (não erro) em `src/ui/missoes/link/linkDeTeste.test-utils.tsx` (React Refresh num arquivo
   de teste).
+
+### 10.1 A validação da correção da revisão r1 (10/11/2026)
+
+T45 a T57 em cima de T42 a T44. Rodada final, com as travas de sempre:
+- `npm run lint`: 0 erro (o aviso antigo de sempre). `npm run typecheck`: limpo. `npm run build`: limpo.
+- `npx vitest run --maxWorkers=4`: 7.453 de 7.453, em 408 arquivos.
+- e2e completo, na configuração normal, com a `trava-e2e` e `--workers=2`: **503 de 503** (11,4 min), com o CA-2295.
+- `npm run test:csp` (com a `trava-csp`): 3 de 3.
+- `npm run test:seguranca` (com a `trava-ataques`): **355 de 355** em 11 arquivos.
+- As sondas da revisão: `sonda-trocar-endereco.mts` (pilha local nova, núcleos e banco de verdade):
+  `furo1=false furo2=false furo3=false`; `sonda-tempo-recuperar.mts`: as quatro respostas entre 3.006 e 3.014 ms, "Sem
+  diferença de tempo".
+
+**Achados da validação, corrigidos:**
+- **A suíte de ataques passava do teto do dia.** Com o S3 "Confirme o seu e-mail" e os testes novos, a suíte (quase toda
+  da mesma conta, no mesmo dia) passou dos 70 do `TETO_DIA` e respondeu 503 em testes que nada tinham com o teto. A
+  suíte agora roda com os tetos altos (`TETOS_DA_SUITE`), e o teste dos tetos (CA-2274) os põe de volta no fim; o teto
+  por conta tem o teste dele (CA-2299) com o número que a conta já mandou.
+- **O teste do "Recuperar" com o e-mail não confirmado gastava um dos 3 pedidos da hora** do mesmo e-mail que o teste
+  da recuperação (CA-2234) usa depois: ele devolve o pedido (`devolver_limite`) no fim.
+
+**Divergências que ficam:**
+- O teto por conta (D-1254) vale também para os avisos: uma conta com mais de 30 pacientes com aviso no mesmo dia tem
+  os que passarem adiados (o lembrete, para o dia seguinte). É o que a D-1254 pede; o `TETO_CONTA_DIA` sobe sem código
+  novo.
+- A Política (D-1250) continua **PARA O DONO APROVAR**; a versão dos textos fica `2026-11-03`.
