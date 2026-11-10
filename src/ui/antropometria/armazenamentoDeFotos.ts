@@ -21,16 +21,22 @@ const textoDo = (erro: object, campo: 'statusCode' | 'code' | 'message'): string
 /** D-1546: o gatilho do 018 recusa a conta cheia com o código 53100, e o armazenamento o põe na mensagem. */
 const CONTA_CHEIA = /\bcode: 53100\b/
 
+/** D-1547 (nota da r3): a recusa da política ("new row violates row-level security policy"), que vem como 403. */
+const RECUSA_DA_POLITICA = /row-level security/i
+
 /**
  * D-1547: o que a recusa do armazenamento quer dizer. O supabase-js entrega o status HTTP (`status`), o do corpo
- * (`statusCode`) e o código do armazenamento (`code`); a recusa da política vem com 400 e `statusCode` "403", e o token
- * vencido, com `InvalidJWT`.
+ * (`statusCode`) e o código do armazenamento (`code`). O token vencido ou falso vem com 400, `statusCode` "403" e
+ * `AccessDenied` ("exp" ou "signature" na mensagem): é a sessão. A recusa da política também vem com `statusCode` "403",
+ * mas, com sessão no aparelho, ela só recusa por contagem (sem o gatilho, D-1531): é uma recusa comum, lida pela pasta.
  */
 function recusaDoArmazenamento(erro: unknown): Exclude<ResultadoDoEnvio, 'ok'> {
   if (!respondeu(erro)) return 'sem-rede'
-  if (CONTA_CHEIA.test(textoDo(erro, 'message'))) return 'conta-cheia'
+  const mensagem = textoDo(erro, 'message')
+  if (CONTA_CHEIA.test(mensagem)) return 'conta-cheia'
   const statusCode = textoDo(erro, 'statusCode')
-  if (erro.status === 401 || erro.status === 403 || statusCode === '401' || statusCode === '403' || textoDo(erro, 'code') === 'InvalidJWT') return 'sessao'
+  if (erro.status === 401 || statusCode === '401' || textoDo(erro, 'code') === 'InvalidJWT') return 'sessao'
+  if (erro.status === 403 || statusCode === '403') return RECUSA_DA_POLITICA.test(mensagem) ? 'recusado' : 'sessao'
   return 'recusado'
 }
 

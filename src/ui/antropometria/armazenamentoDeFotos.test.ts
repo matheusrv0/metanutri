@@ -76,11 +76,19 @@ describe('a recusa do envio (D-1547)', () => {
     expect(await enviar({ erro: recusa(500, '500', 'database error, code: 53100', 'DatabaseError') })).toBe('conta-cheia')
   })
 
-  it('CB-1415 e D-1547: 401, 403 e o token recusado são a sessão vencida', async () => {
-    expect(await enviar({ erro: recusa(400, '403', 'new row violates row-level security policy') })).toBe('sessao')
+  it('CB-1415 e D-1547: 401, o 403 do token e o token recusado são a sessão vencida', async () => {
+    // O formato real do token vencido, da sonda r3b (storage-api v1.79.36): 400, `statusCode` "403" e `AccessDenied`.
+    expect(await enviar({ erro: recusa(400, '403', '"exp" claim timestamp check failed', 'AccessDenied') })).toBe('sessao')
+    expect(await enviar({ erro: recusa(400, '403', 'signature verification failed', 'AccessDenied') })).toBe('sessao')
     expect(await enviar({ erro: recusa(401, '401', 'Unauthorized') })).toBe('sessao')
     expect(await enviar({ erro: recusa(403, '403', 'Forbidden') })).toBe('sessao')
-    expect(await enviar({ erro: recusa(400, '400', '"exp" claim timestamp check failed', 'InvalidJWT') })).toBe('sessao')
+    expect(await enviar({ erro: recusa(400, '400', 'jwt malformed', 'InvalidJWT') })).toBe('sessao')
+  })
+
+  it('CB-1416, D-1505 e D-1547 (nota da r3): o 403 da política é uma recusa comum, lida pela pasta', async () => {
+    // Sem o gatilho (D-1531), a 6ª foto, o 11º anexo e a conta com 2.000 arquivos são recusados pela política.
+    expect(await enviar({ erro: recusa(400, '403', 'new row violates row-level security policy') })).toBe('recusado')
+    expect(await enviar({ erro: recusa(403, '403', 'new row violates row-level security policy for table "objects"', 'Unauthorized') })).toBe('recusado')
   })
 
   it('CB-1497 e D-1547: o resto é uma recusa sem motivo conhecido (o 23514, o 5xx, o balde que não existe, o tipo)', async () => {

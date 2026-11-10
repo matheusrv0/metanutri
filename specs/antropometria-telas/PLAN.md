@@ -333,7 +333,8 @@ A revisão r2 da F2 reprovou por M1; B1 entra junto, e B2 vira risco aceito (D-1
   recusa traz "code: 53100"; os 8 MB do plano trazem "code: 23514"; o token inválido volta com 401, 403 ou `InvalidJWT`.
 - **R19** · `ResultadoDoEnvio` ganha `sessao` e `conta-cheia`. A porta lê a recusa (`recusaDoArmazenamento`): sem
   status, `sem-rede`; "code: 53100" na mensagem, `conta-cheia`; 401, 403 ou `InvalidJWT`, `sessao`; o resto,
-  `recusado`. `subir`: `conta-cheia` dá "O espaço de fotos da conta acabou."; `sessao`, a frase de sessão; `recusado`,
+  `recusado`. Nota da revisão r3 (B1): o 403 da política ("row-level security" na mensagem) é `recusado`, lido pela
+  pasta; o 403 do token (`AccessDenied`, "exp" ou "signature") continua `sessao`. `subir`: `conta-cheia` dá "O espaço de fotos da conta acabou."; `sessao`, a frase de sessão; `recusado`,
   a leitura da pasta, e sem limite nem teto (ou sem ler), "Não foi possível enviar agora. Tente de novo.".
 - **R20** · Ao marcar a autorização, o alerta "Marque a autorização…" sai das fotos e dos anexos (só ele).
 
@@ -432,6 +433,7 @@ Revisão r2 da F2: CB-1496 em `src/data/sqlFotosAvaliacao.test.ts` (o código 53
 `testes/seguranca/fotos.test.ts` (a conta com 500 MB e com 2.000 arquivos recebe "code: 53100"; o plano cheio, "code:
 23514"), `armazenamentoDeFotos.test.ts` (a porta lê "code: 53100" como conta cheia), `fotosDaAvaliacao.test.ts` e
 `fotos.test.tsx` (a frase, na foto e no anexo); CB-1497 e CB-1415 em `armazenamentoDeFotos.test.ts` (401, 403 e
-`InvalidJWT` são a sessão; 23514, 5xx, 404 e 415, a recusa genérica), `testes/seguranca/fotos.test.ts` (o token
+`InvalidJWT` são a sessão, com o formato real do token vencido, `AccessDenied` e "exp"; 23514, 5xx, 404 e 415, a recusa
+genérica; o 403 da política, CB-1416, lido pela pasta), `testes/seguranca/fotos.test.ts` (o token
 recusado volta como sessão), `fotosDaAvaliacao.test.ts` e `fotos.test.tsx`; CB-1498 em `fotos.test.tsx`. D-1549 (o TUS
 pela metade) é risco aceito, sem teste.

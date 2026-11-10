@@ -268,9 +268,18 @@ faça", pelos princípios do pedido.
 | # | Decisão | Motivo |
 |---|---|---|
 | D-1546 | **O teto da conta tem código de erro próprio** (M1). No gatilho do 018, passar de 500 MB somando a conta ou de 2.000 arquivos na conta recusa com o código `53100`; as outras recusas do gatilho (5 fotos e 10 anexos no plano, 8 MB no plano e o tipo) continuam com `23514`. O armazenamento devolve o código na mensagem ("database error, code: 53100"). O teto de 8 MB do plano fica sem código próprio: a leitura da pasta (D-1531) já dá a frase certa, "Passa de 8 MB somando fotos e anexos.", que vale também no plano com 6 MB que recebe um arquivo de 3 MB (onde "Esta avaliação já tem 8 MB" seria falso). O 018 continua podendo rodar de novo: ele só troca a função | Sonda r2b da revisão: o texto do `raise` não chega ao app, e o código chega. A conta cheia não se lê pela pasta do plano: o app não soma a conta inteira |
-| D-1547 | **A frase de cada recusa** (M1; revê a D-1505 e a última frase da D-1531). Conta cheia (`code: 53100`): "O espaço de fotos da conta acabou.", na foto e no anexo, sem ler a pasta. Sessão vencida de verdade (sem sessão no aparelho, ou o servidor respondeu 401 ou 403, ou recusou o token, `InvalidJWT`): "Entre de novo para enviar fotos." (no anexo, "Entre de novo para enviar anexos."). Outra recusa (o `23514`, um erro 5xx sem código, o 018 antigo sem o código novo, o balde que não existe): lida pela pasta como na D-1505 e na D-1531 (5 fotos, 10 anexos, 8 MB); sem nada disso, ou sem conseguir ler a pasta, "Não foi possível enviar agora. Tente de novo." Sem resposta: as frases de rede seguem | "Entre de novo" mandava sair e entrar quando o problema era espaço, e a frase voltava igual. A frase genérica não manda fazer nada que não resolva |
+| D-1547 | **A frase de cada recusa** (M1; revê a D-1505 e a última frase da D-1531). Conta cheia (`code: 53100`): "O espaço de fotos da conta acabou.", na foto e no anexo, sem ler a pasta. Sessão vencida de verdade (sem sessão no aparelho; ou o servidor respondeu 401 ou `InvalidJWT`; ou o 403 do token vencido ou falso, que vem como `AccessDenied` com `"exp" claim timestamp check failed` ou `signature verification failed`): "Entre de novo para enviar fotos." (no anexo, "Entre de novo para enviar anexos."). Outra recusa (o `23514`, o 403 da política com "row-level security" na mensagem, um erro 5xx sem código, o 018 antigo sem o código novo, o balde que não existe; nota da revisão r3): lida pela pasta como na D-1505 e na D-1531 (5 fotos, 10 anexos, 8 MB); sem nada disso, ou sem conseguir ler a pasta, "Não foi possível enviar agora. Tente de novo." Sem resposta: as frases de rede seguem | "Entre de novo" mandava sair e entrar quando o problema era espaço, e a frase voltava igual. A frase genérica não manda fazer nada que não resolva |
 | D-1548 | **Marcar a autorização tira o alerta "Marque a autorização…"** (B1), junto das fotos e junto dos anexos. Os outros alertas ficam até o próximo envio | A tela dizia "Marque a autorização" com a caixa já marcada |
 | D-1549 | **Envio retomável (TUS) pela metade: risco aceito** (B2). O app não usa o envio retomável. Um envio desses deixado pela metade guarda bytes no disco do armazenamento sem linha no banco: o gatilho só roda na gravação final, então esses bytes ficam fora dos tetos. Ninguém lê esses bytes (sem linha, não há leitura nem link), e só quem tem conta abre um envio; o custo é só de armazenamento do dono. O dono confere no painel do Supabase que "Storage > S3 Connection" está desligado (o envio em partes do S3 é parecido). Ver o R-AT-7 do PLAN | Sonda Q6 da revisão r2: 4 MB de um envio de 8 MB ficaram no disco, com 0 linhas no banco |
+
+**Nota da revisão r3 da F2 (B1, 10/11/2026), sobre a D-1547.** No 018 sem o gatilho, que a D-1531 aceita, a 6ª foto, o
+11º anexo e a conta com 2.000 arquivos são recusados pela política, e a recusa chega como 403 ("new row violates
+row-level security policy"). Esse 403 é uma recusa comum: o app lê a pasta e diz a frase da contagem ("Já há 5 fotos
+nesta avaliação.", D-1505 e CB-1416). Com sessão no aparelho, a política só recusa por contagem ou por caminho, e o
+caminho errado o app nunca monta. "Entre de novo" fica só para o 401, o `InvalidJWT` e o 403 do token vencido ou falso.
+O token vencido de verdade chega como 400, `statusCode` "403", `code` `AccessDenied` e `"exp" claim timestamp check
+failed` (sonda r3b, `storage-api` v1.79.36), e não como `InvalidJWT`, como a D-1547 dizia antes. Com o gatilho, que é o
+caminho normal, nada muda: ele recusa antes da política, com `23514` ou `53100`.
 
 ## 3. Critérios de aceite
 
@@ -708,8 +717,9 @@ Os casos que provam as decisões D-1520 a D-1529.
   próxima foto e o próximo PDF com o código 53100, o app diz "O espaço de fotos da conta acabou." e nada entra na lista.
 - **CB-1497** · **Recusa que o app não reconhece** (D-1547): o servidor recusa sem a pasta cheia e sem passar de 8 MB
   (o `23514` do tipo, um 500 sem código, o balde que não existe), ou a pasta não pôde ser lida: "Não foi possível enviar
-  agora. Tente de novo."; só o 401, o 403 e o token recusado dizem "Entre de novo para enviar fotos." (no anexo,
-  "Entre de novo para enviar anexos.").
+  agora. Tente de novo."; só o 401, o 403 do token (vencido ou falso) e o token recusado dizem "Entre de novo para
+  enviar fotos." (no anexo, "Entre de novo para enviar anexos."). O 403 da política (sem o gatilho, a contagem) é lido
+  pela pasta (nota da revisão r3).
 - **CB-1498** · **Autorização marcada depois do alerta** (B1, D-1548): a imagem escolhida em "Adicionar arquivo" sem a
   autorização mostra "Marque a autorização da paciente para adicionar fotos." junto dos anexos; marcar a autorização
   tira o alerta.
