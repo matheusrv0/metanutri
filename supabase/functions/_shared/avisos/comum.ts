@@ -87,8 +87,9 @@ export function remetenteDoLink(nutri: DadosDaNutricionista, link: Pick<LinkDoBa
  * caracteres. Uma conta não manda e-mail com um nome que leva a outro site.
  */
 export function nomeLimpoDoRemetente(nome: string): string {
-  return nome
-    .replace(/[\u0000-\u001f\u007f]/g, ' ')
+  // Os sinais de controle (a quebra de linha que abriria outro cabeçalho) viram espaço.
+  const semControle = Array.from(nome, (letra) => (letra.charCodeAt(0) < 32 || letra.charCodeAt(0) === 127 ? ' ' : letra)).join('')
+  return semControle
     .replace(/\S+@\S+/g, ' ')
     .replace(/\b(?:https?:\/\/|www\.)\S*/gi, ' ')
     .replace(/\b[\p{L}\p{N}-]+(?:\.[\p{L}\p{N}-]+)*\.(?:com|net|org|br|io|app|me|info|site|online|xyz|link|co|biz|shop|store|top|club|ly|gl)\b\S*/giu, ' ')
