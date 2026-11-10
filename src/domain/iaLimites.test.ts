@@ -8,6 +8,13 @@ describe('spec assistente-ia, D-1318 e D-1321: os limites e os textos do uso', (
     expect(PLANOS.map((p) => limiteDoPlano(p.id))).toEqual([3, 5, 20, 40, 40])
   })
 
+  it('CA-2404: o limite do navegador sai de PLANOS e bate com a tabela da função', () => {
+    for (const plano of PLANOS) {
+      expect(limiteDoPlano(plano.id)).toBe(plano.limiteSugestoesIa)
+      expect(plano.limiteSugestoesIa).toBe(LIMITE_DE_SUGESTOES_IA[plano.id])
+    }
+  })
+
   it('o mês de Brasília pelo nome', () => {
     expect(mesDe(new Date('2026-11-03T12:00:00Z'))).toBe('novembro')
     expect(mesDe(new Date('2026-12-01T02:00:00Z'))).toBe('novembro')

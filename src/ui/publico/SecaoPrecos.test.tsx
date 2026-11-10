@@ -39,6 +39,14 @@ describe('SecaoPrecos', () => {
     expect(aoEscolher).toHaveBeenCalledWith('estudante', 'mensal')
   })
 
+  it('CA-2375 (spec assistente-ia): a tabela tem as sugestões com IA, e a nota do Estudante diz as 5 do mês', () => {
+    render(<SecaoPrecos aoEscolher={vi.fn()} contato="contato@exemplo.com" />)
+    const tabela = screen.getByRole('table', { name: /Comparativo dos planos/ })
+    const linha = within(tabela).getByRole('row', { name: /Sugestões com IA por mês/ })
+    expect(within(linha).getAllByRole('cell').map((c) => c.textContent)).toEqual(['3', '20', '40'])
+    expect(screen.getAllByRole('note', { name: 'Plano Estudante' })[0]).toHaveTextContent('5 sugestões com IA por mês')
+  })
+
   it('CA-126: o Clínica mostra o contato e não tem botão', () => {
     render(<SecaoPrecos aoEscolher={vi.fn()} contato="contato@exemplo.com" />)
     expect(screen.queryByRole('button', { name: /Clínica/ })).not.toBeInTheDocument()
@@ -66,6 +74,8 @@ describe('SecaoPrecos', () => {
     expect(linhas).toEqual([
       'Pacientes ativos',
       'Links do paciente',
+      // Spec assistente-ia, CA-2375.
+      'Sugestões com IA por mês',
       'Adequação de 20 vitaminas e minerais e da fibra, com o botão Cobrir',
       'Missões diárias no link do paciente e tela Adesão',
       'Plano impresso em PDF; aconselhamento e memorial em Word',
@@ -113,7 +123,7 @@ describe('SecaoPrecos', () => {
 
   it('D-79: a nota do Estudante chama o plano grátis pelo nome da coluna, Free', () => {
     render(<SecaoPrecos aoEscolher={vi.fn()} contato="contato@exemplo.com" />)
-    expect(document.body.textContent).toContain('Com o comprovante aprovado, o limite do Free sobe para 10 pacientes e 3 links, por 12 meses ou até a formatura, o que vier antes.')
+    expect(document.body.textContent).toContain('Com o comprovante aprovado, o limite do Free sobe para 10 pacientes, 3 links e 5 sugestões com IA por mês, por 12 meses ou até a formatura, o que vier antes.')
   })
 
   it('CA-381: a nota de pagamento fala de cartão de crédito no site e não cita o processador', () => {

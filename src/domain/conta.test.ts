@@ -267,9 +267,15 @@ describe('Comparativo da página de preços', () => {
     expect(linhas.map((l) => l.rotulo)).toEqual([
       'Pacientes ativos',
       'Links do paciente',
+      'Sugestões com IA por mês',
       ...RECURSOS_EM_TODOS_OS_PLANOS.map((r) => r.texto),
     ])
-    for (const linha of linhas.slice(2)) expect(linha.valores).toEqual([true, true, true])
+    for (const linha of linhas.slice(3)) expect(linha.valores).toEqual([true, true, true])
+  })
+
+  it('CA-2375 e CA-2404 (spec assistente-ia): a linha das sugestões com IA sai de PLANOS', () => {
+    expect(linhas.find((l) => l.rotulo === 'Sugestões com IA por mês')?.valores).toEqual(['3', '20', '40'])
+    expect(PLANOS.map((p) => p.limiteSugestoesIa)).toEqual([3, 5, 20, 40, 40])
   })
 
   it('DP-26 (spec dados-na-nuvem): nenhum plano promete uso sem internet', () => {
