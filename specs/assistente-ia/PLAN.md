@@ -233,3 +233,14 @@ R9. Os B1 (R9) e B2 (D-1360) só mudam a spec. Uma tarefa por commit, em TDD; as
 | T46 — B7: o erro numa região que já existe | `src/ui/ia/ErroDaIa.tsx`, `GavetaIa.tsx`, `AssistenteDaIa.tsx` (+ testes) | CA-2410 |
 | T47 — B8: o e2e do CA-2403 | `e2e/servidor-falso/ia.spec.ts` | CA-2403 |
 | T48 — Recomendações leves | `src/ui/ia/AssistenteDaIa.tsx` ("Gerar de novo" confere de novo, botão neutro, proposta vazia), `e2e/servidor-falso/ia.spec.ts` (360 px) (+ testes) | CA-2414, CA-2415, CA-2381 |
+
+### 10.1 Andamento da rodada 1 (10/11/2026)
+
+Feito, um commit por tarefa, de T38 a T48. O que mudou em relação à tabela, ao implementar:
+
+- **T41 e T44.** O aviso da espera (`anuncioDaEspera`) e o motivo do "Sugerir ajustes" (`motivoDoAdequar`) moram em
+  `src/domain/iaGaveta.ts`: o arquivo do componente só exporta componentes (regra do `react-refresh`), e a regra pura
+  ganha teste próprio.
+- **T45.** `lerMetaDaGaveta`, `metaNaTela` e `novaMetaManual` em `iaGaveta.ts`, no lugar do `metaDoTexto` do componente.
+- **T48 antes do T47**, para o e2e rodar uma vez só. O e2e (T47) cobre também, no app de verdade, o CA-2406, o
+  CA-2407, o CA-2408 e o CA-2411, e o CA-2381 passa a 360 px no mesmo commit.

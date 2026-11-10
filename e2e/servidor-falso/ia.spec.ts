@@ -2,8 +2,8 @@
 // CA-2381). A API da Anthropic nunca é chamada: o servidor falso responde pelo endereço do Supabase de teste.
 import { expect, test, type Page } from '@playwright/test'
 import { semRolagemLateral } from '../apoio/fumaca.ts'
-import { CASO_IA, CASO_IA_CHEIO, copiaDaContaComIa } from '../apoio/respostasIa.ts'
-import { ligarServidorFalso, PERFIL_NUTRICIONISTA, type Cenario, type ServidorFalso } from '../apoio/servidorFalso.ts'
+import { CASO_IA, CASO_IA_CHEIO, copiaDaContaComIa, PACIENTE_IA } from '../apoio/respostasIa.ts'
+import { ENDERECO_FALSO, ligarServidorFalso, PERFIL_NUTRICIONISTA, type Cenario, type ServidorFalso } from '../apoio/servidorFalso.ts'
 
 test.use({ reducedMotion: 'reduce' })
 
@@ -109,8 +109,8 @@ test('CA-2370 a CA-2372: o adequar mostra o efeito, o "Vai para …" no plano, a
   await expect(page.getByText(/^\d+ mudanças aplicadas\.$/)).toBeVisible()
 })
 
-test('CA-2381: em 390 px, a gaveta é a folha de baixo, nada rola para o lado e os botões cabem', async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 })
+test('CA-2381: em 360 px, a gaveta é a folha de baixo, nada rola para o lado e os botões cabem', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 740 })
   await abrirPlano(page)
   await page.getByRole('button', { name: 'Sugerir plano com IA' }).click()
   const folha = page.getByRole('dialog', { name: 'Sugerir plano com IA' })
@@ -121,7 +121,103 @@ test('CA-2381: em 390 px, a gaveta é a folha de baixo, nada rola para o lado e 
   expect(caixa).not.toBeNull()
   if (caixa) {
     expect(caixa.x).toBeGreaterThanOrEqual(0)
-    expect(caixa.x + caixa.width).toBeLessThanOrEqual(390)
+    expect(caixa.x + caixa.width).toBeLessThanOrEqual(360)
     expect(caixa.height).toBeGreaterThanOrEqual(44)
   }
+})
+
+/** A ficha da Camila na cópia da conta que subiu (a que a função lê). */
+function fichaDaCamila(gravacao: unknown): { readonly consentimentoIa: unknown } | undefined {
+  const dados = (gravacao as { dados?: { dados?: Record<string, string> } } | null)?.dados?.dados?.['metanutri:pacientes'] ?? '[]'
+  return (JSON.parse(dados) as { id: string; consentimentoIa: unknown }[]).find((p) => p.id === PACIENTE_IA)
+}
+
+test('CA-2403: a autorização ligada agora na gaveta sobe na cópia da conta antes do pedido à função', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  const servidor = await abrirPlano(page, { copia: copiaDaContaComIa({ semAutorizacao: true }) })
+  let naHoraDoPedido: unknown = null
+  await page.route(`${ENDERECO_FALSO}/functions/v1/sugerir-plano`, async (route) => {
+    if ((route.request().postDataJSON() as Record<string, unknown>)['modo'] !== 'uso') naHoraDoPedido = servidor.gravacoesDaCopia.at(-1) ?? null
+    await route.fallback()
+  })
+  await page.getByRole('button', { name: 'Sugerir plano com IA' }).click()
+  const g = gaveta(page)
+  await expect(g.getByRole('button', { name: 'Sugerir plano' })).toBeDisabled()
+  await g.getByRole('switch', { name: 'Paciente autorizou o uso de IA' }).click()
+  await g.getByRole('button', { name: 'Sugerir plano' }).click()
+  await expect(g.getByRole('group', { name: 'Totais calculados pelo app' })).toBeVisible()
+  expect(fichaDaCamila(naHoraDoPedido)?.consentimentoIa).toMatchObject({ versao: 'ia-1' })
+})
+
+test('CA-2403: sem conseguir mandar a cópia, a gaveta diz a frase de sem conexão e nada é pedido', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  const servidor = await abrirPlano(page, { copia: copiaDaContaComIa({ semAutorizacao: true }) })
+  // A nuvem recusa gravar a cópia; a leitura continua.
+  await page.route(`${ENDERECO_FALSO}/rest/v1/copias**`, (route) =>
+    route.request().method() === 'GET' ? route.fallback() : route.fulfill({ status: 503, contentType: 'application/json', body: '{"message":"indisponivel"}' }),
+  )
+  await page.getByRole('button', { name: 'Sugerir plano com IA' }).click()
+  const g = gaveta(page)
+  await g.getByRole('switch', { name: 'Paciente autorizou o uso de IA' }).click()
+  await g.getByRole('button', { name: 'Sugerir plano' }).click()
+  await expect(g.getByText('Não foi possível falar com o servidor. Confira a internet e tente de novo.')).toBeVisible()
+  expect(servidor.pedidosDaIa.filter((p) => p['modo'] !== 'uso')).toEqual([])
+})
+
+test('CA-2406: a sugestão usada no plano da Camila não deixa a faixa nem o "Desfazer" no plano da Patrícia', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await abrirPlano(page)
+  await page.getByRole('button', { name: 'Sugerir plano com IA' }).click()
+  const g = gaveta(page)
+  await g.getByRole('button', { name: 'Sugerir plano' }).click()
+  await g.getByRole('button', { name: 'Usar como rascunho' }).click()
+  await g.getByRole('button', { name: 'Substituir' }).click()
+  await expect(page.getByText('Sugestão da IA no plano, como rascunho.')).toBeVisible()
+  // Como o histórico do navegador ou o endereço digitado: de um plano direto para o outro, sem passar por outra tela.
+  await page.evaluate((id) => (location.hash = `#/caso/${id}/plano`), CASO_IA_CHEIO)
+  await expect(page.getByRole('button', { name: 'Adequar com IA' })).toBeVisible()
+  await expect(page.getByText('Sugestão da IA no plano, como rascunho.')).toBeHidden()
+  await expect(page.getByRole('button', { name: 'Desfazer' })).toBeHidden()
+})
+
+test('CA-2407: em 1024 px, a gaveta abre abaixo dos botões e acima das refeições, com o foco no título', async ({ page }) => {
+  await page.setViewportSize({ width: 1024, height: 800 })
+  await abrirPlano(page)
+  const botao = page.getByRole('button', { name: 'Sugerir plano com IA' })
+  await botao.click()
+  const g = page.getByRole('complementary', { name: 'Sugerir plano com IA' })
+  await expect(g).toBeVisible()
+  await expect(g.getByRole('heading', { name: 'Sugerir plano com IA' })).toBeFocused()
+  await expect(botao).toBeInViewport()
+  const caixaDoBotao = await botao.boundingBox()
+  const caixaDaGaveta = await g.boundingBox()
+  const caixaDaRefeicao = await page.getByRole('textbox', { name: /^Nome da refeição / }).first().boundingBox()
+  expect(caixaDoBotao && caixaDaGaveta && caixaDaRefeicao).toBeTruthy()
+  if (caixaDoBotao && caixaDaGaveta && caixaDaRefeicao) {
+    expect(caixaDaGaveta.y).toBeGreaterThanOrEqual(caixaDoBotao.y + caixaDoBotao.height)
+    expect(caixaDaRefeicao.y).toBeGreaterThanOrEqual(caixaDaGaveta.y + caixaDaGaveta.height)
+  }
+  await page.keyboard.press('Tab')
+  expect(await page.evaluate(() => !!document.activeElement?.closest('aside'))).toBe(true)
+})
+
+test('CA-2408 e CA-2411: em 360 px, a chave acerta o toque em 44 px e o Esc devolve o foco ao botão', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 740 })
+  await abrirPlano(page, { copia: copiaDaContaComIa({ semAutorizacao: true }) })
+  const botao = page.getByRole('button', { name: 'Sugerir plano com IA' })
+  await botao.click()
+  const folha = page.getByRole('dialog', { name: 'Sugerir plano com IA' })
+  const chave = folha.getByRole('switch', { name: 'Paciente autorizou o uso de IA' })
+  await chave.scrollIntoViewIfNeeded()
+  const caixa = await chave.boundingBox()
+  expect(caixa).not.toBeNull()
+  if (caixa) {
+    // D-802: a área de toque passa da caixa desenhada; 20 px acima do centro (44 px de altura) ainda é a chave.
+    const centro = { x: caixa.x + caixa.width / 2, y: caixa.y + caixa.height / 2 }
+    const acima = await page.evaluate(({ x, y }) => document.elementFromPoint(x, y - 20)?.getAttribute('role') ?? '', centro)
+    expect(acima).toBe('switch')
+  }
+  await page.keyboard.press('Escape')
+  await expect(folha).toBeHidden()
+  await expect(botao).toBeFocused()
 })
