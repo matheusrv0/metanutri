@@ -369,6 +369,10 @@ enorme, avaliação vazia, 350 kg e dobra de 90 mm, duas avaliações no mesmo d
 gestante e diagnóstico longo, em 360, 390 e 1440 px. Os achados viraram CB-1454 e CB-1455. Falta a F2 (T21 a T25) e a
 T26.
 
+**Correções da revisão r2 da F2 (10/11/2026, ramo `antropometria-fotos`):** R18 a R20 feitas, um commit cada, depois do
+commit `docs` das decisões (D-1546 a D-1549). B2 ficou como risco aceito (D-1549, R-AT-7), sem código. O 018 mudou: o
+dono roda de novo o 018 inteiro no SQL Editor antes de publicar.
+
 **Correções da revisão r1 da F2 (10/11/2026, ramo `antropometria-fotos`):** R10 a R17 feitas, um commit cada, depois
 do commit `docs` das decisões (D-1530 a D-1538). O R14 também corrigiu o comentário do `nome` em `src/domain/tipos.ts`
 (o anexo leva o nome neutro), e o R15 ganhou o teste da porta (`src/ui/antropometria/armazenamentoDeFotos.test.ts`).
@@ -423,3 +427,11 @@ CB-1471 em `src/ui/casos/TelaCasos.test.tsx`, `pacientes.test.tsx` e `armazename
 `fotosDaAvaliacao.test.ts` e `fotos.test.tsx`; CB-1473 em `sqlFotosAvaliacao.test.ts` e `testes/seguranca/fotos.test.ts`;
 CB-1474 em `fotosDaAvaliacao.test.ts`, `fotos.test.tsx` e o e2e; CB-1475 em `fotos.test.tsx`. D-1537 (o cache) é texto, sem
 teste.
+
+Revisão r2 da F2: CB-1496 em `src/data/sqlFotosAvaliacao.test.ts` (o código 53100 no gatilho),
+`testes/seguranca/fotos.test.ts` (a conta com 500 MB e com 2.000 arquivos recebe "code: 53100"; o plano cheio, "code:
+23514"), `armazenamentoDeFotos.test.ts` (a porta lê "code: 53100" como conta cheia), `fotosDaAvaliacao.test.ts` e
+`fotos.test.tsx` (a frase, na foto e no anexo); CB-1497 e CB-1415 em `armazenamentoDeFotos.test.ts` (401, 403 e
+`InvalidJWT` são a sessão; 23514, 5xx, 404 e 415, a recusa genérica), `testes/seguranca/fotos.test.ts` (o token
+recusado volta como sessão), `fotosDaAvaliacao.test.ts` e `fotos.test.tsx`; CB-1498 em `fotos.test.tsx`. D-1549 (o TUS
+pela metade) é risco aceito, sem teste.
