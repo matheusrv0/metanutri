@@ -26,11 +26,14 @@ export function ListaDeAnexos({ anexos, aoAbrir, aoExcluir }: ListaDeAnexosProps
   return (
     <ul aria-label="Anexos" className="flex flex-col">
       {anexos.map((anexo) => (
-        <li key={anexo.id} className="flex min-h-11 flex-wrap items-center gap-x-2.5 gap-y-0.5 border-t border-border py-1 first:border-t-0">
+        <li key={anexo.id} className="flex min-h-11 items-center gap-x-2.5 border-t border-border py-1 first:border-t-0">
           <FileText className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-          <span className="min-w-0 flex-1 break-words text-sm text-foreground">{anexo.nome}</span>
-          <span className="numeros text-xs text-muted-foreground">{[diaDoEnvio(anexo.enviadoEm), textoDoTamanho(anexo.bytes)].filter(Boolean).join(' · ')}</span>
-          <span className="flex items-center">
+          {/* O nome em cima e o dia e o tamanho embaixo: em 360 px, numa linha só, o nome ficava espremido. */}
+          <span className="flex min-w-0 flex-1 flex-col leading-snug">
+            <span className="break-words text-sm text-foreground">{anexo.nome}</span>
+            <span className="numeros text-xs text-muted-foreground">{[diaDoEnvio(anexo.enviadoEm), textoDoTamanho(anexo.bytes)].filter(Boolean).join(' · ')}</span>
+          </span>
+          <span className="flex shrink-0 items-center">
             <Button variant="link" size="sm" className="px-2" aria-label={`Abrir ${anexo.nome}`} onClick={() => aoAbrir(anexo)}>
               Abrir
             </Button>

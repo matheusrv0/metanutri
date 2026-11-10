@@ -187,6 +187,9 @@ for (const [nome, viewport, toque] of [
       // CB-1474 e D-1536: o anexo leva o nome neutro, com o dia do envio; o nome do arquivo não aparece.
       await expect(cartao.getByRole('list', { name: 'Anexos' }).getByText('anexo-1.pdf')).toBeVisible()
       await expect(cartao.getByText('bioimpedancia-03-11-2026.pdf')).toHaveCount(0)
+      // O nome cabe numa linha, com o dia e o tamanho embaixo (em 390 px, na mesma linha, ele ficava espremido).
+      const caixaDoNome = await cartao.getByRole('list', { name: 'Anexos' }).getByText('anexo-1.pdf').boundingBox()
+      expect(caixaDoNome?.height ?? 99).toBeLessThan(30)
       expect([...servidor.arquivos.keys()].filter((c) => c.startsWith(`${CONTA}/${id}/anexos/`) && c.endsWith('.pdf'))).toHaveLength(1)
 
       // CB-1467 e D-1530: a foto do celular escolhida como anexo, com GPS e aparelho no EXIF, entra como foto "Outra",
