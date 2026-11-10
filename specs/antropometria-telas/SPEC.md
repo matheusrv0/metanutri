@@ -224,6 +224,25 @@ A revisão r2 aprovou a F1 com dois achados baixos (B1-r2 e B2-r2) e uma recomen
 | D-1501 | **A meta de perda pelo sexo** (B2-r2; completa a D-1527): "Idosa com IMC de 22 ou menos...", "Idosa com IMC na faixa de referência..." e "Idosa com IMC de 27 a 29,99: a ESPEN..." numa mulher; "Idoso ..." num homem. A meta só sai com sexo (a prioridade pede o sexo) | Contrato do dono; CB-1411 |
 | D-1502 | **Data local no gráfico de peso da ficha**: plano sem data da consulta usa o dia da última alteração no relógio de quem usa (`diaLocal`), como a D-1528 | Depois das 21h de Brasília, o UTC já é o dia seguinte |
 
+### Fotos e anexos: decisões da implementação (D-1503 a D-1513, 10/11/2026)
+
+Tomadas no "apenas faça", pelo pedido do dono ("fotos e anexos, com Comparar fotos", como no Dietbox), pelo CFN 599
+(art. 58) e pela LGPD.
+
+| # | Decisão | Motivo |
+|---|---|---|
+| D-1503 | **Excluir o paciente apaga as fotos e os anexos das avaliações dele** (os arquivos, a lista e a data da autorização); os planos continuam, como hoje. O cartão "Excluir paciente" diz: "Os planos continuam salvos, mas perdem o vínculo com esta ficha. As fotos e os anexos das avaliações são apagados." Melhor esforço, como o plano (DP-AT-14): arquivo que não sair fica até a exclusão da conta, que limpa a pasta inteira. Revê a parte do paciente na DP-AT-14 | Pedido do dono (a exclusão do paciente e da conta apaga as fotos); sem paciente, o cartão não aparece (D-1459): a foto ficaria guardada sem ninguém ver nem apagar; LGPD art. 18 |
+| D-1504 | **O limite do servidor não tem corrida.** A função da política confere o caminho inteiro (`<conta>/<plano>/fotos/<uuid>.jpg` ou `<conta>/<plano>/anexos/<uuid>.<pdf, jpg ou png>`), trava a pasta da conta até o fim do envio (`pg_advisory_xact_lock`) e só depois conta (5 fotos e 10 anexos por plano, 2.000 arquivos por conta). Nenhuma conta troca nem move arquivo: não há política de alteração | CB-1416: duas abas enviando juntas não passam de 5 fotos |
+| D-1505 | **A recusa do servidor é lida pela pasta.** Recusado o envio, o app conta os arquivos da pasta do plano: com 5 fotos, "Já há 5 fotos nesta avaliação."; com 10 anexos, "Já há 10 anexos nesta avaliação."; senão (ou sem conseguir contar), "Entre de novo para enviar fotos." (no anexo, "Entre de novo para enviar anexos."). Sem resposta do servidor: "A foto não subiu. Confira a internet e tente de novo." (no anexo, "O anexo não subiu. Confira a internet e tente de novo.") | CB-1413, CB-1415 e CB-1416; a mesma ideia do comprovante (D-111) |
+| D-1506 | **Tamanhos.** 1 MB = 1024 × 1024 bytes: o teto da avaliação e o do balde são 8 MB (8.388.608 bytes) e o da foto enviada, 20 MB. Abaixo de 1 MB, o tamanho sai em KB inteiros ("412 KB"); de 1 MB em diante, em MB com 1 casa ("1,1 MB"). A barra: "3,7 de 8 MB usados" | O mesmo número no app e no servidor |
+| D-1507 | **Foto que não abre** (JPEG ou PNG sem os lados no cabeçalho, ou que o navegador não desenha): "Não foi possível ler esta foto. Use JPG ou PNG." e nada sobe. A foto PNG também vira JPEG, com fundo branco no lugar da transparência | D-1453: a foto guardada é sempre JPEG |
+| D-1508 | **Texto pelo sexo da ficha:** "A paciente autorizou fotos para o prontuário", "O paciente autorizou..." ou, sem sexo, "A pessoa autorizou..."; o mesmo em "Marque a autorização da paciente para adicionar fotos." e no lembrete do art. 58 ("nem com autorização da paciente") | D-1450; CB-1411 (nenhum rótulo assume sexo) |
+| D-1509 | **O ângulo da foto nova** é a escolha "Ângulo" ao lado de "Adicionar foto" (Frente, Lado, Costas, Outra), já no primeiro de Frente, Lado e Costas que a avaliação não tem; com os três, Outra. Excluir pede confirmação: "Excluir a foto de frente?" (no anexo, "Excluir “nome”?") e "A foto sai do prontuário e do armazenamento. Não é possível desfazer." (no anexo, "O anexo sai...") | D-1454; CA-50 (excluir sempre confirma) |
+| D-1510 | **Comparar fotos.** A avaliação de antes é a mais recente anterior à aberta, na ordem do Histórico (D-1404), com pelo menos uma foto. O seletor começa no primeiro ângulo que as duas têm (senão, Frente). As diferenças vêm da comparação do documento (D-1494), só Peso, Cintura e a soma das dobras: "−1,1 kg" e "72,6 → 71,5 kg · dentro do erro de medida"; linha sem as duas medidas não aparece | D-1455 e D-1427: a leitura da MMD é a mesma do Histórico e do documento |
+| D-1511 | **Anexos:** até 10 por avaliação; com 10, "Adicionar arquivo" fica desligado e a frase "10 de 10 anexos." aparece. Cada anexo tem "Abrir" (numa aba nova, pela URL assinada) e "Excluir". O anexo não depende da autorização de fotos | D-1456 e D-1457 |
+| D-1512 | **Plano sem paciente** não mostra o cartão (D-1459), também com nuvem; **plano com paciente, sem nuvem**, mostra a frase do modo local | D-1459 |
+| D-1513 | **A foto não fica no aparelho:** a URL assinada vale 10 minutos, o arquivo sobe com `Cache-Control: max-age=0`, o service worker não guarda nada do Supabase e a cópia da conta só leva a lista (caminho, ângulo, tamanho, data) | Dado sensível de saúde (LGPD art. 11); computador dividido no consultório |
+
 ## 3. Critérios de aceite
 
 ### Lugar e navegação
@@ -621,6 +640,15 @@ Os casos que provam as decisões D-1520 a D-1529.
   de 22 ou menos..."; com IMC de 27 a 29,99, o aviso "Idosa com IMC de 27 a 29,99: a ESPEN...". No homem, "Idoso".
 - **CB-1462** · **Gráfico de peso da ficha às 21h30 de Brasília** (D-1502): o plano sem data da consulta alterado às 21h30
   de 03/11 (00h30 UTC de 04/11) vira ponto de 03/11.
+
+### Fotos e anexos: casos da implementação (CB-1463 a CB-1466, 10/11/2026)
+
+- **CB-1463** · **PNG com transparência** como foto: sobe como JPEG, com fundo branco (D-1507).
+- **CB-1464** · **Paciente excluído com fotos** (D-1503): os arquivos das avaliações dele saem do balde; os planos ficam,
+  sem fotos, sem anexos e sem a data da autorização.
+- **CB-1465** · **Foto com GPS e aparelho no EXIF** (D-1453): o arquivo que sobe não tem o bloco EXIF (nem o APP1).
+- **CB-1466** · **Comparar fotos sem a foto do ângulo na avaliação aberta**: "Sem foto de costas em 03/11/2026." no
+  quadro dela, e a de antes aparece.
 
 ## 5. O que fica para a Mor e para o dono
 

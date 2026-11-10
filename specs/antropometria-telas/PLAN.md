@@ -1,7 +1,7 @@
 # PLAN — Antropometria completa: as telas
 
 **Spec de origem:** `./SPEC.md` (D-1400 a D-1460, CA-2400 a CA-2491, CB-1400 a CB-1417; correções da revisão r1:
-D-1520 a D-1529 e CB-1480 a CB-1489; da revisão r2: D-1500 a D-1502 e CB-1460 a CB-1462).
+D-1520 a D-1529 e CB-1480 a CB-1489; da revisão r2: D-1500 a D-1502 e CB-1460 a CB-1462; da implementação da F2: D-1503 a D-1513 e CB-1463 a CB-1466).
 **Motor:** `specs/antropometria-completa/` (D-1000 a D-1042), na `main` desde o 8a96bc8.
 **Protótipo aprovado:** `AvaliacaoAntropometrica.dc.html`, `HistoricoAntropometrico.dc.html` e
 `DocumentoAvaliacao.dc.html` (canvas "MetaNutri Redesenho", 03/11/2026).
@@ -129,9 +129,9 @@ LEIA-ME (DP-AT-9). Na tela, um componente por arquivo, em `src/ui/antropometria/
 | T20 | Ponta a ponta da F1 | `e2e/antropometria.spec.ts` (1440 e 390 px) | CA-2400, CA-2410, CA-2421, CA-2430, CA-2449, CA-2457, CA-2470, CA-2471 | T19 |
 | T21 | Fotos: o domínio | `src/domain/fotosDaAvaliacao.ts` (+ teste) | CA-2481 a CA-2484 (lógica) | T4 |
 | T22 | SQL 018 e ataques | `supabase/018-fotos-avaliacao.sql`, `src/data/sqlFotosAvaliacao.test.ts`, `testes/seguranca/fotos.test.ts`, `preparo.ts`, `tabelas.test.ts` | CA-2488 | T21 |
-| T23 | Exclusão das fotos | `supabase/functions/_shared/exclusaoSupabase.ts`, `excluirConta.ts` (comentário), `src/data/servidorExcluirLigacao.test.ts`, `testes/seguranca/exclusao.test.ts`, `src/ui/casos/DialogoExcluir.tsx` | CA-2489 | T22 |
+| T23 | Exclusão das fotos | `supabase/functions/_shared/exclusaoSupabase.ts`, `excluirConta.ts` (comentário), `src/data/servidorExcluirLigacao.test.ts`, `testes/seguranca/exclusao.test.ts`, `src/ui/antropometria/armazenamentoDeFotos.ts` (a porta e o contexto), `src/ui/casos/TelaCasos.tsx` (o plano), `src/ui/pacientes/TelaPaciente.tsx` (o paciente, D-1503) (+ testes) | CA-2489, CB-1464 | T22 |
 | T24 | CSP | `src/seguranca/csp.ts`, `csp.test.ts` | CA-2491 | T2 |
-| T25 | Fotos e anexos: a tela | `CartaoFotos.tsx`, `ListaDeFotos.tsx`, `CompararFotos.tsx`, `ListaDeAnexos.tsx`, `armazenamentoDeFotos.ts`, `reduzirFoto.ts` (+ testes) | CA-2480 a CA-2487, CA-2490, CB-1413 a CB-1416 | T21 a T24 |
+| T25 | Fotos e anexos: a tela | `CartaoFotos.tsx`, `ListaDeFotos.tsx`, `QuadroDaFoto.tsx`, `CompararFotos.tsx`, `ListaDeAnexos.tsx`, `armazenamentoDeFotos.ts`, `reduzirFoto.ts`, `VistaAvaliacao.tsx` e `TelaAntropometria.tsx` (o cartão no lugar do protótipo), `e2e/apoio/servidorFalso.ts` (o armazenamento falso) e `e2e/servidor-falso/fotos-avaliacao.spec.ts` (+ testes) | CA-2480 a CA-2487, CA-2490, CB-1413 a CB-1416, CB-1463, CB-1465, CB-1466, D-1503 a D-1513 | T21 a T24 |
 | R1 | Revisão r1, M1 e B4: a suprailíaca da etapa 1 e a marcada | `src/domain/protocolosDeDobras.ts` (`dobrasUsadas`), `composicao.ts`, `documentoDaAvaliacao.ts`, `src/ui/caso/CamposComposicao.tsx`, `src/ui/antropometria/textosDaAvaliacao.ts` (+ testes) | CB-1480 a CB-1482, D-1520, D-1521 | T20 |
 | R2 | Revisão r1, M2 e B3: as faixas da etapa 1 na tela nova, zero e negativo | `src/domain/caso.ts` (`erroDaFaixa`, `casoNasFaixas`), `historicoAntropometrico.ts`, `CampoMedida.tsx`, `CartaoPesoEstatura.tsx`, `CartaoCircunferencias.tsx`, `LinhaDeMedida.tsx`, `PainelEstimar.tsx`, `TelaAntropometria.tsx` (+ testes) | CB-1483 a CB-1485, D-1522 a D-1525 | T20 |
 | R3 | Revisão r1, B1: a primeira e a atual no Histórico do celular | `TabelaAvaliacoes.tsx` (+ teste; e2e em 390 px) | CB-1486, D-1526 | T20 |
@@ -233,6 +233,24 @@ ver resultado, histórico e documento). Prints em `scratchpad/antropometria-tela
 
 Domínio com tipo pelo conteúdo, lados pelo cabeçalho (JPEG SOF, PNG IHDR), limites, caminhos e comparação. SQL 018 com
 balde, políticas e contagem; ataques no Supabase local. Exclusão na função e no plano. CSP. A tela.
+
+- **T21** · `fotosDaAvaliacao.ts` reusa `tipoPeloConteudo` e `ladosPeloCabecalho` de `logoDaMarca.ts` (o mesmo leitor de
+  cabeçalho da marca) e acrescenta o PDF. A porta do armazenamento (`ArmazenamentoDeFotos`) e o desenhista da foto
+  (`DesenhistaDeFoto`) são interfaces do domínio; o envio (`enviarFoto`, `enviarAnexo`) decide a frase de cada recusa
+  (D-1505) com uma porta falsa no teste.
+- **T22** · O balde `fotos-avaliacao` (privado, 8 MB, JPEG, PNG e PDF), a função `pode_enviar_arquivo_da_avaliacao`
+  (`security definer`, D-1504) e as três políticas (enviar, ler, apagar); sem política de alteração. Teste de texto em
+  `src/data/sqlFotosAvaliacao.test.ts` e ataques em `testes/seguranca/fotos.test.ts` (a conta B, o anônimo, o tipo, o
+  tamanho, a 6ª foto, o 11º anexo, o caminho fora do formato, duas abas ao mesmo tempo).
+- **T23** · `apagarArquivos` da `excluir-conta` passa pelos dois baldes. O plano excluído em "Planos" e o paciente
+  excluído (D-1503) apagam a pasta do plano pela porta, depois de sair do aparelho (melhor esforço).
+- **T24** · `img-src` com a origem do Supabase do build; sem Supabase, nada.
+- **T25** · A porta de verdade (`armazenamentoDeFotos.ts`, com o supabase-js) e o desenhista (`reduzirFoto.ts`:
+  `createImageBitmap` com `imageOrientation: 'from-image'`, `<canvas>` com fundo branco, `toBlob('image/jpeg', 0.85)`)
+  chegam à tela por um contexto (`ContextoDasFotos`); o teste de componente passa uma porta falsa, e sem servidor a
+  porta é nula (modo local). Os quadros pedem a URL assinada de 10 minutos e pedem de novo uma vez quando a imagem
+  falha (CB-1414). O e2e roda no app com o servidor falso, que ganha o armazenamento (enviar, assinar, baixar, listar,
+  apagar), em 1440 e 390 px, e confere que o arquivo enviado não tem EXIF (CB-1465).
 
 ### R1 a R6 · Correções da revisão r1 (04/11/2026)
 
