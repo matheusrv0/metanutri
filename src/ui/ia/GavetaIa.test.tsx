@@ -18,3 +18,10 @@ describe('GavetaIa (spec assistente-ia, D-1302 e D-1350)', () => {
     expect(screen.getByRole('dialog', { name: 'Adequar com IA' })).toHaveTextContent('rodapé')
   })
 })
+
+describe('GavetaIa: o foco ao abrir (CA-2407, D-1357)', () => {
+  it.each(['lado', 'fluxo'] as const)('em "%s", o título recebe o foco ao abrir', (lugar) => {
+    render(<GavetaIa titulo="Sugerir plano com IA" lugar={lugar} aoFechar={vi.fn()} corpo={<p>corpo</p>} rodape={<p>rodapé</p>} />)
+    expect(document.activeElement).toBe(screen.getByRole('heading', { name: 'Sugerir plano com IA' }))
+  })
+})

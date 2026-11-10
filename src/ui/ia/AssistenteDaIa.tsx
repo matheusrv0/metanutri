@@ -499,7 +499,13 @@ export function AssistenteDaIa(p: AssistenteDaIaProps) {
   const vaiParaTextos = mudancas && lugar !== null ? textosDoVaiPara(mudancas, recusadas, buscarAlimento) : null
   const extras: ExtrasDoPlano = {
     ferramentas: (modelos) => <BotoesDaIa modelos={modelos} podeAdequar={temItens(plano)} motivo={motivoDoBotao} aberta={aberta} aoAbrir={abrir} />,
-    topo: desfazer && desfazer.dono === dono ? <FaixaDaIa texto={desfazer.texto} aoDesfazer={desfazerAgora} /> : null,
+    // D-1357: de 640 a 1180 px, a gaveta entra logo abaixo da linha dos botões, acima da faixa e das refeições.
+    topo: (
+      <>
+        {lugar === 'fluxo' ? gaveta : null}
+        {desfazer && desfazer.dono === dono ? <FaixaDaIa texto={desfazer.texto} aoDesfazer={desfazerAgora} /> : null}
+      </>
+    ),
     vaiPara: vaiParaTextos
       ? (refeicao, opcao, item) => (opcao === 'substituto2' ? null : (vaiParaTextos.get(chaveDoItem(refeicao, opcao === 'principal' ? 'principal' : 'opcao2', item)) ?? null))
       : undefined,
@@ -507,7 +513,6 @@ export function AssistenteDaIa(p: AssistenteDaIaProps) {
 
   return (
     <div className={cn('grid grid-cols-[minmax(0,1fr)] gap-6', lugar === 'lado' ? 'grid-cols-[minmax(0,1fr)_500px]' : 'xl:grid-cols-[minmax(0,1fr)_360px]')}>
-      {lugar === 'fluxo' ? gaveta : null}
       {p.conteudo(extras)}
       {lugar === 'lado' ? gaveta : p.lateral}
       {lugar === 'folha' ? gaveta : null}

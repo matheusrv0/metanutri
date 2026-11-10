@@ -320,3 +320,26 @@ describe('AssistenteDaIa: o estado de um plano só (CA-2406, D-1356)', () => {
     expect(screen.getByTestId('origemB').textContent).toBe('null')
   })
 })
+
+describe('AssistenteDaIa: a gaveta no fluxo, de 640 a 1180 px (CA-2407, D-1357)', () => {
+  // Sem `matchMedia` (o jsdom), a tela vale como a do meio: a gaveta fica no fluxo da página.
+  const depois = (a: Element, b: Element) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0
+
+  it('CA-2407: a gaveta entra entre a linha de "Modelos de plano" e as refeições, e o foco vai ao título dela', async () => {
+    montar()
+    const botao = screen.getByRole('button', { name: 'Sugerir plano com IA' })
+    await userEvent.setup().click(botao)
+    const gaveta = screen.getByRole('complementary', { name: 'Sugerir plano com IA' })
+    expect(depois(screen.getByRole('button', { name: 'Adequar com IA' }), gaveta)).toBe(true)
+    expect(depois(gaveta, screen.getByRole('textbox', { name: 'Nome da refeição Café da manhã' }))).toBe(true)
+    expect(document.activeElement).toBe(within(gaveta).getByRole('heading', { name: 'Sugerir plano com IA' }))
+  })
+
+  it('CA-2407: do título, o Tab entra na gaveta, e não nas refeições', async () => {
+    const usuario = userEvent.setup()
+    montar()
+    await usuario.click(screen.getByRole('button', { name: 'Sugerir plano com IA' }))
+    await usuario.tab()
+    expect(screen.getByRole('complementary', { name: 'Sugerir plano com IA' }).contains(document.activeElement)).toBe(true)
+  })
+})

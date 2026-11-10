@@ -1,12 +1,12 @@
 import { X } from 'lucide-react'
-import { useId, type ReactNode } from 'react'
+import { useEffect, useId, useRef, type ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { Sheet, SheetContent, SheetTitle } from '@ds/componentes/overlay/sheet.tsx'
 
 /**
- * Onde a gaveta mora (spec assistente-ia, D-1302 e D-1350): ao lado do plano a partir de 1180 px, no fluxo da página
- * (acima das refeições) de 640 a 1180 px, e na folha de baixo do sistema abaixo de 640 px. Nada flutua por cima do
+ * Onde a gaveta mora (spec assistente-ia, D-1302, D-1350 e D-1357): ao lado do plano a partir de 1180 px, no fluxo da
+ * página (logo abaixo da linha de "Modelos de plano", acima das refeições) de 640 a 1180 px, e na folha de baixo do sistema abaixo de 640 px. Nada flutua por cima do
  * conteúdo fora da folha, que é um diálogo.
  */
 export type LugarDaGaveta = 'lado' | 'fluxo' | 'folha'
@@ -19,9 +19,16 @@ interface GavetaIaProps {
   readonly rodape: ReactNode
 }
 
-/** D-1302: o título é o nome do botão que a abriu; o rodapé fica fixo embaixo, com a ação, o motivo e o contador. */
+/**
+ * D-1302: o título é o nome do botão que a abriu; o rodapé fica fixo embaixo, com a ação, o motivo e o contador. Ao lado
+ * e no fluxo, o foco vai ao título quando ela abre (D-1357); a folha é um diálogo e leva o foco sozinha.
+ */
 export function GavetaIa({ titulo, lugar, aoFechar, corpo, rodape }: GavetaIaProps) {
   const idTitulo = useId()
+  const refTitulo = useRef<HTMLHeadingElement>(null)
+  useEffect(() => {
+    refTitulo.current?.focus()
+  }, [titulo])
 
   if (lugar === 'folha') {
     return (
@@ -43,7 +50,7 @@ export function GavetaIa({ titulo, lugar, aoFechar, corpo, rodape }: GavetaIaPro
       className={cn('flex min-w-0 flex-col rounded-xl border border-bordersubtle bg-card', lugar === 'lado' && 'self-start')}
     >
       <div className="flex items-center justify-between gap-3 border-b border-bordersubtle py-2 pl-5 pr-2">
-        <h2 id={idTitulo} className="text-base font-bold text-heading">
+        <h2 id={idTitulo} ref={refTitulo} tabIndex={-1} className="rounded-sm text-base font-bold text-heading outline-none focus-visible:ring-2 focus-visible:ring-ring">
           {titulo}
         </h2>
         <Button variant="ghost" size="iconsm" onClick={aoFechar} aria-label="Fechar">
