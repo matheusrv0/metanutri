@@ -244,3 +244,32 @@ Feito, um commit por tarefa, de T38 a T48. O que mudou em relação à tabela, a
 - **T45.** `lerMetaDaGaveta`, `metaNaTela` e `novaMetaManual` em `iaGaveta.ts`, no lugar do `metaDoTexto` do componente.
 - **T48 antes do T47**, para o e2e rodar uma vez só. O e2e (T47) cobre também, no app de verdade, o CA-2406, o
   CA-2407, o CA-2408 e o CA-2411, e o CA-2381 passa a 360 px no mesmo commit.
+
+## 11. Rodada de melhorias (16/11/2026)
+
+Saída da `main` 15715f95, no ar. Itens das revisões `revisao-ia-p2-r2` (baixos 1 e 2 e as leves), `revisao-ia-r3` (as
+leves) e `revisao-ia-r2` (as recomendações 1, 4 e 5; a 2 já é o D-1348 e a 3, o D-1343). Decisões D-1366 a D-1375,
+testes CA-2416 a CA-2427 e CB-1322. Uma tarefa por commit, em TDD. Nenhum SQL: o banco não muda (D-1373 lê a tabela com
+a chave de serviço). As funções mudadas vão no relatório para o dono publicar.
+
+| Tarefa | Arquivos, na ordem | CA e CB |
+|---|---|---|
+| T49 — A sugestão espera pelo plano (baixo 1) | `src/ui/estado/memoriaDaAba.ts` (nova: a lembrança da aba, com o esquecer dos testes), `src/ui/estado/usarSugestaoIa.ts` (o estado pelo dono, fora do componente), `src/ui/ia/AssistenteDaIa.tsx` (o pedido e a gaveta lembrados), `src/ui/ia/BotoesDaIa.tsx` (o foco do botão do modo aberto), `src/ui/conta/UsoDaIa.tsx`, `vitest.setup.ts` (esquece entre os testes), `e2e/servidor-falso/ia.spec.ts` (+ testes) | CA-2416, CA-2417, CB-1322 |
+| T50 — O "Desfazer" espera (E6) | `src/ui/ia/AssistenteDaIa.tsx` (+ teste) | CA-2418 |
+| T51 — Um pedido por vez (S2k) | `src/ui/estado/usarSugestaoIa.ts`, `src/ui/ia/AssistenteDaIa.tsx` (+ testes) | CA-2419 |
+| T52 — A frase do limite ao reabrir (baixo 2) | `src/ui/estado/usarSugestaoIa.ts` (`lerUso` devolve a promessa), `src/ui/ia/AssistenteDaIa.tsx` (+ teste) | CA-2420 |
+| T53 — O motivo do "Gerar de novo" (S7b) | `src/domain/iaGaveta.ts` (`motivoDoGerarDeNovo`), `src/ui/ia/AssistenteDaIa.tsx` (+ testes) | CA-2421, CA-2414 |
+| T54 — A chave no lugar (E7) e os 46 × 46 | `src/ui/ia/RodapeDaIa.tsx` (`reservarMotivo`), `src/ui/ia/AssistenteDaIa.tsx`, `src/ui/ia/AutorizacaoNaGaveta.tsx` (o comentário), `e2e/servidor-falso/ia.spec.ts` (+ testes) | CA-2422, CA-2411 |
+| T55 — "Meus alimentos": números antes do nome (r3, rec. 1) | `supabase/functions/_shared/iaContrato.ts` (`meuAlimento`), `src/data/servidorIaContrato.test.ts` | CA-2423, CA-2390 |
+| T56 — O teto vê as chamadas em andamento (r2, rec. 1; r3, rec. 2) | `supabase/functions/_shared/iaCusto.ts` (`custoMaximoDaChamada`), `_shared/iaPortas.ts` (`reservasEmAndamento`), `_shared/iaSupabase.ts`, `_shared/ia.ts`, `src/data/servidorIaFalsos.test-utils.ts`, `src/data/servidorIa.test.ts`, `src/data/servidorIaLigacao.test.ts`, `testes/seguranca/ia.test.ts` | CA-2424, CA-2425, CA-2310, CB-1303 |
+| T57 — Café e chás até uma caneca (r2, rec. 4) | `src/domain/iaConferencia.ts` (+ teste), `src/domain/iaMudancas.ts` (+ teste) | CA-2426 |
+| T58 — A leitura do corpo com prazo (r2, rec. 5) | `supabase/functions/_shared/corpo.ts` (prazo opcional), `supabase/functions/sugerir-plano/index.ts`, `src/data/servidorCorpo.test.ts`, `src/data/servidorIaLigacao.test.ts` | CA-2427 |
+
+Riscos e decisões para o dono revisar:
+
+- **DP-IA-13.** A lembrança da aba (D-1366) guarda dado do paciente só na memória da página, nunca no navegador nem na
+  nuvem; recarregar ou sair apaga.
+- **DP-IA-14.** O custo máximo de uma chamada (D-1373) usa o preço do modelo configurado; a troca automática para um
+  modelo mais caro no meio da chamada fica fora da conta (o teto pode passar por pouco mais que uma chamada).
+- **DP-IA-15.** A segunda conferência do teto (D-1373) gasta uma das 10 da hora quando barra: é o preço de não travar a
+  tabela.
