@@ -73,6 +73,14 @@ opção do item aparece embaixo dele no plano, na folha, no link e no Word.
 | T35 | A farinha de mandioca no grupo do arroz e da mandioca (B2) | `src/domain/grupoDeSubstituicao.ts` (o grupo `amido` e o "pronto por pronto"); testes: `src/domain/grupoDeSubstituicao.test.ts` e `trocaEquivalente.test.ts` (CA-2152 novo) | CA-2152 | T34 |
 | T36 | Os 44 px medidos com a gaveta parada (recomendação leve 1) | `e2e/busca-substitutos.spec.ts` (CA-2126 espera a animação de subida terminar antes de medir; o limite continua 44 px). O componente já tem `min-h-11` (44 px, valor inteiro): os 43,99997 px são erro de arredondamento da medida no meio da animação, e não altura do componente | CA-2126 | T35 |
 | T37 | Validação da rodada 4 | `npm run lint`, `npm run typecheck`, `npx vitest run --maxWorkers=4`; e2e `busca-substitutos`, `planejador` e `celular-planejador` (`--workers=2`, configuração normal, `trava-e2e`); `npm run build`; as sondas r2 (pelas cópias `r3-2` e `r3-4`), r3 e r4; a varredura da vista padrão (sem candidato, com 1 ou 2, e o macro trocado nos 6 primeiros das carnes e das castanhas) | todos | T36 |
+| T38 | Spec e plano da rodada de melhorias (16/11/2026) | `specs/busca-substitutos/SPEC.md` (D-1121, D-1125 d, D-1133, D-1134, D-1136, D-1137, seção 3, CA-2129, CA-2136, CA-2146, CA-2150, CA-2151 revistos; D-1139 a D-1143 e CA-2153 a CA-2158 novos; nota "Para a Mor"; seção 6), `PLAN.md` | — | T37 |
+| T39 | A regra (d) no derivado de soja (r5, B1; item 1) | `src/domain/grupoDeSubstituicao.ts` (exporta `ehDerivadoDeSoja`), `src/domain/buscaDeSubstitutos.ts` (`naTrocaEquivalente`: o teto da proteína também no tofu); testes: `src/domain/trocaEquivalente.test.ts` (CA-2153 novo; CA-2146, CA-2150 e CA-2151 passam a ler o tofu pela proteína; a fórmula do CA-2136 com a soja) | CA-2136, CA-2146, CA-2150, CA-2151, CA-2153 | T38 |
+| T40 | A regra (d) é uma faixa (r5, B2; item 2) | `src/domain/buscaDeSubstitutos.ts` (`naTrocaEquivalente`: o piso de 1/1,5); testes: `trocaEquivalente.test.ts` (CA-2154 novo; a fórmula do CA-2136 com o piso) | CA-2136, CA-2154 | T39 |
+| T41 | Folha, broto e talo são outro alimento (r5, recomendação 2; item 3) | `src/domain/buscaDeSubstitutos.ts` (`mesmoAlimentoDe` na verdura); teste: `trocaEquivalente.test.ts` (CA-2156 novo) | CA-2148, CA-2156 | T40 |
+| T42 | A (d) na busca por micronutriente (r5, recomendação 1; item 4) | só teste: `trocaEquivalente.test.ts` (CA-2155 novo: a sardinha em óleo por ferro sem candidato, e a faixa em toda busca por ferro, zinco e B12 das carnes). O texto da D-1136 já foi corrigido na T38 | CA-2155 | T41 |
+| T43 | Os pratos prontos pelo tipo de refeição (r2, recomendação 3; item 5) | `src/domain/trocas.ts` (exporta `ehPratoDeLanche`; `noMesmoPapel` separa os pratos), `src/domain/grupoDeSubstituicao.ts` (os grupos `prato-lanche` e `prato-refeicao`); testes: `src/domain/grupoDeSubstituicao.test.ts` (CA-2157, a parte do grupo), `src/domain/trocaRazoavel.test.ts` (CA-2129 revisto; CA-2157, a parte da folha), `trocaEquivalente.test.ts` (CA-2146 dos pratos prontos) | CA-2129, CA-2146, CA-2157 | T42 |
+| T44 | A bebida de soja fora das trocas do feijão na folha (r4, recomendação 3; item 6) | `src/domain/trocas.ts` (`noMesmoPapel`: o extrato de soja não troca com as leguminosas); teste: `trocaRazoavel.test.ts` (CA-2158 novo) | CA-2158 | T43 |
+| T45 | Validação da rodada de melhorias | `npm run lint`, `npm run typecheck`, `npx vitest run --maxWorkers=4`; e2e `busca-substitutos`, `planejador` e `celular-planejador` (`--workers=2`, configuração normal, `trava-e2e`); `npm run build`; a varredura da vista padrão antes e depois; as sondas r2 a r5 (`r2-2` e `r2-4` pelas cópias `r3-2` e `r3-4`); a folha antes e depois (o que a D-1142 e a D-1143 mudam) | todos | T44 |
 
 ## Verificação de cada tarefa
 
@@ -117,6 +125,15 @@ opção do item aparece embaixo dele no plano, na folha, no link e no Word.
    corta 11 listas de carne gorda e não esvazia nenhuma. A D-1137 junta as variedades da verdura e dois sinônimos (mexerica e tangerina; o tofu da TACO e
    o da base ampliada). A D-1138 põe a farinha de mandioca no `amido`: ela passa a aparecer também no lugar do arroz e da
    mandioca. A T36 não muda o componente: a chave já tem `min-h-11` (44 px), e o teste passa a medir com a gaveta parada.
+
+   **Rodada de melhorias (T38 a T45).** A D-1139 e a D-1140 fazem da regra (d) uma faixa (de 2/3 a 1,5 vez a proteína)
+   nas carnes e no tofu. **Decisão para revisar:** o tofu, pela gordura (a vista padrão), fica sem substituto no mesmo
+   grupo, como o caminho da revisão r5 previa; a alternativa era abrir o painel do tofu na proteína, onde ele tem os
+   feijões, mas isso faria uma exceção à D-1110 e traria trocas com 1,5 a 1,7 vez a energia. Por isso a sonda `r5-1`
+   ("o tofu tem o tremoço" na vista padrão) passa a valer pela proteína, como a r5 anotou para o CA-2146. Na busca por
+   micronutriente, a faixa esvazia mais listas de carne (o salmão por ferro e por zinco): medido na T45. A D-1142 **muda a
+   folha impressa** dos pratos de café da manhã (a tapioca com manteiga fica sem troca); a D-1143 só mexe nas trocas que a
+   folha pede e não imprime, a conferir na T45.
 
 1. **A coluna do Resumo do dia desce enquanto o painel está aberto (D-1116).** Pôr o painel exatamente no lugar dela
    exigiria mexer em `AreaDeTrabalho.tsx`, que dois ramos em andamento estão mudando. `TelaPlano` ocupa as duas colunas
