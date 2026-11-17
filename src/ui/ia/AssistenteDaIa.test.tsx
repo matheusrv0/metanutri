@@ -589,7 +589,9 @@ describe('AssistenteDaIa: "Gerar de novo" e a proposta vazia (CA-2414, CA-2415, 
     expect(gerar).toBeEnabled()
     await usuario.click(screen.getByRole('button', { name: 'revogar na ficha' }))
     expect(gerar).toBeDisabled()
-    expect(screen.getByText('Registre na ficha a autorização do paciente.')).toBeInTheDocument()
+    // D-1370: o motivo é do "Gerar de novo"; "Usar como rascunho" continua valendo.
+    expect(screen.getByText('Para gerar de novo, registre na ficha a autorização do paciente.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Usar como rascunho' })).toBeEnabled()
     const pedidos = vi.mocked(deps.chamar).mock.calls.filter(([, c]) => c['modo'] === 'gerar').length
     await usuario.click(gerar)
     expect(vi.mocked(deps.chamar).mock.calls.filter(([, c]) => c['modo'] === 'gerar')).toHaveLength(pedidos)
@@ -611,6 +613,27 @@ describe('AssistenteDaIa: "Gerar de novo" e a proposta vazia (CA-2414, CA-2415, 
     await usuario.click(screen.getByRole('button', { name: 'revogar na ficha' }))
     expect(tentar).toBeDisabled()
     expect(screen.getByText('Registre na ficha a autorização do paciente.')).toBeInTheDocument()
+  })
+
+  it('CA-2421: a última sugestão do mês pode ser usada; o rodapé diz que é para gerar de novo que falta', async () => {
+    const usuario = userEvent.setup()
+    const deps: DependenciasDaSugestao = {
+      chamar: vi.fn(async (_n: string, c: Record<string, unknown>) =>
+        c['modo'] === 'uso'
+          ? { dados: { uso: { ...USO, usados: 19 } }, falha: null }
+          : { dados: { resposta: SUGESTAO, uso: { ...USO, usados: 20 }, foraDaBase: 0, modelo: 'claude-opus-5-5' }, falha: null },
+      ),
+      salvarAgora: vi.fn(async () => true),
+      online: () => true,
+    }
+    montar(deps, PLANO_VAZIO)
+    await usuario.click(screen.getByRole('button', { name: 'Sugerir plano com IA' }))
+    await waitFor(() => expect(screen.getByText(/^19 de 20 sugestões em /)).toBeInTheDocument())
+    await usuario.click(screen.getByRole('button', { name: 'Sugerir plano' }))
+    expect(await screen.findByRole('button', { name: 'Usar como rascunho' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'Gerar de novo' })).toBeDisabled()
+    expect(screen.getByText(/^Para gerar de novo, espere 1º de .+: as 20 sugestões de .+ foram usadas\.$/)).toBeInTheDocument()
+    expect(screen.queryByText(/^As 20 sugestões de /)).not.toBeInTheDocument()
   })
 
   it('CA-2415: a proposta em que a conferência retirou todos os itens não pode ser usada', async () => {

@@ -14,6 +14,7 @@ import {
   lerMetaDaGaveta,
   metaNaTela,
   motivoDoAdequar,
+  motivoDoGerarDeNovo,
   novaMetaManual,
   perguntasQueFaltam,
   refeicoesDaGaveta,
@@ -200,6 +201,8 @@ export function AssistenteDaIa(p: AssistenteDaIaProps) {
   const noLimite = sugestao.uso !== null && sugestao.uso.usados >= sugestao.uso.limite
   const calculada = calcularEnergia(caso, { fator: caso.energia.fator, formula: caso.energia.formula }).get
   const contador = sugestao.uso ? textoDoContador(sugestao.uso, agora) : null
+  // D-1370: com a proposta (ou as mudanças) na gaveta, o motivo é só do "Gerar de novo".
+  const motivoDeGerarDeNovo = motivoDoGerarDeNovo(motivoDaGaveta, sugestao.uso, agora)
 
   const proprios = meus.lista.map(produtoComoAlimento)
   const conferencia = (refeicoes: CorpoDoPedidoIa['refeicoes'], metaKcal: number): ContextoDaConferencia => ({
@@ -462,7 +465,7 @@ export function AssistenteDaIa(p: AssistenteDaIaProps) {
               </Button>
             </>
           }
-          motivo={motivoDaGaveta ?? (vazia ? PROPOSTA_VAZIA : null)}
+          motivo={motivoDeGerarDeNovo ?? (vazia ? PROPOSTA_VAZIA : null)}
           contador={contador}
         />
       )
@@ -483,7 +486,7 @@ export function AssistenteDaIa(p: AssistenteDaIaProps) {
               </Button>
             </>
           }
-          motivo={motivoDaGaveta}
+          motivo={motivoDeGerarDeNovo}
           contador={contador}
         />
       )
