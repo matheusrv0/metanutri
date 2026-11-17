@@ -137,6 +137,8 @@ interface Desfazer {
   readonly origemIa: OrigemIa | null
   readonly texto: string
 }
+/** D-1367: a faixa com "Desfazer" também espera pelo plano. */
+const desfazeresLembrados = criarMemoriaDaAba<Desfazer>()
 
 /**
  * O assistente de IA na etapa Refeições (spec assistente-ia, D-1300 a D-1309, D-1350 a D-1352): os botões, a gaveta, a
@@ -156,7 +158,7 @@ export function AssistenteDaIa(p: AssistenteDaIaProps) {
   const [pedido, setPedido] = useState<PedidoFeito | null>(() => lembrada?.pedido ?? null)
   const [confirmando, setConfirmando] = useState(false)
   const [recusadas, setRecusadas] = useState<ReadonlySet<number>>(() => lembrada?.recusadas ?? new Set())
-  const [desfazer, setDesfazer] = useState<Desfazer | null>(null)
+  const [desfazer, setDesfazer] = useState<Desfazer | null>(() => desfazeresLembrados.ler(dono) ?? null)
   const [erroLocal, setErroLocal] = useState<Erro | null>(null)
   // D-1359: o botão que abriu a gaveta, para o foco voltar a ele quando ela fecha. A gaveta reaberta (D-1366) não foi
   // aberta por um clique: vale o botão do modo dela, que se anota quando aparece.
@@ -171,6 +173,11 @@ export function AssistenteDaIa(p: AssistenteDaIaProps) {
     if (abertaEm !== null && abertaEm.dono !== dono) return
     gavetasLembradas.gravar(dono, abertaEm && form && pedido && pedido.dono === dono ? { modo: abertaEm.modo, form, pedido, recusadas } : undefined)
   }, [dono, abertaEm, form, pedido, recusadas])
+  // D-1367: o "Desfazer" deste plano fica lembrado até ser usado ou trocado por outro.
+  useEffect(() => {
+    if (desfazer !== null && desfazer.dono !== dono) return
+    desfazeresLembrados.gravar(dono, desfazer ?? undefined)
+  }, [dono, desfazer])
   // A gaveta reaberta relê o contador, como ao abrir (CB-1300).
   useEffect(() => {
     if (lembrada) sugestao.lerUso()

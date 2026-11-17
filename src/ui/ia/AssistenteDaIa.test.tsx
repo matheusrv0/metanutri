@@ -401,6 +401,25 @@ describe('AssistenteDaIa: a sugestão espera pelo plano de origem (CA-2416 a CA-
     await usuario.click(screen.getByRole('button', { name: 'voltar ao plano' }))
     expect(screen.queryByRole('complementary')).not.toBeInTheDocument()
   })
+
+  it('CA-2418: a faixa e o "Desfazer" esperam pelo plano; de volta, desfazem o plano e a marca da IA', async () => {
+    const usuario = userEvent.setup()
+    montar(dependencias(), PLANO_VAZIO)
+    await usuario.click(screen.getByRole('button', { name: 'Sugerir plano com IA' }))
+    await usuario.click(screen.getByRole('button', { name: 'Sugerir plano' }))
+    await usuario.click(await screen.findByRole('button', { name: 'Usar como rascunho' }))
+    expect(screen.getByTestId('plano').textContent).toBe('53,488,226|3,561,410||')
+    await usuario.click(screen.getByRole('button', { name: 'sair do plano' }))
+    await usuario.click(screen.getByRole('button', { name: 'voltar ao plano' }))
+    expect(screen.getByText('Sugestão da IA no plano, como rascunho.')).toBeInTheDocument()
+    await usuario.click(screen.getByRole('button', { name: 'Desfazer' }))
+    expect(screen.getByTestId('plano').textContent).toBe('|||')
+    expect(screen.getByTestId('origem').textContent).toBe('null')
+    // Desfeito, não volta mais.
+    await usuario.click(screen.getByRole('button', { name: 'sair do plano' }))
+    await usuario.click(screen.getByRole('button', { name: 'voltar ao plano' }))
+    expect(screen.queryByText('Sugestão da IA no plano, como rascunho.')).not.toBeInTheDocument()
+  })
 })
 
 describe('AssistenteDaIa: a gaveta no fluxo, de 640 a 1180 px (CA-2407, D-1357)', () => {
