@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { IDS_DO_CATALOGO_IA } from '../../../supabase/functions/_shared/iaCatalogo.ts'
 import type { ContextoDaResposta, CorpoDoPedidoIa, LacunasIa } from '../../../supabase/functions/_shared/iaContrato.ts'
 import { diaLocal } from '@/domain/acompanhamento.ts'
@@ -38,6 +38,7 @@ import { alimentosParaSugerir, buscarAlimento } from '@/domain/tabelas.ts'
 import type { Caso, OpcaoId, OrigemIa, Plano } from '@/domain/tipos.ts'
 import { cn } from '@/lib/utils'
 import { Button } from '@ds/componentes/forms/button.tsx'
+import { criarMemoriaDaAba } from '../estado/memoriaDaAba.ts'
 import { useMediaQuery } from '../estado/usarMediaQuery.ts'
 import { useMeusAlimentos } from '../estado/usarMeusAlimentos.ts'
 import { useSugestaoIa, type DependenciasDaSugestao } from '../estado/usarSugestaoIa.ts'
@@ -120,6 +121,15 @@ interface PedidoFeito {
   readonly assinaturaDoPlano: string
 }
 
+/** D-1366: a gaveta com um pedido feito, guardada na aba pelo dono, para reabrir como estava quando a tela volta. */
+interface GavetaLembrada {
+  readonly modo: ModoDaGaveta
+  readonly form: Formulario
+  readonly pedido: PedidoFeito
+  readonly recusadas: ReadonlySet<number>
+}
+const gavetasLembradas = criarMemoriaDaAba<GavetaLembrada>()
+
 interface Desfazer {
   /** O plano de origem (D-1356): a faixa e o "Desfazer" só valem nele. */
   readonly dono: string
@@ -134,22 +144,40 @@ interface Desfazer {
  */
 export function AssistenteDaIa(p: AssistenteDaIaProps) {
   const { caso, plano, paciente } = p
-  const sugestao = useSugestaoIa(p.dependencias)
+  const dono = donoDo(caso, paciente)
+  const sugestao = useSugestaoIa(dono, p.dependencias)
   const meus = useMeusAlimentos()
   const largo = useMediaQuery('(min-width: 1180px)')
   const estreito = useMediaQuery('(max-width: 639.98px)')
-  const [abertaEm, setAbertaEm] = useState<{ readonly modo: ModoDaGaveta; readonly dono: string } | null>(null)
-  const [form, setForm] = useState<Formulario | null>(null)
-  const [pedido, setPedido] = useState<PedidoFeito | null>(null)
+  // D-1366: a tela que volta ao plano reencontra a gaveta com o pedido feito (a espera, a proposta ou o erro).
+  const [lembrada] = useState(() => gavetasLembradas.ler(dono) ?? null)
+  const [abertaEm, setAbertaEm] = useState<{ readonly modo: ModoDaGaveta; readonly dono: string } | null>(() => (lembrada ? { modo: lembrada.modo, dono } : null))
+  const [form, setForm] = useState<Formulario | null>(() => lembrada?.form ?? null)
+  const [pedido, setPedido] = useState<PedidoFeito | null>(() => lembrada?.pedido ?? null)
   const [confirmando, setConfirmando] = useState(false)
-  const [recusadas, setRecusadas] = useState<ReadonlySet<number>>(new Set())
+  const [recusadas, setRecusadas] = useState<ReadonlySet<number>>(() => lembrada?.recusadas ?? new Set())
   const [desfazer, setDesfazer] = useState<Desfazer | null>(null)
   const [erroLocal, setErroLocal] = useState<Erro | null>(null)
-  // D-1359: o botão que abriu a gaveta, para o foco voltar a ele quando ela fecha.
+  // D-1359: o botão que abriu a gaveta, para o foco voltar a ele quando ela fecha. A gaveta reaberta (D-1366) não foi
+  // aberta por um clique: vale o botão do modo dela, que se anota quando aparece.
   const quemAbriu = useRef<HTMLElement | null>(null)
+  const anotarQuemAbriu = (botao: HTMLElement | null) => {
+    if (botao) quemAbriu.current = botao
+  }
+
+  // D-1366: só a gaveta deste plano com um pedido feito fica lembrada; fechada, é esquecida.
+  useEffect(() => {
+    // O estado ainda é de outro plano (a tela trocou sem desmontar, D-1356): não mexe na lembrança deste.
+    if (abertaEm !== null && abertaEm.dono !== dono) return
+    gavetasLembradas.gravar(dono, abertaEm && form && pedido && pedido.dono === dono ? { modo: abertaEm.modo, form, pedido, recusadas } : undefined)
+  }, [dono, abertaEm, form, pedido, recusadas])
+  // A gaveta reaberta relê o contador, como ao abrir (CB-1300).
+  useEffect(() => {
+    if (lembrada) sugestao.lerUso()
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- uma leitura só, a da volta ao plano
+  }, [])
 
   // D-1356: aberta noutro plano (a tela trocou sem desmontar), a gaveta não aparece neste.
-  const dono = donoDo(caso, paciente)
   const aberta = abertaEm !== null && abertaEm.dono === dono ? abertaEm.modo : null
   const agora = new Date()
   const hoje = diaLocal(agora)
@@ -342,7 +370,14 @@ export function AssistenteDaIa(p: AssistenteDaIaProps) {
       rodape = (
         <RodapeDaIa
           acoes={
-            <Button variant="secondary" onClick={() => sugestao.cancelar()}>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                // D-1366: cancelar esquece o pedido; ao voltar ao plano, a gaveta não reabre.
+                sugestao.cancelar()
+                setPedido(null)
+              }}
+            >
               Cancelar
             </Button>
           }
@@ -521,7 +556,7 @@ export function AssistenteDaIa(p: AssistenteDaIaProps) {
 
   const vaiParaTextos = mudancas && lugar !== null ? textosDoVaiPara(mudancas, recusadas, buscarAlimento) : null
   const extras: ExtrasDoPlano = {
-    ferramentas: (modelos) => <BotoesDaIa modelos={modelos} podeAdequar={temItens(plano)} motivo={motivoDoBotao} aberta={aberta} aoAbrir={abrir} />,
+    ferramentas: (modelos) => <BotoesDaIa modelos={modelos} podeAdequar={temItens(plano)} motivo={motivoDoBotao} aberta={aberta} aoAbrir={abrir} refDoAberto={anotarQuemAbriu} />,
     // D-1357: de 640 a 1180 px, a gaveta entra logo abaixo da linha dos botões, acima da faixa e das refeições.
     topo: (
       <>

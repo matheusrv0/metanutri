@@ -12,17 +12,19 @@ interface BotoesDaIaProps {
   readonly aberta: ModoDaGaveta | null
   /** O botão vai junto: o foco volta a ele quando a gaveta fecha (D-1359). */
   readonly aoAbrir: (modo: ModoDaGaveta, botao: HTMLElement) => void
+  /** O botão do modo aberto, também na gaveta que reabriu sozinha (D-1366): o foco volta a ele ao fechar. */
+  readonly refDoAberto?: ((botao: HTMLButtonElement | null) => void) | undefined
 }
 
 /** D-1301 e D-1350: os botões ao lado de "Modelos de plano", com o motivo do botão desligado na linha de baixo. */
-export function BotoesDaIa({ modelos, podeAdequar, motivo, aberta, aoAbrir }: BotoesDaIaProps) {
+export function BotoesDaIa({ modelos, podeAdequar, motivo, aberta, aoAbrir, refDoAberto }: BotoesDaIaProps) {
   const modos: readonly ModoDaGaveta[] = podeAdequar ? ['gerar', 'ajustar'] : ['gerar']
   return (
     <div className="flex flex-col items-end gap-1.5">
       <div className="flex flex-wrap justify-end gap-2">
         {modelos}
         {modos.map((modo) => (
-          <Button key={modo} variant="outline" size="sm" disabled={motivo !== null} aria-expanded={aberta === modo} onClick={(e) => aoAbrir(modo, e.currentTarget)}>
+          <Button key={modo} ref={aberta === modo ? refDoAberto : undefined} variant="outline" size="sm" disabled={motivo !== null} aria-expanded={aberta === modo} onClick={(e) => aoAbrir(modo, e.currentTarget)}>
             {TITULO_DA_GAVETA[modo]}
           </Button>
         ))}

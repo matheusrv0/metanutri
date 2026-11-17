@@ -221,3 +221,24 @@ test('CA-2408 e CA-2411: em 360 px, a chave acerta o toque em 44 px e o Esc devo
   await expect(folha).toBeHidden()
   await expect(botao).toBeFocused()
 })
+
+/** Como o histórico do navegador ou o endereço digitado: de um plano direto para o outro. */
+const irAoPlano = (pagina: Page, casoId: string) => pagina.evaluate((id) => (location.hash = `#/caso/${id}/plano`), casoId)
+
+test('CA-2416: saiu do plano durante a espera; de volta, a proposta está lá, sem pedir de novo, e entra no plano de origem', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  const servidor = await abrirPlano(page, { ia: 'lento' })
+  await page.getByRole('button', { name: 'Sugerir plano com IA' }).click()
+  const g = gaveta(page)
+  await g.getByRole('button', { name: 'Sugerir plano' }).click()
+  await expect(g.getByText('Montando a sugestão. Leva de 1 a 2 minutos.')).toBeVisible()
+  await irAoPlano(page, CASO_IA_CHEIO)
+  await expect(page.getByRole('button', { name: 'Adequar com IA' })).toBeVisible()
+  await expect(gaveta(page)).toBeHidden()
+  await irAoPlano(page, CASO_IA)
+  await expect(g.getByRole('group', { name: 'Totais calculados pelo app' })).toBeVisible({ timeout: 15_000 })
+  expect(servidor.pedidosDaIa.filter((p) => p['modo'] === 'gerar')).toHaveLength(1)
+  await g.getByRole('button', { name: 'Usar como rascunho' }).click()
+  await g.getByRole('button', { name: 'Substituir' }).click()
+  await expect(page.getByText('Sugestão da IA no plano, como rascunho.')).toBeVisible()
+})

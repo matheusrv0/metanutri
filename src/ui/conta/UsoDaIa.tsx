@@ -3,6 +3,9 @@ import { mesDe, renovacaoDoUso } from '@/domain/iaLimites.ts'
 import { Progress } from '@ds/componentes/display/progress.tsx'
 import { useSugestaoIa, type DependenciasDaSugestao } from '../estado/usarSugestaoIa.ts'
 
+/** Só o contador do mês: a tela da conta não pede sugestão, então o dono não é de nenhum plano. */
+const DONO_DA_CONTA = 'conta'
+
 interface UsoDaIaProps {
   readonly agora: Date
   /** Para os testes: a função falsa. */
@@ -14,7 +17,7 @@ interface UsoDaIaProps {
  * a barra. Pede o contador ao abrir; sem resposta, a linha não aparece (CB-1321).
  */
 export function UsoDaIa({ agora, dependencias }: UsoDaIaProps) {
-  const { uso, lerUso } = useSugestaoIa(dependencias)
+  const { uso, lerUso } = useSugestaoIa(DONO_DA_CONTA, dependencias)
   useEffect(() => {
     lerUso()
     // Uma leitura ao abrir a tela; as seguintes vêm da gaveta.
