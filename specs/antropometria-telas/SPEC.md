@@ -295,6 +295,22 @@ O token vencido de verdade chega como 400, `statusCode` "403", `code` `AccessDen
 failed` (sonda r3b, `storage-api` v1.79.36), e não como `InvalidJWT`, como a D-1547 dizia antes. Com o gatilho, que é o
 caminho normal, nada muda: ele recusa antes da política, com `23514` ou `53100`.
 
+### A rodada de melhorias (D-1550 a D-1556, 16/11/2026)
+
+A F2 está no ar (o 018 rodou em produção). As recomendações leves das revisões r1 a r3 da F2 que ainda valiam, e o "2ª
+do dia" da revisão r1 das telas, entram aqui. O 018 não muda mais: o banco vai no `supabase/019-ajustes.sql`. Já estavam
+feitas: separar a queda (5xx) da recusa (D-1547) e o formato real do token vencido no teste (nota da revisão r3).
+
+| # | Decisão | Motivo |
+|---|---|---|
+| D-1550 | **A conta cheia tem um código só do MetaNutri** (leve 2 da r3; muda o código da D-1546). No 019, o gatilho recusa a conta cheia (2.000 arquivos ou 500 MB) com o código `MN001`, fora das classes do Postgres; o resto do gatilho continua com `23514`. O app lê "code: MN001" como conta cheia, e continua lendo "code: 53100" (o 018 sem o 019) | O `53100` é o `disk_full` do Postgres: no registro do banco da produção, a conta cheia aparecia como "disco cheio" |
+| D-1551 | **A imagem do Supabase só pelo caminho das fotos** (leves 1 e 2 da r1). Na CSP do app, o `img-src` libera só `<supabase>/storage/v1/object/sign/fotos-avaliacao/`, o caminho das URLs assinadas do balde, e não a origem inteira. O inventário da CSP (`specs/seguranca-lote-4/PLAN-csp.md`) ganha a linha | Só essas imagens vêm do Supabase; a origem inteira abria mais do que precisa |
+| D-1552 | **A foto grande abre já reduzida** (leve 3 da r1). Com o lado maior do cabeçalho acima de 1600 px, o navegador abre a foto já na largura que leva o lado maior a 1600 px (`createImageBitmap` com `resizeWidth`); o redesenho em JPEG segue igual (D-1453). O navegador que não reduz abre inteira, como antes | Uma foto de 8000 × 6000 virava uma imagem de cerca de 190 MB na memória antes de reduzir, e celular fraco podia fechar a aba |
+| D-1553 | **"desta avaliação" na avaliação de outro dia** (leve 5 da r1; completa a D-1455 e a D-1538). Aberta uma avaliação que não é de hoje, o botão diz "Ver fotos desta avaliação" e a lista se chama "Fotos desta avaliação"; na de hoje, "Ver fotos de hoje" e "Fotos de hoje", como antes | "de hoje" numa avaliação de setembro era falso |
+| D-1554 | **O link assinado fica guardado na tela por 5 minutos** (leve 6 da r1). A tela guarda na memória o link assinado de cada foto por 5 minutos (metade dos 10 da D-1457); alternar "Comparar fotos" e as fotos não pede um novo. Excluir a foto tira o link guardado. Nada vai para o aparelho | Cada alternância assinava um link novo e baixava a imagem de novo |
+| D-1555 | **A imagem anexada avisa junto do botão** (leve 1 da r2; completa a D-1530). Quando a imagem escolhida em "Adicionar arquivo" entra entre as fotos, aparece junto do botão, na área dos anexos, "A imagem entrou nas fotos." (`role="status"`), até o próximo envio | No celular, a foto nova aparecia uma tela acima do botão, e perto dele só mudava a barra de uso |
+| D-1556 | **"2ª do dia" pela ordem de criação** (divergência da correção r1 das telas; muda a D-1529 e a ordem da D-1404 no mesmo dia). O plano novo (criar ou duplicar) guarda a data e a hora em que nasceu (`criadoEm`). No mesmo dia, a lista e o Histórico ordenam pela criação; o plano gravado antes desta versão, sem ela, usa a última alteração, como antes. Editar não troca mais o número | Mexer na avaliação mais antiga do dia trocava "1ª" e "2ª" |
+
 ## 3. Critérios de aceite
 
 ### Lugar e navegação
@@ -758,6 +774,16 @@ Os casos que provam as decisões D-1540 a D-1545.
 - **CB-1498** · **Autorização marcada depois do alerta** (B1, D-1548): a imagem escolhida em "Adicionar arquivo" sem a
   autorização mostra "Marque a autorização da paciente para adicionar fotos." junto dos anexos; marcar a autorização
   tira o alerta.
+
+### A rodada de melhorias (CB-1499 a CB-1505, 16/11/2026)
+
+- **CB-1499** · **Conta cheia com o 019** (D-1550): a conta soma 500 MB, ou tem 2.000 arquivos: o servidor recusa a próxima foto e o próximo PDF com "code: MN001", e o app diz "O espaço de fotos da conta acabou."; com o 018 sem o 019 ("code: 53100"), a mesma frase.
+- **CB-1500** · **A CSP das fotos** (D-1551): dado o build com Supabase, o `img-src` tem só o caminho `/storage/v1/object/sign/fotos-avaliacao/` do Supabase, e a foto abre sem violação; sem Supabase, nada muda (CA-2491).
+- **CB-1501** · **A foto grande** (D-1552): dado uma foto de 4000 × 3000, então o navegador é pedido a abri-la com 1600 px de largura, e a foto guardada tem o lado maior de 1600 px; dado uma de 1200 × 900, então ela abre sem redução.
+- **CB-1502** · **"desta avaliação"** (D-1553): dado a avaliação de 08/09/2026 aberta em 16/11/2026, então o botão diz "Ver fotos desta avaliação" (em "Comparar") e a lista se chama "Fotos desta avaliação"; na de hoje, "Ver fotos de hoje" e "Fotos de hoje".
+- **CB-1503** · **O link guardado** (D-1554): dado uma foto aberta, quando a nutricionista alterna "Comparar fotos" e volta, dentro de 5 minutos, então nenhum link novo é pedido; depois de 5 minutos, ou depois de excluir a foto, um novo é pedido.
+- **CB-1504** · **A imagem anexada** (D-1555): dado a autorização marcada, quando a nutricionista escolhe um JPG em "Adicionar arquivo", então ele entra entre as fotos e, junto do botão, aparece "A imagem entrou nas fotos."; o PDF não mostra a frase.
+- **CB-1505** · **Duas avaliações no mesmo dia** (D-1556): dado duas avaliações de 03/11/2026, a criada antes é a "1ª do dia" e a outra, a "2ª"; quando a nutricionista edita a 1ª, então os números não mudam; dado um plano antigo sem a data de criação, então vale a última alteração, como antes.
 
 ## 5. O que fica para a Mor e para o dono
 

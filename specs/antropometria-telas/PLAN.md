@@ -3,7 +3,7 @@
 **Spec de origem:** `./SPEC.md` (D-1400 a D-1460, CA-2400 a CA-2491, CB-1400 a CB-1417; correções da revisão r1:
 D-1520 a D-1529 e CB-1480 a CB-1489; da revisão r2: D-1500 a D-1502 e CB-1460 a CB-1462; da implementação da F2: D-1503 a D-1513 e CB-1463 a CB-1466; da revisão r1 da F2: D-1530 a D-1538 e CB-1467 a
 CB-1475; do documento sem a lista de referências: D-1540 a D-1545 e CB-1490 a CB-1495; da revisão r2 da F2: D-1546 a
-D-1549 e CB-1496 a CB-1498).
+D-1549 e CB-1496 a CB-1498; da rodada de melhorias de 16/11: D-1550 a D-1556 e CB-1499 a CB-1505).
 **Motor:** `specs/antropometria-completa/` (D-1000 a D-1042), na `main` desde o 8a96bc8.
 **Protótipo aprovado:** `AvaliacaoAntropometrica.dc.html`, `HistoricoAntropometrico.dc.html` e
 `DocumentoAvaliacao.dc.html` (canvas "MetaNutri Redesenho", 03/11/2026).
@@ -350,6 +350,32 @@ Uma tarefa, um commit, em TDD (D-1540 a D-1545, CB-1490 a CB-1495).
   `documentoDaAvaliacao.ts`, a nota do IMC fica sem a fonte curta. `referencias`, "Métodos", o rascunho e a tela não
   mudam. `DialogoDocumentoAvaliacao.tsx` não precisa mudar.
 
+### M1 a M8 · A rodada de melhorias (16/11/2026)
+
+Cada uma é um commit, com o teste antes (TDD). O banco vai no `supabase/019-ajustes.sql`, o único SQL da rodada (o mesmo
+arquivo do `lado-do-paciente`, DP-LP-52), que pode rodar de novo; se o 018 rodar de novo, o 019 roda logo depois.
+
+- **M1** · `docs`: as decisões D-1550 a D-1556 e os CB-1499 a CB-1505.
+- **M2** · O 019 refaz `limite_de_arquivos_da_avaliacao` com `errcode = 'MN001'` na conta cheia (o gatilho continua o
+  mesmo: `create or replace` só troca o corpo da função). `recusaDoArmazenamento` lê `code: MN001` e `code: 53100` como
+  `conta-cheia`. Teste de texto do 019 (`src/data/sql019Ajustes.test.ts`), da porta (`armazenamentoDeFotos.test.ts`) e
+  de ataque (`testes/seguranca/fotos.test.ts`, que agora espera `MN001`).
+- **M3** · `csp.ts`: o `img-src` com `${supabase}/storage/v1/object/sign/fotos-avaliacao/`; a linha no `PLAN-csp.md`.
+  Teste em `src/seguranca/csp.test.ts`; o e2e das fotos abre a imagem com a CSP.
+- **M4** · `conferirFoto` devolve também os lados do cabeçalho; `DesenhistaDeFoto.abrir` recebe a largura de abertura
+  (`larguraDeAbertura`: `ceil(largura × 1600 / lado maior)`, só acima de 1600 px); `reduzirFoto.ts` passa
+  `resizeWidth` e `resizeQuality: 'high'`. A conta do tamanho final continua pelos lados da foto aberta, que é o que vale
+  mesmo se o navegador girar a foto depois de reduzir. Teste em `fotosDaAvaliacao.test.ts`.
+- **M5** · `CartaoFotos.tsx` e `ListaDeFotos.tsx`: "de hoje" ou "desta avaliação" pela data da avaliação aberta
+  (`atual.data` contra o dia de `agora`). Teste em `fotos.test.tsx`.
+- **M6** · `linksGuardados(porta, agora, 5 min)` em `fotosDaAvaliacao.ts`: a porta com `assinar` guardado por caminho e
+  `apagar` que tira o guardado; `CartaoFotos.tsx` a cria uma vez por armazenamento. Teste em `fotosDaAvaliacao.test.ts`.
+- **M7** · `CartaoFotos.tsx`: o resultado do anexo com `campo: 'fotos'` mostra "A imagem entrou nas fotos." junto do
+  botão (`FRASES.imagemNasFotos`). Teste em `fotos.test.tsx`.
+- **M8** · `Caso.criadoEm` (opcional, ISO): `persistencia.ts` o grava no `criar` e no `duplicar`;
+  `avaliacoesDoPaciente` ordena o mesmo dia por `caso.criadoEm ?? atualizadoEm`. Teste em `avaliacoesDoPaciente.test.ts`
+  e `persistencia.test.ts`.
+
 ### T27 · F3 (bloqueada)
 
 Quando a infraestrutura do Resend do `lado-do-paciente` entrar: a função que gera o link com prazo de 7 dias, o envio pelo
@@ -449,3 +475,8 @@ Revisão r2 da F2: CB-1496 em `src/data/sqlFotosAvaliacao.test.ts` (o código 53
 genérica; o 403 da política, CB-1416, lido pela pasta), `testes/seguranca/fotos.test.ts` (o token
 recusado volta como sessão), `fotosDaAvaliacao.test.ts` e `fotos.test.tsx`; CB-1498 em `fotos.test.tsx`. D-1549 (o TUS
 pela metade) é risco aceito, sem teste.
+
+Rodada de melhorias (16/11): CB-1499 em `src/data/sql019Ajustes.test.ts`, `armazenamentoDeFotos.test.ts` e
+`testes/seguranca/fotos.test.ts`; CB-1500 em `src/seguranca/csp.test.ts` e o e2e das fotos; CB-1501 em
+`fotosDaAvaliacao.test.ts` (e o e2e, o <canvas> de verdade); CB-1502 e CB-1504 em `fotos.test.tsx`; CB-1503 em
+`fotosDaAvaliacao.test.ts`; CB-1505 em `avaliacoesDoPaciente.test.ts` e `persistencia.test.ts`.
