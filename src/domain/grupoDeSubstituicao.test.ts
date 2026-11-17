@@ -86,6 +86,45 @@ describe('D-1108: o grupo de substituição', () => {
     }
   })
 
+  it('CA-2157 (D-1142): os pratos prontos se partem em café da manhã e lanche e em almoço e jantar', () => {
+    const TAPIOCA = 551
+    const YAKISOBA = 556
+    expect(grupoDeSubstituicao(porId(TAPIOCA))).toEqual({ id: 'prato-lanche', nome: 'pratos de café da manhã e lanche' })
+    for (const id of [525, 530]) expect(grupo(id), porId(id).descricao).toBe('prato-lanche')
+    expect(grupoDeSubstituicao(porId(YAKISOBA))).toEqual({ id: 'prato-refeicao', nome: 'pratos de almoço e jantar' })
+    for (const id of [540, 542, 527, 537, 541, 544]) expect(grupo(id), porId(id).descricao).toBe('prato-refeicao')
+    // O cuscuz de milho, que a TACO põe entre os preparados, continua no amido.
+    expect(grupo(533)).toBe('amido')
+    // O alimento próprio, pelo nome.
+    const crepioca: Alimento = { ...porId(TAPIOCA), id: -1, descricao: 'Crepioca de frango' }
+    expect(grupoDeSubstituicao(crepioca).id).toBe('prato-lanche')
+    expect(grupoDeSubstituicao({ ...crepioca, descricao: 'Escondidinho de carne' }).id).toBe('prato-refeicao')
+  })
+
+  it('CA-2157 (D-1142): um prato de café da manhã nunca está no mesmo grupo de um de almoço, nos dois sentidos', () => {
+    const lanches = [551, 525, 530].map(porId)
+    const refeicoes = [540, 542, 527, 537, 556].map(porId)
+    for (const x of lanches) {
+      for (const y of refeicoes) {
+        expect(noMesmoGrupo(x)(y), `${x.descricao} × ${y.descricao}`).toBe(false)
+        expect(noMesmoGrupo(y)(x), `${y.descricao} × ${x.descricao}`).toBe(false)
+      }
+    }
+  })
+
+  it('CA-2157 (D-1142): na busca, a tapioca não traz prato de almoço; o yakisoba continua com os pratos de almoço', () => {
+    const lista = (id: number) => {
+      const base = porId(id)
+      const nutriente: ChaveNutrienteAlimento = 'carboidrato_g'
+      const r = buscarSubstitutos({ alimentoId: base.id, gramas: 100 }, { nutrientes: [nutriente], mesmoGrupo: true, alimentos: alimentosParaSugerir(), limite: 1000 }, buscarAlimento)
+      return r.tipo === 'lista' ? r.candidatos.map((c) => c.alimento) : []
+    }
+    expect(lista(551).filter((a) => grupoDeSubstituicao(a).id === 'prato-refeicao').map((a) => a.descricao)).toEqual([])
+    const doYakisoba = lista(556)
+    expect(doYakisoba.length).toBeGreaterThan(0)
+    expect(doYakisoba.every((a) => grupoDeSubstituicao(a).id === 'prato-refeicao')).toBe(true)
+  })
+
   it('fora dos grupos, o grupo da tabela em minúsculas', () => {
     expect(grupoDeSubstituicao(porId(260))).toEqual({ id: 'Gorduras e óleos', nome: 'gorduras e óleos' })
   })

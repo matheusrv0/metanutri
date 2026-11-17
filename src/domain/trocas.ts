@@ -135,10 +135,22 @@ export const papelDe = (a: Alimento): Papel | null => PAPEIS.find(([, re]) => re
  */
 const mesmoEstado = (base: Alimento, a: Alimento): boolean => ehCru(base) === ehCru(a)
 
-/** Com papel, o mesmo papel (de qualquer categoria); sem papel, a mesma categoria e também sem papel. */
+const PREPARADOS = 'Alimentos preparados'
+/**
+ * Spec busca-substitutos, D-1142: os pratos prontos de café da manhã e lanche, pelo nome (na TACO, a tapioca com manteiga,
+ * o bolinho de arroz e o acarajé; os outros nomes valem para o alimento próprio). Eles não trocam pelos de almoço e
+ * jantar: "tapioca → macarrão à bolonhesa" não é troca.
+ */
+const PRATO_DE_LANCHE = /^(Tapioca|Beiju|Crepioca|Mingau|Sandu(í|i)che|Misto quente|Bolinho de arroz|Acaraj(é|e))/i
+export const ehPratoDeLanche = (a: Alimento): boolean => a.categoria === PREPARADOS && PRATO_DE_LANCHE.test(a.descricao.trim())
+
+/**
+ * Com papel, o mesmo papel (de qualquer categoria); sem papel, a mesma categoria e também sem papel. Entre os pratos
+ * prontos, o mesmo tipo de refeição (D-1142).
+ */
 function noMesmoPapel(base: Alimento): (a: Alimento) => boolean {
   const papel = papelDe(base)
-  if (papel === null) return (a) => a.categoria === base.categoria && papelDe(a) === null && mesmaForma(base)(a)
+  if (papel === null) return (a) => a.categoria === base.categoria && papelDe(a) === null && mesmaForma(base)(a) && ehPratoDeLanche(a) === ehPratoDeLanche(base)
   return (a) => papelDe(a) === papel && (papel !== 'acompanhamento' || mesmoEstado(base, a))
 }
 

@@ -110,13 +110,26 @@ describe('CA-2129 (revisão rodada 2, M3): o que muda na folha de verdade', () =
   const ALMEIRAO_CRU = 84
   const ATEMOIA = 174
   const TAPIOCA_COM_MANTEIGA = 551
+  const YAKISOBA = 556
+  const MACARRAO_A_BOLONHESA = 542
 
-  it('o almeirão cru oferece a folha de mostarda, a atemóia o caqui "chocolate" e a tapioca o macarrão à bolonhesa', () => {
+  it('o almeirão cru oferece a folha de mostarda, a atemóia o caqui "chocolate" e o yakisoba o macarrão à bolonhesa', () => {
     expect(TROCAS_PEDIDAS_PELA_FOLHA).toBe(4)
     expect(TROCAS_NA_FOLHA).toBe(2)
     expect(naFolha(ALMEIRAO_CRU, 30)).toContain(135)
     expect(naFolha(ATEMOIA, 330)).toContain(189)
-    expect(naFolha(TAPIOCA_COM_MANTEIGA, 30)).toContain(542)
+    expect(naFolha(YAKISOBA, 200)).toContain(MACARRAO_A_BOLONHESA)
+  })
+
+  it('CA-2157 (D-1142): a tapioca com manteiga, de 30 a 400 g, não oferece prato de almoço nas 4 trocas pedidas', () => {
+    const onde: string[] = []
+    for (let gramas = 30; gramas <= 400; gramas += 10) {
+      const trocas = trocasDoAlimento({ alimentoId: TAPIOCA_COM_MANTEIGA, gramas }, { porAlimento: TROCAS_PEDIDAS_PELA_FOLHA, alimentos: alimentosParaSugerir() })
+      for (const t of trocas) if (porId(t.alimentoId).categoria === 'Alimentos preparados') onde.push(`${gramas} g → ${t.descricao}`)
+    }
+    expect(onde).toEqual([])
+    expect(naFolha(TAPIOCA_COM_MANTEIGA, 30)).not.toContain(YAKISOBA)
+    expect(naFolha(TAPIOCA_COM_MANTEIGA, 30)).not.toContain(MACARRAO_A_BOLONHESA)
   })
 
   it('nenhum acompanhamento, de 30 a 400 g, mostra a batata-doce na folha (a batata inglesa e a mandioca vêm antes)', () => {

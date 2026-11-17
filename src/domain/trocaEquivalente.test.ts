@@ -43,8 +43,6 @@ function vista(base: Alimento, gramas: number, nutrientes: readonly ChaveNutrien
 }
 
 /** Os grupos da tabela da seção 3 da spec (D-1108); fora deles, "os demais", o grupo da tabela de composição. */
-const GRUPOS_DA_SECAO_3: ReadonlySet<string> = new Set(['amido', 'pao', 'cereal-do-cafe', 'leguminosa', 'carne', 'ovo-queijo', 'leite', 'fruta', 'verdura', 'oleaginosa'])
-const noGrupoDaSecao3 = (a: Alimento): boolean => GRUPOS_DA_SECAO_3.has(grupoDeSubstituicao(a).id)
 /** D-1136: os grupos em que a lista de equivalentes junta macros diferentes; e o derivado de soja entre as leguminosas. */
 const DERIVADO_DE_SOJA = /^Soja,|(^|[\s,(])tofu($|[\s,)])/i
 const semOMacro = (a: Alimento): boolean => {
@@ -318,11 +316,11 @@ describe('D-1133: o grupo da tabela já diz que a troca é equivalente', () => {
     expect(naTrocaEquivalente(leite, 150)(soja, mesmaEnergia)).toBe(true)
   })
 
-  it('CA-2146: fora dos grupos da seção 3 (os pratos prontos), o macro dominante continua valendo', () => {
+  it('CA-2146: nos pratos prontos (D-1142), o macro dominante continua valendo', () => {
     const frango = porNome('Frango, com açafrão')
     const quibebe = porNome('Quibebe')
-    expect(noGrupoDaSecao3(frango) || noGrupoDaSecao3(quibebe)).toBe(false)
-    expect(grupoDeSubstituicao(frango).id).toBe(grupoDeSubstituicao(quibebe).id)
+    expect(grupoDeSubstituicao(frango).id).toBe('prato-refeicao')
+    expect(grupoDeSubstituicao(quibebe).id).toBe('prato-refeicao')
     expect(macroPelaFormula(frango)).not.toBe(macroPelaFormula(quibebe))
     const mesmaEnergia = ((frango.nutrientes.energia_kcal ?? 0) * 100) / (quibebe.nutrientes.energia_kcal ?? 1)
     expect(naTrocaEquivalente(frango, 100)(quibebe, mesmaEnergia)).toBe(false)

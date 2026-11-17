@@ -1,7 +1,7 @@
 // O grupo de substituição de um alimento: o "Só do mesmo grupo" da busca de substitutos (spec busca-substitutos, D-1108
 // e seção 3). A categoria da TACO separa arroz de batata e junta arroz com biscoito; o grupo segue o papel no prato das
 // trocas da folha (D-421) e, fora dele, o grupo da tabela.
-import { ehCru, ehVerdura, ehVerduraCozida, formaDoOvo, papelDe } from './trocas.ts'
+import { ehCru, ehPratoDeLanche, ehVerdura, ehVerduraCozida, formaDoOvo, papelDe } from './trocas.ts'
 import type { Alimento } from './tipos.ts'
 
 export interface GrupoDeSubstituicao {
@@ -66,6 +66,9 @@ const GRUPOS: readonly (readonly [GrupoDeSubstituicao, (a: Alimento) => boolean]
   ],
   [{ id: 'fruta', nome: 'frutas' }, (a) => a.categoria === FRUTAS],
   [{ id: 'verdura', nome: 'verduras e legumes' }, ehVerdura],
+  // D-1142: os pratos prontos pelo tipo de refeição; o cuscuz de milho, que a TACO põe entre eles, já ficou no amido.
+  [{ id: 'prato-lanche', nome: 'pratos de café da manhã e lanche' }, ehPratoDeLanche],
+  [{ id: 'prato-refeicao', nome: 'pratos de almoço e jantar' }, (a) => a.categoria === 'Alimentos preparados'],
 ]
 
 /** O grupo do alimento; fora dos grupos, o grupo da tabela (o do alimento próprio é o que a nutricionista escolheu). */
