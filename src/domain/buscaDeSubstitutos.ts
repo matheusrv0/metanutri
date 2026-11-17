@@ -293,6 +293,12 @@ const MAIOR_RAZAO_DE_ENERGIA = 2
  * troca por "tremoço em conserva, 104 g", com 1,76 vez a proteína.
  */
 const MAIOR_RAZAO_DE_PROTEINA_NA_CARNE = 1.5
+/**
+ * D-1140: a regra (d) é uma faixa. O piso é o inverso do teto, como a metade é o inverso do dobro na energia: a
+ * justificativa ("a proteína é o nutriente do grupo") vale nos dois sentidos, e o salmão buscado pela gordura não troca
+ * por "peito bovino, 53 g", com 0,45 vez a proteína.
+ */
+const MENOR_RAZAO_DE_PROTEINA_NA_CARNE = 1 / MAIOR_RAZAO_DE_PROTEINA_NA_CARNE
 /** D-1136 e D-1139: a regra (d) vale no item das carnes, aves e peixes e no derivado de soja. */
 const comARegraDaProteina = (a: Alimento): boolean => grupoDeSubstituicao(a).id === 'carne' || ehDerivadoDeSoja(a)
 
@@ -304,7 +310,8 @@ const comARegraDaProteina = (a: Alimento): boolean => grupoDeSubstituicao(a).id 
  * D-1133 e D-1136: a regra (a) não vale nos leites, nas verduras e no derivado de soja, onde o grupo já diz que a troca é
  * equivalente: o leite integral ("de gordura") troca com o desnatado e a bebida de soja ("de carboidrato"), as verduras,
  * cujos macros são frações de grama, trocam entre si, e o tofu, com o feijão e o tremoço. Nos outros grupos, ela vale. E,
- * nas carnes e no tofu, a regra (d) da D-1136 e da D-1139: a proteína da porção até 1,5 vez a do item.
+ * nas carnes e no tofu, a regra (d) da D-1136, da D-1139 e da D-1140: a proteína da porção entre 1/1,5 e 1,5 vez a do
+ * item, com qualquer nutriente buscado.
  */
 export function naTrocaEquivalente(base: Alimento, gramas: number): (candidato: Alimento, gramasDoCandidato: number) => boolean {
   const macro = macroDominante(base)
@@ -313,11 +320,14 @@ export function naTrocaEquivalente(base: Alimento, gramas: number): (candidato: 
   const energiaDoItem = kcalPorCem !== null && kcalPorCem > ENERGIA_QUASE_ZERO_KCAL ? (kcalPorCem * gramas) / 100 : null
   const baseEmPo = ehPoOuDesidratado(base)
   const proteinaDoItem = ((base.nutrientes.proteina_g ?? 0) * gramas) / 100
-  const tetoDeProteina = comARegraDaProteina(base) && proteinaDoItem > 0 ? MAIOR_RAZAO_DE_PROTEINA_NA_CARNE * proteinaDoItem : null
+  const faixaDeProteina = comARegraDaProteina(base) && proteinaDoItem > 0
   return (a, gramasDoCandidato) => {
     if (!itemSemOMacro && !dispensaOMacroDominante(a) && macroDominante(a) !== macro) return false
     if (!baseEmPo && ehPoOuDesidratado(a)) return false
-    if (tetoDeProteina !== null && ((a.nutrientes.proteina_g ?? 0) * gramasDoCandidato) / 100 > tetoDeProteina + 1e-9) return false
+    if (faixaDeProteina) {
+      const razao = ((a.nutrientes.proteina_g ?? 0) * gramasDoCandidato) / 100 / proteinaDoItem
+      if (razao < MENOR_RAZAO_DE_PROTEINA_NA_CARNE - 1e-9 || razao > MAIOR_RAZAO_DE_PROTEINA_NA_CARNE + 1e-9) return false
+    }
     if (energiaDoItem === null) return true
     // CB-1111: sem energia na tabela, não dá para dizer que a troca é equivalente.
     const kcal = a.nutrientes.energia_kcal
