@@ -129,6 +129,8 @@ export function bancoDaIaFalso(
     readonly agora?: () => Date
     /** D-1347: os ids das fichas com a autorização gravada na cópia da conta (padrão: a do `PEDIDO_BASE`). */
     readonly consentimentos?: ReadonlySet<string>
+    /** D-1373: outra conta reserva logo depois desta (a corrida no teto). */
+    readonly reservaAlheiaAoReservar?: boolean
   } = {},
 ) {
   const agora = o.agora ?? (() => AGORA_IA)
@@ -159,6 +161,7 @@ export function bancoDaIaFalso(
       if (usos.filter((u) => u.conta === conta && u.criadoEm.getTime() > agora().getTime() - 3_600_000).length >= limiteHora) return { motivo: 'limite-hora' }
       const id = usos.length + 1
       usos.push({ id, conta, modo, status: 'reservado', criadoEm: agora(), custo: 0, conclusao: null })
+      if (o.reservaAlheiaAoReservar) usos.push({ id: id + 1, conta: 'outra-conta', modo, status: 'reservado', criadoEm: agora(), custo: 0, conclusao: null })
       return { reserva: id }
     },
     async concluir(reserva, conclusao) {
@@ -176,6 +179,10 @@ export function bancoDaIaFalso(
     async custoDesde(desde) {
       talvezFalhar('custoDesde')
       return (o.gastoDoDia ?? 0) + usos.filter((u) => u.criadoEm.getTime() > desde.getTime()).reduce((s, u) => s + u.custo, 0)
+    },
+    async reservasEmAndamento(desde, semContar) {
+      talvezFalhar('reservasEmAndamento')
+      return usos.filter((u) => u.status === 'reservado' && u.criadoEm.getTime() > desde.getTime() && u.id !== semContar).length
     },
   }
   return { banco, usos, ordem, fichas }

@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { IDS_DO_CATALOGO_IA } from '../../../supabase/functions/_shared/iaCatalogo.ts'
 import type { ContextoDaResposta, CorpoDoPedidoIa, LacunasIa } from '../../../supabase/functions/_shared/iaContrato.ts'
 import { diaLocal } from '@/domain/acompanhamento.ts'
@@ -14,6 +14,7 @@ import {
   lerMetaDaGaveta,
   metaNaTela,
   motivoDoAdequar,
+  motivoDoGerarDeNovo,
   novaMetaManual,
   perguntasQueFaltam,
   refeicoesDaGaveta,
@@ -38,6 +39,7 @@ import { alimentosParaSugerir, buscarAlimento } from '@/domain/tabelas.ts'
 import type { Caso, OpcaoId, OrigemIa, Plano } from '@/domain/tipos.ts'
 import { cn } from '@/lib/utils'
 import { Button } from '@ds/componentes/forms/button.tsx'
+import { criarMemoriaDaAba } from '../estado/memoriaDaAba.ts'
 import { useMediaQuery } from '../estado/usarMediaQuery.ts'
 import { useMeusAlimentos } from '../estado/usarMeusAlimentos.ts'
 import { useSugestaoIa, type DependenciasDaSugestao } from '../estado/usarSugestaoIa.ts'
@@ -92,6 +94,8 @@ const PLANO_MUDOU: Erro = { frase: 'O plano mudou enquanto a IA respondia. Gere 
 const SEM_REFEICAO = 'Deixe ao menos uma refeição.'
 const CORRIJA_A_META = 'Corrija a meta de energia.'
 const PROPOSTA_VAZIA = 'A conferência retirou todos os itens. Gere de novo.'
+/** D-1368: um pedido por vez na aba. */
+const OUTRA_ESPERANDO = 'Outro plano está esperando a sugestão da IA. Espere ou cancele lá.'
 const RASCUNHO = 'Sugestão da IA no plano, como rascunho.'
 
 const idNovo = () => globalThis.crypto.randomUUID()
@@ -120,13 +124,26 @@ interface PedidoFeito {
   readonly assinaturaDoPlano: string
 }
 
+/** D-1366: a gaveta com um pedido feito, guardada na aba pelo dono, para reabrir como estava quando a tela volta. */
+interface GavetaLembrada {
+  readonly modo: ModoDaGaveta
+  readonly form: Formulario
+  readonly pedido: PedidoFeito
+  readonly recusadas: ReadonlySet<number>
+}
+const gavetasLembradas = criarMemoriaDaAba<GavetaLembrada>()
+
 interface Desfazer {
   /** O plano de origem (D-1356): a faixa e o "Desfazer" só valem nele. */
   readonly dono: string
   readonly plano: Plano
   readonly origemIa: OrigemIa | null
   readonly texto: string
+  /** D-1367: o plano como a IA o deixou, em texto; mudou depois, o "Desfazer" apagaria a edição e some. */
+  readonly planoDaIa: string
 }
+/** D-1367: a faixa com "Desfazer" também espera pelo plano. */
+const desfazeresLembrados = criarMemoriaDaAba<Desfazer>()
 
 /**
  * O assistente de IA na etapa Refeições (spec assistente-ia, D-1300 a D-1309, D-1350 a D-1352): os botões, a gaveta, a
@@ -134,22 +151,50 @@ interface Desfazer {
  */
 export function AssistenteDaIa(p: AssistenteDaIaProps) {
   const { caso, plano, paciente } = p
-  const sugestao = useSugestaoIa(p.dependencias)
+  const dono = donoDo(caso, paciente)
+  const sugestao = useSugestaoIa(dono, p.dependencias)
   const meus = useMeusAlimentos()
   const largo = useMediaQuery('(min-width: 1180px)')
   const estreito = useMediaQuery('(max-width: 639.98px)')
-  const [abertaEm, setAbertaEm] = useState<{ readonly modo: ModoDaGaveta; readonly dono: string } | null>(null)
-  const [form, setForm] = useState<Formulario | null>(null)
-  const [pedido, setPedido] = useState<PedidoFeito | null>(null)
+  // D-1366: a tela que volta ao plano reencontra a gaveta com o pedido feito (a espera, a proposta ou o erro).
+  const [lembrada] = useState(() => gavetasLembradas.ler(dono) ?? null)
+  const [abertaEm, setAbertaEm] = useState<{ readonly modo: ModoDaGaveta; readonly dono: string } | null>(() => (lembrada ? { modo: lembrada.modo, dono } : null))
+  const [form, setForm] = useState<Formulario | null>(() => lembrada?.form ?? null)
+  const [pedido, setPedido] = useState<PedidoFeito | null>(() => lembrada?.pedido ?? null)
   const [confirmando, setConfirmando] = useState(false)
-  const [recusadas, setRecusadas] = useState<ReadonlySet<number>>(new Set())
-  const [desfazer, setDesfazer] = useState<Desfazer | null>(null)
+  const [recusadas, setRecusadas] = useState<ReadonlySet<number>>(() => lembrada?.recusadas ?? new Set())
+  const [desfazer, setDesfazer] = useState<Desfazer | null>(() => desfazeresLembrados.ler(dono) ?? null)
   const [erroLocal, setErroLocal] = useState<Erro | null>(null)
-  // D-1359: o botão que abriu a gaveta, para o foco voltar a ele quando ela fecha.
+  // D-1369: a frase do limite só entra na região viva depois da releitura do contador ao abrir.
+  const [usoRelido, setUsoRelido] = useState(true)
+  // D-1364 e D-1369 (L1): a gaveta que reabre na volta ao plano nasce com a região vazia; a frase guardada (o erro ou o
+  // limite) entra depois da releitura do contador, para o leitor de tela anunciar.
+  const [voltaPronta, setVoltaPronta] = useState(() => lembrada === null)
+  // D-1359: o botão que abriu a gaveta, para o foco voltar a ele quando ela fecha. A gaveta reaberta (D-1366) não foi
+  // aberta por um clique: vale o botão do modo dela, que se anota quando aparece.
   const quemAbriu = useRef<HTMLElement | null>(null)
+  const anotarQuemAbriu = (botao: HTMLElement | null) => {
+    if (botao) quemAbriu.current = botao
+  }
+
+  // D-1366: só a gaveta deste plano com um pedido feito fica lembrada; fechada, é esquecida.
+  useEffect(() => {
+    // O estado ainda é de outro plano (a tela trocou sem desmontar, D-1356): não mexe na lembrança deste.
+    if (abertaEm !== null && abertaEm.dono !== dono) return
+    gavetasLembradas.gravar(dono, abertaEm && form && pedido && pedido.dono === dono ? { modo: abertaEm.modo, form, pedido, recusadas } : undefined)
+  }, [dono, abertaEm, form, pedido, recusadas])
+  // D-1367: o "Desfazer" deste plano fica lembrado até ser usado ou trocado por outro.
+  useEffect(() => {
+    if (desfazer !== null && desfazer.dono !== dono) return
+    desfazeresLembrados.gravar(dono, desfazer ?? undefined)
+  }, [dono, desfazer])
+  // A gaveta reaberta relê o contador, como ao abrir (CB-1300).
+  useEffect(() => {
+    if (lembrada) void sugestao.lerUso().then(() => setVoltaPronta(true))
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- uma leitura só, a da volta ao plano
+  }, [])
 
   // D-1356: aberta noutro plano (a tela trocou sem desmontar), a gaveta não aparece neste.
-  const dono = donoDo(caso, paciente)
   const aberta = abertaEm !== null && abertaEm.dono === dono ? abertaEm.modo : null
   const agora = new Date()
   const hoje = diaLocal(agora)
@@ -157,10 +202,12 @@ export function AssistenteDaIa(p: AssistenteDaIaProps) {
   const situacao = { comPaciente: paciente !== null, perfil: p.perfil, estudanteAprovado: p.estudanteAprovado, caso, agora }
   // CA-2360: o botão da etapa desliga pelo que a gaveta não resolve; a autorização e o limite ficam dentro dela.
   const motivoDoBotao = motivoParaNaoUsarIa({ ...situacao, consentimento: true, uso: null })
-  const motivoDaGaveta = motivoParaNaoUsarIa({ ...situacao, consentimento: consentimento !== null, uso: sugestao.uso })
+  const motivoDaGaveta = motivoParaNaoUsarIa({ ...situacao, consentimento: consentimento !== null, uso: sugestao.uso }) ?? (sugestao.outroEsperando ? OUTRA_ESPERANDO : null)
   const noLimite = sugestao.uso !== null && sugestao.uso.usados >= sugestao.uso.limite
   const calculada = calcularEnergia(caso, { fator: caso.energia.fator, formula: caso.energia.formula }).get
   const contador = sugestao.uso ? textoDoContador(sugestao.uso, agora) : null
+  // D-1370: com a proposta (ou as mudanças) na gaveta, o motivo é só do "Gerar de novo".
+  const motivoDeGerarDeNovo = motivoDoGerarDeNovo(motivoDaGaveta, sugestao.uso, agora)
 
   const proprios = meus.lista.map(produtoComoAlimento)
   const conferencia = (refeicoes: CorpoDoPedidoIa['refeicoes'], metaKcal: number): ContextoDaConferencia => ({
@@ -193,8 +240,9 @@ export function AssistenteDaIa(p: AssistenteDaIaProps) {
       outro: '',
       desmarcadas: new Set(),
     })
-    // CB-1300: o contador é relido ao abrir.
-    sugestao.lerUso()
+    // CB-1300: o contador é relido ao abrir; D-1369: a frase do limite espera por ele.
+    setUsoRelido(false)
+    void sugestao.lerUso().then(() => setUsoRelido(true))
   }
 
   const fechar = () => {
@@ -303,21 +351,25 @@ export function AssistenteDaIa(p: AssistenteDaIaProps) {
     // D-1356: a proposta pedida para outro caso ou paciente não entra neste plano.
     if (!proposta || !resposta || pedido?.dono !== dono || proposta.refeicoes.every((r) => r.principal.length === 0)) return
     if (temItens(plano) && !confirmando) return setConfirmando(true)
-    setDesfazer({ dono, plano, origemIa: caso.origemIa, texto: RASCUNHO })
-    p.aoAlterarPlano(propostaParaPlano(proposta, idNovo))
+    const novo = propostaParaPlano(proposta, idNovo)
+    setDesfazer({ dono, plano, origemIa: caso.origemIa, texto: RASCUNHO, planoDaIa: JSON.stringify(novo) })
+    p.aoAlterarPlano(novo)
     p.aoAlterarCaso({ origemIa: marcarIa(resposta.modelo) })
     fechar()
   }
   const aplicar = () => {
     if (!mudancas || !resposta || !pedido || pedido.dono !== dono || aceitas.size === 0) return
     if (JSON.stringify(plano) !== pedido.assinaturaDoPlano) return setErroLocal(PLANO_MUDOU)
-    setDesfazer({ dono, plano, origemIa: caso.origemIa, texto: aceitas.size === 1 ? '1 mudança aplicada.' : `${aceitas.size} mudanças aplicadas.` })
-    p.aoAlterarPlano(aplicarMudancas(plano, mudancas, aceitas, idNovo))
+    const novo = aplicarMudancas(plano, mudancas, aceitas, idNovo)
+    setDesfazer({ dono, plano, origemIa: caso.origemIa, texto: aceitas.size === 1 ? '1 mudança aplicada.' : `${aceitas.size} mudanças aplicadas.`, planoDaIa: JSON.stringify(novo) })
+    p.aoAlterarPlano(novo)
     p.aoAlterarCaso({ origemIa: marcarIa(resposta.modelo) })
     fechar()
   }
+  // D-1356 e D-1367: a faixa e o "Desfazer" só valem no plano de origem e enquanto ele é o que a IA deixou.
+  const desfazerVale = desfazer !== null && desfazer.dono === dono && desfazer.planoDaIa === JSON.stringify(plano)
   const desfazerAgora = () => {
-    if (!desfazer || desfazer.dono !== dono) return
+    if (!desfazer || !desfazerVale) return
     p.aoAlterarPlano(desfazer.plano)
     p.aoAlterarCaso({ origemIa: desfazer.origemIa })
     setDesfazer(null)
@@ -331,6 +383,9 @@ export function AssistenteDaIa(p: AssistenteDaIaProps) {
     <AutorizacaoNaGaveta desde={consentimento?.em ?? null} aoMudar={autorizar} aoBaixarTermo={p.aoBaixarTermo} />
   )
 
+  const lugar: LugarDaGaveta | null = aberta === null ? null : estreito ? 'folha' : largo ? 'lado' : 'fluxo'
+  // D-1371: no pedido, na folha, a linha do motivo fica reservada (a chave da autorização não sai do lugar).
+  const reservarMotivo = lugar === 'folha'
   let corpo: ReactNode = null
   let rodape: ReactNode = null
   // D-1364: a frase do erro vai para a região viva que a gaveta já tem.
@@ -342,7 +397,14 @@ export function AssistenteDaIa(p: AssistenteDaIaProps) {
       rodape = (
         <RodapeDaIa
           acoes={
-            <Button variant="secondary" onClick={() => sugestao.cancelar()}>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                // D-1366: cancelar esquece o pedido; ao voltar ao plano, a gaveta não reabre.
+                sugestao.cancelar()
+                setPedido(null)
+              }}
+            >
               Cancelar
             </Button>
           }
@@ -415,7 +477,7 @@ export function AssistenteDaIa(p: AssistenteDaIaProps) {
               </Button>
             </>
           }
-          motivo={motivoDaGaveta ?? (vazia ? PROPOSTA_VAZIA : null)}
+          motivo={motivoDeGerarDeNovo ?? (vazia ? PROPOSTA_VAZIA : null)}
           contador={contador}
         />
       )
@@ -436,12 +498,13 @@ export function AssistenteDaIa(p: AssistenteDaIaProps) {
               </Button>
             </>
           }
-          motivo={motivoDaGaveta}
+          motivo={motivoDeGerarDeNovo}
           contador={contador}
         />
       )
     } else if (limite) {
-      aviso = limite
+      // D-1369: na primeira pintura a região está vazia; a frase entra quando a releitura termina.
+      aviso = usoRelido ? limite : null
       rodape = <RodapeDaIa acoes={<Button disabled>{aberta === 'gerar' ? 'Sugerir plano' : 'Sugerir ajustes'}</Button>} contador={contador} />
     } else if (aberta === 'gerar') {
       const semRefeicao = form.tiradas.size >= refeicoesDoPlano.length
@@ -482,6 +545,7 @@ export function AssistenteDaIa(p: AssistenteDaIaProps) {
           }
           motivo={motivo}
           contador={contador}
+          reservarMotivo={reservarMotivo}
         />
       )
     } else {
@@ -511,22 +575,22 @@ export function AssistenteDaIa(p: AssistenteDaIaProps) {
           }
           motivo={motivo}
           contador={contador}
+          reservarMotivo={reservarMotivo}
         />
       )
     }
   }
 
-  const lugar: LugarDaGaveta | null = aberta === null ? null : estreito ? 'folha' : largo ? 'lado' : 'fluxo'
-  const gaveta = lugar && aberta ? <GavetaIa titulo={titulo} lugar={lugar} aoFechar={fechar} quemAbriu={quemAbriu} aviso={<ErroDaIa erro={aviso} aoVerPlanos={p.aoVerPlanos} />} corpo={corpo} rodape={rodape} /> : null
+  const gaveta = lugar && aberta ? <GavetaIa titulo={titulo} lugar={lugar} aoFechar={fechar} quemAbriu={quemAbriu} aviso={<ErroDaIa erro={voltaPronta ? aviso : null} aoVerPlanos={p.aoVerPlanos} />} corpo={corpo} rodape={rodape} /> : null
 
   const vaiParaTextos = mudancas && lugar !== null ? textosDoVaiPara(mudancas, recusadas, buscarAlimento) : null
   const extras: ExtrasDoPlano = {
-    ferramentas: (modelos) => <BotoesDaIa modelos={modelos} podeAdequar={temItens(plano)} motivo={motivoDoBotao} aberta={aberta} aoAbrir={abrir} />,
+    ferramentas: (modelos) => <BotoesDaIa modelos={modelos} podeAdequar={temItens(plano)} motivo={motivoDoBotao} aberta={aberta} aoAbrir={abrir} refDoAberto={anotarQuemAbriu} />,
     // D-1357: de 640 a 1180 px, a gaveta entra logo abaixo da linha dos botões, acima da faixa e das refeições.
     topo: (
       <>
         {lugar === 'fluxo' ? gaveta : null}
-        {desfazer && desfazer.dono === dono ? <FaixaDaIa texto={desfazer.texto} aoDesfazer={desfazerAgora} /> : null}
+        {desfazer && desfazerVale ? <FaixaDaIa texto={desfazer.texto} aoDesfazer={desfazerAgora} /> : null}
       </>
     ),
     vaiPara: vaiParaTextos

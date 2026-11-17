@@ -1,11 +1,12 @@
 // O núcleo da função sugerir-plano (spec assistente-ia, D-1316 a D-1320). Puro: o banco, o modelo, o relógio e o
 // registro chegam de fora (src/data/servidorIa.test.ts). Ordem de cada pedido:
 //   1. sessão; 2. formato e autorização declarada; 3. quem pode usar e o plano da assinatura; 4. o modo `uso` responde
-//   o contador; 5. a autorização gravada na ficha (D-1347); 6. o teto de gasto do dia; 7. a reserva atômica do uso (mês
-//   e hora); 8. a chamada à IA; 9. a conferência do JSON; 10. a conclusão do uso, com tokens e custo.
+//   o contador; 5. a autorização gravada na ficha (D-1347); 6. o teto de gasto do dia, com as chamadas em andamento
+//   (D-1373); 7. a reserva atômica do uso (mês e hora) e o teto de novo, sem a própria; 8. a chamada à IA; 9. a
+//   conferência do JSON; 10. a conclusão do uso, com tokens e custo.
 // O registro nunca leva o corpo do pedido, o texto da resposta nem o id da conta (CA-2320).
 import { IDS_DO_CATALOGO_IA } from './iaCatalogo.ts'
-import { custoEmMicrodolares, tokensDoCorte } from './iaCusto.ts'
+import { custoEmMicrodolares, custoMaximoDaChamada, tokensDoCorte } from './iaCusto.ts'
 import {
   conferirResposta,
   ESTUDANTE_SEM_APROVACAO,
@@ -38,6 +39,8 @@ export { custoEmMicrodolares, FATOR_DOS_EUA, PRECOS, type PrecoDoModelo } from '
 export { ESTUDANTE_SEM_APROVACAO, IA_CANCELADA, IA_DEMOROU, IA_INDISPONIVEL, IA_VAZIA, MUITAS_SUGESTOES, RECUSA_DA_IA, SEM_CONSENTIMENTO, SEM_CRN_IA, SEM_PERFIL_IA, SEM_SESSAO_IA }
 
 const UM_DIA_MS = 24 * 60 * 60 * 1000
+/** D-1373: a reserva sem conclusão ainda pode estar viva por 10 minutos (o prazo de 110 s, com folga; D-1318). */
+export const JANELA_DA_RESERVA_VIVA_MS = 10 * 60 * 1000
 /** `IA_TETO_DIARIO_USD`: um número maior que zero; sem ele, ou inválido, US$ 5 (D-1318). */
 export function tetoDoAmbiente(valor: string | undefined): number {
   const n = Number(valor?.trim() || Number.NaN)
@@ -144,13 +147,29 @@ export async function sugerirPlano(pedido: PedidoDaIa, dep: DependenciasDaIa): P
     return erro(IA_INDISPONIVEL, 503, 'indisponivel')
   }
 
-  // CA-2310: o teto de gasto do dia, de todas as contas, antes de reservar.
-  try {
-    const gasto = await dep.banco.custoDesde(new Date(agora.getTime() - UM_DIA_MS))
-    if (gasto >= dep.tetoDiarioUsd * 1_000_000) {
-      dep.log('IA: teto de gasto do dia atingido; a IA não foi chamada. Gasto em microdólares:', gasto)
-      return erro(IA_INDISPONIVEL, 503, 'indisponivel')
+  // CA-2310 e D-1373: o gasto do dia, de todas as contas, mais cada reserva ainda viva (dos últimos 10 minutos) pelo
+  // máximo de uma chamada. A presa há mais tempo (a função morreu, CB-1303) sai da conta e só aparece no registro.
+  // `semContar`: a reserva deste pedido, na conferência depois de reservar.
+  const desde = new Date(agora.getTime() - UM_DIA_MS)
+  const vivaDesde = new Date(agora.getTime() - JANELA_DA_RESERVA_VIVA_MS)
+  const custoMaximo = custoMaximoDaChamada(dep.modeloId)
+  const passouDoTeto = async (semContar: number | null): Promise<boolean> => {
+    // B2: em sequência, as reservas antes da soma. A conclusão muda o status e o custo juntos: nesta ordem, a chamada
+    // que termina no meio pode contar duas vezes, nunca nenhuma.
+    const emAndamento = await dep.banco.reservasEmAndamento(vivaDesde, semContar)
+    const gasto = await dep.banco.custoDesde(desde)
+    if (gasto + emAndamento * custoMaximo < dep.tetoDiarioUsd * 1_000_000) return false
+    let presas = '?'
+    try {
+      presas = String(Math.max(0, (await dep.banco.reservasEmAndamento(desde, semContar)) - emAndamento))
+    } catch {
+      // Só para o registro.
     }
+    dep.log('IA: teto de gasto do dia atingido; a IA não foi chamada. Gasto em microdólares:', gasto, 'em andamento:', emAndamento, 'presas:', presas)
+    return true
+  }
+  try {
+    if (await passouDoTeto(null)) return erro(IA_INDISPONIVEL, 503, 'indisponivel')
   } catch (falha) {
     dep.log('IA: não consegui somar o gasto do dia:', mensagemDe(falha))
     return erro(IA_INDISPONIVEL, 503, 'indisponivel')
@@ -169,6 +188,20 @@ export async function sugerirPlano(pedido: PedidoDaIa, dep: DependenciasDaIa): P
     reserva = r.reserva
   } catch (falha) {
     dep.log('IA: não consegui reservar o uso:', mensagemDe(falha))
+    return erro(IA_INDISPONIVEL, 503, 'indisponivel')
+  }
+
+  // D-1373: o teto de novo, já com as reservas que chegaram junto: pedidos ao mesmo tempo não passam juntos dele. Barrado
+  // aqui, o uso fecha como erro, sem custo (a IA não foi chamada).
+  let barradoNoTeto: boolean
+  try {
+    barradoNoTeto = await passouDoTeto(reserva)
+  } catch (falha) {
+    dep.log('IA: não consegui somar o gasto do dia depois de reservar:', mensagemDe(falha))
+    barradoNoTeto = true
+  }
+  if (barradoNoTeto) {
+    await dep.banco.concluir(reserva, { status: 'erro', modelo: null, entrada: 0, cacheGravados: 0, cacheLidos: 0, saida: 0, custoMicrodolares: 0, duracaoMs: 0, custoEstimado: false })
     return erro(IA_INDISPONIVEL, 503, 'indisponivel')
   }
 

@@ -81,6 +81,13 @@ export function criarBancoDaIa(cliente: SupabaseClient, log: Registro): BancoDaI
       if (error) throw new Error(error.message || 'A contagem do mês falhou.')
       return numero(data, 'A contagem do mês')
     },
+    // D-1373: uma leitura da tabela com a chave de serviço (o banco não muda); só a contagem volta.
+    async reservasEmAndamento(desde, semContar) {
+      const consulta = cliente.from('uso_da_ia').select('id', { count: 'exact', head: true }).eq('status', 'reservado').gt('criado_em', desde.toISOString())
+      const { count, error } = await (semContar === null ? consulta : consulta.neq('id', semContar))
+      if (error) throw new Error(error.message || 'A contagem das reservas falhou.')
+      return numero(count, 'A contagem das reservas')
+    },
     async custoDesde(desde) {
       const { data, error } = await cliente.rpc('custo_da_ia_desde', { p_desde: desde.toISOString() })
       if (error) throw new Error(error.message || 'A soma do gasto falhou.')

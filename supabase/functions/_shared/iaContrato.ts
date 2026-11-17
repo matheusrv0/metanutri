@@ -523,15 +523,17 @@ function refeicoes(v: unknown): readonly RefeicaoIa[] | null {
   return limpas
 }
 
+/** D-1372: o id e os números primeiro; só o item que passa neles tem o nome e o grupo limpos. */
 function meuAlimento(v: unknown): MeuAlimentoIa | null {
   if (!ehObjeto(v) || !ehIdDeMeuAlimento(v['id'])) return null
   const id = v['id']
-  const nome = textoCurto(v['nome'], LIMITES_DO_PEDIDO.nomeDoAlimento)
   const kcal = numeroNaFaixa(v['kcal'], 0, 900)
   const p = numeroNaFaixa(v['p'], 0, 100)
   const c = numeroNaFaixa(v['c'], 0, 100)
   const g = numeroNaFaixa(v['g'], 0, 100)
-  if (nome === '' || kcal === null || p === null || c === null || g === null) return null
+  if (kcal === null || p === null || c === null || g === null) return null
+  const nome = textoCurto(v['nome'], LIMITES_DO_PEDIDO.nomeDoAlimento)
+  if (nome === '') return null
   return { id, nome, grupo: textoCurto(v['grupo'], LIMITES_DO_PEDIDO.grupo), unidade: v['unidade'] === 'ml' ? 'ml' : 'g', kcal, p, c, g }
 }
 

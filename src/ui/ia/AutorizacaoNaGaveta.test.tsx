@@ -32,7 +32,7 @@ describe('AutorizacaoNaGaveta (spec assistente-ia, D-1304)', () => {
     expect(aoMudar).toHaveBeenLastCalledWith(true)
     const chave = screen.getByRole('switch', { name: 'Paciente autorizou o uso de IA' })
     expect(chave.parentElement?.className).toMatch(/min-h-11/)
-    // D-802: o desenho de 36 × 20 px com a área invisível de 48 × 48 px em volta.
+    // D-802: o desenho de 36 × 20 px com a área invisível de 46 × 46 px em volta (D-1371).
     expect(chave.className).toMatch(/before:-inset-y-3\.5/)
   })
 })

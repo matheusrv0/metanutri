@@ -16,7 +16,7 @@ interface AutorizacaoNaGavetaProps {
 
 /**
  * D-1304 e CA-2365: a chave grava na ficha; desligar revoga. O termo em Word sai pelo link. D-1361: o rótulo também liga
- * e desliga, numa linha de 44 px; a chave tem a área de toque de 48 × 48 px do sistema (D-802).
+ * e desliga, numa linha de 44 px; a chave tem a área de toque de 46 × 46 px do sistema (D-802; D-1371).
  */
 export function AutorizacaoNaGaveta({ desde, aoMudar, aoBaixarTermo }: AutorizacaoNaGavetaProps) {
   const id = useId()

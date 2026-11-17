@@ -7,7 +7,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.117.2'
 import { quemPede } from '../_shared/bancoSupabase.ts'
 import { cabecalhosPara, responder } from '../_shared/cobranca.ts'
-import { lerCorpo, PEDIDO_GRANDE_DEMAIS } from '../_shared/corpo.ts'
+import { CORPO_MAXIMO_BYTES, lerCorpo, PEDIDO_GRANDE_DEMAIS, PRAZO_DO_CORPO_MS } from '../_shared/corpo.ts'
 import { IA_INDISPONIVEL, sugerirPlano, tetoDoAmbiente } from '../_shared/ia.ts'
 import { criarModeloAnthropic, esforcoDoAmbiente, modeloDoAmbiente, PRAZO_DA_IA_MS } from '../_shared/iaAnthropic.ts'
 import { criarModeloFalso, modoFalso } from '../_shared/iaFalsa.ts'
@@ -20,8 +20,9 @@ Deno.serve(async (req: Request) => {
   if (req.method !== 'POST') return responder({ erro: 'Use POST.' }, 405, origem)
 
   try {
-    // CA-2301: acima de 64 KB, recusa sem ler o resto, sem consultar o banco e sem chamar a IA.
-    const lido = await lerCorpo(req)
+    // CA-2301: acima de 64 KB, recusa sem ler o resto, sem consultar o banco e sem chamar a IA. D-1375: o corpo tem 10 s
+    // para chegar; depois disso vira nulo (400 pedido-invalido).
+    const lido = await lerCorpo(req, CORPO_MAXIMO_BYTES, PRAZO_DO_CORPO_MS)
     if (lido.grande) return responder({ erro: PEDIDO_GRANDE_DEMAIS, codigo: 'grande' }, 413, origem)
     const urlSupabase = Deno.env.get('SUPABASE_URL')
     const servico = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')

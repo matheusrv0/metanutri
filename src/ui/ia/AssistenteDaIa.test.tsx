@@ -57,8 +57,13 @@ function Tela({
   const [caso, setCaso] = useState(casoInicial)
   const [plano, setPlano] = useState(planoInicial)
   const [paciente, setPaciente] = useState(pacienteInicial)
+  // D-1366: a tela sai do plano (outra etapa ou outra tela) e volta; o caso, o plano e a ficha ficam, como no app.
+  const [naTela, setNaTela] = useState(true)
   return (
     <>
+      <button type="button" onClick={() => setNaTela((v) => !v)}>
+        {naTela ? 'sair do plano' : 'voltar ao plano'}
+      </button>
       <output data-testid="plano">{plano.refeicoes.map((r) => r.opcoes.principal.map((i) => i.alimentoId).join(',')).join('|')}</output>
       <output data-testid="origem">{JSON.stringify(caso.origemIa)}</output>
       <output data-testid="metaManual">{JSON.stringify(caso.energia.getManual)}</output>
@@ -69,23 +74,25 @@ function Tela({
       <button type="button" onClick={() => setPaciente((p) => (p ? { ...p, consentimentoIa: null } : p))}>
         revogar na ficha
       </button>
-      <AssistenteDaIa
-        caso={caso}
-        aoAlterarCaso={(m) => setCaso((c) => ({ ...c, ...m }))}
-        plano={plano}
-        aoAlterarPlano={setPlano}
-        paciente={paciente}
-        aoAlterarPaciente={setPaciente}
-        restricoes={restricoesDoCaso(caso)}
-        perfil={PERFIL}
-        estudanteAprovado={false}
-        basePronta
-        aoVerPlanos={vi.fn()}
-        aoEditarNaFicha={vi.fn()}
-        conteudo={(e) => <TelaPlano plano={plano} aoAlterarPlano={setPlano} ferramentas={e.ferramentas} topo={e.topo} vaiPara={e.vaiPara} />}
-        lateral={<p>Resumo do dia</p>}
-        dependencias={deps}
-      />
+      {naTela ? (
+        <AssistenteDaIa
+          caso={caso}
+          aoAlterarCaso={(m) => setCaso((c) => ({ ...c, ...m }))}
+          plano={plano}
+          aoAlterarPlano={setPlano}
+          paciente={paciente}
+          aoAlterarPaciente={setPaciente}
+          restricoes={restricoesDoCaso(caso)}
+          perfil={PERFIL}
+          estudanteAprovado={false}
+          basePronta
+          aoVerPlanos={vi.fn()}
+          aoEditarNaFicha={vi.fn()}
+          conteudo={(e) => <TelaPlano plano={plano} aoAlterarPlano={setPlano} ferramentas={e.ferramentas} topo={e.topo} vaiPara={e.vaiPara} />}
+          lateral={<p>Resumo do dia</p>}
+          dependencias={deps}
+        />
+      ) : null}
     </>
   )
 }
@@ -335,6 +342,125 @@ describe('AssistenteDaIa: o estado de um plano só (CA-2406, D-1356)', () => {
   })
 })
 
+describe('AssistenteDaIa: a sugestão espera pelo plano de origem (CA-2416 a CA-2418, D-1366 e D-1367)', () => {
+  const comEspera = () => {
+    let soltar: () => void = () => {}
+    const espera = new Promise<void>((r) => {
+      soltar = r
+    })
+    return { deps: dependencias(SUGESTAO, espera), soltar: () => soltar() }
+  }
+
+  it('CA-2416: saiu do plano durante a espera; de volta, a gaveta reabre na espera e mostra a proposta quando ela chega', async () => {
+    const usuario = userEvent.setup()
+    const { deps, soltar } = comEspera()
+    montar(deps, PLANO_VAZIO)
+    await usuario.click(screen.getByRole('button', { name: 'Sugerir plano com IA' }))
+    await usuario.click(screen.getByRole('button', { name: 'Sugerir plano' }))
+    expect(await screen.findByText('Montando a sugestão. Leva de 1 a 2 minutos.')).toBeInTheDocument()
+    // Outra etapa, outro paciente: a tela do plano sai (a `key` da AreaDeTrabalho desmonta o assistente).
+    await usuario.click(screen.getByRole('button', { name: 'sair do plano' }))
+    expect(screen.queryByRole('complementary')).not.toBeInTheDocument()
+    await usuario.click(screen.getByRole('button', { name: 'voltar ao plano' }))
+    const gaveta = screen.getByRole('complementary', { name: 'Sugerir plano com IA' })
+    expect(within(gaveta).getByText('Montando a sugestão. Leva de 1 a 2 minutos.')).toBeInTheDocument()
+    await act(async () => soltar())
+    await usuario.click(await within(gaveta).findByRole('button', { name: 'Usar como rascunho' }))
+    expect(screen.getByTestId('plano').textContent).toBe('53,488,226|3,561,410||')
+    expect(vi.mocked(deps.chamar).mock.calls.filter(([, c]) => c['modo'] === 'gerar')).toHaveLength(1)
+  })
+
+  it('CA-2416: a resposta que chegou com a tela fora do plano aparece na volta, e o contador é relido', async () => {
+    const usuario = userEvent.setup()
+    const { deps, soltar } = comEspera()
+    montar(deps)
+    await usuario.click(screen.getByRole('button', { name: 'Sugerir plano com IA' }))
+    await usuario.click(screen.getByRole('button', { name: 'Sugerir plano' }))
+    await usuario.click(screen.getByRole('button', { name: 'sair do plano' }))
+    await act(async () => soltar())
+    const lidas = vi.mocked(deps.chamar).mock.calls.filter(([, c]) => c['modo'] === 'uso').length
+    await usuario.click(screen.getByRole('button', { name: 'voltar ao plano' }))
+    const gaveta = screen.getByRole('complementary', { name: 'Sugerir plano com IA' })
+    expect(within(gaveta).getByRole('group', { name: 'Totais calculados pelo app' })).toBeInTheDocument()
+    await waitFor(() => expect(vi.mocked(deps.chamar).mock.calls.filter(([, c]) => c['modo'] === 'uso')).toHaveLength(lidas + 1))
+    await waitFor(() => expect(within(gaveta).getByText(/^7 de 20 sugestões em /)).toBeInTheDocument())
+  })
+
+  it('CA-2417: a gaveta fechada (e a espera cancelada) não reabre ao voltar ao plano', async () => {
+    const usuario = userEvent.setup()
+    montar(comEspera().deps)
+    await usuario.click(screen.getByRole('button', { name: 'Sugerir plano com IA' }))
+    await usuario.click(screen.getByRole('button', { name: 'Sugerir plano' }))
+    await usuario.click(await screen.findByRole('button', { name: 'Cancelar' }))
+    await usuario.click(screen.getByRole('button', { name: 'sair do plano' }))
+    await usuario.click(screen.getByRole('button', { name: 'voltar ao plano' }))
+    expect(screen.queryByRole('complementary')).not.toBeInTheDocument()
+    await usuario.click(screen.getByRole('button', { name: 'Sugerir plano com IA' }))
+    await usuario.click(screen.getAllByRole('button', { name: 'Fechar' })[0] as HTMLElement)
+    await usuario.click(screen.getByRole('button', { name: 'sair do plano' }))
+    await usuario.click(screen.getByRole('button', { name: 'voltar ao plano' }))
+    expect(screen.queryByRole('complementary')).not.toBeInTheDocument()
+  })
+
+  it('CA-2428: o plano mudou depois da IA; a faixa e o "Desfazer" somem, na mesma visita e na volta', async () => {
+    const usuario = userEvent.setup()
+    montar(dependencias(), PLANO_VAZIO)
+    await usuario.click(screen.getByRole('button', { name: 'Sugerir plano com IA' }))
+    await usuario.click(screen.getByRole('button', { name: 'Sugerir plano' }))
+    await usuario.click(await screen.findByRole('button', { name: 'Usar como rascunho' }))
+    expect(screen.getByText('Sugestão da IA no plano, como rascunho.')).toBeInTheDocument()
+    await usuario.click(screen.getByRole('button', { name: 'mexer no plano' }))
+    const editado = screen.getByTestId('plano').textContent
+    expect(screen.queryByText('Sugestão da IA no plano, como rascunho.')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Desfazer' })).not.toBeInTheDocument()
+    await usuario.click(screen.getByRole('button', { name: 'sair do plano' }))
+    await usuario.click(screen.getByRole('button', { name: 'voltar ao plano' }))
+    expect(screen.queryByRole('button', { name: 'Desfazer' })).not.toBeInTheDocument()
+    expect(screen.getByTestId('plano').textContent).toBe(editado)
+  })
+
+  it('CA-2418: a faixa e o "Desfazer" esperam pelo plano; de volta, desfazem o plano e a marca da IA', async () => {
+    const usuario = userEvent.setup()
+    montar(dependencias(), PLANO_VAZIO)
+    await usuario.click(screen.getByRole('button', { name: 'Sugerir plano com IA' }))
+    await usuario.click(screen.getByRole('button', { name: 'Sugerir plano' }))
+    await usuario.click(await screen.findByRole('button', { name: 'Usar como rascunho' }))
+    expect(screen.getByTestId('plano').textContent).toBe('53,488,226|3,561,410||')
+    await usuario.click(screen.getByRole('button', { name: 'sair do plano' }))
+    await usuario.click(screen.getByRole('button', { name: 'voltar ao plano' }))
+    expect(screen.getByText('Sugestão da IA no plano, como rascunho.')).toBeInTheDocument()
+    await usuario.click(screen.getByRole('button', { name: 'Desfazer' }))
+    expect(screen.getByTestId('plano').textContent).toBe('|||')
+    expect(screen.getByTestId('origem').textContent).toBe('null')
+    // Desfeito, não volta mais.
+    await usuario.click(screen.getByRole('button', { name: 'sair do plano' }))
+    await usuario.click(screen.getByRole('button', { name: 'voltar ao plano' }))
+    expect(screen.queryByText('Sugestão da IA no plano, como rascunho.')).not.toBeInTheDocument()
+  })
+})
+
+describe('AssistenteDaIa: um pedido por vez na aba (CA-2419, D-1368)', () => {
+  it('CA-2419: com o plano A esperando, o plano B não pede, com o motivo; quando A termina, pode', async () => {
+    const usuario = userEvent.setup()
+    let soltar: () => void = () => {}
+    const espera = new Promise<void>((r) => {
+      soltar = r
+    })
+    const deps = dependencias(SUGESTAO, espera)
+    render(<DoisPlanos deps={deps} />)
+    await usuario.click(screen.getByRole('button', { name: 'Sugerir plano com IA' }))
+    await usuario.click(screen.getByRole('button', { name: 'Sugerir plano' }))
+    await usuario.click(screen.getByRole('button', { name: 'trocar de plano' }))
+    await usuario.click(screen.getByRole('button', { name: 'Sugerir plano com IA' }))
+    const sugerir = screen.getByRole('button', { name: 'Sugerir plano' })
+    expect(sugerir).toBeDisabled()
+    expect(screen.getByText('Outro plano está esperando a sugestão da IA. Espere ou cancele lá.')).toBeInTheDocument()
+    await act(async () => soltar())
+    await waitFor(() => expect(sugerir).toBeEnabled())
+    expect(vi.mocked(deps.chamar).mock.calls.filter(([, c]) => c['modo'] === 'gerar')).toHaveLength(1)
+  })
+})
+
 describe('AssistenteDaIa: a gaveta no fluxo, de 640 a 1180 px (CA-2407, D-1357)', () => {
   // Sem `matchMedia` (o jsdom), a tela vale como a do meio: a gaveta fica no fluxo da página.
   const depois = (a: Element, b: Element) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0
@@ -438,6 +564,87 @@ describe('AssistenteDaIa: o erro numa região que já existe (CA-2410, D-1364)',
   })
 })
 
+describe('AssistenteDaIa: a frase do limite ao reabrir (CA-2420, D-1369)', () => {
+  it('CA-2420: na segunda abertura com o mês cheio, a região viva nasce vazia e recebe a frase depois da releitura', async () => {
+    const usuario = userEvent.setup()
+    const CHEIO = { ...USO, usados: 20 }
+    let leituras = 0
+    let soltarSegunda: () => void = () => {}
+    const deps: DependenciasDaSugestao = {
+      chamar: vi.fn(async (_n: string, c: Record<string, unknown>) => {
+        if (c['modo'] !== 'uso') return { dados: null, falha: { status: 503, codigo: 'indisponivel', erro: null } }
+        leituras += 1
+        if (leituras === 2) await new Promise<void>((r) => (soltarSegunda = r))
+        return { dados: { uso: CHEIO }, falha: null }
+      }),
+      salvarAgora: vi.fn(async () => true),
+      online: () => true,
+    }
+    montar(deps)
+    await usuario.click(screen.getByRole('button', { name: 'Sugerir plano com IA' }))
+    const primeira = screen.getByRole('complementary', { name: 'Sugerir plano com IA' })
+    await waitFor(() => expect(within(primeira).getByRole('status')).toHaveTextContent(/^As 20 sugestões de .+ foram usadas\./))
+    await usuario.click(within(primeira).getAllByRole('button', { name: 'Fechar' })[0] as HTMLElement)
+    await usuario.click(screen.getByRole('button', { name: 'Sugerir plano com IA' }))
+    const segunda = screen.getByRole('complementary', { name: 'Sugerir plano com IA' })
+    const regiao = within(segunda).getByRole('status')
+    expect(regiao).toHaveTextContent(/^$/)
+    await act(async () => soltarSegunda())
+    await waitFor(() => expect(regiao).toHaveTextContent(/^As 20 sugestões de .+ foram usadas\./))
+    expect(regiao.isConnected).toBe(true)
+  })
+})
+
+describe('AssistenteDaIa: a frase do limite na gaveta que reabre (CA-2420, L1)', () => {
+  /** A função recusa (422) ou cai (503); o contador vem 19 na abertura e 20 na volta, que espera até `soltar`. */
+  const comVolta = (falha: { readonly status: number; readonly codigo: string }) => {
+    let leituras = 0
+    let soltar: () => void = () => {}
+    const deps: DependenciasDaSugestao = {
+      chamar: vi.fn(async (_n: string, c: Record<string, unknown>) => {
+        if (c['modo'] !== 'uso') return { dados: null, falha: { ...falha, erro: null } }
+        leituras += 1
+        if (leituras === 2) await new Promise<void>((r) => (soltar = r))
+        return { dados: { uso: { ...USO, usados: leituras === 1 ? 19 : 20 } }, falha: null }
+      }),
+      salvarAgora: vi.fn(async () => true),
+      online: () => true,
+    }
+    return { deps, soltar: () => soltar() }
+  }
+
+  it('CA-2420: "Voltar ao pedido", sair e voltar com o mês cheio: a região nasce vazia e recebe a frase do limite', async () => {
+    const usuario = userEvent.setup()
+    const { deps, soltar } = comVolta({ status: 422, codigo: 'recusa' })
+    montar(deps)
+    await usuario.click(screen.getByRole('button', { name: 'Sugerir plano com IA' }))
+    await waitFor(() => expect(screen.getByText(/^19 de 20 sugestões em /)).toBeInTheDocument())
+    await usuario.click(screen.getByRole('button', { name: 'Sugerir plano' }))
+    await usuario.click(await screen.findByRole('button', { name: 'Voltar ao pedido' }))
+    await usuario.click(screen.getByRole('button', { name: 'sair do plano' }))
+    await usuario.click(screen.getByRole('button', { name: 'voltar ao plano' }))
+    const regiao = within(screen.getByRole('complementary', { name: 'Sugerir plano com IA' })).getByRole('status')
+    expect(regiao).toHaveTextContent(/^$/)
+    await act(async () => soltar())
+    await waitFor(() => expect(regiao).toHaveTextContent(/^As 20 sugestões de .+ foram usadas\./))
+  })
+
+  it('D-1364: o erro guardado também entra na região depois que a gaveta reabre, não na primeira pintura', async () => {
+    const usuario = userEvent.setup()
+    const { deps, soltar } = comVolta({ status: 503, codigo: 'indisponivel' })
+    montar(deps)
+    await usuario.click(screen.getByRole('button', { name: 'Sugerir plano com IA' }))
+    await usuario.click(screen.getByRole('button', { name: 'Sugerir plano' }))
+    await screen.findByText('As sugestões com IA estão indisponíveis agora. Tente mais tarde.')
+    await usuario.click(screen.getByRole('button', { name: 'sair do plano' }))
+    await usuario.click(screen.getByRole('button', { name: 'voltar ao plano' }))
+    const regiao = within(screen.getByRole('complementary', { name: 'Sugerir plano com IA' })).getByRole('status')
+    expect(regiao).toHaveTextContent(/^$/)
+    await act(async () => soltar())
+    await waitFor(() => expect(regiao).toHaveTextContent('As sugestões com IA estão indisponíveis agora. Tente mais tarde.'))
+  })
+})
+
 describe('AssistenteDaIa: "Gerar de novo" e a proposta vazia (CA-2414, CA-2415, D-1365)', () => {
   it('CA-2414: com a autorização revogada, "Gerar de novo" desliga com o motivo e nada é pedido', async () => {
     const usuario = userEvent.setup()
@@ -449,7 +656,9 @@ describe('AssistenteDaIa: "Gerar de novo" e a proposta vazia (CA-2414, CA-2415, 
     expect(gerar).toBeEnabled()
     await usuario.click(screen.getByRole('button', { name: 'revogar na ficha' }))
     expect(gerar).toBeDisabled()
-    expect(screen.getByText('Registre na ficha a autorização do paciente.')).toBeInTheDocument()
+    // D-1370: o motivo é do "Gerar de novo"; "Usar como rascunho" continua valendo.
+    expect(screen.getByText('Para gerar de novo, registre na ficha a autorização do paciente.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Usar como rascunho' })).toBeEnabled()
     const pedidos = vi.mocked(deps.chamar).mock.calls.filter(([, c]) => c['modo'] === 'gerar').length
     await usuario.click(gerar)
     expect(vi.mocked(deps.chamar).mock.calls.filter(([, c]) => c['modo'] === 'gerar')).toHaveLength(pedidos)
@@ -471,6 +680,27 @@ describe('AssistenteDaIa: "Gerar de novo" e a proposta vazia (CA-2414, CA-2415, 
     await usuario.click(screen.getByRole('button', { name: 'revogar na ficha' }))
     expect(tentar).toBeDisabled()
     expect(screen.getByText('Registre na ficha a autorização do paciente.')).toBeInTheDocument()
+  })
+
+  it('CA-2421: a última sugestão do mês pode ser usada; o rodapé diz que é para gerar de novo que falta', async () => {
+    const usuario = userEvent.setup()
+    const deps: DependenciasDaSugestao = {
+      chamar: vi.fn(async (_n: string, c: Record<string, unknown>) =>
+        c['modo'] === 'uso'
+          ? { dados: { uso: { ...USO, usados: 19 } }, falha: null }
+          : { dados: { resposta: SUGESTAO, uso: { ...USO, usados: 20 }, foraDaBase: 0, modelo: 'claude-opus-5-5' }, falha: null },
+      ),
+      salvarAgora: vi.fn(async () => true),
+      online: () => true,
+    }
+    montar(deps, PLANO_VAZIO)
+    await usuario.click(screen.getByRole('button', { name: 'Sugerir plano com IA' }))
+    await waitFor(() => expect(screen.getByText(/^19 de 20 sugestões em /)).toBeInTheDocument())
+    await usuario.click(screen.getByRole('button', { name: 'Sugerir plano' }))
+    expect(await screen.findByRole('button', { name: 'Usar como rascunho' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'Gerar de novo' })).toBeDisabled()
+    expect(screen.getByText(/^Para gerar de novo, espere até 1º de .+: as 20 sugestões de .+ foram usadas\.$/)).toBeInTheDocument()
+    expect(screen.queryByText(/^As 20 sugestões de /)).not.toBeInTheDocument()
   })
 
   it('CA-2415: a proposta em que a conferência retirou todos os itens não pode ser usada', async () => {

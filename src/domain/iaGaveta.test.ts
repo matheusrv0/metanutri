@@ -1,6 +1,7 @@
-import { IA_DEMOROU, IA_INDISPONIVEL, IA_VAZIA, MUITAS_SUGESTOES, RECUSA_DA_IA, SEM_CONSENTIMENTO } from '../../supabase/functions/_shared/iaContrato.ts'
+import { IA_DEMOROU, IA_INDISPONIVEL, IA_VAZIA, MUITAS_SUGESTOES, RECUSA_DA_IA, SEM_CONSENTIMENTO, textoDoLimite } from '../../supabase/functions/_shared/iaContrato.ts'
 import { casoDaGestante, HOJE, pacienteDaGestante, planoDeAdulto, restricoesDoCaso } from './ia.test-utils.ts'
 import {
+  motivoDoGerarDeNovo,
   erroDaIa,
   fichaNaGaveta,
   itensDoQueAjustar,
@@ -201,5 +202,22 @@ describe('a meta de energia da gaveta (CA-2413, D-1363)', () => {
   it('a meta inválida avisa na linha do campo', () => {
     expect(textoDaMeta(null, 2681)).toBe('Informe uma meta entre 500 e 6.000 kcal.')
     expect(textoDaMeta(null, null)).toBe('Informe uma meta entre 500 e 6.000 kcal.')
+  })
+})
+
+describe('o motivo do "Gerar de novo" desligado (CA-2421, D-1370)', () => {
+  const CHEIO = { usados: 20, limite: 20, renovaEm: '2026-12-01' }
+
+  it('no limite, o motivo diz que é para gerar de novo, e quando volta', () => {
+    expect(motivoDoGerarDeNovo(textoDoLimite(20, agora), CHEIO, agora)).toBe('Para gerar de novo, espere até 1º de dezembro: as 20 sugestões de novembro foram usadas.')
+  })
+
+  it('sem a autorização, o mesmo jeito', () => {
+    expect(motivoDoGerarDeNovo(SEM_CONSENTIMENTO, null, agora)).toBe('Para gerar de novo, registre na ficha a autorização do paciente.')
+  })
+
+  it('os outros motivos ficam como são; sem motivo, nada', () => {
+    expect(motivoDoGerarDeNovo('Outro plano está esperando a sugestão da IA. Espere ou cancele lá.', CHEIO, agora)).toBe('Outro plano está esperando a sugestão da IA. Espere ou cancele lá.')
+    expect(motivoDoGerarDeNovo(null, CHEIO, agora)).toBeNull()
   })
 })

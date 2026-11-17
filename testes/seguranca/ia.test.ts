@@ -3,6 +3,7 @@
 // cascata ao excluir a conta, em exclusao.test.ts. Aqui: só o servidor chama as funções, duas abas não passam juntas do
 // limite, a hora conta tudo, concluir vale uma vez e os usos velhos saem.
 import { afterEach, beforeAll, describe, expect, it } from 'vitest'
+import { criarBancoDaIa } from '../../supabase/functions/_shared/iaSupabase.ts'
 import { barrado, fotografar, prepararCenario, semNadaDaVitima, type Cenario } from './preparo.ts'
 
 let c: Cenario
@@ -203,6 +204,23 @@ describe('CA-2310: o gasto do dia', () => {
     await c.servico.from('uso_da_ia').insert({ nutricionista_id: c.atacante.id, modo: 'gerar', status: 'ok', consentimento_declarado: true, custo_microdolares: 250_000 })
     const depois = (await c.servico.rpc('custo_da_ia_desde', { p_desde: desde })).data as number
     expect(Number(depois) - Number(antes)).toBe(250_000)
+    await limparAtacante()
+  })
+})
+
+describe('CA-2425 e D-1373: as reservas em andamento, para o teto do dia', () => {
+  it('a função conta só as reservadas depois da data, de todas as contas, sem a reserva indicada', async () => {
+    await limparAtacante()
+    const banco = criarBancoDaIa(c.servico, () => undefined)
+    const desde = new Date(Date.now() - 60 * 1000)
+    const antes = await banco.reservasEmAndamento(desde, null)
+    const presa = linhaDe((await reservar(40)).data).reserva
+    const concluida = linhaDe((await reservar(40)).data).reserva
+    if (presa === null || concluida === null) throw new Error('a reserva não veio')
+    await c.servico.rpc('concluir_uso_da_ia', { p_reserva: concluida, p_status: 'ok', p_modelo: 'claude-opus-5-5', p_entrada: 1, p_cache_gravados: 0, p_cache_lidos: 0, p_saida: 1, p_custo: 10, p_duracao: 1, p_custo_estimado: false })
+    expect(await banco.reservasEmAndamento(desde, null)).toBe(antes + 1)
+    expect(await banco.reservasEmAndamento(desde, presa)).toBe(antes)
+    expect(await banco.reservasEmAndamento(new Date(Date.now() + 60 * 1000), null)).toBe(0)
     await limparAtacante()
   })
 })

@@ -1,11 +1,14 @@
 // O tamanho do pedido às funções de cobrança (spec seguranca-lote-2, D-110; CA-451). Puro: usa só o
-// Request e o ReadableStream padrão, que existem no Deno e no Node; sem Deno, sem rede e sem relógio
-// (src/data/servidorCorpo.test.ts).
+// Request e o ReadableStream padrão, que existem no Deno e no Node; sem Deno e sem rede. O relógio só entra com o
+// prazo opcional da leitura (spec assistente-ia, D-1375) (src/data/servidorCorpo.test.ts).
 
 /** D-110: o pedido vai até 64 KB. */
 export const CORPO_MAXIMO_BYTES = 65_536
 /** A frase do 413 de assinar e gerenciar-assinatura. */
 export const PEDIDO_GRANDE_DEMAIS = 'O pedido é grande demais.'
+
+/** D-1375: o prazo para o corpo chegar inteiro, na sugerir-plano (as outras funções leem sem prazo). */
+export const PRAZO_DO_CORPO_MS = 10_000
 
 /** O que o pedido precisa ter para ser lido aqui; o Request do Deno serve. */
 export interface PedidoComCorpo {
@@ -24,7 +27,7 @@ const SEM_JSON: CorpoLido = { grande: false, json: null }
  * ele, ou com um declarado menor que o de verdade, a leitura para no primeiro pedaço que passa do
  * limite. Corpo vazio, que não é JSON ou que falha no meio vira nulo.
  */
-export async function lerCorpo(pedido: PedidoComCorpo, limite = CORPO_MAXIMO_BYTES): Promise<CorpoLido> {
+export async function lerCorpo(pedido: PedidoComCorpo, limite = CORPO_MAXIMO_BYTES, prazoMs?: number): Promise<CorpoLido> {
   const declarado = Number(pedido.headers.get('content-length') ?? Number.NaN)
   if (declarado > limite) return GRANDE
   if (!pedido.body) return SEM_JSON
@@ -32,9 +35,23 @@ export async function lerCorpo(pedido: PedidoComCorpo, limite = CORPO_MAXIMO_BYT
   const decodificador = new TextDecoder()
   let texto = ''
   let lidos = 0
+  // D-1375: com prazo, o corpo que não chega inteiro a tempo vira nulo, e a leitura para (o cliente lento não segura
+  // o trabalhador).
+  let relogio: ReturnType<typeof setTimeout> | undefined
+  const esgotou =
+    prazoMs === undefined
+      ? null
+      : new Promise<'esgotou'>((avisar) => {
+          relogio = setTimeout(() => avisar('esgotou'), prazoMs)
+        })
   try {
     for (;;) {
-      const { done, value } = await leitor.read()
+      const lido = esgotou ? await Promise.race([leitor.read(), esgotou]) : await leitor.read()
+      if (lido === 'esgotou') {
+        await leitor.cancel().catch(() => undefined)
+        return SEM_JSON
+      }
+      const { done, value } = lido
       if (done) break
       lidos += value.byteLength
       if (lidos > limite) {
@@ -46,6 +63,8 @@ export async function lerCorpo(pedido: PedidoComCorpo, limite = CORPO_MAXIMO_BYT
     texto += decodificador.decode()
   } catch {
     return SEM_JSON
+  } finally {
+    clearTimeout(relogio)
   }
   try {
     const json: unknown = JSON.parse(texto)

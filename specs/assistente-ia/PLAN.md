@@ -244,3 +244,60 @@ Feito, um commit por tarefa, de T38 a T48. O que mudou em relação à tabela, a
 - **T45.** `lerMetaDaGaveta`, `metaNaTela` e `novaMetaManual` em `iaGaveta.ts`, no lugar do `metaDoTexto` do componente.
 - **T48 antes do T47**, para o e2e rodar uma vez só. O e2e (T47) cobre também, no app de verdade, o CA-2406, o
   CA-2407, o CA-2408 e o CA-2411, e o CA-2381 passa a 360 px no mesmo commit.
+
+## 11. Rodada de melhorias (16/11/2026)
+
+Saída da `main` 15715f95, no ar. Itens das revisões `revisao-ia-p2-r2` (baixos 1 e 2 e as leves), `revisao-ia-r3` (as
+leves) e `revisao-ia-r2` (as recomendações 1, 4 e 5; a 2 já é o D-1348 e a 3, o D-1343). Decisões D-1366 a D-1375,
+testes CA-2416 a CA-2427 e CB-1322. Uma tarefa por commit, em TDD. Nenhum SQL: o banco não muda (D-1373 lê a tabela com
+a chave de serviço). As funções mudadas vão no relatório para o dono publicar.
+
+| Tarefa | Arquivos, na ordem | CA e CB |
+|---|---|---|
+| T49 — A sugestão espera pelo plano (baixo 1) | `src/ui/estado/memoriaDaAba.ts` (nova: a lembrança da aba, com o esquecer dos testes), `src/ui/estado/usarSugestaoIa.ts` (o estado pelo dono, fora do componente), `src/ui/ia/AssistenteDaIa.tsx` (o pedido e a gaveta lembrados), `src/ui/ia/BotoesDaIa.tsx` (o foco do botão do modo aberto), `src/ui/conta/UsoDaIa.tsx`, `vitest.setup.ts` (esquece entre os testes), `e2e/servidor-falso/ia.spec.ts` (+ testes) | CA-2416, CA-2417, CB-1322 |
+| T50 — O "Desfazer" espera (E6) | `src/ui/ia/AssistenteDaIa.tsx` (+ teste) | CA-2418 |
+| T51 — Um pedido por vez (S2k) | `src/ui/estado/usarSugestaoIa.ts`, `src/ui/ia/AssistenteDaIa.tsx` (+ testes) | CA-2419 |
+| T52 — A frase do limite ao reabrir (baixo 2) | `src/ui/estado/usarSugestaoIa.ts` (`lerUso` devolve a promessa), `src/ui/ia/AssistenteDaIa.tsx` (+ teste) | CA-2420 |
+| T53 — O motivo do "Gerar de novo" (S7b) | `src/domain/iaGaveta.ts` (`motivoDoGerarDeNovo`), `src/ui/ia/AssistenteDaIa.tsx` (+ testes) | CA-2421, CA-2414 |
+| T54 — A chave no lugar (E7) e os 46 × 46 | `src/ui/ia/RodapeDaIa.tsx` (`reservarMotivo`), `src/ui/ia/AssistenteDaIa.tsx`, `src/ui/ia/AutorizacaoNaGaveta.tsx` (o comentário), `e2e/servidor-falso/ia.spec.ts` (+ testes) | CA-2422, CA-2411 |
+| T55 — "Meus alimentos": números antes do nome (r3, rec. 1) | `supabase/functions/_shared/iaContrato.ts` (`meuAlimento`), `src/data/servidorIaContrato.test.ts` | CA-2423, CA-2390 |
+| T56 — O teto vê as chamadas em andamento (r2, rec. 1; r3, rec. 2) | `supabase/functions/_shared/iaCusto.ts` (`custoMaximoDaChamada`), `_shared/iaPortas.ts` (`reservasEmAndamento`), `_shared/iaSupabase.ts`, `_shared/ia.ts`, `src/data/servidorIaFalsos.test-utils.ts`, `src/data/servidorIa.test.ts`, `src/data/servidorIaLigacao.test.ts`, `testes/seguranca/ia.test.ts` | CA-2424, CA-2425, CA-2310, CB-1303 |
+| T57 — Café e chás até uma caneca (r2, rec. 4) | `src/domain/iaConferencia.ts` (+ teste), `src/domain/iaMudancas.ts` (+ teste) | CA-2426 |
+| T58 — A leitura do corpo com prazo (r2, rec. 5) | `supabase/functions/_shared/corpo.ts` (prazo opcional), `supabase/functions/sugerir-plano/index.ts`, `src/data/servidorCorpo.test.ts`, `src/data/servidorIaLigacao.test.ts` | CA-2427 |
+
+Riscos e decisões para o dono revisar:
+
+- **DP-IA-13.** A lembrança da aba (D-1366) guarda dado do paciente só na memória da página, nunca no navegador nem na
+  nuvem; recarregar ou sair apaga.
+- **DP-IA-14.** O custo máximo de uma chamada (D-1373) usa o preço do modelo configurado: US$ 0,85 no Opus 5.5 e
+  US$ 0,43 no Sonnet 5.5. A troca automática de modelo (recusa no meio da resposta) cobra a parte já escrita e a chamada
+  inteira de novo no outro modelo: uma chamada pode custar até 2 vezes o máximo (cerca de 2,25 vezes no Opus, que troca
+  para o Opus 5 ou o 4.8, mais caros). O teto pode passar por isso (revisão das melhorias, B3).
+- **DP-IA-15.** A segunda conferência do teto (D-1373) gasta uma das 10 da hora quando barra: é o preço de não travar a
+  tabela. Com muitos pedidos no mesmo instante perto do teto, todos podem ser barrados (cada um vê os outros): não gasta
+  dinheiro, e no uso real (pedidos a segundos de distância) é raro (revisão das melhorias, B1).
+- **DP-IA-16.** A reserva presa (D-1373, CB-1303) sai do teto depois de 10 minutos: o que ela gastou de verdade fica sem
+  contar no dia. A trava final é o limite mensal no Console da Anthropic (D-1318); o dono vê e solta as presas pelo SQL
+  Editor (relatório da rodada).
+
+## 12. Correções da revisão das melhorias (16/11/2026)
+
+A revisão `revisao-melhorias-ia` aprovou com 2 médios (M1 e M2) e baixos. Decisões D-1366 a D-1374 atualizadas,
+testes CA-2428 a CA-2431. Uma tarefa por commit, em TDD. Sem SQL.
+
+| Tarefa | Arquivos | CA |
+|---|---|---|
+| T59 — M1: o "Desfazer" some quando o plano mudou | `src/ui/ia/AssistenteDaIa.tsx` (+ teste) | CA-2428, CA-2418 |
+| T60 — M2 e B2: só a reserva viva conta, lida antes da soma | `supabase/functions/_shared/ia.ts`, `src/data/servidorIa.test.ts` | CA-2431, CA-2424 |
+| T61 — B4: a troca de conta esquece a aba | `src/ui/estado/memoriaDaAba.ts` (`useEsquecerAoTrocarDeConta`), `src/App.tsx` (+ teste) | CA-2429 |
+| T62 — B5: café e chás somam com a opção no adequar | `src/domain/iaMudancas.ts` (+ teste) | CA-2430 |
+| T63 — L1: a gaveta que reabre espera a releitura | `src/ui/ia/AssistenteDaIa.tsx` (+ teste) | CA-2420 |
+| T64 — L2: os dois textos | `src/domain/iaGaveta.ts`, `src/ui/ia/AssistenteDaIa.tsx` (+ testes) | CA-2419, CA-2421 |
+| T65 — O plano e a marca da IA, juntos (achado no e2e do T59) | `src/ui/estado/usarCasoAberto.ts` (+ teste novo `usarCasoAberto.test.tsx`) | CA-2368, CA-2402, CA-2428 |
+
+**T65, achado ao rodar o e2e do T59.** "Usar como rascunho" e "Aplicar" chamam `aoAlterarPlano` e logo depois
+`aoAlterarCaso({ origemIa })`, no mesmo evento. No app, as duas funções de `useCasoAberto` montam o que salvam a partir do
+mesmo `registro` da renderização: a segunda grava o caso com o plano de antes. A marca da IA fica, e o plano volta ao de
+antes. O "Desfazer" (que chama as duas) tem o mesmo defeito. Os testes de tela não pegavam porque o `Tela` dos testes guarda
+o caso e o plano em estados separados, e o e2e só olhava a faixa. A correção: cada mudança parte do que está salvo
+(`repositorio.obter`), não do `registro` da renderização. Fora do plano original; anotado aqui antes do código.

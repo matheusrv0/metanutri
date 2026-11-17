@@ -4,12 +4,16 @@
 import {
   conferirResposta,
   IA_DEMOROU,
+  mesEmBrasilia,
   IA_INDISPONIVEL,
   IA_VAZIA,
   LIMITE_DE_SUGESTOES_IA,
   MUITAS_SUGESTOES,
   RECUSA_DA_IA,
+  renovaEm,
+  SEM_CONSENTIMENTO,
   SEM_SESSAO_IA,
+  textoDaRenovacao,
   textoDoLimite,
   type ContextoDaResposta,
   type LacunasIa,
@@ -295,6 +299,19 @@ export interface RespostaDaFuncao {
 const ehObjeto = (v: unknown): v is Readonly<Record<string, unknown>> => typeof v === 'object' && v !== null && !Array.isArray(v)
 
 /** O contador que a função devolve; fora da forma, nulo. */
+/**
+ * D-1370: com a proposta (ou as mudanças) na gaveta, o motivo do rodapé é só do "Gerar de novo"; o limite e a
+ * autorização dizem isso, para não parecer que a proposta não pode ser usada.
+ */
+export function motivoDoGerarDeNovo(motivo: string | null, uso: UsoDoMes | null, agora: Date): string | null {
+  if (motivo === SEM_CONSENTIMENTO) return 'Para gerar de novo, registre na ficha a autorização do paciente.'
+  if (uso && motivo === textoDoLimite(uso.limite, agora)) {
+    const quando = textoDaRenovacao(renovaEm(agora)).replace(/^Renovam em /, '')
+    return `Para gerar de novo, espere até ${quando}: as ${uso.limite} sugestões de ${mesEmBrasilia(agora)} foram usadas.`
+  }
+  return motivo
+}
+
 export function lerUso(valor: unknown): UsoDoMes | null {
   if (!ehObjeto(valor)) return null
   const { usados, limite, renovaEm } = valor

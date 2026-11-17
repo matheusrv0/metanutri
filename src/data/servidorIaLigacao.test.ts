@@ -51,6 +51,10 @@ describe('D-1316: a função é só ligação', () => {
     expect(grande).toBeLessThan(indice.indexOf('quemPede('))
   })
 
+  it('CA-2427 e D-1375: o corpo tem o prazo de leitura; as outras funções leem sem prazo', () => {
+    expect(indice).toContain('await lerCorpo(req, CORPO_MAXIMO_BYTES, PRAZO_DO_CORPO_MS)')
+  })
+
   it('falha inesperada responde 500 com a frase de indisponível e os cabeçalhos do site; o registro leva só a mensagem', () => {
     const pegar = indice.indexOf('\n  } catch (erro) {\n')
     expect(pegar).toBeGreaterThan(indice.indexOf('return responder(resposta.corpo, resposta.status, origem)'))
@@ -90,7 +94,7 @@ describe('CA-2300: a permissão do navegador e o método, pelo que a função de
     const metodo = indice.indexOf("if (req.method !== 'POST') return responder({ erro: 'Use POST.' }, 405, origem)")
     expect(opcoes).toBeGreaterThan(indice.indexOf("const origem = req.headers.get('Origin')"))
     expect(metodo).toBeGreaterThan(opcoes)
-    expect(metodo).toBeLessThan(indice.indexOf('await lerCorpo(req)'))
+    expect(metodo).toBeLessThan(indice.indexOf('await lerCorpo(req, '))
   })
 
   it('do app: a permissão repete o endereço; de outro endereço ou sem endereço: sem permissão; sempre Vary: Origin', () => {
@@ -122,6 +126,11 @@ describe('o banco de verdade fala com as funções do 016 pelos nomes e parâmet
     const assinatura = sql.split(`create or replace function public.${nome}(`)[1]?.split(')')[0] ?? ''
     const doSql = [...assinatura.matchAll(/(p_[a-z_]+) /g)].map((p) => p[1])
     expect(chamada?.parametros).toEqual(doSql)
+  })
+
+  it('D-1373: conta as reservas em andamento na tabela, de todas as contas, desde a data, sem a reserva indicada', () => {
+    expect(bancoDaIa).toContain("cliente.from('uso_da_ia').select('id', { count: 'exact', head: true }).eq('status', 'reservado').gt('criado_em', desde.toISOString())")
+    expect(bancoDaIa).toContain(".neq('id', semContar)")
   })
 
   it('D-1305: lê o perfil, o pedido de estudante aprovado e a assinatura da conta', () => {

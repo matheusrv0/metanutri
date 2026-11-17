@@ -1,6 +1,7 @@
 // O custo das chamadas à IA (spec assistente-ia, D-1319, D-1329 e D-1334): a tabela de preços da página oficial e a
 // estimativa conservadora da chamada cortada (prazo, rede, erro no fluxo ou cancelamento), para o teto do dia enxergar
 // também o que não chegou inteiro. Puro: sem Deno, sem rede e sem relógio.
+import { CORPO_MAXIMO_BYTES } from './corpo.ts'
 import type { TokensDoModelo } from './iaPortas.ts'
 import { CATALOGO_DO_PROMPT, REGRAS_IA } from './iaPrompt.ts'
 
@@ -55,6 +56,16 @@ export const CARACTERES_POR_TOKEN = 3
 /** A entrada estimada do pedido inteiro (regras, catálogo e a mensagem), sem cache. */
 export function entradaEstimada(mensagem: string): number {
   return Math.ceil((REGRAS_IA.length + CATALOGO_DO_PROMPT.length + mensagem.length) / CARACTERES_POR_TOKEN)
+}
+
+/**
+ * D-1373: o custo máximo de uma chamada, para o teto do dia contar as que estão em andamento (e as que ficaram sem
+ * custo): a entrada do maior pedido (regras, catálogo e o corpo de 64 KB, sem cache) e a saída inteira, no preço do
+ * modelo, com os 10% dos EUA. Cerca de US$ 1 no Opus 5.5.
+ */
+export function custoMaximoDaChamada(modelo: string): number {
+  const entrada = Math.ceil((REGRAS_IA.length + CATALOGO_DO_PROMPT.length + CORPO_MAXIMO_BYTES) / CARACTERES_POR_TOKEN)
+  return custoEmMicrodolares([{ modelo, entrada, cacheGravados: 0, cacheLidos: 0, saida: MAX_TOKENS }])
 }
 
 export interface CorteDaChamada {
