@@ -422,6 +422,28 @@ describe('AssistenteDaIa: a sugestão espera pelo plano de origem (CA-2416 a CA-
   })
 })
 
+describe('AssistenteDaIa: um pedido por vez na aba (CA-2419, D-1368)', () => {
+  it('CA-2419: com o plano A esperando, o plano B não pede, com o motivo; quando A termina, pode', async () => {
+    const usuario = userEvent.setup()
+    let soltar: () => void = () => {}
+    const espera = new Promise<void>((r) => {
+      soltar = r
+    })
+    const deps = dependencias(SUGESTAO, espera)
+    render(<DoisPlanos deps={deps} />)
+    await usuario.click(screen.getByRole('button', { name: 'Sugerir plano com IA' }))
+    await usuario.click(screen.getByRole('button', { name: 'Sugerir plano' }))
+    await usuario.click(screen.getByRole('button', { name: 'trocar de plano' }))
+    await usuario.click(screen.getByRole('button', { name: 'Sugerir plano com IA' }))
+    const sugerir = screen.getByRole('button', { name: 'Sugerir plano' })
+    expect(sugerir).toBeDisabled()
+    expect(screen.getByText('Outra sugestão está sendo gerada. Espere ela terminar.')).toBeInTheDocument()
+    await act(async () => soltar())
+    await waitFor(() => expect(sugerir).toBeEnabled())
+    expect(vi.mocked(deps.chamar).mock.calls.filter(([, c]) => c['modo'] === 'gerar')).toHaveLength(1)
+  })
+})
+
 describe('AssistenteDaIa: a gaveta no fluxo, de 640 a 1180 px (CA-2407, D-1357)', () => {
   // Sem `matchMedia` (o jsdom), a tela vale como a do meio: a gaveta fica no fluxo da página.
   const depois = (a: Element, b: Element) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0

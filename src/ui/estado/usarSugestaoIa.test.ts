@@ -212,3 +212,31 @@ describe('useSugestaoIa: a espera pelo plano de origem (D-1366)', () => {
     expect(renderHook(() => useSugestaoIa(DONO, d)).result.current.estado.fase).toBe('pedido')
   })
 })
+
+describe('useSugestaoIa: um pedido por vez na aba (D-1368)', () => {
+  it('CA-2419: com o plano A esperando, o plano B sabe e não pede; quando A termina, B pode', async () => {
+    const espera = prometida()
+    const d = dependencias({ chamar: vi.fn((_n: string, c: Record<string, unknown>) => (c['modo'] === 'uso' ? Promise.resolve({ dados: { uso: USO }, falha: null }) : espera.promessa)) })
+    const a = renderHook(() => useSugestaoIa(DONO, d))
+    const b = renderHook(() => useSugestaoIa('["caso-2","pac-2"]', d))
+    act(() => void a.result.current.pedir(corpo, CONTEXTO))
+    await waitFor(() => expect(b.result.current.outroEsperando).toBe(true))
+    expect(a.result.current.outroEsperando).toBe(false)
+    await act(async () => b.result.current.pedir(corpo, CONTEXTO))
+    expect(vi.mocked(d.chamar).mock.calls.filter(([, c]) => c['modo'] === 'gerar')).toHaveLength(1)
+    expect(b.result.current.estado.fase).toBe('pedido')
+    await act(async () => espera.resolver({ dados: { resposta: RESPOSTA, uso: USO, foraDaBase: 0, modelo: 'm' }, falha: null }))
+    expect(b.result.current.outroEsperando).toBe(false)
+  })
+
+  it('CA-2419: cancelar em A libera B na hora', async () => {
+    const espera = prometida()
+    const d = dependencias({ chamar: vi.fn(() => espera.promessa) })
+    const a = renderHook(() => useSugestaoIa(DONO, d))
+    const b = renderHook(() => useSugestaoIa('["caso-2","pac-2"]', d))
+    act(() => void a.result.current.pedir(corpo, CONTEXTO))
+    await waitFor(() => expect(b.result.current.outroEsperando).toBe(true))
+    act(() => a.result.current.cancelar())
+    expect(b.result.current.outroEsperando).toBe(false)
+  })
+})

@@ -31,6 +31,8 @@ export interface ValorSugestaoIa {
   /** O contador do mês; nulo enquanto não foi lido, ou quando a função não respondeu (CB-1321). */
   readonly uso: UsoDoMes | null
   readonly ocupado: boolean
+  /** D-1368: outro plano da aba espera a IA; este não pede até ela terminar. */
+  readonly outroEsperando: boolean
   readonly lerUso: () => void
   readonly pedir: (corpo: CorpoDoPedidoIa, contexto: ContextoDaResposta) => Promise<void>
   /** CA-2366: volta ao pedido; a resposta que chegar depois é descartada. */
@@ -56,6 +58,9 @@ interface Espera {
 /** Só os donos fora do pedido têm espera guardada: a volta ao pedido a apaga. */
 const esperas = new Map<string, Espera>()
 let ultimaVez = 0
+/** D-1368: um pedido por vez na aba: o dono e a vez do pedido que está saindo. */
+let emAndamento: { readonly dono: string; readonly vez: number } | null = null
+const donoEmAndamento = (): string | null => emAndamento?.dono ?? null
 const ouvintes = new Set<() => void>()
 const avisar = () => {
   for (const ouvir of ouvintes) ouvir()
@@ -71,10 +76,13 @@ const vezDe = (dono: string): number | null => esperas.get(dono)?.vez ?? null
 function mudar(dono: string, estado: EstadoDaSugestao, vez: number | null = vezDe(dono)): void {
   if (estado.fase === 'pedido' || vez === null) esperas.delete(dono)
   else esperas.set(dono, { estado, vez })
+  // A espera que acabou (ou foi cancelada) libera a aba.
+  if (emAndamento !== null && emAndamento.dono === dono && (estado.fase !== 'esperando' || vez !== emAndamento.vez)) emAndamento = null
   avisar()
 }
 aoEsquecerTudo(() => {
   esperas.clear()
+  emAndamento = null
   avisar()
 })
 
@@ -120,6 +128,8 @@ export function useSugestaoIa(dono: string, dependencias?: DependenciasDaSugesta
   const estado = useSyncExternalStore(assinar, () => estadoDe(dono))
   const [uso, setUso] = useState<UsoDoMes | null>(null)
   const ocupado = estado.fase === 'esperando'
+  const quemEspera = useSyncExternalStore(assinar, donoEmAndamento)
+  const outroEsperando = quemEspera !== null && quemEspera !== dono
 
   const { chamar, salvarAgora } = d
   const estaOnline = d.online
@@ -134,11 +144,12 @@ export function useSugestaoIa(dono: string, dependencias?: DependenciasDaSugesta
 
   const pedir = useCallback(
     async (corpo: CorpoDoPedidoIa, contexto: ContextoDaResposta) => {
-      // CB-1301: um pedido por vez neste plano.
-      if (estadoDe(dono).fase === 'esperando') return
+      // CB-1301 e D-1368: um pedido por vez neste plano e na aba.
+      if (estadoDe(dono).fase === 'esperando' || emAndamento !== null) return
       const minha = ++ultimaVez
       const falhou = (falha: FalhaDaIa) => mudar(dono, { fase: 'erro', erro: erroDaIa(falha, uso, new Date()) }, minha)
       if (!estaOnline()) return falhou(SEM_CONEXAO)
+      emAndamento = { dono, vez: minha }
       mudar(dono, { fase: 'esperando', inicio: Date.now() }, minha)
       // A resposta só vale enquanto a vez é esta: cancelar (ou fechar) a troca, e a tela que saiu do plano não.
       const valeAinda = () => vezDe(dono) === minha
@@ -179,5 +190,5 @@ export function useSugestaoIa(dono: string, dependencias?: DependenciasDaSugesta
 
   const voltar = useCallback(() => mudar(dono, PEDIDO), [dono])
 
-  return { estado, uso, ocupado, lerUso: lerUsoAgora, pedir, cancelar, voltar }
+  return { estado, uso, ocupado, outroEsperando, lerUso: lerUsoAgora, pedir, cancelar, voltar }
 }

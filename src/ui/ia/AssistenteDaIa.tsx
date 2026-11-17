@@ -93,6 +93,8 @@ const PLANO_MUDOU: Erro = { frase: 'O plano mudou enquanto a IA respondia. Gere 
 const SEM_REFEICAO = 'Deixe ao menos uma refeição.'
 const CORRIJA_A_META = 'Corrija a meta de energia.'
 const PROPOSTA_VAZIA = 'A conferência retirou todos os itens. Gere de novo.'
+/** D-1368: um pedido por vez na aba. */
+const OUTRA_ESPERANDO = 'Outra sugestão está sendo gerada. Espere ela terminar.'
 const RASCUNHO = 'Sugestão da IA no plano, como rascunho.'
 
 const idNovo = () => globalThis.crypto.randomUUID()
@@ -192,7 +194,7 @@ export function AssistenteDaIa(p: AssistenteDaIaProps) {
   const situacao = { comPaciente: paciente !== null, perfil: p.perfil, estudanteAprovado: p.estudanteAprovado, caso, agora }
   // CA-2360: o botão da etapa desliga pelo que a gaveta não resolve; a autorização e o limite ficam dentro dela.
   const motivoDoBotao = motivoParaNaoUsarIa({ ...situacao, consentimento: true, uso: null })
-  const motivoDaGaveta = motivoParaNaoUsarIa({ ...situacao, consentimento: consentimento !== null, uso: sugestao.uso })
+  const motivoDaGaveta = motivoParaNaoUsarIa({ ...situacao, consentimento: consentimento !== null, uso: sugestao.uso }) ?? (sugestao.outroEsperando ? OUTRA_ESPERANDO : null)
   const noLimite = sugestao.uso !== null && sugestao.uso.usados >= sugestao.uso.limite
   const calculada = calcularEnergia(caso, { fator: caso.energia.fator, formula: caso.energia.formula }).get
   const contador = sugestao.uso ? textoDoContador(sugestao.uso, agora) : null
