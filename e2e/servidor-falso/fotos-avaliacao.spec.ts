@@ -180,7 +180,8 @@ for (const [nome, viewport, toque] of [
       await comparar.getByRole('radio', { name: 'Costas' }).click()
       await expect(comparar.getByText('Sem foto de costas em 03/11/2026.')).toBeVisible()
       await semRolagemLateral(page)
-      await cartao.getByRole('button', { name: 'Ver fotos de hoje' }).click()
+      // D-1553: a avaliação é gravada com 03/11/2026; fora desse dia, o botão e a lista dizem "desta avaliação".
+      await cartao.getByRole('button', { name: /^Ver fotos (de hoje|desta avaliação)$/ }).click()
 
       // D-1511: o anexo em PDF.
       await cartao.getByLabel('Adicionar arquivo').setInputFiles({ name: 'bioimpedancia-03-11-2026.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4\n% exame de teste\n%%EOF\n') })
@@ -197,7 +198,7 @@ for (const [nome, viewport, toque] of [
       const fotosAntes = new Set([...servidor.arquivos.keys()].filter((c) => c.startsWith(`${CONTA}/${id}/fotos/`)))
       await cartao.getByLabel('Adicionar arquivo').setInputFiles({ name: 'exame-em-casa.jpg', mimeType: 'image/jpeg', buffer: comExif(await silhueta(page, 'lado', '#7a8a8f')) })
       await expect(cartao.getByText('2 de 5 fotos')).toBeVisible()
-      await expect(cartao.getByRole('list', { name: 'Fotos de hoje' }).getByText('Outra', { exact: true })).toBeVisible()
+      await expect(cartao.getByRole('list', { name: /^Fotos (de hoje|desta avaliação)$/ }).getByText('Outra', { exact: true })).toBeVisible()
       const anexada = [...servidor.arquivos.entries()].filter(([c]) => c.startsWith(`${CONTA}/${id}/fotos/`) && !fotosAntes.has(c))
       expect(anexada).toHaveLength(1)
       const [, comoFoto] = anexada[0] ?? ['', { tipo: '', bytes: Buffer.alloc(0) }]
