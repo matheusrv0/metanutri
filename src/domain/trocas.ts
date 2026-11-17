@@ -135,10 +135,50 @@ export const papelDe = (a: Alimento): Papel | null => PAPEIS.find(([, re]) => re
  */
 const mesmoEstado = (base: Alimento, a: Alimento): boolean => ehCru(base) === ehCru(a)
 
-/** Com papel, o mesmo papel (de qualquer categoria); sem papel, a mesma categoria e também sem papel. */
+/**
+ * O extrato de soja (a "bebida de soja"), que a TACO põe entre as leguminosas. Na busca, ele é do grupo dos leites; na
+ * folha, não troca com as leguminosas, nos dois sentidos (spec busca-substitutos, D-1143): feijão não é bebida.
+ */
+const EXTRATO_DE_SOJA = /^Soja, extrato solúvel/i
+export const ehExtratoDeSoja = (a: Alimento): boolean => EXTRATO_DE_SOJA.test(a.descricao.trim())
+
+const PREPARADOS = 'Alimentos preparados'
+/**
+ * Spec busca-substitutos, D-1142 e D-1144: os pratos prontos de café da manhã e lanche, pelo nome (na TACO, a tapioca com
+ * manteiga, o bolinho de arroz e o acarajé; os outros nomes valem para a receita e a preparação próprias). Eles não trocam
+ * pelos de almoço e jantar: "tapioca → macarrão à bolonhesa" não é troca.
+ */
+const PRATO_DE_LANCHE =
+  /^(Tapioca|Beiju|Crepioca|Mingau|Sandu(í|i)che|Misto quente|Bolinho de arroz|Acaraj(é|e)|Panqueca|P(ã|a)o de queijo|Omelete|Bolo de caneca|Cuscuz(,? de milho| nordestino|.* com ovo))/i
+
+/**
+ * D-1142 e D-1144: o tipo do prato pronto. O de café da manhã e lanche, pelo nome; o da tabela de composição (TACO e base
+ * ampliada, listas fechadas e conhecidas) fora dessa lista é de almoço e jantar; o próprio que o nome não diz é neutro, e
+ * troca com os dois. Fora dos "Alimentos preparados", `null`.
+ */
+export type TipoDoPrato = 'lanche' | 'refeicao' | 'neutro'
+export function tipoDoPrato(a: Alimento): TipoDoPrato | null {
+  if (a.categoria !== PREPARADOS) return null
+  if (PRATO_DE_LANCHE.test(a.descricao.trim())) return 'lanche'
+  return a.proprio ? 'neutro' : 'refeicao'
+}
+/** D-1144: o mesmo tipo, ou um deles neutro. Café da manhã e almoço não trocam entre si. */
+export const pratosCombinam = (x: TipoDoPrato | null, y: TipoDoPrato | null): boolean => x === y || x === 'neutro' || y === 'neutro'
+
+/**
+ * Com papel, o mesmo papel (de qualquer categoria); sem papel, a mesma categoria e também sem papel. Entre os pratos
+ * prontos, o mesmo tipo de refeição, ou o neutro (D-1142, D-1144); a bebida de soja não troca com as leguminosas
+ * (D-1143).
+ */
 function noMesmoPapel(base: Alimento): (a: Alimento) => boolean {
   const papel = papelDe(base)
-  if (papel === null) return (a) => a.categoria === base.categoria && papelDe(a) === null && mesmaForma(base)(a)
+  if (papel === null)
+    return (a) =>
+      a.categoria === base.categoria &&
+      papelDe(a) === null &&
+      mesmaForma(base)(a) &&
+      pratosCombinam(tipoDoPrato(a), tipoDoPrato(base)) &&
+      ehExtratoDeSoja(a) === ehExtratoDeSoja(base)
   return (a) => papelDe(a) === papel && (papel !== 'acompanhamento' || mesmoEstado(base, a))
 }
 

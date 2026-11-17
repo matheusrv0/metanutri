@@ -110,13 +110,26 @@ describe('CA-2129 (revisão rodada 2, M3): o que muda na folha de verdade', () =
   const ALMEIRAO_CRU = 84
   const ATEMOIA = 174
   const TAPIOCA_COM_MANTEIGA = 551
+  const YAKISOBA = 556
+  const MACARRAO_A_BOLONHESA = 542
 
-  it('o almeirão cru oferece a folha de mostarda, a atemóia o caqui "chocolate" e a tapioca o macarrão à bolonhesa', () => {
+  it('o almeirão cru oferece a folha de mostarda, a atemóia o caqui "chocolate" e o yakisoba o macarrão à bolonhesa', () => {
     expect(TROCAS_PEDIDAS_PELA_FOLHA).toBe(4)
     expect(TROCAS_NA_FOLHA).toBe(2)
     expect(naFolha(ALMEIRAO_CRU, 30)).toContain(135)
     expect(naFolha(ATEMOIA, 330)).toContain(189)
-    expect(naFolha(TAPIOCA_COM_MANTEIGA, 30)).toContain(542)
+    expect(naFolha(YAKISOBA, 200)).toContain(MACARRAO_A_BOLONHESA)
+  })
+
+  it('CA-2157 (D-1142): a tapioca com manteiga, de 30 a 400 g, não oferece prato de almoço nas 4 trocas pedidas', () => {
+    const onde: string[] = []
+    for (let gramas = 30; gramas <= 400; gramas += 10) {
+      const trocas = trocasDoAlimento({ alimentoId: TAPIOCA_COM_MANTEIGA, gramas }, { porAlimento: TROCAS_PEDIDAS_PELA_FOLHA, alimentos: alimentosParaSugerir() })
+      for (const t of trocas) if (porId(t.alimentoId).categoria === 'Alimentos preparados') onde.push(`${gramas} g → ${t.descricao}`)
+    }
+    expect(onde).toEqual([])
+    expect(naFolha(TAPIOCA_COM_MANTEIGA, 30)).not.toContain(YAKISOBA)
+    expect(naFolha(TAPIOCA_COM_MANTEIGA, 30)).not.toContain(MACARRAO_A_BOLONHESA)
   })
 
   it('nenhum acompanhamento, de 30 a 400 g, mostra a batata-doce na folha (a batata inglesa e a mandioca vêm antes)', () => {
@@ -126,5 +139,71 @@ describe('CA-2129 (revisão rodada 2, M3): o que muda na folha de verdade', () =
       for (let gramas = 30; gramas <= 400; gramas += 10) if (naFolha(a.id, gramas).includes(BATATA_DOCE)) onde.push(`${a.descricao} ${gramas} g`)
     }
     expect(onde).toEqual([])
+  })
+})
+
+describe('CA-2158 (D-1143): nas trocas da folha, a bebida de soja não troca com as leguminosas', () => {
+  beforeAll(() => registrarBaseAmpliada(decodificarBaseAmpliada(arquivo as unknown as ArquivoBaseAmpliada)))
+  afterAll(() => registrarBaseAmpliada([]))
+  const EXTRATO_DE_SOJA = /^Soja, extrato solúvel/i
+  const pedidas = (alimentoId: number, gramas: number) =>
+    trocasDoAlimento({ alimentoId, gramas }, { porAlimento: TROCAS_PEDIDAS_PELA_FOLHA, alimentos: alimentosParaSugerir() })
+
+  it('nenhuma leguminosa da TACO, de 30 a 400 g, tem a bebida de soja nas trocas pedidas pela folha', () => {
+    const onde: string[] = []
+    for (const a of ALIMENTOS.filter((x) => x.categoria === 'Leguminosas e derivados' && !EXTRATO_DE_SOJA.test(x.descricao))) {
+      for (let gramas = 30; gramas <= 400; gramas += 10) {
+        for (const t of pedidas(a.id, gramas)) if (EXTRATO_DE_SOJA.test(t.descricao)) onde.push(`${a.descricao} ${gramas} g → ${t.descricao}`)
+      }
+    }
+    expect(onde.slice(0, 10), `${onde.length} casos`).toEqual([])
+  })
+
+  it('a bebida de soja não troca por leguminosa na folha', () => {
+    const soja = ALIMENTOS.find((x) => /^Soja, extrato solúvel, natural, fluido$/.test(x.descricao.trim()))
+    expect(soja).toBeDefined()
+    for (const gramas of [100, 200, 300]) {
+      const leguminosas = pedidas(soja?.id ?? 0, gramas).filter((t) => porId(t.alimentoId).categoria === 'Leguminosas e derivados' && !EXTRATO_DE_SOJA.test(t.descricao))
+      expect(leguminosas.map((t) => t.descricao), `${gramas} g`).toEqual([])
+    }
+  })
+})
+
+describe('CA-2159 (D-1144): o prato próprio de café da manhã nas trocas da folha', () => {
+  const TAPIOCA_COM_MANTEIGA = 551
+  const YAKISOBA = 556
+  let proximo = 940_000
+  const proprio = (descricao: string, de = TAPIOCA_COM_MANTEIGA): Alimento => ({
+    ...porId(de),
+    id: (proximo += 1),
+    descricao,
+    categoria: 'Alimentos preparados',
+    proprio: { tipo: 'preparacao', nomeParaPaciente: descricao, sugerir: true, energiaIncoerente: false },
+  })
+  const doCafe = ['Panqueca de banana com aveia', 'Pão de queijo de frigideira', 'Cuscuz nordestino com ovo', 'Omelete de espinafre', 'Crepioca de frango'].map((n) => proprio(n))
+  const escondidinho = proprio('Escondidinho de frango', YAKISOBA)
+  beforeEach(() => registrarProdutos([...doCafe, escondidinho]))
+  afterEach(() => registrarProdutos([]))
+  const pedidas = (alimentoId: number, gramas: number) =>
+    trocasDoAlimento({ alimentoId, gramas }, { porAlimento: TROCAS_PEDIDAS_PELA_FOLHA, alimentos: alimentosParaSugerir() }).map((t) => t.descricao.trim())
+  const DE_ALMOCO = /^(Yakisoba|Macarrão, molho bolognesa|Cuscuz, paulista|Baião de dois|Charuto|Estrogonofe|Feijoada)/
+
+  it('nenhum prato de café da manhã próprio, de 30 a 400 g, oferece prato de almoço', () => {
+    const onde: string[] = []
+    for (const a of doCafe) {
+      for (let gramas = 30; gramas <= 400; gramas += 10) for (const t of pedidas(a.id, gramas)) if (DE_ALMOCO.test(t)) onde.push(`${a.descricao} ${gramas} g → ${t}`)
+    }
+    expect(onde.slice(0, 10), `${onde.length} casos`).toEqual([])
+  })
+
+  it('a tapioca com manteiga volta a ter troca: os pratos de café da manhã próprios', () => {
+    const t = pedidas(TAPIOCA_COM_MANTEIGA, 100)
+    expect(t.length).toBeGreaterThan(0)
+    expect(t.some((x) => /^(Panqueca|Pão de queijo|Cuscuz nordestino)/.test(x)), t.join(' | ')).toBe(true)
+    expect(t.filter((x) => DE_ALMOCO.test(x))).toEqual([])
+  })
+
+  it('o escondidinho próprio, neutro, troca com prato de almoço da TACO', () => {
+    expect(pedidas(escondidinho.id, 100).some((x) => DE_ALMOCO.test(x))).toBe(true)
   })
 })

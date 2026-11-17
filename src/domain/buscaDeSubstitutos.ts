@@ -4,7 +4,7 @@
 import { MICRONUTRIENTES_ADEQUACAO } from './adequacao.ts'
 import { MAXIMO_DE_PEDACOS, MEDIDAS_DE_CONTAR, medidaParaMostrar, medidasDoAlimento } from './busca.ts'
 import { posicaoNoConsumo } from './consumoPof.ts'
-import { dispensaOMacroDominante, ehFrutaInteira, ehSucoOuPolpaDeFruta, grupoDeSubstituicao, noMesmoGrupo } from './grupoDeSubstituicao.ts'
+import { dispensaOMacroDominante, ehDerivadoDeSoja, ehFrutaInteira, ehSucoOuPolpaDeFruta, grupoDeSubstituicao, noMesmoGrupo } from './grupoDeSubstituicao.ts'
 import { ehLiquido, unidadeDo } from './liquido.ts'
 import { CAFE_OU_CHA, ehDeUsoComum, ehFrito, ehPoOuDesidratado, ehPratoComposto, ehProcessado, ehSegundaEscolha, ehUltraprocessado } from './prescritivel.ts'
 import { casaRestricao, comoRestricoes, ehNaoGosta, type RestricoesDoPaciente } from './restricoes.ts'
@@ -289,8 +289,18 @@ const MAIOR_RAZAO_DE_ENERGIA = 2
  * D-1136, regra d: nas carnes, aves e peixes, a porção do candidato tem no máximo 1,5 vez a proteína da do item. No
  * grupo das carnes e ovos da lista de equivalentes (Philippi et al., Rev. Nutr. 1999;12(1):65-80), o grupo é o da
  * proteína: o cupim buscado pela gordura não troca por "contra-filé com gordura, 150 g", com 1,7 vez a proteína.
+ * D-1139: o mesmo no derivado de soja, que a lista de equivalentes põe com os feijões: o tofu buscado pela gordura não
+ * troca por "tremoço em conserva, 104 g", com 1,76 vez a proteína.
  */
 const MAIOR_RAZAO_DE_PROTEINA_NA_CARNE = 1.5
+/**
+ * D-1140: a regra (d) é uma faixa. O piso é o inverso do teto, como a metade é o inverso do dobro na energia: a
+ * justificativa ("a proteína é o nutriente do grupo") vale nos dois sentidos, e o salmão buscado pela gordura não troca
+ * por "peito bovino, 53 g", com 0,45 vez a proteína.
+ */
+const MENOR_RAZAO_DE_PROTEINA_NA_CARNE = 1 / MAIOR_RAZAO_DE_PROTEINA_NA_CARNE
+/** D-1136 e D-1139: a regra (d) vale no item das carnes, aves e peixes e no derivado de soja. */
+const comARegraDaProteina = (a: Alimento): boolean => grupoDeSubstituicao(a).id === 'carne' || ehDerivadoDeSoja(a)
 
 /**
  * D-1125: a troca equivalente no mesmo grupo, a lista de equivalentes (Philippi et al., "Pirâmide alimentar adaptada",
@@ -299,8 +309,9 @@ const MAIOR_RAZAO_DE_PROTEINA_NA_CARNE = 1.5
  * procura pelo nutriente: a energia só barra o absurdo ("leite em pó 526 g" no lugar de um copo de leite).
  * D-1133 e D-1136: a regra (a) não vale nos leites, nas verduras e no derivado de soja, onde o grupo já diz que a troca é
  * equivalente: o leite integral ("de gordura") troca com o desnatado e a bebida de soja ("de carboidrato"), as verduras,
- * cujos macros são frações de grama, trocam entre si, e o tofu, com o tremoço. Nos outros grupos, ela vale. E, nas
- * carnes, a regra (d) da D-1136: a proteína da porção até 1,5 vez a do item.
+ * cujos macros são frações de grama, trocam entre si, e o tofu, com o feijão e o tremoço. Nos outros grupos, ela vale. E,
+ * nas carnes e no tofu, a regra (d) da D-1136, da D-1139 e da D-1140: a proteína da porção entre 1/1,5 e 1,5 vez a do
+ * item, com qualquer nutriente buscado.
  */
 export function naTrocaEquivalente(base: Alimento, gramas: number): (candidato: Alimento, gramasDoCandidato: number) => boolean {
   const macro = macroDominante(base)
@@ -309,11 +320,14 @@ export function naTrocaEquivalente(base: Alimento, gramas: number): (candidato: 
   const energiaDoItem = kcalPorCem !== null && kcalPorCem > ENERGIA_QUASE_ZERO_KCAL ? (kcalPorCem * gramas) / 100 : null
   const baseEmPo = ehPoOuDesidratado(base)
   const proteinaDoItem = ((base.nutrientes.proteina_g ?? 0) * gramas) / 100
-  const tetoDeProteina = grupoDeSubstituicao(base).id === 'carne' && proteinaDoItem > 0 ? MAIOR_RAZAO_DE_PROTEINA_NA_CARNE * proteinaDoItem : null
+  const faixaDeProteina = comARegraDaProteina(base) && proteinaDoItem > 0
   return (a, gramasDoCandidato) => {
     if (!itemSemOMacro && !dispensaOMacroDominante(a) && macroDominante(a) !== macro) return false
     if (!baseEmPo && ehPoOuDesidratado(a)) return false
-    if (tetoDeProteina !== null && ((a.nutrientes.proteina_g ?? 0) * gramasDoCandidato) / 100 > tetoDeProteina + 1e-9) return false
+    if (faixaDeProteina) {
+      const razao = ((a.nutrientes.proteina_g ?? 0) * gramasDoCandidato) / 100 / proteinaDoItem
+      if (razao < MENOR_RAZAO_DE_PROTEINA_NA_CARNE - 1e-9 || razao > MAIOR_RAZAO_DE_PROTEINA_NA_CARNE + 1e-9) return false
+    }
     if (energiaDoItem === null) return true
     // CB-1111: sem energia na tabela, não dá para dizer que a troca é equivalente.
     const kcal = a.nutrientes.energia_kcal
@@ -341,6 +355,11 @@ const partesDoNome = (descricao: string): readonly string[] =>
 
 /** D-1137: os sinônimos óbvios da primeira parte do nome ("Mexerica" e "Tangerina" são a mesma fruta). */
 const SINONIMOS: ReadonlyMap<string, string> = new Map([['mexerica', 'tangerina']])
+/**
+ * D-1141: na verdura, a folha, o broto e o talo são outro alimento que a raiz ou o fruto ("Beterraba, crua" e
+ * "Beterraba, folha, crua"); "folhas desidratadas" é o estado da erva, e não a folha.
+ */
+const PARTE_DA_PLANTA = /^(folhas?|brotos?|talos?)$/
 /** D-1137: o tofu, pelo nome da TACO ("Soja, queijo (tofu)") ou da base ampliada ("Tofu, firme, …"). */
 const TOFU = /(^|[\s,(])tofu($|[\s,)])/i
 
@@ -354,14 +373,15 @@ const nomeDoAlimento = (a: Alimento): string => {
  * D-1134: o alimento, pelo nome sem o preparo. Na fruta, o nome da fruta (D-422: banana prata e banana nanica são a mesma
  * fruta); o suco e a polpa são outro alimento que a fruta inteira (D-1131). D-1137: na verdura, o nome da verdura (alface
  * crespa, lisa e americana são a mesma alface), e os sinônimos óbvios (mexerica e tangerina; o tofu da TACO e o da base
- * ampliada) são o mesmo alimento.
+ * ampliada) são o mesmo alimento. D-1141: na verdura, a folha e o broto são outro alimento que a raiz.
  */
 export function mesmoAlimentoDe(a: Alimento): string {
   if (TOFU.test(a.descricao)) return 'tofu'
   const alimento = nomeDoAlimento(a)
   if (ehSucoOuPolpaDeFruta(a)) return `${alimento} (suco ou polpa)`
-  if (ehFrutaInteira(a) || grupoDeSubstituicao(a).id === 'verdura') return alimento
+  if (ehFrutaInteira(a)) return alimento
   const [, ...resto] = partesDoNome(a.descricao)
+  if (grupoDeSubstituicao(a).id === 'verdura') return [alimento, ...resto.filter((p) => PARTE_DA_PLANTA.test(p))].join(', ')
   return [alimento, ...resto.filter((p) => !SO_PREPARO.test(p))].join(', ')
 }
 

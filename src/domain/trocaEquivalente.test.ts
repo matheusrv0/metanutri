@@ -3,13 +3,14 @@
 // sem as funções do código: o macro dominante pelos fatores de Atwater (4, 4 e 9 kcal/g), a energia na porção pela regra
 // de três e o pó pelo nome. Rodada 3 (04/11/2026): D-1133, o macro dominante só fora dos grupos da seção 3 da spec.
 // Rodada 4 (10/11/2026): D-1136, o macro dominante em todo grupo, menos no leite, na verdura e no derivado de soja.
+// Rodada de melhorias (16/11/2026): D-1139 e D-1140, a regra (d) também no derivado de soja, e como faixa.
 import arquivo from '../data/base-ampliada.json'
 import { decodificarBaseAmpliada, type ArquivoBaseAmpliada } from './baseAmpliada.ts'
-import { buscarSubstitutos, ENERGIA_QUASE_ZERO_KCAL, mesmoAlimentoDe, naTrocaEquivalente, nutrienteInicial, textoDaPorcao, type Candidato } from './buscaDeSubstitutos.ts'
+import { buscarSubstitutos, ENERGIA_QUASE_ZERO_KCAL, mensagemSemCandidato, mesmoAlimentoDe, naTrocaEquivalente, nutrienteInicial, textoDaPorcao, type Candidato } from './buscaDeSubstitutos.ts'
 import { grupoDeSubstituicao } from './grupoDeSubstituicao.ts'
 import { ehDeUsoComum, ehPoOuDesidratado, ehPrescritivel } from './prescritivel.ts'
 import { montarRestricoes } from './restricoes.ts'
-import { ALIMENTOS, alimentosParaSugerir, buscarAlimento, registrarBaseAmpliada } from './tabelas.ts'
+import { ALIMENTOS, alimentosDaBase, alimentosParaSugerir, buscarAlimento, registrarBaseAmpliada } from './tabelas.ts'
 import type { Alimento, ChaveNutrienteAlimento } from './tipos.ts'
 
 const porNome = (nome: string): Alimento => {
@@ -42,8 +43,6 @@ function vista(base: Alimento, gramas: number, nutrientes: readonly ChaveNutrien
 }
 
 /** Os grupos da tabela da seção 3 da spec (D-1108); fora deles, "os demais", o grupo da tabela de composição. */
-const GRUPOS_DA_SECAO_3: ReadonlySet<string> = new Set(['amido', 'pao', 'cereal-do-cafe', 'leguminosa', 'carne', 'ovo-queijo', 'leite', 'fruta', 'verdura', 'oleaginosa'])
-const noGrupoDaSecao3 = (a: Alimento): boolean => GRUPOS_DA_SECAO_3.has(grupoDeSubstituicao(a).id)
 /** D-1136: os grupos em que a lista de equivalentes junta macros diferentes; e o derivado de soja entre as leguminosas. */
 const DERIVADO_DE_SOJA = /^Soja,|(^|[\s,(])tofu($|[\s,)])/i
 const semOMacro = (a: Alimento): boolean => {
@@ -65,9 +64,12 @@ function foraDaTroca(base: Alimento, gramas: number, c: Candidato): string | nul
     if (k < kItem / 2 - 1e-9 || k > 2 * kItem + 1e-9) return `energia ×${(k / kItem).toFixed(2)}`
   }
   if (emPoOuSeco(a) && !emPoOuSeco(base)) return 'pó ou desidratado no lugar de quem não é'
-  // D-1136, regra (d): nas carnes, a proteína da porção até 1,5 vez a do item.
+  // D-1136 e D-1139, regra (d): nas carnes e no derivado de soja, a proteína da porção até 1,5 vez a do item.
   const pItem = ((base.nutrientes.proteina_g ?? 0) * gramas) / 100
-  if (grupoDeSubstituicao(base).id === 'carne' && pItem > 0 && ((a.nutrientes.proteina_g ?? 0) * c.gramas) / 100 > 1.5 * pItem + 1e-9) return 'proteína acima de 1,5 vez, nas carnes'
+  const comADeProteina = grupoDeSubstituicao(base).id === 'carne' || (grupoDeSubstituicao(base).id === 'leguminosa' && DERIVADO_DE_SOJA.test(base.descricao))
+  if (comADeProteina && pItem > 0 && ((a.nutrientes.proteina_g ?? 0) * c.gramas) / 100 > 1.5 * pItem + 1e-9) return 'proteína acima de 1,5 vez, nas carnes e na soja'
+  // D-1140: a (d) é uma faixa; o piso é 1/1,5 da proteína do item.
+  if (comADeProteina && pItem > 0 && ((a.nutrientes.proteina_g ?? 0) * c.gramas) / 100 < pItem / 1.5 - 1e-9) return 'proteína abaixo de 1/1,5, nas carnes e na soja'
   return null
 }
 
@@ -109,7 +111,7 @@ describe('D-1125: a troca equivalente no mesmo grupo', () => {
     }
   })
 
-  it('CA-2136 e CB-1111: toda a TACO e a base ampliada como item, com 1 e 2 nutrientes, cumprem as quatro regras (a regra a, menos no leite, na verdura e na soja; a d, nas carnes)', () => {
+  it('CA-2136 e CB-1111: toda a TACO e a base ampliada como item, com 1 e 2 nutrientes, cumprem as quatro regras (a regra a, menos no leite, na verdura e na soja; a d, nas carnes e na soja)', () => {
     const erros = new Map<string, string>()
     let candidatos = 0
     const bases = [...ALIMENTOS, ...alimentosParaSugerir().filter((a) => a.id > 100_000)]
@@ -287,11 +289,11 @@ describe('D-1133: o grupo da tabela já diz que a troca é equivalente', () => {
     expect(nomes('Iogurte, natural', 170, 'lipideos_g', { restricoes })).toContain(SOJA)
   })
 
-  it('CA-2146: o agrião tem verduras, e o tofu, o tremoço', () => {
+  it('CA-2146: o agrião tem verduras, e o tofu, pela proteína, o tremoço', () => {
     const verduras = nomes('Agrião, cru', 100, 'proteina_g')
     expect(verduras.length, verduras.join(' | ')).toBeGreaterThanOrEqual(5)
     expect(verduras.every((n) => grupoDeSubstituicao(porNome(n)).id === 'verdura')).toBe(true)
-    expect(nomes('Soja, queijo (tofu)', 100, 'lipideos_g')).toContain('Tremoço, em conserva')
+    expect(nomes('Soja, queijo (tofu)', 100, 'proteina_g')).toContain('Tremoço, em conserva')
   })
 
   it('CA-2146: a energia e o pó continuam valendo: nem leite em pó no lugar do leite e do iogurte, nem abacate no lugar da banana', () => {
@@ -314,11 +316,11 @@ describe('D-1133: o grupo da tabela já diz que a troca é equivalente', () => {
     expect(naTrocaEquivalente(leite, 150)(soja, mesmaEnergia)).toBe(true)
   })
 
-  it('CA-2146: fora dos grupos da seção 3 (os pratos prontos), o macro dominante continua valendo', () => {
+  it('CA-2146: nos pratos prontos (D-1142), o macro dominante continua valendo', () => {
     const frango = porNome('Frango, com açafrão')
     const quibebe = porNome('Quibebe')
-    expect(noGrupoDaSecao3(frango) || noGrupoDaSecao3(quibebe)).toBe(false)
-    expect(grupoDeSubstituicao(frango).id).toBe(grupoDeSubstituicao(quibebe).id)
+    expect(grupoDeSubstituicao(frango).id).toBe('prato-refeicao')
+    expect(grupoDeSubstituicao(quibebe).id).toBe('prato-refeicao')
     expect(macroPelaFormula(frango)).not.toBe(macroPelaFormula(quibebe))
     const mesmaEnergia = ((frango.nutrientes.energia_kcal ?? 0) * 100) / (quibebe.nutrientes.energia_kcal ?? 1)
     expect(naTrocaEquivalente(frango, 100)(quibebe, mesmaEnergia)).toBe(false)
@@ -471,9 +473,9 @@ describe('D-1130 e D-1134 (rodada 3): o mesmo alimento, em toda a lista', () => 
     expect(alface.length, 'a alface continua com verduras').toBeGreaterThanOrEqual(5)
     const banana = nomesDaVista('Banana, prata, crua', 100).filter((x) => /^(Mexerica|Tangerina),/.test(x))
     expect(banana.length, banana.join(' | ')).toBeLessThanOrEqual(1)
-    const tofu = nomesDaVista('Soja, queijo (tofu)', 100)
+    const tofu = vista(porNome('Soja, queijo (tofu)'), 100, ['proteina_g']).map((c) => c.alimento.descricao.trim())
     expect(tofu.filter((x) => /tofu/i.test(x)), tofu.join(' | ')).toEqual([])
-    expect(tofu, 'o tofu continua com o tremoço').toContain('Tremoço, em conserva')
+    expect(tofu, 'o tofu, pela proteína, continua com o tremoço').toContain('Tremoço, em conserva')
   })
 
   it('CA-2152 (D-1138): a farinha de mandioca, na vista padrão, tem substitutos prontos do grupo, e não a outra farinha', () => {
@@ -505,4 +507,162 @@ describe('D-1130 e D-1134 (rodada 3): o mesmo alimento, em toda a lista', () => 
     }
     expect(Object.fromEntries(erros)).toEqual({})
   }, 600_000)
+})
+
+describe('D-1139 (rodada de melhorias): a regra (d) também no derivado de soja', () => {
+  const tofu = (): Alimento => porNome('Soja, queijo (tofu)')
+  const proteina = (a: Alimento, gramas: number): number => ((a.nutrientes.proteina_g ?? 0) * gramas) / 100
+
+  it('CA-2153: pela gordura, nenhum candidato passa de 1,5 vez a proteína do tofu e o tremoço sai; com a base ampliada, fica o edamame', () => {
+    const candidatos = vista(tofu(), 100, ['lipideos_g'])
+    const p = proteina(tofu(), 100)
+    expect(candidatos.filter((c) => proteina(c.alimento, c.gramas) > 1.5 * p + 1e-9).map((c) => c.alimento.descricao)).toEqual([])
+    const n = candidatos.map((c) => c.alimento.descricao.trim())
+    expect(n).not.toContain('Tremoço, em conserva')
+    expect(n).toEqual(['Edamame, cozido'])
+  })
+
+  it('CA-2153: pela gordura, só com a TACO, o tofu fica sem substituto no mesmo grupo e vem a frase do CB-1100', () => {
+    registrarBaseAmpliada([])
+    try {
+      const r = buscarSubstitutos({ alimentoId: tofu().id, gramas: 100 }, { nutrientes: ['lipideos_g'], mesmoGrupo: true, alimentos: alimentosParaSugerir(), limite: 1000 }, buscarAlimento)
+      expect(r).toEqual({ tipo: 'lista', candidatos: [], restricaoTirou: false })
+      expect(mensagemSemCandidato(false)).toMatch(/^Nenhum substituto com esses nutrientes\. Tire um nutriente/)
+    } finally {
+      registrarBaseAmpliada(decodificarBaseAmpliada(arquivo as unknown as ArquivoBaseAmpliada))
+    }
+  })
+
+  it('CA-2153: pela proteína, o tofu troca com o feijão carioca, o preto, a lentilha e o tremoço', () => {
+    const n = vista(tofu(), 100, ['proteina_g']).map((c) => c.alimento.descricao.trim())
+    expect(n).toEqual(expect.arrayContaining(['Feijão, carioca, cozido', 'Feijão, preto, cozido', 'Lentilha, cozida', 'Tremoço, em conserva']))
+  })
+
+  it('CA-2153: o teto vale no tofu, por fórmula: o tremoço com a mesma gordura passa de 1,5 vez a proteína e sai', () => {
+    const tremoco = porNome('Tremoço, em conserva')
+    const mesmaGordura = ((tofu().nutrientes.lipideos_g ?? 0) * 100) / (tremoco.nutrientes.lipideos_g ?? 1)
+    expect(proteina(tremoco, mesmaGordura) / proteina(tofu(), 100)).toBeGreaterThan(1.5)
+    expect(naTrocaEquivalente(tofu(), 100)(tremoco, mesmaGordura)).toBe(false)
+  })
+})
+
+describe('D-1140 (rodada de melhorias): a regra (d) é uma faixa, de 1/1,5 a 1,5 vez a proteína', () => {
+  const proteina = (a: Alimento, gramas: number): number => ((a.nutrientes.proteina_g ?? 0) * gramas) / 100
+  const foraDaFaixa = (base: Alimento, gramas: number, candidatos: readonly Candidato[]): string[] => {
+    const p = proteina(base, gramas)
+    return candidatos
+      .filter((c) => proteina(c.alimento, c.gramas) < p / 1.5 - 1e-9 || proteina(c.alimento, c.gramas) > 1.5 * p + 1e-9)
+      .map((c) => `${c.alimento.descricao.trim()} · ${textoDaPorcao(c)} (×${(proteina(c.alimento, c.gramas) / p).toFixed(2)})`)
+  }
+
+  it.each([
+    ['Salmão, sem pele, fresco, grelhado'],
+    ['Carne, bovina, contra-filé, com gordura, grelhado'],
+    ['Frango, sobrecoxa, com pele, assada'],
+    ['Carne, bovina, picanha, com gordura, grelhada'],
+  ] as const)('CA-2154: %s 100 g, vista padrão: nenhum candidato fora da faixa da proteína, e a lista não fica vazia', (nome) => {
+    const base = porNome(nome)
+    const candidatos = vista(base, 100)
+    expect(candidatos.length).toBeGreaterThan(0)
+    const fora = foraDaFaixa(base, 100, candidatos)
+    expect(fora, fora.join(' | ')).toEqual([])
+  })
+
+  it('CA-2154: em toda a TACO, nenhuma carne a 100 g, na vista padrão, tem candidato fora da faixa ou fica sem candidato', () => {
+    const erros: string[] = []
+    for (const base of ALIMENTOS.filter((a) => ehPrescritivel(a) && a.nutrientes.energia_kcal && grupoDeSubstituicao(a).id === 'carne')) {
+      const candidatos = vista(base, 100)
+      if (candidatos.length === 0) erros.push(`${base.descricao.trim()}: sem candidato`)
+      const fora = foraDaFaixa(base, 100, candidatos)
+      if (fora.length > 0) erros.push(`${base.descricao.trim()} → ${fora.join(' | ')}`)
+    }
+    expect(erros.slice(0, 10), `${erros.length} itens`).toEqual([])
+  }, 300_000)
+
+  it.each([
+    ['Carne, bovina, patinho, sem gordura, grelhado'],
+    ['Frango, peito, sem pele, grelhado'],
+    ['Frango, coxa, sem pele, cozida'],
+    ['Merluza, filé, assado'],
+    ['Sardinha, assada'],
+    ['Porco, lombo, assado'],
+    ['Camarão, Rio Grande, grande, cozido'],
+  ] as const)('CA-2154: %s, pela proteína, de 30 a 200 g, tem pelo menos 10 candidatos', (nome) => {
+    for (const gramas of [30, 50, 80, 100, 150, 200]) {
+      expect(vista(porNome(nome), gramas, ['proteina_g']).length, `${nome} ${gramas} g`).toBeGreaterThanOrEqual(10)
+    }
+  })
+
+  it('CA-2154: o piso, por fórmula: o peito bovino com a gordura de 100 g de salmão tem menos de 2/3 da proteína e sai', () => {
+    const salmao = porNome('Salmão, sem pele, fresco, grelhado')
+    const peito = porNome('Carne, bovina, peito, sem gordura, cozido')
+    const mesmaGordura = ((salmao.nutrientes.lipideos_g ?? 0) * 100) / (peito.nutrientes.lipideos_g ?? 1)
+    expect(proteina(peito, mesmaGordura) / proteina(salmao, 100)).toBeLessThan(1 / 1.5)
+    expect(naTrocaEquivalente(salmao, 100)(peito, mesmaGordura)).toBe(false)
+    // Na faixa, a troca continua: o contra-filé de costela com a mesma gordura.
+    const costela = porNome('Carne, bovina, contra-filé de costela, grelhado')
+    const daCostela = ((salmao.nutrientes.lipideos_g ?? 0) * 100) / (costela.nutrientes.lipideos_g ?? 1)
+    expect(naTrocaEquivalente(salmao, 100)(costela, daCostela)).toBe(true)
+  })
+})
+
+describe('D-1141 (rodada de melhorias): folha, broto e talo são outro alimento', () => {
+  const daBase = (nome: string): Alimento => {
+    const a = alimentosDaBase().find((x) => x.descricao.trim() === nome)
+    if (!a) throw new Error(`sem ${nome}`)
+    return a
+  }
+  const mesmo = (x: string, y: string) => mesmoAlimentoDe(daBase(x)) === mesmoAlimentoDe(daBase(y))
+
+  it('CA-2156: a raiz e a folha, e a raiz e o broto, são dois alimentos', () => {
+    for (const [x, y] of [
+      ['Beterraba, crua', 'Beterraba, folha, crua'],
+      ['Beterraba, cozida', 'Beterraba, folha, cozida'],
+      ['Rabanete, cru', 'Rabanete, broto, cru'],
+    ] as const) {
+      expect(mesmo(x, y), `${x} ≠ ${y}`).toBe(false)
+    }
+  })
+
+  it('CA-2156: entre si, as folhas são o mesmo alimento, e "folhas desidratadas" é o estado da erva', () => {
+    for (const [x, y] of [
+      ['Beterraba, folha, crua', 'Beterraba, folha, cozida'],
+      ['Mostarda, folha, crua', 'Mostarda, folha, cozida'],
+      ['Coentro, cru', 'Coentro, folhas desidratadas'],
+      ['Beterraba, crua', 'Beterraba, cozida'],
+    ] as const) {
+      expect(mesmo(x, y), `${x} = ${y}`).toBe(true)
+    }
+  })
+})
+
+describe('D-1136 e D-1140 (rodada de melhorias): a regra (d) na busca por micronutriente', () => {
+  const proteina = (a: Alimento, gramas: number): number => ((a.nutrientes.proteina_g ?? 0) * gramas) / 100
+
+  it('CA-2155: a sardinha em óleo 100 g por ferro fica sem candidato no mesmo grupo; com o filtro desligado, tem', () => {
+    const sardinha = porNome('Sardinha, conserva em óleo')
+    const r = buscarSubstitutos({ alimentoId: sardinha.id, gramas: 100 }, { nutrientes: ['ferro_mg'], mesmoGrupo: true, alimentos: alimentosParaSugerir(), limite: 1000 }, buscarAlimento)
+    expect(r).toEqual({ tipo: 'lista', candidatos: [], restricaoTirou: false })
+    expect(vista(sardinha, 100, ['ferro_mg'], false).length).toBeGreaterThan(0)
+  })
+
+  it('CA-2155: toda carne da TACO por ferro, zinco ou vitamina B12, de 30 a 200 g, só traz candidato na faixa da proteína', () => {
+    const erros: string[] = []
+    let listas = 0
+    for (const base of ALIMENTOS.filter((a) => ehPrescritivel(a) && a.nutrientes.energia_kcal && grupoDeSubstituicao(a).id === 'carne')) {
+      for (const nutriente of ['ferro_mg', 'zinco_mg', 'vitamina_b12_mcg'] as const) {
+        if (!((base.nutrientes[nutriente] ?? 0) > 0)) continue
+        for (const gramas of [30, 50, 80, 100, 150, 200]) {
+          listas += 1
+          const p = proteina(base, gramas)
+          for (const c of vista(base, gramas, [nutriente])) {
+            const razao = proteina(c.alimento, c.gramas) / p
+            if (razao < 1 / 1.5 - 1e-9 || razao > 1.5 + 1e-9) erros.push(`${base.descricao.trim()} ${gramas} g por ${nutriente} → ${c.alimento.descricao.trim()} (×${razao.toFixed(2)})`)
+          }
+        }
+      }
+    }
+    expect(listas).toBeGreaterThan(1000)
+    expect(erros.slice(0, 10), `${erros.length} casos`).toEqual([])
+  }, 300_000)
 })
