@@ -135,6 +135,13 @@ export const papelDe = (a: Alimento): Papel | null => PAPEIS.find(([, re]) => re
  */
 const mesmoEstado = (base: Alimento, a: Alimento): boolean => ehCru(base) === ehCru(a)
 
+/**
+ * O extrato de soja (a "bebida de soja"), que a TACO põe entre as leguminosas. Na busca, ele é do grupo dos leites; na
+ * folha, não troca com as leguminosas, nos dois sentidos (spec busca-substitutos, D-1143): feijão não é bebida.
+ */
+const EXTRATO_DE_SOJA = /^Soja, extrato solúvel/i
+export const ehExtratoDeSoja = (a: Alimento): boolean => EXTRATO_DE_SOJA.test(a.descricao.trim())
+
 const PREPARADOS = 'Alimentos preparados'
 /**
  * Spec busca-substitutos, D-1142: os pratos prontos de café da manhã e lanche, pelo nome (na TACO, a tapioca com manteiga,
@@ -146,11 +153,17 @@ export const ehPratoDeLanche = (a: Alimento): boolean => a.categoria === PREPARA
 
 /**
  * Com papel, o mesmo papel (de qualquer categoria); sem papel, a mesma categoria e também sem papel. Entre os pratos
- * prontos, o mesmo tipo de refeição (D-1142).
+ * prontos, o mesmo tipo de refeição (D-1142); a bebida de soja não troca com as leguminosas (D-1143).
  */
 function noMesmoPapel(base: Alimento): (a: Alimento) => boolean {
   const papel = papelDe(base)
-  if (papel === null) return (a) => a.categoria === base.categoria && papelDe(a) === null && mesmaForma(base)(a) && ehPratoDeLanche(a) === ehPratoDeLanche(base)
+  if (papel === null)
+    return (a) =>
+      a.categoria === base.categoria &&
+      papelDe(a) === null &&
+      mesmaForma(base)(a) &&
+      ehPratoDeLanche(a) === ehPratoDeLanche(base) &&
+      ehExtratoDeSoja(a) === ehExtratoDeSoja(base)
   return (a) => papelDe(a) === papel && (papel !== 'acompanhamento' || mesmoEstado(base, a))
 }
 

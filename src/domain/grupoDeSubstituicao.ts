@@ -1,7 +1,7 @@
 // O grupo de substituição de um alimento: o "Só do mesmo grupo" da busca de substitutos (spec busca-substitutos, D-1108
 // e seção 3). A categoria da TACO separa arroz de batata e junta arroz com biscoito; o grupo segue o papel no prato das
 // trocas da folha (D-421) e, fora dele, o grupo da tabela.
-import { ehCru, ehPratoDeLanche, ehVerdura, ehVerduraCozida, formaDoOvo, papelDe } from './trocas.ts'
+import { ehCru, ehExtratoDeSoja, ehPratoDeLanche, ehVerdura, ehVerduraCozida, formaDoOvo, papelDe } from './trocas.ts'
 import type { Alimento } from './tipos.ts'
 
 export interface GrupoDeSubstituicao {
@@ -45,8 +45,6 @@ const SUCO_OU_POLPA = /(^|[\s,])(suco|polpa)($|[\s,])/i
 export const ehSucoOuPolpaDeFruta = (a: Alimento): boolean => a.categoria === FRUTAS && SUCO_OU_POLPA.test(a.descricao)
 /** A fruta inteira: do grupo das frutas, sem ser suco nem polpa. */
 export const ehFrutaInteira = (a: Alimento): boolean => a.categoria === FRUTAS && !ehSucoOuPolpaDeFruta(a)
-/** O extrato de soja (a "bebida de soja") troca com o leite. */
-const EXTRATO_DE_SOJA = /^Soja, extrato solúvel/i
 const QUEIJO = /^Queijo,/i
 
 const GRUPOS: readonly (readonly [GrupoDeSubstituicao, (a: Alimento) => boolean])[] = [
@@ -56,7 +54,8 @@ const GRUPOS: readonly (readonly [GrupoDeSubstituicao, (a: Alimento) => boolean]
   [{ id: 'oleaginosa', nome: 'castanhas, sementes e amendoim' }, (a) => a.categoria === 'Nozes e sementes' || AMENDOIM.test(nomeLimpo(a))],
   [
     { id: 'leite', nome: 'leites e iogurtes' },
-    (a) => (a.categoria === 'Leite e derivados' && !QUEIJO.test(nomeLimpo(a))) || EXTRATO_DE_SOJA.test(nomeLimpo(a)),
+    // O extrato de soja (a "bebida de soja") troca com o leite.
+    (a) => (a.categoria === 'Leite e derivados' && !QUEIJO.test(nomeLimpo(a))) || ehExtratoDeSoja(a),
   ],
   [{ id: 'leguminosa', nome: 'leguminosas' }, (a) => a.categoria === 'Leguminosas e derivados'],
   [{ id: 'carne', nome: 'carnes, aves e peixes' }, (a) => a.categoria === 'Carnes e derivados' || a.categoria === 'Pescados e frutos do mar'],

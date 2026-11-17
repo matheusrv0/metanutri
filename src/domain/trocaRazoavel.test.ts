@@ -141,3 +141,30 @@ describe('CA-2129 (revisão rodada 2, M3): o que muda na folha de verdade', () =
     expect(onde).toEqual([])
   })
 })
+
+describe('CA-2158 (D-1143): nas trocas da folha, a bebida de soja não troca com as leguminosas', () => {
+  beforeAll(() => registrarBaseAmpliada(decodificarBaseAmpliada(arquivo as unknown as ArquivoBaseAmpliada)))
+  afterAll(() => registrarBaseAmpliada([]))
+  const EXTRATO_DE_SOJA = /^Soja, extrato solúvel/i
+  const pedidas = (alimentoId: number, gramas: number) =>
+    trocasDoAlimento({ alimentoId, gramas }, { porAlimento: TROCAS_PEDIDAS_PELA_FOLHA, alimentos: alimentosParaSugerir() })
+
+  it('nenhuma leguminosa da TACO, de 30 a 400 g, tem a bebida de soja nas trocas pedidas pela folha', () => {
+    const onde: string[] = []
+    for (const a of ALIMENTOS.filter((x) => x.categoria === 'Leguminosas e derivados' && !EXTRATO_DE_SOJA.test(x.descricao))) {
+      for (let gramas = 30; gramas <= 400; gramas += 10) {
+        for (const t of pedidas(a.id, gramas)) if (EXTRATO_DE_SOJA.test(t.descricao)) onde.push(`${a.descricao} ${gramas} g → ${t.descricao}`)
+      }
+    }
+    expect(onde.slice(0, 10), `${onde.length} casos`).toEqual([])
+  })
+
+  it('a bebida de soja não troca por leguminosa na folha', () => {
+    const soja = ALIMENTOS.find((x) => /^Soja, extrato solúvel, natural, fluido$/.test(x.descricao.trim()))
+    expect(soja).toBeDefined()
+    for (const gramas of [100, 200, 300]) {
+      const leguminosas = pedidas(soja?.id ?? 0, gramas).filter((t) => porId(t.alimentoId).categoria === 'Leguminosas e derivados' && !EXTRATO_DE_SOJA.test(t.descricao))
+      expect(leguminosas.map((t) => t.descricao), `${gramas} g`).toEqual([])
+    }
+  })
+})
