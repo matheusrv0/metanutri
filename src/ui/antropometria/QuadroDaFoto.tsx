@@ -53,7 +53,11 @@ export function QuadroDaFoto({ armazenamento, caminho, alt }: QuadroDaFotoProps)
           draggable={false}
           className="size-full object-cover"
           onError={() => {
-            if (vez === 0) setVez(1)
+            if (vez === 0) {
+              // D-1554: o link guardado venceu; o próximo pedido assina um novo.
+              armazenamento.esquecerLink?.(caminho)
+              setVez(1)
+            }
             else setFalhou(true)
           }}
         />

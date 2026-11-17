@@ -1,5 +1,5 @@
 import { CircleAlert, Columns2, LoaderCircle, Lock, Paperclip, Plus } from 'lucide-react'
-import { useEffect, useId, useRef, useState, type ChangeEvent } from 'react'
+import { useEffect, useId, useMemo, useRef, useState, type ChangeEvent } from 'react'
 import { diaLocal } from '@/domain/acompanhamento.ts'
 import { dataCompleta } from '@/domain/formatarData.ts'
 import {
@@ -14,6 +14,7 @@ import {
   FOTOS_POR_AVALIACAO,
   FRASES,
   lerPastaDoPlano,
+  linksGuardados,
   NOME_DO_ANGULO,
   religarSoltos,
   TETO_DA_AVALIACAO,
@@ -68,7 +69,9 @@ const lerBytes = async (arquivo: File, limite: number): Promise<Uint8Array> => n
  * com a avaliação de antes. Nada sai da ficha: sem compartilhar, sem baixar, sem documento (CFN 599/2018, art. 58).
  */
 export function CartaoFotos({ bruto, sexo, atual, anterior, aoAlterar, agora }: CartaoFotosProps) {
-  const armazenamento = useArmazenamentoDeFotos()
+  const doContexto = useArmazenamentoDeFotos()
+  // D-1554: o link assinado de cada foto fica guardado na memória da tela por 5 minutos.
+  const armazenamento = useMemo(() => (doContexto === null ? null : linksGuardados(doContexto, () => Date.now())), [doContexto])
   const desenhista = useDesenhistaDeFoto()
   const idTitulo = useId()
   const idMarque = useId()

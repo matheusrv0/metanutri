@@ -236,6 +236,16 @@ describe('os quadros e a exclusão (CA-2485, CB-1414, D-1509)', () => {
     expect(f.assinados).toHaveLength(2)
   })
 
+  it('CB-1503 e D-1554: alternar "Comparar fotos" e voltar não assina de novo a mesma foto', async () => {
+    const f = falsos()
+    const { usuario, cartao } = abrir({ porta: f.porta, avaliacao: { fotosAutorizadasEm: '2026-11-03', fotos: [foto('f1', 'frente')] } })
+    await cartao().findByRole('img', { name: 'Foto de frente, 03/11/2026' })
+    await usuario.click(cartao().getByRole('button', { name: 'Comparar fotos' }))
+    await usuario.click(cartao().getByRole('button', { name: 'Ver fotos de hoje' }))
+    expect(await cartao().findByRole('img', { name: 'Foto de frente, 03/11/2026' })).toHaveAttribute('src', expect.stringMatching(/f1\.jpg\?vez=1$/))
+    expect(f.assinados.filter((c) => c.endsWith('/f1.jpg'))).toHaveLength(1)
+  })
+
   it('CA-2485: "Excluir" pede confirmação; confirmado, o arquivo sai do balde e da lista', async () => {
     const f = falsos()
     const { usuario, gravado, cartao } = abrir({ porta: f.porta, avaliacao: { fotosAutorizadasEm: '2026-11-03', fotos: [foto('f1', 'frente'), foto('f2', 'lado')] } })

@@ -27,6 +27,8 @@ export const LADO_DA_FOTO = 1600
 export const QUALIDADE_DA_FOTO = 0.85
 /** D-1457: a URL assinada vale 10 minutos. */
 export const VALIDADE_DA_URL_S = 600
+/** D-1554: a tela guarda o link assinado por 5 minutos, a metade da validade dele. */
+export const VALIDADE_DO_LINK_GUARDADO_MS = 5 * 60 * 1000
 /** D-1457: o balde privado. */
 export const BALDE_DAS_FOTOS = 'fotos-avaliacao'
 
@@ -178,6 +180,8 @@ export interface ArmazenamentoDeFotos {
   apagar(caminhos: readonly string[]): Promise<boolean>
   /** Apaga tudo dentro da pasta (`<conta>/<plano>`), em todas as subpastas. */
   apagarPasta(pasta: string): Promise<boolean>
+  /** D-1554: esquece o link guardado daquele caminho (a imagem não abriu: o link venceu). Só a porta que guarda tem. */
+  esquecerLink?(caminho: string): void
 }
 
 /** A foto aberta pelo navegador, já girada pela orientação da câmera. */
@@ -481,3 +485,36 @@ export const temArquivos = (avaliacao: DadosDaAvaliacao): boolean =>
 
 /** D-1503: a avaliação do paciente excluído fica sem fotos, sem anexos e sem a data da autorização. */
 export const semArquivos = (avaliacao: DadosDaAvaliacao): DadosDaAvaliacao => ({ ...avaliacao, fotosAutorizadasEm: null, fotos: null, anexos: null })
+
+/**
+ * D-1554 e CB-1503: a porta com o link assinado guardado na memória da tela por `VALIDADE_DO_LINK_GUARDADO_MS`, por
+ * caminho. Alternar "Comparar fotos" e as fotos não pede um link novo nem baixa a imagem de novo. O link que falhou não é
+ * guardado; excluir o arquivo, e a imagem que não abriu (`esquecerLink`), tiram o guardado. Nada vai para o aparelho.
+ */
+export function linksGuardados(porta: ArmazenamentoDeFotos, agora: () => number): ArmazenamentoDeFotos {
+  const guardados = new Map<string, { readonly url: string; readonly ate: number }>()
+  return {
+    conta: () => porta.conta(),
+    enviar: (caminho, arquivo, tipo) => porta.enviar(caminho, arquivo, tipo),
+    listar: (pasta) => porta.listar(pasta),
+    async assinar(caminho) {
+      const guardado = guardados.get(caminho)
+      if (guardado && agora() < guardado.ate) return guardado.url
+      const url = await porta.assinar(caminho)
+      if (url === null) guardados.delete(caminho)
+      else guardados.set(caminho, { url, ate: agora() + VALIDADE_DO_LINK_GUARDADO_MS })
+      return url
+    },
+    async apagar(caminhos) {
+      for (const caminho of caminhos) guardados.delete(caminho)
+      return porta.apagar(caminhos)
+    },
+    async apagarPasta(pasta) {
+      for (const caminho of [...guardados.keys()]) if (caminho.startsWith(`${pasta}/`)) guardados.delete(caminho)
+      return porta.apagarPasta(pasta)
+    },
+    esquecerLink(caminho) {
+      guardados.delete(caminho)
+    },
+  }
+}

@@ -15,6 +15,8 @@ import {
   FRASES,
   ladosDaCopia,
   larguraDeAbertura,
+  linksGuardados,
+  VALIDADE_DO_LINK_GUARDADO_MS,
   MEGA,
   semArquivos,
   temArquivos,
@@ -526,5 +528,62 @@ describe('a exclusão (D-1458, D-1503)', () => {
     expect(limpa).toMatchObject({ fotosAutorizadasEm: null, fotos: null, anexos: null, diagnostico: 'Sobrepeso.' })
     expect(temArquivos(limpa)).toBe(false)
     expect(temArquivos(avaliacao({ fotosAutorizadasEm: '2026-11-03' }))).toBe(true)
+  })
+})
+
+describe('CB-1503 e D-1554: o link assinado guardado na tela por 5 minutos', () => {
+  function contando() {
+    const assinados: string[] = []
+    const apagados: string[][] = []
+    const porta: ArmazenamentoDeFotos = {
+      ...portaFalsa().porta,
+      assinar: async (caminho) => {
+        assinados.push(caminho)
+        return caminho.includes('falha') ? null : `https://falso/${caminho}?vez=${assinados.length}`
+      },
+      apagar: async (caminhos) => {
+        apagados.push([...caminhos])
+        return true
+      },
+    }
+    return { porta, assinados, apagados }
+  }
+
+  it('CB-1503: dentro de 5 minutos, o mesmo caminho não pede link novo; depois, pede', async () => {
+    expect(VALIDADE_DO_LINK_GUARDADO_MS).toBe(5 * 60 * 1000)
+    let relogio = 1_000_000
+    const { porta, assinados } = contando()
+    const guardado = linksGuardados(porta, () => relogio)
+    expect(await guardado.assinar('c/p/fotos/a.jpg')).toBe('https://falso/c/p/fotos/a.jpg?vez=1')
+    relogio += 5 * 60 * 1000 - 1
+    expect(await guardado.assinar('c/p/fotos/a.jpg')).toBe('https://falso/c/p/fotos/a.jpg?vez=1')
+    expect(await guardado.assinar('c/p/fotos/b.jpg')).toBe('https://falso/c/p/fotos/b.jpg?vez=2')
+    relogio += 1
+    expect(await guardado.assinar('c/p/fotos/a.jpg')).toBe('https://falso/c/p/fotos/a.jpg?vez=3')
+    expect(assinados).toHaveLength(3)
+  })
+
+  it('CB-1503: o link que falhou não fica guardado; excluir e esquecer tiram o guardado', async () => {
+    const { porta, assinados, apagados } = contando()
+    const guardado = linksGuardados(porta, () => 0)
+    expect(await guardado.assinar('c/p/fotos/falha.jpg')).toBeNull()
+    expect(await guardado.assinar('c/p/fotos/falha.jpg')).toBeNull()
+    expect(assinados).toHaveLength(2)
+    await guardado.assinar('c/p/fotos/a.jpg')
+    expect(await guardado.apagar(['c/p/fotos/a.jpg'])).toBe(true)
+    expect(apagados).toEqual([['c/p/fotos/a.jpg']])
+    await guardado.assinar('c/p/fotos/a.jpg')
+    expect(assinados).toHaveLength(4)
+    // A imagem que não abriu (o link venceu) esquece o guardado e pede outro.
+    guardado.esquecerLink?.('c/p/fotos/a.jpg')
+    await guardado.assinar('c/p/fotos/a.jpg')
+    expect(assinados).toHaveLength(5)
+  })
+
+  it('CB-1503: o resto da porta é o de sempre', async () => {
+    const { porta } = contando()
+    const guardado = linksGuardados(porta, () => 0)
+    expect(await guardado.conta()).toBe(CONTA)
+    expect(await guardado.listar('c/p')).toEqual([])
   })
 })
