@@ -54,3 +54,37 @@ export async function lerCorpo(pedido: PedidoComCorpo, limite = CORPO_MAXIMO_BYT
     return SEM_JSON
   }
 }
+
+/** O corpo lido como texto, ou "grande demais". */
+export type TextoLido = { readonly grande: false; readonly texto: string } | { readonly grande: true }
+
+/**
+ * D-1274 e CB-1242 (spec lado-do-paciente): a mesma leitura por pedaços de `lerCorpo`, para o corpo que não é JSON (o
+ * formulário `List-Unsubscribe=One-Click` do descadastro de um clique). O tamanho declarado acima do limite recusa sem
+ * ler; sem ele, a leitura para no primeiro pedaço que passa do limite. Corpo vazio, ou que falha no meio, é texto vazio.
+ */
+export async function lerTexto(pedido: PedidoComCorpo, limite: number): Promise<TextoLido> {
+  const declarado = Number(pedido.headers.get('content-length') ?? Number.NaN)
+  if (declarado > limite) return GRANDE
+  if (!pedido.body) return { grande: false, texto: '' }
+  const leitor = pedido.body.getReader()
+  const decodificador = new TextDecoder()
+  let texto = ''
+  let lidos = 0
+  try {
+    for (;;) {
+      const { done, value } = await leitor.read()
+      if (done) break
+      lidos += value.byteLength
+      if (lidos > limite) {
+        await leitor.cancel().catch(() => undefined)
+        return GRANDE
+      }
+      texto += decodificador.decode(value, { stream: true })
+    }
+    texto += decodificador.decode()
+  } catch {
+    return { grande: false, texto: '' }
+  }
+  return { grande: false, texto }
+}
