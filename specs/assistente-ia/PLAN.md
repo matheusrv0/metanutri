@@ -293,3 +293,11 @@ testes CA-2428 a CA-2431. Uma tarefa por commit, em TDD. Sem SQL.
 | T62 — B5: café e chás somam com a opção no adequar | `src/domain/iaMudancas.ts` (+ teste) | CA-2430 |
 | T63 — L1: a gaveta que reabre espera a releitura | `src/ui/ia/AssistenteDaIa.tsx` (+ teste) | CA-2420 |
 | T64 — L2: os dois textos | `src/domain/iaGaveta.ts`, `src/ui/ia/AssistenteDaIa.tsx` (+ testes) | CA-2419, CA-2421 |
+| T65 — O plano e a marca da IA, juntos (achado no e2e do T59) | `src/ui/estado/usarCasoAberto.ts` (+ teste novo `usarCasoAberto.test.tsx`) | CA-2368, CA-2402, CA-2428 |
+
+**T65, achado ao rodar o e2e do T59.** "Usar como rascunho" e "Aplicar" chamam `aoAlterarPlano` e logo depois
+`aoAlterarCaso({ origemIa })`, no mesmo evento. No app, as duas funções de `useCasoAberto` montam o que salvam a partir do
+mesmo `registro` da renderização: a segunda grava o caso com o plano de antes. A marca da IA fica, e o plano volta ao de
+antes. O "Desfazer" (que chama as duas) tem o mesmo defeito. Os testes de tela não pegavam porque o `Tela` dos testes guarda
+o caso e o plano em estados separados, e o e2e só olhava a faixa. A correção: cada mudança parte do que está salvo
+(`repositorio.obter`), não do `registro` da renderização. Fora do plano original; anotado aqui antes do código.
