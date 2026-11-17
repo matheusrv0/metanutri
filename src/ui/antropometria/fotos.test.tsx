@@ -94,10 +94,12 @@ interface Abertura {
   readonly paciente?: Paciente | null
   readonly porta?: ArmazenamentoDeFotos | null
   readonly comSetembro?: boolean
+  /** A data da avaliação aberta; o dia de AGORA é 03/11/2026. */
+  readonly data?: string
 }
 
-function abrir({ avaliacao = {}, paciente = RENATA, porta = falsos().porta, comSetembro = true }: Abertura = {}) {
-  const atual = planoDe('av', casoDe({ pacienteId: paciente?.id ?? null, dataConsulta: '2026-11-03', pesoKg: 71.5, circunferenciaCinturaCm: 84, avaliacao }))
+function abrir({ avaliacao = {}, paciente = RENATA, porta = falsos().porta, comSetembro = true, data = '2026-11-03' }: Abertura = {}) {
+  const atual = planoDe('av', casoDe({ pacienteId: paciente?.id ?? null, dataConsulta: data, pesoKg: 71.5, circunferenciaCinturaCm: 84, avaliacao }))
   const montado = montarComDados({ pacientes: paciente ? [paciente] : [], planos: comSetembro && paciente ? [setembro, atual] : [atual] }, () => (
     <ContextoArmazenamentoDeFotos.Provider value={porta}>
       <ContextoDesenhistaDeFoto.Provider value={desenhista}>
@@ -285,6 +287,15 @@ describe('Comparar fotos (CA-2486, CB-1412, CB-1466, D-1510)', () => {
     expect(voltar).not.toHaveAttribute('aria-pressed')
     await usuario.click(voltar)
     expect(cartao().getByRole('list', { name: 'Fotos de hoje' })).toBeInTheDocument()
+  })
+
+  it('CB-1502 e D-1553: na avaliação de outro dia, "Ver fotos desta avaliação" e a lista "Fotos desta avaliação"', async () => {
+    const { usuario, cartao } = abrir({ data: '2026-10-20', avaliacao: { fotosAutorizadasEm: '2026-10-20', fotos: [foto('f-out', 'frente')] } })
+    expect(cartao().getByRole('list', { name: 'Fotos desta avaliação' })).toBeInTheDocument()
+    expect(cartao().queryByRole('list', { name: 'Fotos de hoje' })).not.toBeInTheDocument()
+    await usuario.click(cartao().getByRole('button', { name: 'Comparar fotos' }))
+    expect(cartao().getByRole('button', { name: 'Ver fotos desta avaliação' })).toBeInTheDocument()
+    expect(cartao().queryByRole('button', { name: 'Ver fotos de hoje' })).not.toBeInTheDocument()
   })
 
   it('CB-1466: sem foto de lado na de hoje, o quadro diz "Sem foto de lado em 03/11/2026." e a de antes aparece', async () => {

@@ -135,6 +135,8 @@ export function CartaoFotos({ bruto, sexo, atual, anterior, aoAlterar, agora }: 
   const fotosCheias = fotos.length >= FOTOS_POR_AVALIACAO
   const anexosCheios = anexos.length >= ANEXOS_POR_AVALIACAO
   const usados = bytesUsados(avaliacao)
+  // D-1553 e CB-1502: "de hoje" só na avaliação de hoje; na de outro dia, "desta avaliação".
+  const deHoje = atual.data === diaLocal(agora)
 
   const receber = (resultado: EnvioDoAnexo, erro: (texto: string | null) => void) => {
     if (resultado.tipo === 'erro') {
@@ -273,10 +275,10 @@ export function CartaoFotos({ bruto, sexo, atual, anterior, aoAlterar, agora }: 
               onChange={(e) => void escolherFoto(e)}
             />
           </label>
-          {/* D-1538: o rótulo troca ("Comparar fotos" e "Ver fotos de hoje"); com isso, sem aria-pressed. */}
+          {/* D-1538: o rótulo troca ("Comparar fotos" e "Ver fotos de hoje" ou "desta avaliação"); com isso, sem aria-pressed. */}
           <Button variant="outline" size="sm" onClick={() => setComparando((c) => !c)}>
             <Columns2 aria-hidden="true" />
-            {comparando ? 'Ver fotos de hoje' : 'Comparar fotos'}
+            {comparando ? (deHoje ? 'Ver fotos de hoje' : 'Ver fotos desta avaliação') : 'Comparar fotos'}
           </Button>
         </div>
         {autorizadaEm === null ? (
@@ -298,7 +300,7 @@ export function CartaoFotos({ bruto, sexo, atual, anterior, aoAlterar, agora }: 
             <p className="text-sm text-muted-foreground">{FRASES.semOutra}</p>
           )
         ) : (
-          <ListaDeFotos armazenamento={armazenamento} fotos={fotos} data={atual.data} aoExcluir={(arquivo) => setExcluindo({ tipo: 'foto', arquivo })} />
+          <ListaDeFotos armazenamento={armazenamento} fotos={fotos} data={atual.data} rotulo={deHoje ? 'Fotos de hoje' : 'Fotos desta avaliação'} aoExcluir={(arquivo) => setExcluindo({ tipo: 'foto', arquivo })} />
         )}
 
         <p className="text-xs text-muted-foreground">{FRASES.regras}</p>

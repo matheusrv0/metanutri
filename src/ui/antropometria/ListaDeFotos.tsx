@@ -9,17 +9,19 @@ interface ListaDeFotosProps {
   readonly fotos: readonly ArquivoDaAvaliacao[]
   /** AAAA-MM-DD da avaliação, para o texto alternativo. */
   readonly data: string
+  /** "Fotos de hoje" ou "Fotos desta avaliação" (D-1553). */
+  readonly rotulo: string
   readonly aoExcluir: (foto: ArquivoDaAvaliacao) => void
 }
 
 /**
- * As fotos de hoje (D-1454): cada uma com o ângulo, o tamanho e "Excluir" (44 × 44 px no toque, D-1532); as vagas,
+ * As fotos da avaliação aberta (D-1454): cada uma com o ângulo, o tamanho e "Excluir" (44 × 44 px no toque, D-1532); as vagas,
  * "Foto N de 5". Cinco por linha na tela larga e três abaixo de 640 px, como o protótipo.
  */
-export function ListaDeFotos({ armazenamento, fotos, data, aoExcluir }: ListaDeFotosProps) {
+export function ListaDeFotos({ armazenamento, fotos, data, rotulo, aoExcluir }: ListaDeFotosProps) {
   const vagas = Array.from({ length: Math.max(0, FOTOS_POR_AVALIACAO - fotos.length) }, (_, i) => fotos.length + i + 1)
   return (
-    <ul aria-label="Fotos de hoje" className="grid grid-cols-3 gap-2.5 sm:grid-cols-5">
+    <ul aria-label={rotulo} className="grid grid-cols-3 gap-2.5 sm:grid-cols-5">
       {fotos.map((foto) => (
         <li key={foto.id} className="flex min-w-0 flex-col gap-1.5">
           <QuadroDaFoto key={foto.caminho} armazenamento={armazenamento} caminho={foto.caminho} alt={`Foto de ${anguloNaFrase(foto.angulo)}, ${dataCompleta(data)}`} />
