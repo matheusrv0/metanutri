@@ -60,6 +60,9 @@ const BOTAO_DE_ARQUIVO = cn(
 const ACEITA_FOTO = '.jpg,.jpeg,.png,image/jpeg,image/png'
 const ACEITA_ANEXO = '.pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png'
 
+/** O relógio do link guardado (D-1554): só é lido quando a tela pede um link, nunca ao desenhar. */
+const relogio = (): number => Date.now()
+
 /** Os bytes do começo do arquivo, até `limite` (um a mais que o teto, para a conferência saber que passou). */
 const lerBytes = async (arquivo: File, limite: number): Promise<Uint8Array> => new Uint8Array(await arquivo.slice(0, limite).arrayBuffer())
 
@@ -71,7 +74,7 @@ const lerBytes = async (arquivo: File, limite: number): Promise<Uint8Array> => n
 export function CartaoFotos({ bruto, sexo, atual, anterior, aoAlterar, agora }: CartaoFotosProps) {
   const doContexto = useArmazenamentoDeFotos()
   // D-1554: o link assinado de cada foto fica guardado na memória da tela por 5 minutos.
-  const armazenamento = useMemo(() => (doContexto === null ? null : linksGuardados(doContexto, () => Date.now())), [doContexto])
+  const armazenamento = useMemo(() => (doContexto === null ? null : linksGuardados(doContexto, relogio)), [doContexto])
   const desenhista = useDesenhistaDeFoto()
   const idTitulo = useId()
   const idMarque = useId()
