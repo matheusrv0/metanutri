@@ -21,10 +21,10 @@ const CTX: ContextoDaConferencia = {
 }
 
 const m = (o: Partial<MudancaSugerida>): MudancaSugerida => ({ tipo: 'trocar', refeicao: 1, opcao: 'principal', item: 0, alimentoId: 1, gramas: null, motivo: '+ fibra', ...o })
-/** O plano de adulto com café (100 ml) no primeiro item do café da manhã. */
-const planoComCafe = (): Plano => {
+/** O plano de adulto com café (100 ml, ou o que se pedir) no primeiro item do café da manhã. */
+const planoComCafe = (ml = 100): Plano => {
   const p = planoDeAdulto()
-  return { refeicoes: p.refeicoes.map((r, i) => (i === 0 ? { ...r, opcoes: { ...r.opcoes, principal: [{ id: 'cafe', alimentoId: 471, gramas: 100 }, ...r.opcoes.principal] } } : r)) }
+  return { refeicoes: p.refeicoes.map((r, i) => (i === 0 ? { ...r, opcoes: { ...r.opcoes, principal: [{ id: 'cafe', alimentoId: 471, gramas: ml }, ...r.opcoes.principal] } } : r)) }
 }
 const ids = (plano: Plano, refeicao: number) => plano.refeicoes[refeicao]?.opcoes.principal.map((i) => [i.alimentoId, i.gramas])
 
@@ -55,6 +55,26 @@ describe('spec assistente-ia, D-1309: a conferência de cada mudança', () => {
     )
     expect(cha).toMatchObject({ para: { alimentoId: 475, gramas: 300 }, marcas: [CAFE_E_CHA_NA_REFEICAO], barrada: null, maximo: 300 })
     expect(cafe).toMatchObject({ para: { alimentoId: 471, gramas: 300 }, marcas: [CAFE_E_CHA_NA_REFEICAO], barrada: null })
+  })
+
+  it('CA-2430 (D-1374): no adequar, o chá soma com o café que já está na opção e com as mudanças antes dele', () => {
+    const chaNoCafe = (gramas: number) => m({ tipo: 'adicionar', refeicao: 0, item: null, alimentoId: 475, gramas })
+    const [cheia] = conferirMudancas([chaNoCafe(300)], planoComCafe(300), CTX)
+    expect(cheia).toMatchObject({ para: null, barrada: CAFE_E_CHA_NA_REFEICAO })
+    const [sobra] = conferirMudancas([chaNoCafe(300)], planoComCafe(200), CTX)
+    expect(sobra).toMatchObject({ para: { alimentoId: 475, gramas: 100 }, marcas: [CAFE_E_CHA_NA_REFEICAO], barrada: null })
+    const [primeira, segunda] = conferirMudancas(
+      [m({ tipo: 'adicionar', refeicao: 2, item: null, alimentoId: 475, gramas: 200 }), m({ tipo: 'adicionar', refeicao: 2, item: null, alimentoId: 476, gramas: 200 })],
+      planoDeAdulto(),
+      CTX,
+    )
+    expect(primeira).toMatchObject({ para: { alimentoId: 475, gramas: 200 }, marcas: [], barrada: null })
+    expect(segunda).toMatchObject({ para: { alimentoId: 476, gramas: 100 }, marcas: [CAFE_E_CHA_NA_REFEICAO], barrada: null })
+  })
+
+  it('CA-2430: mudar os gramas do próprio café não conta com ele mesmo', () => {
+    const [c] = conferirMudancas([m({ tipo: 'gramas', refeicao: 0, item: 0, alimentoId: null, gramas: 250 })], planoComCafe(300), CTX)
+    expect(c).toMatchObject({ para: { alimentoId: 471, gramas: 250 }, marcas: [], barrada: null })
   })
 
   it('item que não existe, ou de receita, fica barrado', () => {

@@ -81,10 +81,34 @@ function maximoDe(alimentoId: number, ctx: ContextoDaConferencia): number {
   return (a ? faixaDoAlimento(a, ctx.caso.idadeAnos)?.maxima : undefined) ?? QUANTIDADE_MAXIMA_G
 }
 
+const ehCafeOuCha = (alimentoId: number, ctx: ContextoDaConferencia): boolean => {
+  const a = ctx.buscar(alimentoId)
+  return a !== undefined && a !== null && ehCafeOuChaSemGrupo(a)
+}
+
 /** D-1309: cada mudança conferida contra o plano atual e a ficha. */
 export function conferirMudancas(mudancas: readonly MudancaSugerida[], plano: Plano, ctx: ContextoDaConferencia): readonly MudancaConferida[] {
+  // D-1374 (B5): café e chás somam até uma caneca por opção, com o que já está no plano e as mudanças de antes.
+  const cafeNaOpcao = new Map<string, number>()
+  const cafeDoPlano = (refeicao: number, opcao: OpcaoIa): number =>
+    (plano.refeicoes[refeicao]?.opcoes[opcaoDoPlano(opcao)] ?? []).filter((i) => !ehItemDeReceita(i) && ehCafeOuCha(i.alimentoId, ctx)).reduce((t, i) => t + i.gramas, 0)
   return mudancas.map((m): MudancaConferida => {
     const c = conferirUma(m, plano, ctx)
+    if (c.barrada === null && c.para && ehCafeOuCha(c.para.alimentoId, ctx)) {
+      const chave = `${m.refeicao}:${m.opcao}`
+      const antes = cafeNaOpcao.get(chave) ?? cafeDoPlano(m.refeicao, m.opcao)
+      // A troca e os gramas mudam um item que já está na conta: ele sai antes de somar.
+      const sai = m.tipo !== 'adicionar' && c.de && ehCafeOuCha(c.de.alimentoId, ctx) ? c.de.gramas : 0
+      const sobra = Math.max(0, CANECA_ML - (antes - sai))
+      if (sobra <= 0) {
+        cafeNaOpcao.set(chave, antes)
+        return { ...c, para: null, marcas: [], barrada: CAFE_E_CHA_NA_REFEICAO, maximo: null }
+      }
+      const gramas = Math.min(c.para.gramas, sobra)
+      const marcas = gramas < c.para.gramas && !c.marcas.includes(CAFE_E_CHA_NA_REFEICAO) ? [...c.marcas, CAFE_E_CHA_NA_REFEICAO] : c.marcas
+      cafeNaOpcao.set(chave, antes - sai + gramas)
+      return { ...c, para: { ...c.para, gramas }, marcas, maximo: maximoDe(c.para.alimentoId, ctx) }
+    }
     return { ...c, maximo: c.para ? maximoDe(c.para.alimentoId, ctx) : null }
   })
 }
