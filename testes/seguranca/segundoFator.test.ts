@@ -109,6 +109,12 @@ describe('CA-841: o 014 não roda com administrador sem o app', () => {
   const sql014 = readFileSync(fileURLToPath(new URL('../../supabase/014-seguranca-lote-5.sql', import.meta.url)), 'utf8')
 
   it('CA-841: com um administrador sem o app, o arquivo para com a frase e nada muda; sem ele, roda de novo', async () => {
+    // Antes de tudo, nenhum outro arquivo deixou administrador sem o app: o teste não depende da ordem dos arquivos.
+    const sobrou = sqlNoBancoLocal(
+      "select count(*) from public.administradores a where not exists (select 1 from auth.mfa_factors f where f.user_id = a.usuario and f.factor_type = 'totp' and f.status = 'verified');",
+    )
+    expect(sobrou.ok, sobrou.erro).toBe(true)
+    expect(sobrou.saida, 'um arquivo que rodou antes deixou um administrador sem o app').toBe('0')
     // Um administrador novo, cadastrado sem o app, como o dono antes de ativar.
     const email = `novo.admin.${Date.now()}@exemplo.com`
     const criado = await c.servico.auth.admin.createUser({ email, password: `Senha-${Date.now()}`, email_confirm: true })

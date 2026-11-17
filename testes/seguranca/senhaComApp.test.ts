@@ -3,7 +3,7 @@
 // com `insufficient_aal` e, depois do código do app, aceita. É o que a tela faz (CA-858).
 import { readFileSync } from 'node:fs'
 import { fileURLToPath, URL } from 'node:url'
-import { beforeAll, describe, expect, it } from 'vitest'
+import { afterEach, beforeAll, describe, expect, it } from 'vitest'
 import { sqlNoBancoLocal } from './bancoLocal.ts'
 import { clienteSemSessao, confirmarComOApp, novoAdministradorComApp, prepararCenario, type Cenario } from './preparo.ts'
 
@@ -12,6 +12,25 @@ let c: Cenario
 beforeAll(async () => {
   c = await prepararCenario()
 })
+
+/**
+ * Os administradores que cada teste cria saem no fim dele, passe ou falhe. O CB-261 tira o app de um; se ele
+ * sobrasse na lista, o 014 pararia no CA-841 (segundoFator.test.ts) quando este arquivo rodasse antes daquele.
+ */
+const administradoresCriados: string[] = []
+
+afterEach(async () => {
+  for (const id of administradoresCriados.splice(0)) {
+    expect((await c.servico.from('administradores').delete().eq('usuario', id)).error).toBeNull()
+    expect((await c.servico.auth.admin.deleteUser(id)).error).toBeNull()
+  }
+})
+
+async function novoAdministrador(email: string) {
+  const admin = await novoAdministradorComApp(c, email)
+  administradoresCriados.push(admin.id)
+  return admin
+}
 
 /** O código de 8 dígitos de "Esqueci a senha", como o e-mail traria, e a sessão de recuperação que ele abre. */
 async function sessaoDeRecuperacao(email: string) {
@@ -27,7 +46,7 @@ async function sessaoDeRecuperacao(email: string) {
 describe('D-268: a senha do administrador com o app', () => {
   it('CA-858: o código do e-mail não basta; com o código do app, a senha nova é gravada e vale', async () => {
     const email = `senha.admin.${Date.now()}@exemplo.com`
-    const admin = await novoAdministradorComApp(c, email)
+    const admin = await novoAdministrador(email)
     const cliente = await sessaoDeRecuperacao(email)
 
     const recusada = await cliente.auth.updateUser({ password: 'Senha-nova-do-admin-1' })
@@ -41,7 +60,7 @@ describe('D-268: a senha do administrador com o app', () => {
 
   it('CB-261: a receita do celular perdido (topo do 014) tira a sessão confirmada pelo app e libera a troca de senha', async () => {
     const email = `celular.perdido.${Date.now()}@exemplo.com`
-    const admin = await novoAdministradorComApp(c, email)
+    const admin = await novoAdministrador(email)
     const sql014 = readFileSync(fileURLToPath(new URL('../../supabase/014-seguranca-lote-5.sql', import.meta.url)), 'utf8')
     const receita = sql014
       .split('\n')
