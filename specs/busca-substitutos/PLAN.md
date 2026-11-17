@@ -128,12 +128,17 @@ opção do item aparece embaixo dele no plano, na folha, no link e no Word.
 
    **Rodada de melhorias (T38 a T45).** A D-1139 e a D-1140 fazem da regra (d) uma faixa (de 2/3 a 1,5 vez a proteína)
    nas carnes e no tofu. **Decisão para revisar:** o tofu, pela gordura (a vista padrão), fica sem substituto no mesmo
-   grupo, como o caminho da revisão r5 previa; a alternativa era abrir o painel do tofu na proteína, onde ele tem os
-   feijões, mas isso faria uma exceção à D-1110 e traria trocas com 1,5 a 1,7 vez a energia. Por isso a sonda `r5-1`
-   ("o tofu tem o tremoço" na vista padrão) passa a valer pela proteína, como a r5 anotou para o CA-2146. Na busca por
-   micronutriente, a faixa esvazia mais listas de carne (o salmão por ferro e por zinco): medido na T45. A D-1142 **muda a
-   folha impressa** dos pratos de café da manhã (a tapioca com manteiga fica sem troca); a D-1143 só mexe nas trocas que a
-   folha pede e não imprime, a conferir na T45.
+   grupo na TACO (com a base ampliada, fica o edamame), como o caminho da revisão r5 previa; a alternativa era abrir o
+   painel do tofu na proteína, onde ele tem os feijões, mas isso faria uma exceção à D-1110 e traria trocas com 1,5 a 1,7
+   vez a energia. Por isso as sondas `r4-1` e `r5-1` ("o tofu tem o tremoço" pela gordura) passam a valer pela proteína,
+   como a r5 anotou para o CA-2146. **Medido na T45** (varredura da vista padrão, TACO a 100 g): sem candidato, 10 → 11 (o
+   tofu); com 1 ou 2, 17 → 16; carnes com candidato abaixo de 2/3 da proteína nos 6 primeiros, 13 → 0. Nas 1.812 listas
+   das 66 carnes da TACO (30 a 200 g; vista padrão, proteína, lipídeos, ferro, zinco e B12), as vazias vão de 32 a 59,
+   nenhuma na vista padrão (o salmão por ferro e por zinco, o corimbatá por zinco, o bacalhau salgado por ferro); com a
+   base ampliada, de 240 a 297 de 6.108, e as 9 vazias da vista padrão (ostra e rabo de porco) já eram vazias. **A folha
+   impressa muda** em 19 de 2.388 casos (cada alimento da TACO a 30, 80, 150 e 250 g), e só onde devia: o acarajé, o
+   bolinho de arroz e a tapioca com manteiga perdem os pratos de almoço (D-1142), e a bebida de soja, fluida e em pó,
+   perde o feijão, o amendoim e o tofu (D-1143).
 
 1. **A coluna do Resumo do dia desce enquanto o painel está aberto (D-1116).** Pôr o painel exatamente no lugar dela
    exigiria mexer em `AreaDeTrabalho.tsx`, que dois ramos em andamento estão mudando. `TelaPlano` ocupa as duas colunas
