@@ -86,3 +86,21 @@ O que ele responde:
 Ele **nunca** usa a produção: não lê o `.env.local`, não usa projeto ligado e só roda em `127.0.0.1` ou
 `localhost`, conferido no script e de novo dentro dos testes. A configuração do Supabase local fica em
 `testes/supabase-local/`, separada de `supabase/`, para não mudar nada na publicação.
+
+**Só alguns arquivos.** O que vier depois de `--` vai para o Vitest. Por exemplo, só as fotos:
+`npm run test:seguranca -- testes/seguranca/fotos.test.ts`. Para conferir que um arquivo não depende de outro ter
+rodado antes, troque a ordem com `-- --sequence.shuffle.files --sequence.seed=3` (outro número, outra ordem).
+
+**Duas rodadas ao mesmo tempo.** A pilha de sempre se chama `metanutri-ataques` e usa as portas 55420 a 55422: duas
+rodadas com ela derrubam uma à outra. Para rodar outra em paralelo, dê a ela um nome e uma primeira porta próprios
+(ela usa a porta dada e as duas seguintes):
+
+```bash
+ATAQUE_PROJETO=ataques-b ATAQUE_PORTA_BASE=55520 npm run test:seguranca
+```
+
+No PowerShell: `$env:ATAQUE_PROJETO='ataques-b'; $env:ATAQUE_PORTA_BASE='55520'; npm run test:seguranca`.
+O script faz uma cópia temporária da configuração em `testes/pilhas-temporarias/<nome>` (fora do commit), com só o
+nome e as portas trocados, sobe a pilha a partir dela e apaga a cópia no fim, mesmo com falha ou Ctrl+C. O nome leva
+só letras minúsculas, números e hífen; ele e as portas têm de ser diferentes dos da pilha de sempre. Faltando uma das
+duas variáveis, ou com um valor que não serve, nada sobe e a saída é `2`. Sem as variáveis, tudo fica como antes.

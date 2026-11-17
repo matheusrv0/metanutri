@@ -1,28 +1,47 @@
 // Testes de ataque contra um Supabase LOCAL (spec seguranca-lote-4, D-136, CA-488, CA-489 e CB-129).
 // Uso: npm run test:seguranca
+//      npm run test:seguranca -- testes/seguranca/fotos.test.ts   (o que vier depois do -- vai para o Vitest)
+//      ATAQUE_PROJETO=ataques-b ATAQUE_PORTA_BASE=55520 npm run test:seguranca   (pilha própria, em paralelo)
 //
 // O que faz, na ordem:
 //   1. confere o Docker e o Supabase CLI; sem eles, diz o que falta e para (código 2);
-//   2. sobe um Supabase local novo, só deste teste (testes/supabase-local), com os dados zerados;
+//   2. sobe um Supabase local novo, só deste teste (testes/supabase-local), com os dados zerados; com
+//      ATAQUE_PROJETO e ATAQUE_PORTA_BASE, numa pilha própria, com outro nome e outras portas, a partir de uma
+//      cópia temporária da configuração (scripts/pilha-de-ataque.mjs);
 //   3. lê a URL e as chaves locais e RECUSA tudo que não seja 127.0.0.1 ou localhost (código 3);
 //   4. aplica supabase/001 a 011, na ordem, no banco local;
 //   5. roda os ataques (testes/seguranca) com duas contas e um administrador de teste;
-//   6. derruba a pilha local e apaga os dados, mesmo se algo falhar.
+//   6. derruba a pilha local e apaga os dados (e a cópia da configuração), mesmo se algo falhar.
 //
 // Nunca fala com a produção: não lê o .env.local, não usa --linked nem --project-ref, e a URL é conferida
 // aqui e de novo dentro dos testes, antes de qualquer pedido.
 import { spawnSync } from 'node:child_process'
-import { readdirSync, readFileSync } from 'node:fs'
+import { mkdirSync, readdirSync, readFileSync, rmdirSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { configDaPilha, pilhaDoAmbiente } from './pilha-de-ataque.mjs'
 
 const RAIZ = join(dirname(fileURLToPath(import.meta.url)), '..')
-/** Caminho relativo à raiz, sem espaço: o npx do Windows passa pelo shell. */
-const PASTA_LOCAL = 'testes/supabase-local'
 /** DP-A1: versão fixa do CLI, para o teste não mudar sozinho. */
 const CLI = 'supabase@2.120.0'
-/** O project_id de testes/supabase-local/supabase/config.toml; o contêiner do banco leva este nome. */
-const CONTEINER_DO_BANCO = 'supabase_db_metanutri-ataques'
+
+/**
+ * A pilha desta rodada: a de sempre (metanutri-ataques, portas 5542x) ou, com ATAQUE_PROJETO e ATAQUE_PORTA_BASE,
+ * uma própria. scripts/pilha-de-ataque.mjs confere o nome e as portas antes de subir qualquer coisa.
+ */
+let PILHA
+try {
+  PILHA = pilhaDoAmbiente(process.env)
+} catch (erro) {
+  console.error(['', '  Os testes de ataque com banco NÃO rodaram.', `  ${erro instanceof Error ? erro.message : String(erro)}`, ''].join('\n'))
+  process.exit(2)
+}
+/** Caminho relativo à raiz, sem espaço: o npx do Windows passa pelo shell. */
+const PASTA_LOCAL = PILHA.pasta
+/** O project_id da configuração; o contêiner do banco leva este nome. */
+const CONTEINER_DO_BANCO = PILHA.conteinerDoBanco
+/** O que vier depois de `npm run test:seguranca --` vai para o Vitest: um arquivo, um filtro, a ordem. */
+const ARGUMENTOS_DO_VITEST = process.argv.slice(2)
 /** Só sobem o banco, o login, a API de tabelas, o armazenamento e a porta de entrada. */
 const DESLIGADOS = 'realtime,imgproxy,mailpit,postgres-meta,studio,edge-runtime,logflare,vector,supavisor'
 const HOSTS_LOCAIS = new Set(['127.0.0.1', 'localhost', '::1', '[::1]'])
@@ -45,6 +64,27 @@ function rodar(comando, args, opcoes = {}) {
     stdio: opcoes.herdar ? 'inherit' : 'pipe',
     maxBuffer: 64 * 1024 * 1024,
   })
+}
+
+/** Só da pilha própria: a cópia da configuração, que sai no fim por qualquer caminho (process.on('exit')). */
+function criarCopiaDaConfiguracao() {
+  if (!PILHA.propria) return
+  const original = readFileSync(join(RAIZ, 'testes', 'supabase-local', 'supabase', 'config.toml'), 'utf8')
+  const texto = configDaPilha(original, PILHA)
+  process.on('exit', apagarCopiaDaConfiguracao)
+  mkdirSync(join(RAIZ, PASTA_LOCAL, 'supabase'), { recursive: true })
+  writeFileSync(join(RAIZ, PASTA_LOCAL, 'supabase', 'config.toml'), texto)
+}
+
+function apagarCopiaDaConfiguracao() {
+  if (!PILHA.propria) return
+  rmSync(join(RAIZ, PASTA_LOCAL), { recursive: true, force: true })
+  // A pasta de cima sai se ficou vazia; com outra rodada própria em andamento, fica.
+  try {
+    rmdirSync(dirname(join(RAIZ, PASTA_LOCAL)))
+  } catch {
+    // não vazia: outra pilha própria está usando
+  }
 }
 
 const supabase = (args, opcoes = {}) => rodar('npx', ['--yes', CLI, ...args, '--workdir', PASTA_LOCAL], { ...opcoes, shell: NO_WINDOWS })
@@ -131,18 +171,26 @@ function ambienteDosTestes(status) {
 }
 
 function principal() {
-  console.log('Testes de ataque (spec seguranca-lote-4): Supabase local, nunca a produção.\n')
+  console.log('Testes de ataque (spec seguranca-lote-4): Supabase local, nunca a produção.')
+  const portas = `portas ${PILHA.portaBase} a ${PILHA.portaBase + 2}`
+  console.log(`Pilha ${PILHA.projeto}, ${portas}${PILHA.propria ? `, própria (cópia da configuração em ${PASTA_LOCAL})` : ''}.\n`)
 
   const docker = rodar('docker', ['info', '--format', '{{.ServerVersion}}'])
   if (docker.error) faltando(['Falta o Docker: instale o Docker Desktop e rode de novo.'])
   if (docker.status !== 0) faltando(['O Docker não está rodando: abra o Docker Desktop, espere ele ficar pronto e rode de novo.'])
+
+  try {
+    criarCopiaDaConfiguracao()
+  } catch (erro) {
+    faltando([erro instanceof Error ? erro.message : String(erro)])
+  }
 
   const cli = supabase(['--version'])
   if (cli.status !== 0) {
     faltando([`Não consegui rodar o Supabase CLI (npx ${CLI}).`, 'Na primeira vez ele precisa de internet para baixar.'])
   }
 
-  // DP-A2: sempre uma pilha nova; uma que sobrou de outra rodada é derrubada com os dados.
+  // DP-A2: sempre uma pilha nova; uma que sobrou de outra rodada, com este nome, é derrubada com os dados.
   derrubar()
   console.log('Subindo o Supabase local (na primeira vez as imagens são baixadas, pode demorar)...')
   pilhaNoAr = true
@@ -166,7 +214,7 @@ function principal() {
     console.log(`\nAtacando ${status.API_URL} ...\n`)
     const testes = rodar(
       process.execPath,
-      [join(RAIZ, 'node_modules', 'vitest', 'vitest.mjs'), 'run', '--config', 'testes/seguranca/vitest.config.ts'],
+      [join(RAIZ, 'node_modules', 'vitest', 'vitest.mjs'), 'run', '--config', 'testes/seguranca/vitest.config.ts', ...ARGUMENTOS_DO_VITEST],
       { herdar: true, env: ambienteDosTestes(status) },
     )
     return testes.status === 0 ? 0 : 1

@@ -42,6 +42,8 @@ docs/modelos/
 
 # Cache do Supabase CLI
 supabase/.temp/
+# Cópias temporárias da configuração das pilhas próprias dos testes de ataque (scripts/pilha-de-ataque.mjs)
+testes/pilhas-temporarias/
 
 # cópias de trabalho dos agentes (git worktree)
 .claude/worktrees/

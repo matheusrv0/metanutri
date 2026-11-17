@@ -28,6 +28,7 @@ Outros comandos:
 | `npm run build` | gera a versão de produção em `dist/` |
 | `npm run preview` | serve o `dist/` para conferir o build |
 | `npx playwright test` | testes de ponta a ponta em navegador real |
+| `npm run test:seguranca` | ataques contra um Supabase local no Docker; como rodar só alguns arquivos ou duas rodadas ao mesmo tempo está em [SECURITY.md](SECURITY.md#os-testes-de-segurança) |
 
 Trabalhando com um agente de código? As instruções do repositório estão em
 [AGENTS.md](AGENTS.md).
