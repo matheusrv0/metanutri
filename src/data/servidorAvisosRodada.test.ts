@@ -347,7 +347,7 @@ describe('o resumo da adesão às segundas (D-1231)', () => {
     expect(tipos()).toEqual(['N1'])
   })
 
-  it('CA-2313 e D-1266: a segunda do agendamento (o "n1" das 7h duas vezes e a "manha" das 8h) manda 1 N1, e a de 21h30 ainda é segunda', async () => {
+  it('CB-1243 e D-1290: a segunda do agendamento (o "n1" das 7h duas vezes e a "manha" das 8h) manda 1 N1, e a de 21h30 ainda é segunda', async () => {
     // O teste de ataque falhou em 16/11 às 21h24: já é terça no UTC, mas o dia dos avisos é o de Brasília (CB-1206).
     const noite = as(16, 21, 30)
     expect(noite.toISOString()).toBe('2026-11-17T00:30:00.000Z')

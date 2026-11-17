@@ -112,8 +112,6 @@ export function quandoNoTexto(quando: Date): string {
   return `${semana}, ${Number(d)}/${mes}, ${Number(h)}h${m === '00' ? '' : m}`
 }
 
-/** "Próximo: Resumo da semana, quinta, 5/11, 8h" (CA-2264). */
-export const linhaDoProximo = (proximo: ProximoAviso): string => `Próximo: ${NOME_DO_PROXIMO[proximo.tipo]}, ${quandoNoTexto(proximo.quando)}`
 
 /** A prévia do próximo e-mail: o assunto, a frase e, no resumo, os 7 dias até agora (protótipo AvisosNutri). */
 export interface PreviaDoProximo {

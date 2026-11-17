@@ -1,15 +1,15 @@
 // "Enviados" na ficha (spec lado-do-paciente, CA-2264; protótipo AvisosNutri): os e-mails do link nos últimos 30 dias,
-// com o dia e a hora, o tipo, o assunto e o estado, e a linha do próximo.
+// com o dia e a hora, o tipo, o assunto e o estado. O próximo aviso fica só no cartão "Próximo e-mail", logo acima
+// (D-1269: sem texto repetido).
 import { useId } from 'react'
-import { diaEHora, ESTADO_NA_FICHA, linhaDoProximo, tipoNaFicha, type TomDoEstado } from '@/domain/avisosNaFicha.ts'
+import { diaEHora, ESTADO_NA_FICHA, tipoNaFicha, type TomDoEstado } from '@/domain/avisosNaFicha.ts'
 import type { EmailsDoLink } from '@/domain/emailsDoLink.ts'
 import { Badge, type BadgeProps } from '@ds/componentes/display/badge.tsx'
 import { Card, CardTitle } from '@ds/componentes/display/card.tsx'
-import type { ProximoAviso } from '../../../supabase/functions/_shared/avisos/regras.ts'
 
 const SELO: Readonly<Record<TomDoEstado, BadgeProps['variant']>> = { ok: 'lightSuccess', neutro: 'lightWarning', erro: 'lightError', desligado: 'outline' }
 
-export function CartaoEnviados({ emails, proximo }: { readonly emails: EmailsDoLink | null; readonly proximo: ProximoAviso | null }) {
+export function CartaoEnviados({ emails }: { readonly emails: EmailsDoLink | null }) {
   const idTitulo = useId()
   const envios = emails?.envios ?? []
   return (
@@ -18,7 +18,6 @@ export function CartaoEnviados({ emails, proximo }: { readonly emails: EmailsDoL
         <CardTitle id={idTitulo}>Enviados</CardTitle>
         <span className="text-xs text-muted-foreground">Últimos 30 dias</span>
       </div>
-      {proximo ? <p className="text-sm font-medium text-heading">{linhaDoProximo(proximo)}</p> : null}
       {envios.length === 0 ? (
         <p className="text-sm text-muted-foreground">Nenhum e-mail enviado.</p>
       ) : (

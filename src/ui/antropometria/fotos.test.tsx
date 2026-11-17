@@ -94,10 +94,12 @@ interface Abertura {
   readonly paciente?: Paciente | null
   readonly porta?: ArmazenamentoDeFotos | null
   readonly comSetembro?: boolean
+  /** A data da avaliação aberta; o dia de AGORA é 03/11/2026. */
+  readonly data?: string
 }
 
-function abrir({ avaliacao = {}, paciente = RENATA, porta = falsos().porta, comSetembro = true }: Abertura = {}) {
-  const atual = planoDe('av', casoDe({ pacienteId: paciente?.id ?? null, dataConsulta: '2026-11-03', pesoKg: 71.5, circunferenciaCinturaCm: 84, avaliacao }))
+function abrir({ avaliacao = {}, paciente = RENATA, porta = falsos().porta, comSetembro = true, data = '2026-11-03' }: Abertura = {}) {
+  const atual = planoDe('av', casoDe({ pacienteId: paciente?.id ?? null, dataConsulta: data, pesoKg: 71.5, circunferenciaCinturaCm: 84, avaliacao }))
   const montado = montarComDados({ pacientes: paciente ? [paciente] : [], planos: comSetembro && paciente ? [setembro, atual] : [atual] }, () => (
     <ContextoArmazenamentoDeFotos.Provider value={porta}>
       <ContextoDesenhistaDeFoto.Provider value={desenhista}>
@@ -234,6 +236,16 @@ describe('os quadros e a exclusão (CA-2485, CB-1414, D-1509)', () => {
     expect(f.assinados).toHaveLength(2)
   })
 
+  it('CB-1503 e D-1554: alternar "Comparar fotos" e voltar não assina de novo a mesma foto', async () => {
+    const f = falsos()
+    const { usuario, cartao } = abrir({ porta: f.porta, avaliacao: { fotosAutorizadasEm: '2026-11-03', fotos: [foto('f1', 'frente')] } })
+    await cartao().findByRole('img', { name: 'Foto de frente, 03/11/2026' })
+    await usuario.click(cartao().getByRole('button', { name: 'Comparar fotos' }))
+    await usuario.click(cartao().getByRole('button', { name: 'Ver fotos de hoje' }))
+    expect(await cartao().findByRole('img', { name: 'Foto de frente, 03/11/2026' })).toHaveAttribute('src', expect.stringMatching(/f1\.jpg\?vez=1$/))
+    expect(f.assinados.filter((c) => c.endsWith('/f1.jpg'))).toHaveLength(1)
+  })
+
   it('CA-2485: "Excluir" pede confirmação; confirmado, o arquivo sai do balde e da lista', async () => {
     const f = falsos()
     const { usuario, gravado, cartao } = abrir({ porta: f.porta, avaliacao: { fotosAutorizadasEm: '2026-11-03', fotos: [foto('f1', 'frente'), foto('f2', 'lado')] } })
@@ -287,6 +299,15 @@ describe('Comparar fotos (CA-2486, CB-1412, CB-1466, D-1510)', () => {
     expect(cartao().getByRole('list', { name: 'Fotos de hoje' })).toBeInTheDocument()
   })
 
+  it('CB-1502 e D-1553: na avaliação de outro dia, "Ver fotos desta avaliação" e a lista "Fotos desta avaliação"', async () => {
+    const { usuario, cartao } = abrir({ data: '2026-10-20', avaliacao: { fotosAutorizadasEm: '2026-10-20', fotos: [foto('f-out', 'frente')] } })
+    expect(cartao().getByRole('list', { name: 'Fotos desta avaliação' })).toBeInTheDocument()
+    expect(cartao().queryByRole('list', { name: 'Fotos de hoje' })).not.toBeInTheDocument()
+    await usuario.click(cartao().getByRole('button', { name: 'Comparar fotos' }))
+    expect(cartao().getByRole('button', { name: 'Ver fotos desta avaliação' })).toBeInTheDocument()
+    expect(cartao().queryByRole('button', { name: 'Ver fotos de hoje' })).not.toBeInTheDocument()
+  })
+
   it('CB-1466: sem foto de lado na de hoje, o quadro diz "Sem foto de lado em 03/11/2026." e a de antes aparece', async () => {
     const { usuario, cartao } = abrir({ avaliacao: { fotosAutorizadasEm: '2026-11-03', fotos: [foto('f-nov', 'frente')] } })
     await usuario.click(cartao().getByRole('button', { name: 'Comparar fotos' }))
@@ -332,6 +353,19 @@ describe('anexos e espaço (CA-2482, CA-2483, D-1511)', () => {
     expect(cartao().getByText('1 de 5 fotos')).toBeInTheDocument()
     expect(within(cartao().getByRole('list', { name: 'Fotos de hoje' })).getByText('Outra')).toBeInTheDocument()
     expect(cartao().queryByRole('list', { name: 'Anexos' })).not.toBeInTheDocument()
+  })
+
+  it('CB-1504 e D-1555: a imagem anexada avisa junto do botão "A imagem entrou nas fotos."; o PDF não', async () => {
+    const { usuario, gravado, cartao } = abrir({ avaliacao: { fotosAutorizadasEm: '2026-11-03' } })
+    await usuario.upload(campoDoAnexo(), arquivoDe(jpeg(1200, 1600), 'IMG_0001.jpg', 'image/jpeg'))
+    await vi.waitFor(() => expect(gravado()?.fotos).toHaveLength(1))
+    const aviso = cartao().getByRole('status')
+    expect(aviso).toHaveTextContent('A imagem entrou nas fotos.')
+    // Junto do botão: na área dos anexos, depois do "Adicionar arquivo".
+    expect(campoDoAnexo().compareDocumentPosition(aviso) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    await usuario.upload(campoDoAnexo(), arquivoDe(PDF, 'exame.pdf', 'application/pdf'))
+    await vi.waitFor(() => expect(gravado()?.anexos).toHaveLength(1))
+    expect(cartao().queryByText('A imagem entrou nas fotos.')).not.toBeInTheDocument()
   })
 
   it('CB-1467 e D-1530: sem a autorização, a imagem anexada não sobe e a frase pede a marca', async () => {

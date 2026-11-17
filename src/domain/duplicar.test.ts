@@ -183,8 +183,9 @@ describe('duplicarCaso', () => {
 
 describe('medidas do dia na duplicação (spec ficha-unica, D-367)', () => {
   it('D-367: todo campo do plano tem classificação, e só os que existem', () => {
-    expect(conferirClassificacao(criarCasoVazio('x'), NA_DUPLICACAO)).toEqual([])
-    expect(conferirClassificacao({ ...criarCasoVazio('x'), ...COMPLETO }, NA_DUPLICACAO)).toEqual([])
+    // D-1556: `criadoEm` é opcional (o plano de antes não tem); o plano criado agora tem.
+    expect(conferirClassificacao({ ...criarCasoVazio('x'), criadoEm: '2026-11-16T10:00:00.000Z' }, NA_DUPLICACAO)).toEqual([])
+    expect(conferirClassificacao({ ...criarCasoVazio('x'), criadoEm: '2026-11-16T10:00:00.000Z', ...COMPLETO }, NA_DUPLICACAO)).toEqual([])
   })
 
   it('D-367: a lista das medidas do dia é esta, e só a cópia ganha id, nome e data novos', () => {
@@ -239,7 +240,7 @@ describe('medidas do dia na duplicação (spec ficha-unica, D-367)', () => {
       'medidasCorporais.alturaDoJoelhoCm',
       'medidasCorporais.semienvergaduraCm',
     ])
-    expect(caminhos('novo')).toEqual(['id', 'nome', 'dataConsulta'])
+    expect(caminhos('novo')).toEqual(['id', 'nome', 'dataConsulta', 'criadoEm'])
     // Spec antropometria-telas (D-1436): os arquivos nunca vão na cópia.
     expect(caminhos('arquivo do dia')).toEqual(['avaliacao.fotos', 'avaliacao.anexos'])
   })

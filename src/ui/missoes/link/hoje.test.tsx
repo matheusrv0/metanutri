@@ -63,7 +63,8 @@ describe('CA-2203 e CA-2205: marcar', () => {
     const agua = screen.getByRole('button', { name: /litros de água/ })
     await usuario.click(agua)
     expect(agua).toHaveAttribute('aria-pressed', 'true')
-    expect(agua).toHaveAccessibleName('Beber cerca de 2,2 litros de água, feita')
+    // CB-1236 e D-1268: o estado vem só do pressionado; o nome é o da missão.
+    expect(agua).toHaveAccessibleName('Beber cerca de 2,2 litros de água')
     expect(agua.closest('li')?.className).toContain('bg-lightsuccess')
     expect(agua.querySelector('svg path')).not.toBeNull()
     expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '1')
@@ -286,5 +287,15 @@ describe('a linha da semana', () => {
     })
     expect(screen.getByRole('heading', { level: 1, name: 'Sua semana' })).toBeInTheDocument()
     expect(DIETA.refeicoes).toHaveLength(4)
+  })
+})
+
+describe('CB-1239 e D-1271: o verde da missão feita', () => {
+  it('CB-1239: só a linha tem o fundo verde; o botão da missão fica sem fundo próprio por cima dele', () => {
+    abrirLink(linkDeTeste({ marcacoes: [{ dia: HOJE, feitas: ['refeicao-almoco'] }] }))
+    const almoco = screen.getByRole('button', { name: 'Almoço por volta das 12h30', pressed: true })
+    expect(almoco.closest('li')?.className).toContain('bg-lightsuccess')
+    expect(almoco.className).not.toContain('bg-lightsuccess')
+    expect(almoco.className).not.toContain('bg-card')
   })
 })

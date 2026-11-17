@@ -19,6 +19,7 @@ qualquer script, só no build: o `npm run dev` e o recarregamento do Vite ficam 
 | Service worker (`sw.js`) e manifest do PWA | o próprio site | `worker-src`, `manifest-src` |
 | Logo do perfil (vira `data:` no `FileReader`) | `data:` | `img-src` |
 | Banco, login, armazenamento dos comprovantes e funções de cobrança | origem do Supabase do build | `connect-src` |
+| Foto da avaliação, pela URL assinada de 10 minutos do balde privado (spec antropometria-telas, D-1457, CA-2491, D-1551) | só o caminho `/storage/v1/object/sign/fotos-avaliacao/` do Supabase do build | `img-src` |
 | SDK do pagamento (`/js/v2`) | `https://sdk.mercadopago.com` | `script-src` |
 | Bandeira pelo BIN e registro do aparelho (`/v1/payment_methods`, `/v1/devices/widgets`) | `https://api.mercadopago.com` | `connect-src` |
 | Os três campos do cartão (iframes) e uma consulta do SDK | `https://secure-fields.mercadopago.com` | `frame-src`, `connect-src` |

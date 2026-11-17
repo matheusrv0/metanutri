@@ -11,7 +11,7 @@ import { dependenciasDoAmbiente } from '../_shared/avisos/ambiente.ts'
 import { responderAosAvisos } from '../_shared/avisos/avisosResposta.ts'
 import { NAO_ENVIOU } from '../_shared/avisos/comum.ts'
 import { cabecalhosPara, responder } from '../_shared/cobranca.ts'
-import { lerCorpo, PEDIDO_GRANDE_DEMAIS } from '../_shared/corpo.ts'
+import { lerCorpo, lerTexto, PEDIDO_GRANDE_DEMAIS } from '../_shared/corpo.ts'
 
 /** O corpo do formulário de um clique é curto: `List-Unsubscribe=One-Click`. */
 const LIMITE_DO_FORMULARIO = 1024
@@ -31,10 +31,10 @@ Deno.serve(async (req: Request) => {
     let corpo: unknown = null
     let umClique = false
     if (formulario) {
-      const declarado = Number(req.headers.get('content-length') ?? '0')
-      if (declarado > LIMITE_DO_FORMULARIO) return responder({ erro: PEDIDO_GRANDE_DEMAIS }, 413, origem)
-      const texto = (await req.text()).slice(0, LIMITE_DO_FORMULARIO)
-      umClique = new URLSearchParams(texto).get('List-Unsubscribe') === 'One-Click'
+      // D-1274 e CB-1242: lido por pedaços até 1 KB, com o tamanho declarado ou sem ele.
+      const lido = await lerTexto(req, LIMITE_DO_FORMULARIO)
+      if (lido.grande) return responder({ erro: PEDIDO_GRANDE_DEMAIS }, 413, origem)
+      umClique = new URLSearchParams(lido.texto).get('List-Unsubscribe') === 'One-Click'
     } else {
       const lido = await lerCorpo(req, 4096)
       if (lido.grande) return responder({ erro: PEDIDO_GRANDE_DEMAIS }, 413, origem)

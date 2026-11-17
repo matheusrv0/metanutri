@@ -372,8 +372,8 @@ describe('a rodada dos avisos (função avisos)', () => {
       expect(await enviosDo(link)).toEqual([expect.objectContaining({ tipo: 'A2', estado: 'enviado', dia, extra: { dias: 2 } })])
     })
 
-    it('CA-2267, CA-2268, CA-2276 e CA-2313: o N1 vai ao e-mail da conta, como MetaNutri, sem nada do paciente, uma vez por segunda', async () => {
-      // D-1266: o "n1" roda numa segunda, como o agendamento do 017, depois do dia do A2 acima. Se a suíte roda numa
+    it('CA-2267, CA-2268, CA-2276 e CB-1243: o N1 vai ao e-mail da conta, como MetaNutri, sem nada do paciente, uma vez por segunda', async () => {
+      // D-1290: o "n1" roda numa segunda, como o agendamento do 017, depois do dia do A2 acima. Se a suíte roda numa
       // segunda, aquele dia também é segunda, e a "manha" dele já mandou o N1 daquela semana (D-1237): conta só o daqui.
       const segunda = proximaSegunda(somarDias(HOJE, 8))
       const antes = para(c.vitima.email).length

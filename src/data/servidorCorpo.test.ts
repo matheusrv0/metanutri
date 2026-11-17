@@ -1,7 +1,7 @@
 // @vitest-environment node
 // D-110 (spec seguranca-lote-2): o pedido às três funções de cobrança vai até 64 KB. Testado com o
 // Request e o ReadableStream de verdade do Node, os mesmos do Deno.
-import { CORPO_MAXIMO_BYTES, lerCorpo, PEDIDO_GRANDE_DEMAIS } from '../../supabase/functions/_shared/corpo.ts'
+import { CORPO_MAXIMO_BYTES, lerCorpo, lerTexto, PEDIDO_GRANDE_DEMAIS } from '../../supabase/functions/_shared/corpo.ts'
 
 const KB = 1024
 const pedido = (corpo: string | null) => new Request('https://exemplo.com/funcao', { method: 'POST', ...(corpo === null ? {} : { body: corpo }) })
@@ -81,5 +81,30 @@ describe('o tamanho do pedido às funções de cobrança (D-110)', () => {
 
   it('a frase do 413 é curta e em português', () => {
     expect(PEDIDO_GRANDE_DEMAIS).toBe('O pedido é grande demais.')
+  })
+})
+
+describe('CB-1242 e D-1274: o formulário do descadastro de um clique, lido até 1 KB', () => {
+  it('CB-1242: o formulário curto volta como texto', async () => {
+    expect(await lerTexto(pedido('List-Unsubscribe=One-Click'), KB)).toEqual({ grande: false, texto: 'List-Unsubscribe=One-Click' })
+    expect(await lerTexto(pedido(null), KB)).toEqual({ grande: false, texto: '' })
+  })
+
+  it('CB-1242: 1 KB exato passa; um byte a mais, sem o tamanho declarado, é recusado', async () => {
+    expect(await lerTexto(pedido('a'.repeat(KB)), KB)).toEqual({ grande: false, texto: 'a'.repeat(KB) })
+    expect(await lerTexto(pedido('a'.repeat(KB + 1)), KB)).toEqual({ grande: true })
+  })
+
+  it('CB-1242: o corpo sem fim nem tamanho declarado para no primeiro pedaço que passa de 1 KB', async () => {
+    const { corpo, estado } = corpoSemFim(512)
+    expect(await lerTexto({ headers: new Headers(), body: corpo }, KB)).toEqual({ grande: true })
+    expect(estado.puxados).toBeLessThanOrEqual(4)
+    expect(estado.cancelado).toBe(true)
+  })
+
+  it('CB-1242: o tamanho declarado acima do limite recusa sem ler', async () => {
+    const { corpo, estado } = corpoSemFim(KB)
+    expect(await lerTexto({ headers: new Headers({ 'content-length': String(KB + 1) }), body: corpo }, KB)).toEqual({ grande: true })
+    expect(estado.puxados).toBe(0)
   })
 })

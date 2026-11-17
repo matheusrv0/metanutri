@@ -65,6 +65,17 @@ describe('CA-2225: a migração do link por plano para o link fixo por paciente'
       [a.id, c.id],
     ])
   })
+
+  it('CB-1241 e D-1273: um fixo novo leva junto os links que apontavam para o fixo de antes (o banco segue um nível só)', () => {
+    const fixo = link({ criadoEm: '2026-09-01T10:00:00.000Z' })
+    const antigo = link({ criadoEm: '2026-08-01T10:00:00.000Z', substituidoPor: fixo.id })
+    const deOutro = link({ criadoEm: '2026-07-01T10:00:00.000Z', pacienteId: 'pac-2', substituidoPor: 'outro-fixo' })
+    const novo = link({ criadoEm: '2026-11-01T10:00:00.000Z' })
+    const mudados = migrarParaLinkFixo([antigo, fixo, novo, deOutro], [])
+    expect(mudados.map((l) => `${l.id}>${String(l.substituidoPor)}`).sort()).toEqual([`${fixo.id}>${novo.id}`, `${antigo.id}>${novo.id}`].sort())
+    // As marcações e o resto do link antigo não mudam.
+    expect(mudados.find((l) => l.id === antigo.id)).toEqual({ ...antigo, substituidoPor: novo.id })
+  })
 })
 
 describe('o link do paciente', () => {

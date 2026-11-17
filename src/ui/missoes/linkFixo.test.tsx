@@ -7,8 +7,10 @@ import type { ClienteDosEmails } from '@/domain/emailsDoLink.ts'
 import { emailsFalsos, linhaDeEmails } from '@/domain/emailsFalsos.test-utils.ts'
 import type { Missao } from '@/domain/missoes.ts'
 import type { Armazenamento } from '@/domain/persistencia.ts'
+import { criarPacienteVazio, criarRepositorioPacientes } from '@/domain/pacientes.ts'
 import { criarRepositorioAcompanhamentos, type RepositorioAcompanhamentos } from '@/domain/repositorioAcompanhamentos.ts'
 import { ProvedorAcompanhamentos } from '@/ui/estado/ProvedorAcompanhamentos.tsx'
+import { ContextoPacientes } from '@/ui/estado/contextoPacientes.ts'
 import { ContextoClienteDosEmails } from '@/ui/estado/usarEmailsDoLink.ts'
 import { CartaoLinkMissoes } from './CartaoLinkMissoes.tsx'
 import { TelaAdesao } from './TelaAdesao.tsx'
@@ -296,5 +298,39 @@ describe('CA-2226 e CB-1224: o limite conta pacientes com link', () => {
       </Anfitriao>,
     )
     expect(screen.queryByRole('button', { name: 'Gerar link do paciente' })).not.toBeInTheDocument()
+  })
+})
+
+describe('CB-1240 e D-1272: o link leva o nome da ficha', () => {
+  const ficha = { ...criarPacienteVazio('pac-ana', '2026-11-01T10:00:00.000Z'), nome: 'Ana Souza' }
+  const comFicha = (filho: ReactNode) => (
+    <ContextoPacientes.Provider value={{ repositorio: criarRepositorioPacientes(memoria()), pacientes: [ficha], atualizar: () => undefined }}>{filho}</ContextoPacientes.Provider>
+  )
+
+  it('CB-1240: gerar o link do plano "Gestante Ana" grava o nome da paciente, "Ana Souza"', async () => {
+    const usuario = userEvent.setup()
+    const repo = criarRepositorioAcompanhamentos(memoria())
+    render(comFicha(<Anfitriao repositorio={repo}><CartaoLinkMissoes casoId="plano-g" pacienteId="pac-ana" nome="Gestante Ana" missoes={MISSOES} hoje={HOJE} /></Anfitriao>))
+    await usuario.click(screen.getByRole('button', { name: 'Gerar link do paciente' }))
+    await usuario.click(screen.getByRole('button', { name: /Já tenho a autorização/ }))
+    await waitFor(() => expect(repo.listar()[0]?.nome).toBe('Ana Souza'))
+  })
+
+  it('CB-1240: atualizar com um plano novo também grava o nome da ficha', async () => {
+    const usuario = userEvent.setup()
+    const repo = criarRepositorioAcompanhamentos(memoria())
+    const fixo = repo.salvar(linkDe({ casoId: 'plano-1', pacienteId: 'pac-ana', nome: 'Plano antigo', criadoEm: '2026-09-01T10:00:00.000Z' }))
+    render(comFicha(<Anfitriao repositorio={repo}><CartaoLinkMissoes casoId="plano-2" pacienteId="pac-ana" nome="Gestante Ana" missoes={NOVAS} hoje={HOJE} /></Anfitriao>))
+    await usuario.click(screen.getByRole('button', { name: 'Atualizar' }))
+    await waitFor(() => expect(repo.porId(fixo.id)?.nome).toBe('Ana Souza'))
+  })
+
+  it('CB-1240: sem ficha, o link leva o nome do plano, como antes', async () => {
+    const usuario = userEvent.setup()
+    const repo = criarRepositorioAcompanhamentos(memoria())
+    render(<Anfitriao repositorio={repo}><CartaoLinkMissoes casoId="plano-s" pacienteId="pac-sem-ficha" nome="Gestante Ana" missoes={MISSOES} hoje={HOJE} /></Anfitriao>)
+    await usuario.click(screen.getByRole('button', { name: 'Gerar link do paciente' }))
+    await usuario.click(screen.getByRole('button', { name: /Já tenho a autorização/ }))
+    await waitFor(() => expect(repo.listar()[0]?.nome).toBe('Gestante Ana'))
   })
 })

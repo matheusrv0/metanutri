@@ -124,7 +124,9 @@ describe('CA-2264: "Enviados" e o próximo e-mail', () => {
     expect(linhas[1]).toHaveTextContent('Aviso')
     expect(linhas[1]).toHaveTextContent('Adiado pelo teto')
     expect(linhas[2]).toHaveTextContent('Devolvido')
-    expect(c.getByText('Próximo: Resumo da semana, quinta, 5/11, 8h')).toBeInTheDocument()
+    // CB-1237 e D-1269: o próximo aviso fica só em "Próximo e-mail", logo acima; "Enviados" não o repete.
+    expect(c.queryByText(/^Próximo:/)).not.toBeInTheDocument()
+    expect(cartao('Próximo e-mail').getByText(/Resumo da semana · quinta, 5\/11, 8h/)).toBeInTheDocument()
     expect(c.getByText('Últimos 30 dias')).toBeInTheDocument()
   })
 

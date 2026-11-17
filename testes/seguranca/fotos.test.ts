@@ -2,7 +2,8 @@
 // A dona envia, lê, assina e apaga na própria pasta; outra conta e quem não tem conta não fazem nada na pasta dela; o
 // servidor recusa o tipo, o tamanho, o caminho fora do formato, a 6ª foto, o 11º anexo e a conta com 2.000 arquivos,
 // também com duas abas enviando juntas; e soma os bytes: 8 MB por plano e 500 MB por conta (D-1531, CB-1468). A conta
-// cheia chega ao app com o código próprio 53100; o resto do gatilho, com 23514 (D-1546, CB-1496).
+// cheia chega ao app com o código próprio MN001 do 019 (D-1550, CB-1499; no 018 era 53100); o resto do gatilho, com
+// 23514 (D-1546, CB-1496).
 import { randomUUID } from 'node:crypto'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { afterEach, beforeAll, describe, expect, it } from 'vitest'
@@ -48,10 +49,10 @@ async function enviar(cliente: SupabaseClient, caminho: string, arquivo: Blob = 
 }
 
 /**
- * D-1546: recusado pelo gatilho com este código, como o app o recebe ("database error, code: 53100"). O texto do `raise`
- * não chega; o código chega, e é por ele que o app reconhece a conta cheia.
+ * D-1546 e D-1550: recusado pelo gatilho com este código, como o app o recebe ("database error, code: MN001"). O
+ * texto do `raise` não chega; o código chega, e é por ele que o app reconhece a conta cheia.
  */
-function recusadoComCodigo(resposta: Awaited<ReturnType<typeof enviar>>, codigo: '23514' | '53100'): void {
+function recusadoComCodigo(resposta: Awaited<ReturnType<typeof enviar>>, codigo: '23514' | 'MN001'): void {
   expect(resposta.error, `esperava recusa com ${codigo}`).not.toBeNull()
   expect(resposta.error?.message).toContain(`code: ${codigo}`)
 }
@@ -254,7 +255,7 @@ describe('CA-2488: o servidor confere o arquivo e as contagens (D-1457, D-1504)'
     expect(bytesNoBanco(`${id}/${plano}`)).toBe(8 * MB)
   })
 
-  it('CB-1468, CB-1496 e D-1546: a conta que soma 500 MB tem o próximo arquivo recusado, em qualquer plano, com 53100', async () => {
+  it('CB-1468, CB-1496 e D-1546: a conta que soma 500 MB tem o próximo arquivo recusado, em qualquer plano, com MN001 (D-1550; era 53100 no 018)', async () => {
     const id = c.atacante.id
     // Linhas de mentira (sem arquivo), postas pelo banco, até a conta somar 500 MB: 8 MB em cada plano (o teto do plano
     // vale também para elas) e o resto no último. O gatilho só soma o que o banco diz.
@@ -270,8 +271,8 @@ describe('CA-2488: o servidor confere o arquivo e as contagens (D-1457, D-1504)'
     expect(r.ok, r.erro).toBe(true)
     try {
       expect(bytesNoBanco(id)).toBe(500 * MB)
-      recusadoComCodigo(await enviar(c.atacante.cliente, caminhoDaFoto(id, 'plano-depois-dos-500')), '53100')
-      recusadoComCodigo(await enviar(c.atacante.cliente, caminhoDoAnexo(id, 'plano-depois-dos-500'), pdf()), '53100')
+      recusadoComCodigo(await enviar(c.atacante.cliente, caminhoDaFoto(id, 'plano-depois-dos-500')), 'MN001')
+      recusadoComCodigo(await enviar(c.atacante.cliente, caminhoDoAnexo(id, 'plano-depois-dos-500'), pdf()), 'MN001')
       expect(nomesNoBanco(`${id}/plano-depois-dos-500`)).toEqual([])
     } finally {
       // As linhas ficam (a pilha local é apagada depois), mas sem peso: os testes seguintes usam a mesma conta.
@@ -281,7 +282,7 @@ describe('CA-2488: o servidor confere o arquivo e as contagens (D-1457, D-1504)'
     expect((await enviar(c.atacante.cliente, caminhoDaFoto(id, 'plano-depois-de-zerar'))).error).toBeNull()
   })
 
-  it('D-1457, CB-1496 e D-1546: com 2.000 arquivos na conta, o próximo é recusado, com 53100', async () => {
+  it('D-1457, CB-1496 e D-1546: com 2.000 arquivos na conta, o próximo é recusado, com MN001 (D-1550; era 53100 no 018)', async () => {
     const id = c.atacante.id
     const ja = nomesNoBanco(id).length
     const faltam = 2000 - ja
@@ -290,12 +291,12 @@ describe('CA-2488: o servidor confere o arquivo e as contagens (D-1457, D-1504)'
     )
     expect(r.ok, r.erro).toBe(true)
     expect(nomesNoBanco(id)).toHaveLength(2000)
-    recusadoComCodigo(await enviar(c.atacante.cliente, caminhoDaFoto(id, 'plano-depois-do-teto')), '53100')
-    recusadoComCodigo(await enviar(c.atacante.cliente, caminhoDoAnexo(id, 'plano-depois-do-teto'), pdf()), '53100')
+    recusadoComCodigo(await enviar(c.atacante.cliente, caminhoDaFoto(id, 'plano-depois-do-teto')), 'MN001')
+    recusadoComCodigo(await enviar(c.atacante.cliente, caminhoDoAnexo(id, 'plano-depois-do-teto'), pdf()), 'MN001')
     // As linhas de mentira ficam até o fim: a pilha local é apagada depois dos testes.
   })
 
-  it('CB-1497 e D-1547: o token recusado volta como sessão (401, 403 ou InvalidJWT), nunca como 53100', async () => {
+  it('CB-1497 e D-1547: o token recusado volta como sessão (401, 403 ou InvalidJWT), nunca como conta cheia', async () => {
     const semToken = createClient(c.ambiente.url, c.ambiente.anon, {
       auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
       global: { headers: { Authorization: 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ4In0.assinatura-falsa' } },
@@ -305,7 +306,7 @@ describe('CA-2488: o servidor confere o arquivo e as contagens (D-1457, D-1504)'
     const erro: { readonly status?: unknown; readonly statusCode?: unknown; readonly code?: unknown; readonly message: string } = r.error ?? { message: '' }
     const sessao = [401, 403].includes(Number(erro.status)) || ['401', '403'].includes(String(erro.statusCode)) || erro.code === 'InvalidJWT'
     expect(sessao, JSON.stringify({ status: erro.status, statusCode: erro.statusCode, code: erro.code, message: erro.message })).toBe(true)
-    expect(erro.message).not.toContain('53100')
+    expect(erro.message).not.toMatch(/MN001|53100/)
     expect(nomesNoBanco(`${c.atacante.id}/plano-token-falso`)).toEqual([])
   })
 

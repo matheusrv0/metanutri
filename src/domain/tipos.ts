@@ -201,6 +201,11 @@ export interface DadosDaAvaliacao {
 /** Dados e medidas (CA-01). Campos numéricos ficam `null` enquanto não preenchidos. */
 export interface Caso {
   readonly id: string
+  /**
+   * Data e hora (ISO) em que o plano nasceu, ao criar ou duplicar (spec antropometria-telas, D-1556). O plano gravado
+   * antes desta versão não tem: no mesmo dia, a lista de avaliações usa a última alteração.
+   */
+  readonly criadoEm?: string
   /** Paciente a quem este plano pertence; `null` enquanto não vinculado. */
   readonly pacienteId: string | null
   readonly nome: string

@@ -1,6 +1,6 @@
 // Os avisos por e-mail na ficha (spec lado-do-paciente, D-1227, CA-2260 a CA-2265, DP-LP-25).
 import { describe, expect, it } from 'vitest'
-import { convite, estadoDoAviso, linhaDoProximo, origemDoEmail, previaDoProximo, proximoDoLink, quandoDoAviso, semProximo } from './avisosNaFicha.ts'
+import { convite, estadoDoAviso, origemDoEmail, previaDoProximo, proximoDoLink, quandoDoAviso, quandoNoTexto, semProximo } from './avisosNaFicha.ts'
 import { lerEmailsDoLink } from './emailsDoLink.ts'
 import { linhaDeEmails } from './emailsFalsos.test-utils.ts'
 
@@ -78,7 +78,7 @@ describe('CA-2264 e DP-LP-25: o próximo e-mail', () => {
   it('CA-2264: com o resumo aceito numa quinta, o próximo é "Resumo da semana, quinta, 5/11, 8h"', () => {
     const proximo = proximoDoLink({ marcacoes: [{ dia: '2026-11-02', feitas: ['agua', 'frutas'] }], planoEm: null, ultimoAcesso: '2026-11-03' }, emails({ aceites: [aceite('semana')] }), AGORA)
     expect(proximo?.tipo).toBe('A2')
-    expect(proximo ? linhaDoProximo(proximo) : null).toBe('Próximo: Resumo da semana, quinta, 5/11, 8h')
+    expect(proximo ? quandoNoTexto(proximo.quando) : null).toBe('quinta, 5/11, 8h')
   })
 
   it('a prévia do resumo traz os dias até agora', () => {

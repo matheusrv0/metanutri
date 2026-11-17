@@ -252,6 +252,8 @@ describe('o link fixo por paciente (CA-2225, CA-2226)', () => {
     expect(sqlNoBancoLocal(readFileSync(new URL('../../supabase/017-lado-do-paciente.sql', import.meta.url), 'utf8')).ok).toBe(true)
     expect((await linhaDoLink(antigo.id))['substituido_por']).toBe(fixo.id)
     expect((await linhaDoLink(fixo.id))['substituido_por']).toBeNull()
+    // O 017 refaz a troca do endereço na versão dele: o 019 roda logo depois, como o cabeçalho do 019 manda (D-1266).
+    expect(sqlNoBancoLocal(readFileSync(new URL('../../supabase/019-ajustes.sql', import.meta.url), 'utf8')).ok).toBe(true)
   })
 
   it('CA-2226: o limite conta pacientes com link: o substituído não conta, e o terceiro paciente passa do limite', async () => {
@@ -436,10 +438,12 @@ describe('"Trocar o endereço" corta quem tinha o link (revisão r1: CA-2289, CA
     expect(await trocado(tokenNovo())).toBe(false)
     expect((await linhaDoLink(antigo.id))['cortado_em']).not.toBeNull()
     expect((await linhaDoLink(fixo.id))['cortado_em']).toBeNull()
-    // Só o resumo do endereço de antes fica guardado, e ninguém o lê pela API.
+    // Só os resumos ficam guardados: o do endereço de antes e, desde o 019 (D-1266), o do link cortado. Ninguém os lê
+    // pela API.
     const guardados = await c.servico.from('tokens_trocados').select('token_hash, link_id').eq('link_id', fixo.id)
     expect(JSON.stringify(guardados.data)).not.toContain(fixo.token)
-    expect(guardados.data).toHaveLength(1)
+    expect(JSON.stringify(guardados.data)).not.toContain(antigo.token)
+    expect(guardados.data?.map((g) => String(g.token_hash)).sort()).toEqual([resumoDoToken(fixo.token), resumoDoToken(antigo.token)].sort())
   })
 
   it('CA-2289: o endereço cortado não marca, não registra acesso nem desliga aviso', async () => {
@@ -498,6 +502,16 @@ describe('"Trocar o endereço" corta quem tinha o link (revisão r1: CA-2289, CA
     expect((await linhaDoLink(outro))['cortado_em']).toBeNull()
   })
 
+  it('CB-1234 e D-1266: o link cortado, apagado e gravado de novo com o mesmo token, não volta a abrir', async () => {
+    sem('apagar o link cortado', (await c.vitima.cliente.from('acompanhamentos').delete().eq('id', antigo.id)).error)
+    expect(await trocado(antigo.token)).toBe(true)
+    const r = await c.vitima.cliente
+      .from('acompanhamentos')
+      .insert({ id: antigo.id, nutricionista_id: c.vitima.id, token: antigo.token, caso_id: 'caso-lp', paciente_id: 'paciente-troca', nome: 'Antigo', substituido_por: fixo.id })
+    recusadoCom(r, ['23505'])
+    expect(await abrir(antigo.token)).toBeNull()
+  })
+
   it('CB-1231: trocado duas vezes, os dois endereços de antes dizem "trocado"; removido o link, os resumos saem junto', async () => {
     const terceiro = tokenNovo()
     sem('trocar de novo', (await c.vitima.cliente.from('acompanhamentos').update({ token: terceiro }).eq('id', fixo.id)).error)
@@ -507,6 +521,28 @@ describe('"Trocar o endereço" corta quem tinha o link (revisão r1: CA-2289, CA
     expect(await abrir(terceiro)).toMatchObject({ id: fixo.id })
     sem('remover o link', (await c.vitima.cliente.from('acompanhamentos').delete().eq('id', fixo.id)).error)
     expect((await c.servico.from('tokens_trocados').select('token_hash').eq('link_id', fixo.id)).data).toEqual([])
+  })
+
+  it('CB-1234 e D-1266: o link cortado antes do 019 ganha o resumo ao rodar o 019, preso ao fixo, e não volta', async () => {
+    const velho = await novoLink(c.vitima, 'paciente-019', new Date(Date.now() - MES_MS).toISOString())
+    const atual = await novoLink(c.vitima, 'paciente-019')
+    sem('migrar', (await c.vitima.cliente.from('acompanhamentos').update({ substituido_por: atual.id }).eq('id', velho.id)).error)
+    // Como o 017 cortava: a linha marcada, sem o resumo do token dela.
+    sem('cortar como o 017', (await c.servico.from('acompanhamentos').update({ cortado_em: new Date().toISOString() }).eq('id', velho.id)).error)
+    expect((await c.servico.from('tokens_trocados').select('token_hash').eq('token_hash', resumoDoToken(velho.token))).data).toEqual([])
+    const sql = readFileSync(new URL('../../supabase/019-ajustes.sql', import.meta.url), 'utf8')
+    const rodou = sqlNoBancoLocal(sql)
+    expect(rodou.ok, rodou.erro).toBe(true)
+    expect((await c.servico.from('tokens_trocados').select('link_id').eq('token_hash', resumoDoToken(velho.token))).data).toEqual([{ link_id: atual.id }])
+    // Rodar de novo não muda nada.
+    expect(sqlNoBancoLocal(sql).ok).toBe(true)
+    sem('apagar o cortado', (await c.vitima.cliente.from('acompanhamentos').delete().eq('id', velho.id)).error)
+    const r = await c.vitima.cliente
+      .from('acompanhamentos')
+      .insert({ id: velho.id, nutricionista_id: c.vitima.id, token: velho.token, caso_id: 'caso-lp', paciente_id: 'paciente-019', nome: 'Velho', substituido_por: atual.id })
+    recusadoCom(r, ['23505'])
+    expect(await abrir(velho.token)).toBeNull()
+    sem('limpar', (await c.vitima.cliente.from('acompanhamentos').delete().eq('id', atual.id)).error)
   })
 
   it('o corte é da conta: a troca de uma conta não corta o link de outra com o mesmo paciente', async () => {

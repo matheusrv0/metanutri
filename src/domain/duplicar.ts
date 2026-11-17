@@ -57,6 +57,8 @@ export const NA_DUPLICACAO: ClassificacaoDoPlano = {
   id: 'novo',
   nome: 'novo',
   dataConsulta: 'novo',
+  // D-1556: a cópia nasce agora (o repositório grava a hora dela).
+  criadoEm: 'novo',
   // Do paciente: com paciente, a ficha manda (D-340); sem paciente, são do caso de estudo.
   pacienteId: 'copiado',
   sexo: 'copiado',

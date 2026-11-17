@@ -18,8 +18,11 @@ const textoDo = (erro: object, campo: 'statusCode' | 'code' | 'message'): string
   return typeof valor === 'string' ? valor : ''
 }
 
-/** D-1546: o gatilho do 018 recusa a conta cheia com o código 53100, e o armazenamento o põe na mensagem. */
-const CONTA_CHEIA = /\bcode: 53100\b/
+/**
+ * D-1546 e D-1550: o gatilho recusa a conta cheia com um código próprio, e o armazenamento o põe na mensagem: `MN001`
+ * (o do 019) ou `53100` (o do 018, antes de o 019 rodar).
+ */
+const CONTA_CHEIA = /\bcode: (?:MN001|53100)\b/
 
 /** D-1547 (nota da r3): a recusa da política ("new row violates row-level security policy"), que vem como 403. */
 const RECUSA_DA_POLITICA = /row-level security/i

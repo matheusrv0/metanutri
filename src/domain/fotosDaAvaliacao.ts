@@ -27,6 +27,8 @@ export const LADO_DA_FOTO = 1600
 export const QUALIDADE_DA_FOTO = 0.85
 /** D-1457: a URL assinada vale 10 minutos. */
 export const VALIDADE_DA_URL_S = 600
+/** D-1554: a tela guarda o link assinado por 5 minutos, a metade da validade dele. */
+export const VALIDADE_DO_LINK_GUARDADO_MS = 5 * 60 * 1000
 /** D-1457: o balde privado. */
 export const BALDE_DAS_FOTOS = 'fotos-avaliacao'
 
@@ -53,6 +55,8 @@ export const FRASES = {
   semOutra: 'Comparar fotos precisa de outra avaliação com foto.',
   regras: 'Até 5 fotos por avaliação. Fotos e anexos somam até 8 MB. Fotos em JPG ou PNG; anexos em PDF. Imagem anexada entra como foto.',
   dezDeDez: '10 de 10 anexos.',
+  /** D-1555: junto de "Adicionar arquivo", quando a imagem anexada entra entre as fotos. */
+  imagemNasFotos: 'A imagem entrou nas fotos.',
 } as const
 
 export type TipoDoArquivo = ArquivoDaAvaliacao['tipo']
@@ -93,6 +97,16 @@ export function tipoDoAnexo(bytes: Uint8Array): TipoDoArquivo | null {
 export function ladosDaCopia(largura: number, altura: number): { readonly largura: number; readonly altura: number } {
   const escala = Math.min(1, LADO_DA_FOTO / Math.max(largura, altura))
   return { largura: Math.max(1, Math.round(largura * escala)), altura: Math.max(1, Math.round(altura * escala)) }
+}
+
+/**
+ * D-1552 e CB-1501: a largura com que o navegador abre a foto, já reduzida, quando o lado maior do cabeçalho passa de
+ * 1600 px: a que leva o lado maior a 1600, arredondada para cima (a foto aberta nunca fica menor que a guardada). Nula: a
+ * foto abre inteira. Só a largura vai ao navegador, para a proporção ficar a da foto, girada ou não.
+ */
+export function larguraDeAbertura(largura: number, altura: number): number | null {
+  const maior = Math.max(largura, altura)
+  return maior > LADO_DA_FOTO ? Math.ceil((largura * LADO_DA_FOTO) / maior) : null
 }
 
 /** D-1451: o que a avaliação já usa, fotos e anexos somados. */
@@ -139,7 +153,7 @@ export function textosPeloSexo(sexo: Sexo | null): { readonly autorizou: string;
 // --- O envio (D-1453, D-1505) ------------------------------------------------------------------------------------------
 
 /**
- * D-1547: `conta-cheia`, o servidor recusou pelo teto da conta (500 MB ou 2.000 arquivos, o código 53100 da D-1546);
+ * D-1547: `conta-cheia`, o servidor recusou pelo teto da conta (500 MB ou 2.000 arquivos, o código MN001 da D-1550 ou o 53100 da D-1546);
  * `sessao`, recusou a sessão (401, 403 ou o token); `recusado`, respondeu e não aceitou por outro motivo; `sem-rede`, não
  * respondeu.
  */
@@ -168,6 +182,8 @@ export interface ArmazenamentoDeFotos {
   apagar(caminhos: readonly string[]): Promise<boolean>
   /** Apaga tudo dentro da pasta (`<conta>/<plano>`), em todas as subpastas. */
   apagarPasta(pasta: string): Promise<boolean>
+  /** D-1554: esquece o link guardado daquele caminho (a imagem não abriu: o link venceu). Só a porta que guarda tem. */
+  esquecerLink?(caminho: string): void
 }
 
 /** A foto aberta pelo navegador, já girada pela orientação da câmera. */
@@ -180,8 +196,11 @@ export interface FotoAberta {
 
 /** Quem abre e redesenha a foto: o <canvas> na interface; um falso nos testes. */
 export interface DesenhistaDeFoto {
-  /** Rejeita quando a foto não abre. */
-  abrir(arquivo: Blob): Promise<FotoAberta>
+  /**
+   * Rejeita quando a foto não abre. Com `larguraDeAbertura`, o navegador abre a foto já nessa largura (D-1552); quem não
+   * reduz abre inteira, e os lados da foto aberta dizem o que veio.
+   */
+  abrir(arquivo: Blob, larguraDeAbertura: number | null): Promise<FotoAberta>
 }
 
 export type EnvioDoArquivo = { readonly tipo: 'ok'; readonly arquivo: ArquivoDaAvaliacao } | { readonly tipo: 'erro'; readonly mensagem: string }
@@ -257,7 +276,8 @@ export async function enviarFoto(entrada: EntradaDaFoto, porta: ArmazenamentoDeF
   if (conferida.tipo === 'erro') return conferida
   let blob: Blob
   try {
-    const aberta = await desenhista.abrir(entrada.arquivo)
+    const cabecalho = ladosPeloCabecalho(entrada.bytes, conferida.mime)
+    const aberta = await desenhista.abrir(entrada.arquivo, cabecalho ? larguraDeAbertura(cabecalho.largura, cabecalho.altura) : null)
     if (!(aberta.largura > 0) || !(aberta.altura > 0)) return erro(FRASES.leitura)
     const lados = ladosDaCopia(aberta.largura, aberta.altura)
     blob = await aberta.desenharJpeg(lados.largura, lados.altura, QUALIDADE_DA_FOTO)
@@ -467,3 +487,36 @@ export const temArquivos = (avaliacao: DadosDaAvaliacao): boolean =>
 
 /** D-1503: a avaliação do paciente excluído fica sem fotos, sem anexos e sem a data da autorização. */
 export const semArquivos = (avaliacao: DadosDaAvaliacao): DadosDaAvaliacao => ({ ...avaliacao, fotosAutorizadasEm: null, fotos: null, anexos: null })
+
+/**
+ * D-1554 e CB-1503: a porta com o link assinado guardado na memória da tela por `VALIDADE_DO_LINK_GUARDADO_MS`, por
+ * caminho. Alternar "Comparar fotos" e as fotos não pede um link novo nem baixa a imagem de novo. O link que falhou não é
+ * guardado; excluir o arquivo, e a imagem que não abriu (`esquecerLink`), tiram o guardado. Nada vai para o aparelho.
+ */
+export function linksGuardados(porta: ArmazenamentoDeFotos, agora: () => number): ArmazenamentoDeFotos {
+  const guardados = new Map<string, { readonly url: string; readonly ate: number }>()
+  return {
+    conta: () => porta.conta(),
+    enviar: (caminho, arquivo, tipo) => porta.enviar(caminho, arquivo, tipo),
+    listar: (pasta) => porta.listar(pasta),
+    async assinar(caminho) {
+      const guardado = guardados.get(caminho)
+      if (guardado && agora() < guardado.ate) return guardado.url
+      const url = await porta.assinar(caminho)
+      if (url === null) guardados.delete(caminho)
+      else guardados.set(caminho, { url, ate: agora() + VALIDADE_DO_LINK_GUARDADO_MS })
+      return url
+    },
+    async apagar(caminhos) {
+      for (const caminho of caminhos) guardados.delete(caminho)
+      return porta.apagar(caminhos)
+    },
+    async apagarPasta(pasta) {
+      for (const caminho of [...guardados.keys()]) if (caminho.startsWith(`${pasta}/`)) guardados.delete(caminho)
+      return porta.apagarPasta(pasta)
+    },
+    esquecerLink(caminho) {
+      guardados.delete(caminho)
+    },
+  }
+}

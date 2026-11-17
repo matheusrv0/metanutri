@@ -78,6 +78,9 @@ export function origemDoSupabase(endereco: unknown): string | null {
   }
 }
 
+/** D-1551: o caminho das URLs assinadas do balde das fotos da avaliação (`createSignedUrl` do supabase-js). */
+const CAMINHO_DAS_FOTOS = '/storage/v1/object/sign/fotos-avaliacao/'
+
 export function diretivasDaPolitica({ supabase }: OpcoesDaPolitica): Politica {
   const molduras = [CAMPOS_DO_CARTAO, CAMPOS_DO_CARTAO_RESERVA, VERIFICACAO]
   return [
@@ -86,8 +89,9 @@ export function diretivasDaPolitica({ supabase }: OpcoesDaPolitica): Politica {
     // React, Radix, motion, o SDK do pagamento e o Turnstile escrevem estilo na página. Script, nunca.
     ['style-src', ["'self'", "'unsafe-inline'"]],
     // `data:` é a logo do perfil (o FileReader a lê assim). O Supabase: a foto da avaliação, pela URL assinada de 10
-    // minutos do balde privado (spec antropometria-telas, D-1457 e CA-2491).
-    ['img-src', ["'self'", 'data:', ...(supabase ? [supabase] : []), ANTIFRAUDE, ANTIFRAUDE_BRASIL, ANTIFRAUDE_DOMINIO_BR]],
+    // minutos do balde privado (spec antropometria-telas, D-1457 e CA-2491); só o caminho dessas URLs, não a origem
+    // inteira (D-1551, CB-1500).
+    ['img-src', ["'self'", 'data:', ...(supabase ? [`${supabase}${CAMINHO_DAS_FOTOS}`] : []), ANTIFRAUDE, ANTIFRAUDE_BRASIL, ANTIFRAUDE_DOMINIO_BR]],
     // DP-CSP-4: as fontes vêm como arquivo do próprio site, nunca `data:`.
     ['font-src', ["'self'"]],
     [

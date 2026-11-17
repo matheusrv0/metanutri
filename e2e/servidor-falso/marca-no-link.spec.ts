@@ -96,7 +96,9 @@ test.describe('o link do paciente com a marca', () => {
     // O verde de "feita" é estado, não marca.
     const feita = page.getByRole('button', { name: /Café da manhã/ })
     await expect(feita).toHaveAttribute('aria-pressed', 'true')
-    expect((await cores(feita)).fundo).toBe('rgb(220, 243, 231)')
+    // D-1271: o verde é o da linha da missão; o botão fica sem fundo próprio por cima dele.
+    expect((await cores(feita.locator('xpath=ancestor::li[1]'))).fundo).toBe('rgb(220, 243, 231)')
+    expect((await cores(feita)).fundo).toBe('rgba(0, 0, 0, 0)')
     // O MetaNutri pequeno no rodapé, depois das missões.
     const metanutri = page.getByRole('img', { name: 'MetaNutri' })
     await expect(metanutri).toHaveCount(1)

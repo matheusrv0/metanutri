@@ -198,7 +198,8 @@ export function criarRepositorio(armazenamento: Armazenamento | null, opcoes: Op
     obter,
 
     criar(nome: string): CasoSalvo {
-      const caso: Caso = { ...criarCasoVazio(gerarId()), nome }
+      // D-1556: o plano guarda quando nasceu (a ordem de "1ª do dia" e "2ª do dia" não muda ao editar).
+      const caso: Caso = { ...criarCasoVazio(gerarId()), nome, criadoEm: agora() }
       return salvar({ caso, plano: criarPlanoPadrao(gerarId) })
     },
 
@@ -208,7 +209,9 @@ export function criarRepositorio(armazenamento: Armazenamento | null, opcoes: Op
     duplicar(id: string, opcoes: Pick<OpcoesDuplicar, 'nascimento'> = {}): CasoSalvo {
       const original = exigir(id)
       // CB-1448: o dia do relógio de quem usa; o `slice` do ISO daria o dia seguinte depois das 21 h no Brasil.
-      return salvar(duplicarCaso(original, gerarId, { ...opcoes, hoje: diaLocal(new Date(agora())) }))
+      const copia = duplicarCaso(original, gerarId, { ...opcoes, hoje: diaLocal(new Date(agora())) })
+      // D-1556: a cópia é um plano novo, que nasce agora.
+      return salvar({ ...copia, caso: { ...copia.caso, criadoEm: agora() } })
     },
 
     renomear(id: string, nome: string): CasoSalvo {

@@ -14,6 +14,9 @@ import {
   enviarFoto,
   FRASES,
   ladosDaCopia,
+  larguraDeAbertura,
+  linksGuardados,
+  VALIDADE_DO_LINK_GUARDADO_MS,
   MEGA,
   semArquivos,
   temArquivos,
@@ -91,8 +94,11 @@ function portaFalsa(p: { envio?: ResultadoDoEnvio; conta?: string | null; pasta?
 /** O desenhista falso: a foto tem os lados do cabeçalho e o JPEG desenhado tem `saida` bytes. */
 function desenhistaFalso(saida = 300_000, falha: 'abrir' | 'desenhar' | null = null) {
   const pedidos: { largura: number; altura: number; qualidade: number }[] = []
+  /** A largura com que a foto foi pedida aberta (D-1552); nula, inteira. */
+  const aberturas: (number | null)[] = []
   const desenhista: DesenhistaDeFoto = {
-    abrir: async () => {
+    abrir: async (_arquivo, larguraDeAbertura) => {
+      aberturas.push(larguraDeAbertura)
       if (falha === 'abrir') throw new Error('não abre')
       return {
         largura: 4000,
@@ -105,7 +111,7 @@ function desenhistaFalso(saida = 300_000, falha: 'abrir' | 'desenhar' | null = n
       }
     },
   }
-  return { desenhista, pedidos }
+  return { desenhista, pedidos, aberturas }
 }
 
 const agora = new Date('2026-11-03T13:00:00.000Z')
@@ -208,6 +214,25 @@ describe('enviar a foto (D-1453, D-1505)', () => {
       tipo: 'ok',
       arquivo: { id: ID, angulo: 'frente', nome: 'Frente', caminho: `${CONTA}/${PLANO}/fotos/${ID}.jpg`, bytes: 310_000, tipo: 'image/jpeg', enviadoEm: agora.toISOString() },
     })
+  })
+
+  it('CB-1501 e D-1552: a foto acima de 1600 px abre já na largura que leva o lado maior a 1600; a pequena, inteira', async () => {
+    expect(larguraDeAbertura(4000, 3000)).toBe(1600)
+    expect(larguraDeAbertura(3000, 4000)).toBe(1200)
+    expect(larguraDeAbertura(8000, 6000)).toBe(1600)
+    expect(larguraDeAbertura(4001, 3000)).toBe(1600)
+    // Arredonda para cima: a foto aberta nunca fica menor que a guardada.
+    expect(larguraDeAbertura(3001, 4001)).toBe(1201)
+    expect(larguraDeAbertura(1600, 1200)).toBeNull()
+    expect(larguraDeAbertura(1200, 900)).toBeNull()
+    const grande = desenhistaFalso()
+    await enviarFoto(entrada(), portaFalsa().porta, grande.desenhista)
+    expect(grande.aberturas).toEqual([1600])
+    // A conta do tamanho guardado continua pelos lados da foto aberta (o navegador pode girar depois de reduzir).
+    expect(grande.pedidos).toEqual([{ largura: 1600, altura: 1200, qualidade: 0.85 }])
+    const pequena = desenhistaFalso()
+    await enviarFoto(entrada({ bytes: jpeg(1200, 900), arquivo: new Blob([jpeg(1200, 900)], { type: 'image/jpeg' }) }), portaFalsa().porta, pequena.desenhista)
+    expect(pequena.aberturas).toEqual([null])
   })
 
   it('CA-2482 e CA-2484: o arquivo recusado nem abre e nada sobe', async () => {
@@ -503,5 +528,62 @@ describe('a exclusão (D-1458, D-1503)', () => {
     expect(limpa).toMatchObject({ fotosAutorizadasEm: null, fotos: null, anexos: null, diagnostico: 'Sobrepeso.' })
     expect(temArquivos(limpa)).toBe(false)
     expect(temArquivos(avaliacao({ fotosAutorizadasEm: '2026-11-03' }))).toBe(true)
+  })
+})
+
+describe('CB-1503 e D-1554: o link assinado guardado na tela por 5 minutos', () => {
+  function contando() {
+    const assinados: string[] = []
+    const apagados: string[][] = []
+    const porta: ArmazenamentoDeFotos = {
+      ...portaFalsa().porta,
+      assinar: async (caminho) => {
+        assinados.push(caminho)
+        return caminho.includes('falha') ? null : `https://falso/${caminho}?vez=${assinados.length}`
+      },
+      apagar: async (caminhos) => {
+        apagados.push([...caminhos])
+        return true
+      },
+    }
+    return { porta, assinados, apagados }
+  }
+
+  it('CB-1503: dentro de 5 minutos, o mesmo caminho não pede link novo; depois, pede', async () => {
+    expect(VALIDADE_DO_LINK_GUARDADO_MS).toBe(5 * 60 * 1000)
+    let relogio = 1_000_000
+    const { porta, assinados } = contando()
+    const guardado = linksGuardados(porta, () => relogio)
+    expect(await guardado.assinar('c/p/fotos/a.jpg')).toBe('https://falso/c/p/fotos/a.jpg?vez=1')
+    relogio += 5 * 60 * 1000 - 1
+    expect(await guardado.assinar('c/p/fotos/a.jpg')).toBe('https://falso/c/p/fotos/a.jpg?vez=1')
+    expect(await guardado.assinar('c/p/fotos/b.jpg')).toBe('https://falso/c/p/fotos/b.jpg?vez=2')
+    relogio += 1
+    expect(await guardado.assinar('c/p/fotos/a.jpg')).toBe('https://falso/c/p/fotos/a.jpg?vez=3')
+    expect(assinados).toHaveLength(3)
+  })
+
+  it('CB-1503: o link que falhou não fica guardado; excluir e esquecer tiram o guardado', async () => {
+    const { porta, assinados, apagados } = contando()
+    const guardado = linksGuardados(porta, () => 0)
+    expect(await guardado.assinar('c/p/fotos/falha.jpg')).toBeNull()
+    expect(await guardado.assinar('c/p/fotos/falha.jpg')).toBeNull()
+    expect(assinados).toHaveLength(2)
+    await guardado.assinar('c/p/fotos/a.jpg')
+    expect(await guardado.apagar(['c/p/fotos/a.jpg'])).toBe(true)
+    expect(apagados).toEqual([['c/p/fotos/a.jpg']])
+    await guardado.assinar('c/p/fotos/a.jpg')
+    expect(assinados).toHaveLength(4)
+    // A imagem que não abriu (o link venceu) esquece o guardado e pede outro.
+    guardado.esquecerLink?.('c/p/fotos/a.jpg')
+    await guardado.assinar('c/p/fotos/a.jpg')
+    expect(assinados).toHaveLength(5)
+  })
+
+  it('CB-1503: o resto da porta é o de sempre', async () => {
+    const { porta } = contando()
+    const guardado = linksGuardados(porta, () => 0)
+    expect(await guardado.conta()).toBe(CONTA)
+    expect(await guardado.listar('c/p')).toEqual([])
   })
 })

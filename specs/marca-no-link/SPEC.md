@@ -72,6 +72,7 @@ pelo token, só as missões, as marcações, a dieta e o aviso de estágio; não
 
 - **CA-1965** · Dado um link de uma conta com marca salva, num celular no tema claro, então o topo tem a logo dela numa placa branca, a barra do dia e a aba escolhida na cor dela com texto branco ("Tentar de novo", de antes de o link abrir, fica teal: D-956), as missões feitas em verde e o símbolo do MetaNutri pequeno no rodapé.
 - **CA-1966** · Dado o mesmo link num celular no tema escuro, então a cor é a versão do escuro, o texto por cima dela é `#101A1D` e a logo continua na placa branca.
+- *Nota de 16/11/2026 sobre o CA-1965 e o CA-1966 (spec `lado-do-paciente`, D-1202, CA-2215 e D-1275): as abas viraram a barra de baixo. A parte escolhida dela leva a cor da marca no nome, num fundo claro da mesma cor; o par "a cor com texto branco" (no escuro, `#101A1D`) passou para "Marcar como feita", no Plano. Vale o que a `lado-do-paciente` diz.*
 - **CA-1967** · Dado um link enviado antes de a nutricionista salvar a marca, quando o paciente abre depois, então vê a marca, sem link novo.
 - **CA-1968** · Dado uma conta sem marca salva, então o link é como hoje.
 - **CA-1969** · Dado uma marca só com cor, então o topo tem a logo do MetaNutri, a cor vale na ação e o rodapé não repete a logo do MetaNutri.

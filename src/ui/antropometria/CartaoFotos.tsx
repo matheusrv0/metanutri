@@ -1,5 +1,5 @@
 import { CircleAlert, Columns2, LoaderCircle, Lock, Paperclip, Plus } from 'lucide-react'
-import { useEffect, useId, useRef, useState, type ChangeEvent } from 'react'
+import { useEffect, useId, useMemo, useRef, useState, type ChangeEvent } from 'react'
 import { diaLocal } from '@/domain/acompanhamento.ts'
 import { dataCompleta } from '@/domain/formatarData.ts'
 import {
@@ -14,6 +14,7 @@ import {
   FOTOS_POR_AVALIACAO,
   FRASES,
   lerPastaDoPlano,
+  linksGuardados,
   NOME_DO_ANGULO,
   religarSoltos,
   TETO_DA_AVALIACAO,
@@ -59,6 +60,9 @@ const BOTAO_DE_ARQUIVO = cn(
 const ACEITA_FOTO = '.jpg,.jpeg,.png,image/jpeg,image/png'
 const ACEITA_ANEXO = '.pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png'
 
+/** O relógio do link guardado (D-1554): só é lido quando a tela pede um link, nunca ao desenhar. */
+const relogio = (): number => Date.now()
+
 /** Os bytes do começo do arquivo, até `limite` (um a mais que o teto, para a conferência saber que passou). */
 const lerBytes = async (arquivo: File, limite: number): Promise<Uint8Array> => new Uint8Array(await arquivo.slice(0, limite).arrayBuffer())
 
@@ -68,7 +72,9 @@ const lerBytes = async (arquivo: File, limite: number): Promise<Uint8Array> => n
  * com a avaliação de antes. Nada sai da ficha: sem compartilhar, sem baixar, sem documento (CFN 599/2018, art. 58).
  */
 export function CartaoFotos({ bruto, sexo, atual, anterior, aoAlterar, agora }: CartaoFotosProps) {
-  const armazenamento = useArmazenamentoDeFotos()
+  const doContexto = useArmazenamentoDeFotos()
+  // D-1554: o link assinado de cada foto fica guardado na memória da tela por 5 minutos.
+  const armazenamento = useMemo(() => (doContexto === null ? null : linksGuardados(doContexto, relogio)), [doContexto])
   const desenhista = useDesenhistaDeFoto()
   const idTitulo = useId()
   const idMarque = useId()
@@ -77,6 +83,8 @@ export function CartaoFotos({ bruto, sexo, atual, anterior, aoAlterar, agora }: 
   const [enviando, setEnviando] = useState<'foto' | 'anexo' | null>(null)
   const [erroDaFoto, setErroDaFoto] = useState<string | null>(null)
   const [erroDoAnexo, setErroDoAnexo] = useState<string | null>(null)
+  // D-1555: a imagem escolhida em "Adicionar arquivo" entrou entre as fotos, longe do botão no celular.
+  const [imagemNasFotos, setImagemNasFotos] = useState(false)
   const [excluindo, setExcluindo] = useState<ArquivoAExcluir>(null)
 
   // O envio termina depois de alguns segundos: a lista é acrescentada ao plano como ele está nessa hora, não como estava
@@ -135,6 +143,8 @@ export function CartaoFotos({ bruto, sexo, atual, anterior, aoAlterar, agora }: 
   const fotosCheias = fotos.length >= FOTOS_POR_AVALIACAO
   const anexosCheios = anexos.length >= ANEXOS_POR_AVALIACAO
   const usados = bytesUsados(avaliacao)
+  // D-1553 e CB-1502: "de hoje" só na avaliação de hoje; na de outro dia, "desta avaliação".
+  const deHoje = atual.data === diaLocal(agora)
 
   const receber = (resultado: EnvioDoAnexo, erro: (texto: string | null) => void) => {
     if (resultado.tipo === 'erro') {
@@ -151,6 +161,7 @@ export function CartaoFotos({ bruto, sexo, atual, anterior, aoAlterar, agora }: 
     evento.target.value = ''
     if (!arquivo) return
     setErroDaFoto(null)
+    setImagemNasFotos(false)
     setEnviando('foto')
     try {
       const bytes = await lerBytes(arquivo, FOTO_ENVIO_MAX_BYTES + 1)
@@ -171,6 +182,7 @@ export function CartaoFotos({ bruto, sexo, atual, anterior, aoAlterar, agora }: 
     evento.target.value = ''
     if (!arquivo) return
     setErroDoAnexo(null)
+    setImagemNasFotos(false)
     setEnviando('anexo')
     try {
       // D-1530: a imagem anexada vira foto, e a foto vai até 20 MB antes de reduzir.
@@ -181,6 +193,7 @@ export function CartaoFotos({ bruto, sexo, atual, anterior, aoAlterar, agora }: 
         desenhista,
       )
       receber(resultado, setErroDoAnexo)
+      setImagemNasFotos(resultado.tipo === 'ok' && resultado.campo === 'fotos')
     } finally {
       setEnviando(null)
     }
@@ -273,10 +286,10 @@ export function CartaoFotos({ bruto, sexo, atual, anterior, aoAlterar, agora }: 
               onChange={(e) => void escolherFoto(e)}
             />
           </label>
-          {/* D-1538: o rótulo troca ("Comparar fotos" e "Ver fotos de hoje"); com isso, sem aria-pressed. */}
+          {/* D-1538: o rótulo troca ("Comparar fotos" e "Ver fotos de hoje" ou "desta avaliação"); com isso, sem aria-pressed. */}
           <Button variant="outline" size="sm" onClick={() => setComparando((c) => !c)}>
             <Columns2 aria-hidden="true" />
-            {comparando ? 'Ver fotos de hoje' : 'Comparar fotos'}
+            {comparando ? (deHoje ? 'Ver fotos de hoje' : 'Ver fotos desta avaliação') : 'Comparar fotos'}
           </Button>
         </div>
         {autorizadaEm === null ? (
@@ -298,7 +311,7 @@ export function CartaoFotos({ bruto, sexo, atual, anterior, aoAlterar, agora }: 
             <p className="text-sm text-muted-foreground">{FRASES.semOutra}</p>
           )
         ) : (
-          <ListaDeFotos armazenamento={armazenamento} fotos={fotos} data={atual.data} aoExcluir={(arquivo) => setExcluindo({ tipo: 'foto', arquivo })} />
+          <ListaDeFotos armazenamento={armazenamento} fotos={fotos} data={atual.data} rotulo={deHoje ? 'Fotos de hoje' : 'Fotos desta avaliação'} aoExcluir={(arquivo) => setExcluindo({ tipo: 'foto', arquivo })} />
         )}
 
         <p className="text-xs text-muted-foreground">{FRASES.regras}</p>
@@ -317,6 +330,11 @@ export function CartaoFotos({ bruto, sexo, atual, anterior, aoAlterar, agora }: 
             </label>
           </div>
           {anexosCheios ? <p className="text-sm text-muted-foreground">{FRASES.dezDeDez}</p> : null}
+          {imagemNasFotos ? (
+            <p role="status" className="text-sm text-muted-foreground">
+              {FRASES.imagemNasFotos}
+            </p>
+          ) : null}
           {erroDoAnexo ? (
             <p role="alert" className="flex items-start gap-2 text-sm text-errortext">
               <CircleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />

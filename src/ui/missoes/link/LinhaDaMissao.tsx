@@ -15,7 +15,7 @@ interface LinhaDaMissaoProps {
 
 /**
  * Uma missão de Hoje (D-1203 a D-1205, CA-2203 e CA-2217): um botão de alternar de 64 px, com o nome e o estado para o
- * leitor de tela ("Almoço por volta das 12h, feita"), e o "Ver" de 44 px separado, que nunca marca. Feita, a linha fica
+ * leitor de tela pelo botão pressionado (D-1268), e o "Ver" de 44 px separado, que nunca marca. Feita, a linha fica
  * no verde de "feita", que não é a cor da marca (CA-1965).
  */
 export function LinhaDaMissao({ missao, acabouDeMarcar, aoAlternar, ver }: LinhaDaMissaoProps) {
@@ -30,13 +30,14 @@ export function LinhaDaMissao({ missao, acabouDeMarcar, aoAlternar, ver }: Linha
       <button
         type="button"
         aria-pressed={missao.feita}
-        aria-label={missao.feita ? `${missao.texto}, feita` : missao.texto}
+        aria-label={missao.texto}
         aria-describedby={idOrigem}
         onClick={() => aoAlternar(missao.id, !missao.feita)}
         className={cn(
           'flex min-h-16 min-w-0 flex-1 items-start gap-3 rounded-2xl py-3.5 pr-2.5 pl-3.5 text-left [-webkit-tap-highlight-color:transparent] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
           'transition-transform duration-150 ease-[var(--ease-marcar)] motion-safe:active:scale-[0.98]',
-          missao.feita ? 'bg-lightsuccess' : 'bg-card hover:bg-surfacerow',
+          // D-1271: feita, o verde é só o da linha. No escuro ele é transparente, e um segundo verde aqui somava com o dela.
+          missao.feita ? 'bg-transparent' : 'bg-card hover:bg-surfacerow',
         )}
       >
         <span

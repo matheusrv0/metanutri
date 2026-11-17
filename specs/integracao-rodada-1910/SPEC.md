@@ -42,6 +42,8 @@ quatro specs: as emendas entre elas, a data dos termos e os campos de texto no c
   outro valor (texto, número) é ignorada, e o item é lido como alimento.
 - **CA-974** · Dado a panqueca no Desjejum e o link aberto no celular (360 px), então "Meu plano" mostra
   "1 unidade" e "Panqueca de banana", a mesma linha da folha impressa (uma quantidade só desde a D-319).
+  *Nota de 16/11/2026 (spec `lado-do-paciente`, D-1206 e D-1275): no link, a linha não é mais a da folha impressa. O
+  nome fica à esquerda, as gramas à direita e a medida embaixo do nome; vale o CA-2209 da `lado-do-paciente`.*
 
 ### Campos de texto no celular (D-311 a D-313)
 
