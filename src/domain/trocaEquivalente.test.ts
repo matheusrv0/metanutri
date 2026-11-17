@@ -637,3 +637,34 @@ describe('D-1141 (rodada de melhorias): folha, broto e talo são outro alimento'
     }
   })
 })
+
+describe('D-1136 e D-1140 (rodada de melhorias): a regra (d) na busca por micronutriente', () => {
+  const proteina = (a: Alimento, gramas: number): number => ((a.nutrientes.proteina_g ?? 0) * gramas) / 100
+
+  it('CA-2155: a sardinha em óleo 100 g por ferro fica sem candidato no mesmo grupo; com o filtro desligado, tem', () => {
+    const sardinha = porNome('Sardinha, conserva em óleo')
+    const r = buscarSubstitutos({ alimentoId: sardinha.id, gramas: 100 }, { nutrientes: ['ferro_mg'], mesmoGrupo: true, alimentos: alimentosParaSugerir(), limite: 1000 }, buscarAlimento)
+    expect(r).toEqual({ tipo: 'lista', candidatos: [], restricaoTirou: false })
+    expect(vista(sardinha, 100, ['ferro_mg'], false).length).toBeGreaterThan(0)
+  })
+
+  it('CA-2155: toda carne da TACO por ferro, zinco ou vitamina B12, de 30 a 200 g, só traz candidato na faixa da proteína', () => {
+    const erros: string[] = []
+    let listas = 0
+    for (const base of ALIMENTOS.filter((a) => ehPrescritivel(a) && a.nutrientes.energia_kcal && grupoDeSubstituicao(a).id === 'carne')) {
+      for (const nutriente of ['ferro_mg', 'zinco_mg', 'vitamina_b12_mcg'] as const) {
+        if (!((base.nutrientes[nutriente] ?? 0) > 0)) continue
+        for (const gramas of [30, 50, 80, 100, 150, 200]) {
+          listas += 1
+          const p = proteina(base, gramas)
+          for (const c of vista(base, gramas, [nutriente])) {
+            const razao = proteina(c.alimento, c.gramas) / p
+            if (razao < 1 / 1.5 - 1e-9 || razao > 1.5 + 1e-9) erros.push(`${base.descricao.trim()} ${gramas} g por ${nutriente} → ${c.alimento.descricao.trim()} (×${razao.toFixed(2)})`)
+          }
+        }
+      }
+    }
+    expect(listas).toBeGreaterThan(1000)
+    expect(erros.slice(0, 10), `${erros.length} casos`).toEqual([])
+  }, 300_000)
+})
