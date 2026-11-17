@@ -89,7 +89,8 @@ describe('o link com a marca da nutricionista', () => {
     await abrir(link({}, { logo: LOGO, cor: VERDE_FOLHA }))
     const feita = screen.getByRole('button', { name: /Café da manhã/ })
     expect(feita).toHaveAttribute('aria-pressed', 'true')
-    expect(feita.className).toContain('bg-lightsuccess')
+    // D-1271: o verde é o da linha da missão.
+    expect(feita.closest('li')?.className).toContain('bg-lightsuccess')
     expect(feita.className).not.toContain('linkacao')
   })
 

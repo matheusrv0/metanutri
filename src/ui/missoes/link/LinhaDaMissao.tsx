@@ -36,7 +36,8 @@ export function LinhaDaMissao({ missao, acabouDeMarcar, aoAlternar, ver }: Linha
         className={cn(
           'flex min-h-16 min-w-0 flex-1 items-start gap-3 rounded-2xl py-3.5 pr-2.5 pl-3.5 text-left [-webkit-tap-highlight-color:transparent] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
           'transition-transform duration-150 ease-[var(--ease-marcar)] motion-safe:active:scale-[0.98]',
-          missao.feita ? 'bg-lightsuccess' : 'bg-card hover:bg-surfacerow',
+          // D-1271: feita, o verde é só o da linha. No escuro ele é transparente, e um segundo verde aqui somava com o dela.
+          missao.feita ? 'bg-transparent' : 'bg-card hover:bg-surfacerow',
         )}
       >
         <span
