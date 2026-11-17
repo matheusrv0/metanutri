@@ -1,7 +1,7 @@
 // O grupo de substituição de um alimento: o "Só do mesmo grupo" da busca de substitutos (spec busca-substitutos, D-1108
 // e seção 3). A categoria da TACO separa arroz de batata e junta arroz com biscoito; o grupo segue o papel no prato das
 // trocas da folha (D-421) e, fora dele, o grupo da tabela.
-import { ehCru, ehExtratoDeSoja, ehPratoDeLanche, ehVerdura, ehVerduraCozida, formaDoOvo, papelDe } from './trocas.ts'
+import { ehCru, ehExtratoDeSoja, ehVerdura, ehVerduraCozida, formaDoOvo, papelDe, pratosCombinam, tipoDoPrato } from './trocas.ts'
 import type { Alimento } from './tipos.ts'
 
 export interface GrupoDeSubstituicao {
@@ -65,9 +65,11 @@ const GRUPOS: readonly (readonly [GrupoDeSubstituicao, (a: Alimento) => boolean]
   ],
   [{ id: 'fruta', nome: 'frutas' }, (a) => a.categoria === FRUTAS],
   [{ id: 'verdura', nome: 'verduras e legumes' }, ehVerdura],
-  // D-1142: os pratos prontos pelo tipo de refeição; o cuscuz de milho, que a TACO põe entre eles, já ficou no amido.
-  [{ id: 'prato-lanche', nome: 'pratos de café da manhã e lanche' }, ehPratoDeLanche],
-  [{ id: 'prato-refeicao', nome: 'pratos de almoço e jantar' }, (a) => a.categoria === 'Alimentos preparados'],
+  // D-1142 e D-1144: os pratos prontos pelo tipo de refeição; o cuscuz de milho da TACO, que ela põe entre eles, já ficou
+  // no amido. O próprio que o nome não diz fica em "pratos prontos", que troca com os dois.
+  [{ id: 'prato-lanche', nome: 'pratos de café da manhã e lanche' }, (a) => tipoDoPrato(a) === 'lanche'],
+  [{ id: 'prato-refeicao', nome: 'pratos de almoço e jantar' }, (a) => tipoDoPrato(a) === 'refeicao'],
+  [{ id: 'prato', nome: 'pratos prontos' }, (a) => tipoDoPrato(a) === 'neutro'],
 ]
 
 /** O grupo do alimento; fora dos grupos, o grupo da tabela (o do alimento próprio é o que a nutricionista escolheu). */
@@ -112,11 +114,19 @@ function mesmaFormaDoOvo(base: Alimento, a: Alimento): boolean {
  */
 export function noMesmoGrupo(base: Alimento): (a: Alimento) => boolean {
   const grupo = grupoDeSubstituicao(base).id
+  // D-1144: entre os pratos prontos, o neutro troca com o de café da manhã e com o de almoço; os dois não trocam entre si.
+  const pratoDaBase = tipoDoPrato(base)
+  const doGrupo = (a: Alimento): boolean => {
+    const pratoDoCandidato = tipoDoPrato(a)
+    if (pratoDaBase !== null && pratoDoCandidato !== null && grupo.startsWith('prato') && grupoDeSubstituicao(a).id.startsWith('prato'))
+      return pratosCombinam(pratoDaBase, pratoDoCandidato)
+    return grupoDeSubstituicao(a).id === grupo
+  }
   const verduraCozida = ehVerduraCozida(base)
   const acompanhamento = grupo === 'amido'
   const frutaInteira = ehFrutaInteira(base)
   return (a) =>
-    grupoDeSubstituicao(a).id === grupo &&
+    doGrupo(a) &&
     mesmaFormaDoOvo(base, a) &&
     (!verduraCozida || !ehCru(a)) &&
     (!acompanhamento || cruNoPrato(a) === cruNoPrato(base)) &&

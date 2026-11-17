@@ -168,3 +168,42 @@ describe('CA-2158 (D-1143): nas trocas da folha, a bebida de soja não troca com
     }
   })
 })
+
+describe('CA-2159 (D-1144): o prato próprio de café da manhã nas trocas da folha', () => {
+  const TAPIOCA_COM_MANTEIGA = 551
+  const YAKISOBA = 556
+  let proximo = 940_000
+  const proprio = (descricao: string, de = TAPIOCA_COM_MANTEIGA): Alimento => ({
+    ...porId(de),
+    id: (proximo += 1),
+    descricao,
+    categoria: 'Alimentos preparados',
+    proprio: { tipo: 'preparacao', nomeParaPaciente: descricao, sugerir: true, energiaIncoerente: false },
+  })
+  const doCafe = ['Panqueca de banana com aveia', 'Pão de queijo de frigideira', 'Cuscuz nordestino com ovo', 'Omelete de espinafre', 'Crepioca de frango'].map((n) => proprio(n))
+  const escondidinho = proprio('Escondidinho de frango', YAKISOBA)
+  beforeEach(() => registrarProdutos([...doCafe, escondidinho]))
+  afterEach(() => registrarProdutos([]))
+  const pedidas = (alimentoId: number, gramas: number) =>
+    trocasDoAlimento({ alimentoId, gramas }, { porAlimento: TROCAS_PEDIDAS_PELA_FOLHA, alimentos: alimentosParaSugerir() }).map((t) => t.descricao.trim())
+  const DE_ALMOCO = /^(Yakisoba|Macarrão, molho bolognesa|Cuscuz, paulista|Baião de dois|Charuto|Estrogonofe|Feijoada)/
+
+  it('nenhum prato de café da manhã próprio, de 30 a 400 g, oferece prato de almoço', () => {
+    const onde: string[] = []
+    for (const a of doCafe) {
+      for (let gramas = 30; gramas <= 400; gramas += 10) for (const t of pedidas(a.id, gramas)) if (DE_ALMOCO.test(t)) onde.push(`${a.descricao} ${gramas} g → ${t}`)
+    }
+    expect(onde.slice(0, 10), `${onde.length} casos`).toEqual([])
+  })
+
+  it('a tapioca com manteiga volta a ter troca: os pratos de café da manhã próprios', () => {
+    const t = pedidas(TAPIOCA_COM_MANTEIGA, 100)
+    expect(t.length).toBeGreaterThan(0)
+    expect(t.some((x) => /^(Panqueca|Pão de queijo|Cuscuz nordestino)/.test(x)), t.join(' | ')).toBe(true)
+    expect(t.filter((x) => DE_ALMOCO.test(x))).toEqual([])
+  })
+
+  it('o escondidinho próprio, neutro, troca com prato de almoço da TACO', () => {
+    expect(pedidas(escondidinho.id, 100).some((x) => DE_ALMOCO.test(x))).toBe(true)
+  })
+})

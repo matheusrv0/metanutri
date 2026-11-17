@@ -3,7 +3,7 @@ import arquivo from '../data/base-ampliada.json'
 import { decodificarBaseAmpliada, type ArquivoBaseAmpliada } from './baseAmpliada.ts'
 import { buscarSubstitutos } from './buscaDeSubstitutos.ts'
 import { grupoDeSubstituicao, noMesmoGrupo } from './grupoDeSubstituicao.ts'
-import { alimentosParaSugerir, buscarAlimento, registrarBaseAmpliada } from './tabelas.ts'
+import { alimentosParaSugerir, buscarAlimento, registrarBaseAmpliada, registrarProdutos } from './tabelas.ts'
 import type { Alimento, ChaveNutrienteAlimento } from './tipos.ts'
 
 const BASE = decodificarBaseAmpliada(arquivo as unknown as ArquivoBaseAmpliada)
@@ -197,5 +197,69 @@ describe('D-1108: "Só do mesmo grupo", com as regras de forma das trocas', () =
   it('acompanhamento pronto só por pronto: o arroz cozido não aceita o arroz cru', () => {
     expect(noMesmoGrupo(porId(3))(porId(4))).toBe(false)
     expect(noMesmoGrupo(porId(3))(porId(5))).toBe(true)
+  })
+})
+
+describe('CA-2159 (D-1144): o prato próprio que a lista não reconhece é neutro', () => {
+  const TAPIOCA = 551
+  const YAKISOBA = 556
+  let proximo = 930_000
+  /** Uma preparação própria (a receita salva vira "Alimentos preparados"), com os nutrientes de um prato da TACO. */
+  const proprio = (descricao: string, de = TAPIOCA): Alimento => ({
+    ...porId(de),
+    id: (proximo += 1),
+    descricao,
+    categoria: 'Alimentos preparados',
+    proprio: { tipo: 'preparacao', nomeParaPaciente: descricao, sugerir: true, energiaIncoerente: false },
+  })
+  const CAFE = ['Panqueca de banana com aveia', 'Pão de queijo de frigideira', 'Cuscuz nordestino com ovo', 'Omelete de espinafre', 'Bolo de caneca de banana', 'Crepioca de frango', 'Cuscuz de milho com ovo']
+  const doCafe = CAFE.map((n) => proprio(n))
+  const escondidinho = proprio('Escondidinho de frango', YAKISOBA)
+  const PROPRIOS = [...doCafe, escondidinho]
+
+  beforeEach(() => registrarProdutos(PROPRIOS))
+  afterEach(() => registrarProdutos([]))
+
+  it('a lista de café da manhã reconhece panqueca, pão de queijo, cuscuz, omelete, bolo de caneca e crepioca', () => {
+    for (const a of doCafe) expect(grupoDeSubstituicao(a), a.descricao).toEqual({ id: 'prato-lanche', nome: 'pratos de café da manhã e lanche' })
+  })
+
+  it('a preparação própria que a lista não reconhece vai para "pratos prontos"; a da TACO continua em almoço e jantar', () => {
+    expect(grupoDeSubstituicao(escondidinho)).toEqual({ id: 'prato', nome: 'pratos prontos' })
+    expect(grupoDeSubstituicao(porId(YAKISOBA)).id).toBe('prato-refeicao')
+  })
+
+  it('o neutro troca com os dois lados e com ele mesmo; café da manhã e almoço continuam sem trocar', () => {
+    const outroNeutro = proprio('Torta salgada de liquidificador', YAKISOBA)
+    for (const y of [porId(YAKISOBA), porId(TAPIOCA), doCafe[0], outroNeutro]) {
+      if (!y) throw new Error('sem o prato')
+      expect(noMesmoGrupo(escondidinho)(y), `Escondidinho × ${y.descricao}`).toBe(true)
+      expect(noMesmoGrupo(y)(escondidinho), `${y.descricao} × Escondidinho`).toBe(true)
+    }
+    for (const x of doCafe) {
+      expect(noMesmoGrupo(x)(porId(YAKISOBA)), `${x.descricao} × Yakisoba`).toBe(false)
+      expect(noMesmoGrupo(porId(YAKISOBA))(x), `Yakisoba × ${x.descricao}`).toBe(false)
+    }
+  })
+
+  const lista = (base: Alimento) => {
+    const nutriente: ChaveNutrienteAlimento = 'carboidrato_g'
+    const r = buscarSubstitutos({ alimentoId: base.id, gramas: 100 }, { nutrientes: [nutriente], mesmoGrupo: true, alimentos: alimentosParaSugerir(), limite: 1000 }, buscarAlimento)
+    return r.tipo === 'lista' ? r.candidatos.map((c) => c.alimento) : []
+  }
+
+  it('na busca, o prato de café da manhã próprio não traz prato de almoço, e a tapioca traz a panqueca, o pão de queijo e o cuscuz com ovo', () => {
+    for (const a of doCafe) {
+      const n = lista(a).filter((x) => grupoDeSubstituicao(x).id === 'prato-refeicao').map((x) => x.descricao)
+      expect(n, a.descricao).toEqual([])
+    }
+    const daTapioca = lista(porId(TAPIOCA)).map((x) => x.descricao)
+    expect(daTapioca).toEqual(expect.arrayContaining(['Panqueca de banana com aveia', 'Pão de queijo de frigideira', 'Cuscuz nordestino com ovo']))
+  })
+
+  it('na busca, o escondidinho próprio troca com prato de almoço e com prato de café da manhã', () => {
+    const grupos = new Set(lista(escondidinho).map((x) => grupoDeSubstituicao(x).id))
+    expect(grupos.has('prato-refeicao')).toBe(true)
+    expect(grupos.has('prato-lanche')).toBe(true)
   })
 })
