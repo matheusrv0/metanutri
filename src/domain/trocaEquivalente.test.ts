@@ -10,7 +10,7 @@ import { buscarSubstitutos, ENERGIA_QUASE_ZERO_KCAL, mensagemSemCandidato, mesmo
 import { grupoDeSubstituicao } from './grupoDeSubstituicao.ts'
 import { ehDeUsoComum, ehPoOuDesidratado, ehPrescritivel } from './prescritivel.ts'
 import { montarRestricoes } from './restricoes.ts'
-import { ALIMENTOS, alimentosParaSugerir, buscarAlimento, registrarBaseAmpliada } from './tabelas.ts'
+import { ALIMENTOS, alimentosDaBase, alimentosParaSugerir, buscarAlimento, registrarBaseAmpliada } from './tabelas.ts'
 import type { Alimento, ChaveNutrienteAlimento } from './tipos.ts'
 
 const porNome = (nome: string): Alimento => {
@@ -605,5 +605,35 @@ describe('D-1140 (rodada de melhorias): a regra (d) é uma faixa, de 1/1,5 a 1,5
     const costela = porNome('Carne, bovina, contra-filé de costela, grelhado')
     const daCostela = ((salmao.nutrientes.lipideos_g ?? 0) * 100) / (costela.nutrientes.lipideos_g ?? 1)
     expect(naTrocaEquivalente(salmao, 100)(costela, daCostela)).toBe(true)
+  })
+})
+
+describe('D-1141 (rodada de melhorias): folha, broto e talo são outro alimento', () => {
+  const daBase = (nome: string): Alimento => {
+    const a = alimentosDaBase().find((x) => x.descricao.trim() === nome)
+    if (!a) throw new Error(`sem ${nome}`)
+    return a
+  }
+  const mesmo = (x: string, y: string) => mesmoAlimentoDe(daBase(x)) === mesmoAlimentoDe(daBase(y))
+
+  it('CA-2156: a raiz e a folha, e a raiz e o broto, são dois alimentos', () => {
+    for (const [x, y] of [
+      ['Beterraba, crua', 'Beterraba, folha, crua'],
+      ['Beterraba, cozida', 'Beterraba, folha, cozida'],
+      ['Rabanete, cru', 'Rabanete, broto, cru'],
+    ] as const) {
+      expect(mesmo(x, y), `${x} ≠ ${y}`).toBe(false)
+    }
+  })
+
+  it('CA-2156: entre si, as folhas são o mesmo alimento, e "folhas desidratadas" é o estado da erva', () => {
+    for (const [x, y] of [
+      ['Beterraba, folha, crua', 'Beterraba, folha, cozida'],
+      ['Mostarda, folha, crua', 'Mostarda, folha, cozida'],
+      ['Coentro, cru', 'Coentro, folhas desidratadas'],
+      ['Beterraba, crua', 'Beterraba, cozida'],
+    ] as const) {
+      expect(mesmo(x, y), `${x} = ${y}`).toBe(true)
+    }
   })
 })

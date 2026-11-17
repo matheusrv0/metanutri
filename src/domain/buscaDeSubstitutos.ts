@@ -355,6 +355,11 @@ const partesDoNome = (descricao: string): readonly string[] =>
 
 /** D-1137: os sinônimos óbvios da primeira parte do nome ("Mexerica" e "Tangerina" são a mesma fruta). */
 const SINONIMOS: ReadonlyMap<string, string> = new Map([['mexerica', 'tangerina']])
+/**
+ * D-1141: na verdura, a folha, o broto e o talo são outro alimento que a raiz ou o fruto ("Beterraba, crua" e
+ * "Beterraba, folha, crua"); "folhas desidratadas" é o estado da erva, e não a folha.
+ */
+const PARTE_DA_PLANTA = /^(folhas?|brotos?|talos?)$/
 /** D-1137: o tofu, pelo nome da TACO ("Soja, queijo (tofu)") ou da base ampliada ("Tofu, firme, …"). */
 const TOFU = /(^|[\s,(])tofu($|[\s,)])/i
 
@@ -368,14 +373,15 @@ const nomeDoAlimento = (a: Alimento): string => {
  * D-1134: o alimento, pelo nome sem o preparo. Na fruta, o nome da fruta (D-422: banana prata e banana nanica são a mesma
  * fruta); o suco e a polpa são outro alimento que a fruta inteira (D-1131). D-1137: na verdura, o nome da verdura (alface
  * crespa, lisa e americana são a mesma alface), e os sinônimos óbvios (mexerica e tangerina; o tofu da TACO e o da base
- * ampliada) são o mesmo alimento.
+ * ampliada) são o mesmo alimento. D-1141: na verdura, a folha e o broto são outro alimento que a raiz.
  */
 export function mesmoAlimentoDe(a: Alimento): string {
   if (TOFU.test(a.descricao)) return 'tofu'
   const alimento = nomeDoAlimento(a)
   if (ehSucoOuPolpaDeFruta(a)) return `${alimento} (suco ou polpa)`
-  if (ehFrutaInteira(a) || grupoDeSubstituicao(a).id === 'verdura') return alimento
+  if (ehFrutaInteira(a)) return alimento
   const [, ...resto] = partesDoNome(a.descricao)
+  if (grupoDeSubstituicao(a).id === 'verdura') return [alimento, ...resto.filter((p) => PARTE_DA_PLANTA.test(p))].join(', ')
   return [alimento, ...resto.filter((p) => !SO_PREPARO.test(p))].join(', ')
 }
 
