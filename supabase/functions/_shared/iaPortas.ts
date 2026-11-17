@@ -84,6 +84,11 @@ export interface BancoDaIa {
   lerConta(conta: string): Promise<ContaParaIa>
   /** D-1347: a ficha `pacienteId` da cópia da conta tem a autorização para o uso de IA (só o sim ou não). */
   consentimentoNaFicha(conta: string, pacienteId: string): Promise<boolean>
+  /**
+   * D-1373: quantos usos de todas as contas, criados depois de `desde`, ainda estão `reservado` (as chamadas em
+   * andamento e as que ficaram sem custo), sem contar a reserva `semContar`.
+   */
+  reservasEmAndamento(desde: Date, semContar: number | null): Promise<number>
   reservar(conta: string, modo: ModoIa, limiteMes: number, inicioDoMes: Date, limiteHora: number): Promise<Reserva>
   concluir(reserva: number, conclusao: ConclusaoDoUso): Promise<void>
   usosNoMes(conta: string, inicioDoMes: Date): Promise<number>

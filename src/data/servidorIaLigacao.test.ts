@@ -124,6 +124,11 @@ describe('o banco de verdade fala com as funções do 016 pelos nomes e parâmet
     expect(chamada?.parametros).toEqual(doSql)
   })
 
+  it('D-1373: conta as reservas em andamento na tabela, de todas as contas, desde a data, sem a reserva indicada', () => {
+    expect(bancoDaIa).toContain("cliente.from('uso_da_ia').select('id', { count: 'exact', head: true }).eq('status', 'reservado').gt('criado_em', desde.toISOString())")
+    expect(bancoDaIa).toContain(".neq('id', semContar)")
+  })
+
   it('D-1305: lê o perfil, o pedido de estudante aprovado e a assinatura da conta', () => {
     expect(bancoDaIa).toContain("cliente.from('perfis').select('situacao, crn_status').eq('id', conta).maybeSingle()")
     expect(bancoDaIa).toContain("cliente.from('pedidos_estudante').select('id').eq('usuario', conta).eq('status', 'aprovado').limit(1)")

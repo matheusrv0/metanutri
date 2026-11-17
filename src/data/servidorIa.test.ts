@@ -20,7 +20,7 @@ import {
   type DependenciasDaIa,
 } from '../../supabase/functions/_shared/ia.ts'
 import { IDS_DO_CATALOGO_IA } from '../../supabase/functions/_shared/iaCatalogo.ts'
-import { entradaEstimada, PRECOS, SAIDA_ESTIMADA_POR_SEGUNDO } from '../../supabase/functions/_shared/iaCusto.ts'
+import { custoMaximoDaChamada, entradaEstimada, PRECOS, SAIDA_ESTIMADA_POR_SEGUNDO } from '../../supabase/functions/_shared/iaCusto.ts'
 import { conferirResposta, limparPedido, type PedidoDeSugestao } from '../../supabase/functions/_shared/iaContrato.ts'
 import { criarModeloFalso, modoFalso, LISTAS_DO_FALSO } from '../../supabase/functions/_shared/iaFalsa.ts'
 import { montarMensagem } from '../../supabase/functions/_shared/iaPrompt.ts'
@@ -47,9 +47,11 @@ function montar(
     readonly gastoDoDia?: number
     readonly falhas?: readonly MetodoDoBanco[]
     readonly consentimentos?: ReadonlySet<string>
+    readonly reservaAlheiaAoReservar?: boolean
   } = {},
 ) {
   const banco = bancoDaIaFalso({
+    ...(o.reservaAlheiaAoReservar ? { reservaAlheiaAoReservar: true } : {}),
     ...(o.conta ? { conta: o.conta } : {}),
     ...(o.usos ? { usos: o.usos } : {}),
     ...(o.gastoDoDia !== undefined ? { gastoDoDia: o.gastoDoDia } : {}),
@@ -217,17 +219,84 @@ describe('os limites e o teto do dia', () => {
   it('CA-2310: o gasto do dia no teto: 503, sem reservar e sem chamar a IA', async () => {
     const m = montar({ gastoDoDia: 5_000_000 })
     expect(await pedir(PEDIDO_BASE, m.dep)).toEqual({ status: 503, corpo: { erro: IA_INDISPONIVEL, codigo: 'indisponivel' } })
-    expect(m.banco.ordem).toEqual(['lerConta', 'consentimentoNaFicha', 'custoDesde'])
+    expect(m.banco.ordem).toEqual(['lerConta', 'consentimentoNaFicha', 'custoDesde', 'reservasEmAndamento'])
     expect(m.modelo.chamadas).toEqual([])
     expect((await pedir(PEDIDO_BASE, montar({ gastoDoDia: 4_999_999 }).dep)).status).toBe(200)
   })
 
-  it('CA-2310: sem conseguir somar o gasto, ou reservar: 503 sem chamar a IA', async () => {
-    for (const falha of ['custoDesde', 'reservar'] as const) {
+  it('CA-2310: sem conseguir somar o gasto, contar as chamadas em andamento ou reservar: 503 sem chamar a IA', async () => {
+    for (const falha of ['custoDesde', 'reservasEmAndamento', 'reservar'] as const) {
       const m = montar({ falhas: [falha] })
       expect((await pedir(PEDIDO_BASE, m.dep)).status).toBe(503)
       expect(m.modelo.chamadas).toEqual([])
     }
+  })
+})
+
+describe('D-1373: o teto do dia vê as chamadas em andamento', () => {
+  const MAXIMO = custoMaximoDaChamada('claude-opus-5-5')
+  const TETO = 5_000_000
+  const HA_UM_MINUTO = new Date(AGORA_IA.getTime() - 60_000)
+  const emAndamento = (criadoEm = HA_UM_MINUTO): Omit<UsoGuardado, 'id' | 'conclusao'> => ({ conta: 'outra-conta', modo: 'gerar', status: 'reservado', criadoEm, custo: 0 })
+  const ultimoUso = (m: ReturnType<typeof montar>) => m.banco.usos.find((u) => u.conta === CONTA_IA.id)
+
+  it('o custo máximo de uma chamada: a entrada do maior pedido e a saída inteira, com os EUA (cerca de US$ 1 no Opus 5.5)', () => {
+    expect(MAXIMO).toBeGreaterThan(700_000)
+    expect(MAXIMO).toBeLessThan(1_300_000)
+    expect(custoMaximoDaChamada('claude-haiku-5-5')).toBeLessThan(MAXIMO / 10)
+  })
+
+  it('CA-2424: o gasto mais a chamada de outra conta em andamento chega ao teto: 503, sem reservar e sem chamar a IA', async () => {
+    const m = montar({ gastoDoDia: TETO - MAXIMO, usos: [emAndamento()] })
+    expect(await pedir(PEDIDO_BASE, m.dep)).toEqual({ status: 503, corpo: { erro: IA_INDISPONIVEL, codigo: 'indisponivel' } })
+    expect(m.banco.ordem).not.toContain('reservar')
+    expect(m.modelo.chamadas).toEqual([])
+  })
+
+  it('CA-2424: sem a chamada em andamento, o mesmo gasto passa; a reserva de mais de 24 h não conta', async () => {
+    expect((await pedir(PEDIDO_BASE, montar({ gastoDoDia: TETO - MAXIMO }).dep)).status).toBe(200)
+    const velha = new Date(AGORA_IA.getTime() - 25 * 60 * 60_000)
+    expect((await pedir(PEDIDO_BASE, montar({ gastoDoDia: TETO - MAXIMO, usos: [emAndamento(velha)] }).dep)).status).toBe(200)
+  })
+
+  it('CB-1303: a reserva que ficou sem custo (o trabalhador caiu) conta pelo máximo enquanto está nas 24 h', async () => {
+    const presa = new Date(AGORA_IA.getTime() - 3 * 60 * 60_000)
+    const m = montar({ gastoDoDia: TETO - MAXIMO, usos: [emAndamento(presa)] })
+    expect((await pedir(PEDIDO_BASE, m.dep)).status).toBe(503)
+  })
+
+  it('CA-2424: outra conta reserva no meio; a segunda conferência barra: uso erro com custo 0, 503 e a IA não é chamada', async () => {
+    const m = montar({ gastoDoDia: TETO - MAXIMO, reservaAlheiaAoReservar: true })
+    expect(await pedir(PEDIDO_BASE, m.dep)).toEqual({ status: 503, corpo: { erro: IA_INDISPONIVEL, codigo: 'indisponivel' } })
+    expect(m.modelo.chamadas).toEqual([])
+    expect(ultimoUso(m)).toMatchObject({ status: 'erro', custo: 0 })
+    expect(m.banco.ordem.filter((o) => o === 'reservasEmAndamento')).toHaveLength(2)
+  })
+
+  it('CA-2424: na segunda conferência, a própria reserva não conta', async () => {
+    const m = montar({ gastoDoDia: TETO - MAXIMO })
+    expect((await pedir(PEDIDO_BASE, m.dep)).status).toBe(200)
+    expect(ultimoUso(m)).toMatchObject({ status: 'ok' })
+  })
+
+  it('CA-2424: sem conseguir contar depois de reservar: 503, a reserva concluída como erro sem custo, e a IA não é chamada', async () => {
+    let contagens = 0
+    const m = montar({ gastoDoDia: 0 })
+    const banco = m.dep.banco
+    const dep: DependenciasDaIa = {
+      ...m.dep,
+      banco: {
+        ...banco,
+        reservasEmAndamento: async (desde, semContar) => {
+          contagens += 1
+          if (contagens === 2) throw new Error('o banco caiu')
+          return banco.reservasEmAndamento(desde, semContar)
+        },
+      },
+    }
+    expect((await pedir(PEDIDO_BASE, dep)).status).toBe(503)
+    expect(m.modelo.chamadas).toEqual([])
+    expect(ultimoUso(m)).toMatchObject({ status: 'erro', custo: 0 })
   })
 })
 
