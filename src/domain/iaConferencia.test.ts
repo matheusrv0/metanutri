@@ -2,6 +2,7 @@ import { IDS_DO_CATALOGO_IA } from '../../supabase/functions/_shared/iaCatalogo.
 import type { RespostaDaIa } from '../../supabase/functions/_shared/iaContrato.ts'
 import { casoDaGestante, gerarId, pacienteDaGestante, restricoesDoCaso } from './ia.test-utils.ts'
 import {
+  CAFE_E_CHA_NA_REFEICAO,
   conferirOpcao,
   conferirSugestao,
   ENERGIA_INCOERENTE,
@@ -251,6 +252,34 @@ describe('as marcas do plano', () => {
     expect(p.totais.proteinaGKg).not.toBeNull()
     expect(p.abaixoDaMeta.length).toBeGreaterThan(0)
     expect(p.abaixoDaMeta.map((a) => a.nutriente)).not.toContain('Sódio')
+  })
+})
+
+describe('CA-2426 e D-1374: café e chás somam até uma caneca (300 ml) por opção da refeição', () => {
+  it('quatro chás de 1.000 ml: o primeiro fica em 300 ml, marcado; os outros saem com o motivo', () => {
+    const p = semAjuste(resposta([[53, 50]], [[475, 1000], [476, 1000], [477, 1000], [471, 1000], [3, 150]]), { caso: adulto(), restricoes: SEM_RESTRICOES })
+    expect(p.refeicoes[1]?.principal.find((i) => i.alimentoId === 475)).toEqual({ alimentoId: 475, gramas: 300, marcas: [CAFE_E_CHA_NA_REFEICAO] })
+    expect(p.retirados.map((r) => [r.alimentoId, r.gramas, r.motivo])).toEqual([
+      [476, 1000, CAFE_E_CHA_NA_REFEICAO],
+      [477, 1000, CAFE_E_CHA_NA_REFEICAO],
+      [471, 1000, CAFE_E_CHA_NA_REFEICAO],
+    ])
+    expect(p.refeicoes[1]?.principal.map((i) => i.alimentoId)).toEqual([475, 3])
+  })
+
+  it('200 ml de café e 200 ml de chá: o chá fica em 100 ml, marcado; o café, como veio', () => {
+    const p = semAjuste(resposta([[471, 200], [475, 200], [53, 50]]), { caso: adulto(), restricoes: SEM_RESTRICOES })
+    expect(p.refeicoes[0]?.principal.slice(0, 2)).toEqual([
+      { alimentoId: 471, gramas: 200, marcas: [] },
+      { alimentoId: 475, gramas: 100, marcas: [CAFE_E_CHA_NA_REFEICAO] },
+    ])
+    expect(p.retirados).toEqual([])
+  })
+
+  it('cada opção tem a sua caneca: 300 ml na principal e 300 ml na opção 2 ficam', () => {
+    const p = semAjuste(resposta([[471, 300], [53, 50]], [], [[475, 300]]), { caso: adulto(), restricoes: SEM_RESTRICOES })
+    expect(p.refeicoes[0]?.principal[0]).toEqual({ alimentoId: 471, gramas: 300, marcas: [] })
+    expect(p.refeicoes[0]?.opcao2[0]).toEqual({ alimentoId: 475, gramas: 300, marcas: [] })
   })
 })
 

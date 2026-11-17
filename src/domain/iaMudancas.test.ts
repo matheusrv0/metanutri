@@ -1,7 +1,7 @@
 import { IDS_DO_CATALOGO_IA } from '../../supabase/functions/_shared/iaCatalogo.ts'
 import type { MudancaSugerida } from '../../supabase/functions/_shared/iaContrato.ts'
 import { casoDaGestante, gerarId, planoDeAdulto, restricoesDoCaso } from './ia.test-utils.ts'
-import { PORCAO_REDUZIDA, type ContextoDaConferencia } from './iaConferencia.ts'
+import { CAFE_E_CHA_NA_REFEICAO, PORCAO_REDUZIDA, type ContextoDaConferencia } from './iaConferencia.ts'
 import { aplicarMudancas, aplicarMudancasComMarcas, conferirMudancas, efeitoDasMudancas, ITEM_DE_RECEITA, ITEM_SUMIU, resumoDoPlano } from './iaMudancas.ts'
 import { gastoCalculado } from './iaPedido.ts'
 import { ID_DE_RECEITA } from './receitaNoPlano.ts'
@@ -21,6 +21,11 @@ const CTX: ContextoDaConferencia = {
 }
 
 const m = (o: Partial<MudancaSugerida>): MudancaSugerida => ({ tipo: 'trocar', refeicao: 1, opcao: 'principal', item: 0, alimentoId: 1, gramas: null, motivo: '+ fibra', ...o })
+/** O plano de adulto com café (100 ml) no primeiro item do café da manhã. */
+const planoComCafe = (): Plano => {
+  const p = planoDeAdulto()
+  return { refeicoes: p.refeicoes.map((r, i) => (i === 0 ? { ...r, opcoes: { ...r.opcoes, principal: [{ id: 'cafe', alimentoId: 471, gramas: 100 }, ...r.opcoes.principal] } } : r)) }
+}
 const ids = (plano: Plano, refeicao: number) => plano.refeicoes[refeicao]?.opcoes.principal.map((i) => [i.alimentoId, i.gramas])
 
 describe('spec assistente-ia, D-1309: a conferência de cada mudança', () => {
@@ -40,6 +45,16 @@ describe('spec assistente-ia, D-1309: a conferência de cada mudança', () => {
   it('gramas: só a porção é conferida, reduzida ao máximo do grupo', () => {
     const [c] = conferirMudancas([m({ tipo: 'gramas', alimentoId: null, gramas: 400 })], plano, CTX)
     expect(c).toMatchObject({ para: { alimentoId: 3, gramas: 150 }, marcas: [PORCAO_REDUZIDA], barrada: null })
+  })
+
+  it('CA-2426 (D-1374): adicionar 1.000 ml de chá fica em 300 ml; mudar os gramas do café para 800 ml também', () => {
+    const [cha, cafe] = conferirMudancas(
+      [m({ tipo: 'adicionar', refeicao: 2, item: null, alimentoId: 475, gramas: 1000 }), m({ tipo: 'gramas', refeicao: 0, item: 0, alimentoId: null, gramas: 800 })],
+      planoComCafe(),
+      CTX,
+    )
+    expect(cha).toMatchObject({ para: { alimentoId: 475, gramas: 300 }, marcas: [CAFE_E_CHA_NA_REFEICAO], barrada: null, maximo: 300 })
+    expect(cafe).toMatchObject({ para: { alimentoId: 471, gramas: 300 }, marcas: [CAFE_E_CHA_NA_REFEICAO], barrada: null })
   })
 
   it('item que não existe, ou de receita, fica barrado', () => {

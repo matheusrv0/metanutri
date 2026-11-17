@@ -5,7 +5,7 @@ import type { MudancaSugerida, OpcaoIa } from '../../supabase/functions/_shared/
 import { calcularAdequacao } from './adequacao.ts'
 import { FAIXA_DO_GASTO_PADRAO, percentualDoGasto } from './energia.ts'
 import { QUANTIDADE_MAXIMA_G } from './busca.ts'
-import { conferirOpcao, faixaDoAlimento, motivoParaRetirar, PORCAO_REDUZIDA, QUANTIDADE_FORA, type ContextoDaConferencia, type Retirado } from './iaConferencia.ts'
+import { CAFE_E_CHA_NA_REFEICAO, CANECA_ML, conferirOpcao, ehCafeOuChaSemGrupo, faixaDoAlimento, motivoParaRetirar, PORCAO_REDUZIDA, QUANTIDADE_FORA, type ContextoDaConferencia, type Retirado } from './iaConferencia.ts'
 import { calcularMacros } from './macros.ts'
 import { lerOpcoesDoItem } from './opcoesDoItem.ts'
 import { ehItemDeReceita } from './receitaNoPlano.ts'
@@ -66,15 +66,18 @@ function conferirEntrada(alimentoId: number, gramas: number, m: MudancaSugerida,
 function conferirPorcao(alimentoId: number, gramas: number, ctx: ContextoDaConferencia): { readonly para: ItemDaMudanca; readonly marcas: readonly string[]; readonly barrada: null } {
   const a = ctx.buscar(alimentoId)
   const faixa = a ? faixaDoAlimento(a, ctx.caso.idadeAnos) : null
+  // D-1374: café e chás até uma caneca.
+  if (!faixa && a && ehCafeOuChaSemGrupo(a) && gramas > CANECA_ML) return { para: { alimentoId, gramas: CANECA_ML }, marcas: [CAFE_E_CHA_NA_REFEICAO], barrada: null }
   if (!faixa) return { para: { alimentoId, gramas }, marcas: [], barrada: null }
   if (gramas > faixa.maxima) return { para: { alimentoId, gramas: faixa.maxima }, marcas: [PORCAO_REDUZIDA], barrada: null }
   if (gramas < faixa.minima) return { para: { alimentoId, gramas: faixa.minima }, marcas: [QUANTIDADE_FORA], barrada: null }
   return { para: { alimentoId, gramas }, marcas: [], barrada: null }
 }
 
-/** D-1332: o máximo da porção do alimento na idade; fora dos grupos, o teto de 2.000 g. */
+/** D-1332: o máximo da porção do alimento na idade; café e chás, uma caneca (D-1374); fora dos grupos, o teto de 2.000 g. */
 function maximoDe(alimentoId: number, ctx: ContextoDaConferencia): number {
   const a = ctx.buscar(alimentoId)
+  if (a && ehCafeOuChaSemGrupo(a)) return CANECA_ML
   return (a ? faixaDoAlimento(a, ctx.caso.idadeAnos)?.maxima : undefined) ?? QUANTIDADE_MAXIMA_G
 }
 

@@ -8,6 +8,7 @@ import { medidaParaMostrar, medidasDoAlimento, QUANTIDADE_MAXIMA_G } from './bus
 import { PASSO_PORCAO_G, porcaoDoGrupo, porcaoMaximaNaIdade, porcaoMinima } from './cobrir.ts'
 import { FAIXA_DO_GASTO_PADRAO, percentualDoGasto } from './energia.ts'
 import { fraseDoMacro } from './iaPedido.ts'
+import { CAFE_OU_CHA } from './prescritivel.ts'
 import { calcularMacros } from './macros.ts'
 import { ehNaoGosta, restricaoDoAlimento, type RestricoesDoPaciente } from './restricoes.ts'
 import { ehPrescritivelParaSugerir, motivoParaNaoSugerir, regraDaBaseParaSugerir } from './sugestaoDoProprio.ts'
@@ -24,6 +25,15 @@ export const LACTACAO_ABAIXO = 'Na lactação, o plano fica abaixo do gasto calc
 export const IDADE_ABAIXO = 'Abaixo do gasto calculado para a idade.'
 export const PROPRIO_FORA_DO_COBRIR = 'No cadastro, fora do Cobrir e das trocas'
 export const ENERGIA_INCOERENTE = 'A energia do cadastro não bate com os macros'
+export const CAFE_E_CHA_NA_REFEICAO = 'Café e chá somam até uma caneca (300 ml) na refeição'
+
+/**
+ * D-1374: café e chás não têm porção de grupo (D-1332); numa opção da refeição, somam no máximo uma caneca, 300 ml, a
+ * maior medida caseira deles na Tabela de Medidas Referidas para os Alimentos Consumidos no Brasil (IBGE, Pesquisa de
+ * Orçamentos Familiares 2008-2009, 2011), a mesma do app (medidasDoAlimento).
+ */
+export const CANECA_ML = 300
+export const ehCafeOuChaSemGrupo = (a: Alimento): boolean => porcaoDoGrupo(a) === null && CAFE_OU_CHA.test(a.descricao)
 
 /** D-1311: o ajuste de energia multiplica as porções por um fator preso nesta faixa, no máximo 2 vezes. */
 export const FATOR_MINIMO = 0.8
@@ -177,6 +187,22 @@ export function conferirOpcao(
     if (item.gramas <= QUANTIDADE_MAXIMA_G) continue
     retirados.push({ alimentoId: item.alimentoId, nome: nomeDe(ctx.buscar(item.alimentoId), item.alimentoId), gramas: item.gramas, refeicao, opcao, motivo: QUANTIDADE_FORA })
     ficam.splice(ficam.indexOf(item), 1)
+  }
+  // D-1374: café e chás somam até uma caneca na opção, na ordem da IA; o que passa é reduzido, o que não cabe sai.
+  let sobraDaCaneca = CANECA_ML
+  for (const item of [...ficam]) {
+    const a = ctx.buscar(item.alimentoId)
+    if (!a || !ehCafeOuChaSemGrupo(a)) continue
+    if (sobraDaCaneca <= 0) {
+      retirados.push({ alimentoId: item.alimentoId, nome: nomeDe(a, item.alimentoId), gramas: item.gramas, refeicao, opcao, motivo: CAFE_E_CHA_NA_REFEICAO })
+      ficam.splice(ficam.indexOf(item), 1)
+      continue
+    }
+    if (item.gramas > sobraDaCaneca) {
+      item.gramas = sobraDaCaneca
+      marcar(item, CAFE_E_CHA_NA_REFEICAO)
+    }
+    sobraDaCaneca -= item.gramas
   }
   for (const item of ficam) {
     const a = ctx.buscar(item.alimentoId)
