@@ -219,7 +219,8 @@ describe('os limites e o teto do dia', () => {
   it('CA-2310: o gasto do dia no teto: 503, sem reservar e sem chamar a IA', async () => {
     const m = montar({ gastoDoDia: 5_000_000 })
     expect(await pedir(PEDIDO_BASE, m.dep)).toEqual({ status: 503, corpo: { erro: IA_INDISPONIVEL, codigo: 'indisponivel' } })
-    expect(m.banco.ordem).toEqual(['lerConta', 'consentimentoNaFicha', 'custoDesde', 'reservasEmAndamento'])
+    // B2: as reservas antes da soma, em sequência; barrado, mais uma contagem só para o registro (as presas).
+    expect(m.banco.ordem).toEqual(['lerConta', 'consentimentoNaFicha', 'reservasEmAndamento', 'custoDesde', 'reservasEmAndamento'])
     expect(m.modelo.chamadas).toEqual([])
     expect((await pedir(PEDIDO_BASE, montar({ gastoDoDia: 4_999_999 }).dep)).status).toBe(200)
   })
@@ -259,10 +260,27 @@ describe('D-1373: o teto do dia vê as chamadas em andamento', () => {
     expect((await pedir(PEDIDO_BASE, montar({ gastoDoDia: TETO - MAXIMO, usos: [emAndamento(velha)] }).dep)).status).toBe(200)
   })
 
-  it('CB-1303: a reserva que ficou sem custo (o trabalhador caiu) conta pelo máximo enquanto está nas 24 h', async () => {
-    const presa = new Date(AGORA_IA.getTime() - 3 * 60 * 60_000)
-    const m = montar({ gastoDoDia: TETO - MAXIMO, usos: [emAndamento(presa)] })
+  it('CA-2431 e CB-1303: a reserva de menos de 10 minutos conta pelo máximo; a presa há mais, não conta', async () => {
+    const haNoveMinutos = new Date(AGORA_IA.getTime() - 9 * 60_000)
+    expect((await pedir(PEDIDO_BASE, montar({ gastoDoDia: TETO - MAXIMO, usos: [emAndamento(haNoveMinutos)] }).dep)).status).toBe(503)
+    for (const ha of [11 * 60_000, 3 * 60 * 60_000]) {
+      const presa = new Date(AGORA_IA.getTime() - ha)
+      expect((await pedir(PEDIDO_BASE, montar({ gastoDoDia: TETO - MAXIMO, usos: [emAndamento(presa)] }).dep)).status).toBe(200)
+    }
+  })
+
+  it('CA-2431: barrado, o registro diz quantas reservas estão em andamento e quantas presas', async () => {
+    const presa = emAndamento(new Date(AGORA_IA.getTime() - 3 * 60 * 60_000))
+    const m = montar({ gastoDoDia: TETO - MAXIMO, usos: [emAndamento(), presa, presa] })
     expect((await pedir(PEDIDO_BASE, m.dep)).status).toBe(503)
+    expect(m.registro.find((l) => l.includes('teto de gasto do dia'))).toMatch(/em andamento: 1 presas: 2$/)
+  })
+
+  it('B2: cada conferência lê as reservas antes da soma do gasto', async () => {
+    const m = montar()
+    expect((await pedir(PEDIDO_BASE, m.dep)).status).toBe(200)
+    const teto = m.banco.ordem.filter((o) => o === 'reservasEmAndamento' || o === 'custoDesde')
+    expect(teto).toEqual(['reservasEmAndamento', 'custoDesde', 'reservasEmAndamento', 'custoDesde'])
   })
 
   it('CA-2424: outra conta reserva no meio; a segunda conferência barra: uso erro com custo 0, 503 e a IA não é chamada', async () => {
@@ -270,7 +288,8 @@ describe('D-1373: o teto do dia vê as chamadas em andamento', () => {
     expect(await pedir(PEDIDO_BASE, m.dep)).toEqual({ status: 503, corpo: { erro: IA_INDISPONIVEL, codigo: 'indisponivel' } })
     expect(m.modelo.chamadas).toEqual([])
     expect(ultimoUso(m)).toMatchObject({ status: 'erro', custo: 0 })
-    expect(m.banco.ordem.filter((o) => o === 'reservasEmAndamento')).toHaveLength(2)
+    // As duas conferências, e a contagem das presas para o registro.
+    expect(m.banco.ordem.filter((o) => o === 'reservasEmAndamento')).toHaveLength(3)
   })
 
   it('CA-2424: na segunda conferência, a própria reserva não conta', async () => {
