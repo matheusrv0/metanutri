@@ -19,7 +19,9 @@ export function linkDoPaciente(links: readonly Acompanhamento[], pacienteId: str
 
 /**
  * D-1217 e CA-2225: em cada paciente com mais de um link vigente, o mais recente (`criadoEm`) vira o fixo e os outros
- * apontam para ele. Devolve só os links que mudaram, para gravar. Link sem paciente continua como está.
+ * apontam para ele. Devolve só os links que mudaram, para gravar. Link sem paciente continua como está. D-1273 e
+ * CB-1241: os links que já apontavam para um desses antigos passam a apontar para o fixo novo também; o banco segue o
+ * `substituido_por` um nível só, e o mais antigo abriria o do meio, com o plano velho.
  */
 export function migrarParaLinkFixo(links: readonly Acompanhamento[], planos: Planos): readonly Acompanhamento[] {
   const porPaciente = new Map<string, Acompanhamento[]>()
@@ -33,7 +35,10 @@ export function migrarParaLinkFixo(links: readonly Acompanhamento[], planos: Pla
     if (deles.length < 2) continue
     const [fixo, ...antigos] = [...deles].sort((a, b) => b.criadoEm.localeCompare(a.criadoEm))
     if (!fixo) continue
-    for (const antigo of antigos) mudados.push({ ...antigo, substituidoPor: fixo.id })
+    for (const antigo of antigos) {
+      mudados.push({ ...antigo, substituidoPor: fixo.id })
+      for (const l of links) if (l.substituidoPor === antigo.id) mudados.push({ ...l, substituidoPor: fixo.id })
+    }
   }
   return mudados
 }
