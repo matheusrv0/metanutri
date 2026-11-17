@@ -374,6 +374,9 @@ export function AssistenteDaIa(p: AssistenteDaIaProps) {
     <AutorizacaoNaGaveta desde={consentimento?.em ?? null} aoMudar={autorizar} aoBaixarTermo={p.aoBaixarTermo} />
   )
 
+  const lugar: LugarDaGaveta | null = aberta === null ? null : estreito ? 'folha' : largo ? 'lado' : 'fluxo'
+  // D-1371: no pedido, na folha, a linha do motivo fica reservada (a chave da autorização não sai do lugar).
+  const reservarMotivo = lugar === 'folha'
   let corpo: ReactNode = null
   let rodape: ReactNode = null
   // D-1364: a frase do erro vai para a região viva que a gaveta já tem.
@@ -533,6 +536,7 @@ export function AssistenteDaIa(p: AssistenteDaIaProps) {
           }
           motivo={motivo}
           contador={contador}
+          reservarMotivo={reservarMotivo}
         />
       )
     } else {
@@ -562,12 +566,12 @@ export function AssistenteDaIa(p: AssistenteDaIaProps) {
           }
           motivo={motivo}
           contador={contador}
+          reservarMotivo={reservarMotivo}
         />
       )
     }
   }
 
-  const lugar: LugarDaGaveta | null = aberta === null ? null : estreito ? 'folha' : largo ? 'lado' : 'fluxo'
   const gaveta = lugar && aberta ? <GavetaIa titulo={titulo} lugar={lugar} aoFechar={fechar} quemAbriu={quemAbriu} aviso={<ErroDaIa erro={aviso} aoVerPlanos={p.aoVerPlanos} />} corpo={corpo} rodape={rodape} /> : null
 
   const vaiParaTextos = mudancas && lugar !== null ? textosDoVaiPara(mudancas, recusadas, buscarAlimento) : null

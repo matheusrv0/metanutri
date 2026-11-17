@@ -260,3 +260,22 @@ test('CA-2418: a faixa e o "Desfazer" do plano da Camila esperam por ele; de vol
   await page.getByRole('button', { name: 'Desfazer' }).click()
   await expect(page.getByText('Sugestão da IA no plano, como rascunho.')).toBeHidden()
 })
+
+test('CA-2422: em 360 px, ligar a autorização não tira a chave do lugar (o segundo toque cai nela)', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 740 })
+  await abrirPlano(page, { copia: copiaDaContaComIa({ semAutorizacao: true }) })
+  await page.getByRole('button', { name: 'Sugerir plano com IA' }).click()
+  const folha = page.getByRole('dialog', { name: 'Sugerir plano com IA' })
+  const chave = folha.getByRole('switch', { name: 'Paciente autorizou o uso de IA' })
+  await chave.scrollIntoViewIfNeeded()
+  const antes = await chave.boundingBox()
+  await chave.click()
+  await expect(chave).toHaveAttribute('aria-checked', 'true')
+  await expect(folha.getByText('Registre na ficha a autorização do paciente.')).toBeHidden()
+  const depois = await chave.boundingBox()
+  expect(antes && depois).toBeTruthy()
+  if (antes && depois) expect(Math.abs(depois.y - antes.y)).toBeLessThan(1)
+  // O segundo toque no mesmo ponto desliga.
+  if (antes) await page.mouse.click(antes.x + antes.width / 2, antes.y + antes.height / 2)
+  await expect(chave).toHaveAttribute('aria-checked', 'false')
+})
