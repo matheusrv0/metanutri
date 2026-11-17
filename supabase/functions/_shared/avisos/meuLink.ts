@@ -44,6 +44,12 @@ const HORA_MS = 60 * 60 * 1000
 /** D-1249: "Recuperar meu link" responde sempre 3 segundos depois do pedido, com cadastro ou sem. */
 export const TEMPO_DA_RECUPERACAO_MS = 3_000
 
+/**
+ * D-1267: "Receber" com um e-mail digitado responde no mínimo 1,5 s depois do pedido, saia o e-mail ou não: o envio ao
+ * Resend costuma levar menos que isso, e o e-mail que já voltou (que não manda nada) não se distingue pelo tempo.
+ */
+export const TEMPO_MINIMO_DO_RECEBER_MS = 1_500
+
 const esperarDeVerdade = (ms: number): Promise<void> => new Promise((resolver) => setTimeout(resolver, ms))
 
 export interface DependenciasDoMeuLink extends DependenciasComuns {
@@ -235,6 +241,13 @@ const avisosDoCorpo = (valor: unknown): readonly TipoDeAviso[] => (Array.isArray
  * plano vai para ele no "Confirmar" (avisosResposta.ts), e o link continua com o e-mail de antes até lá.
  */
 async function receber(corpo: Readonly<Record<string, unknown>>, deps: DependenciasDoMeuLink): Promise<RespostaDaFuncao> {
+  const inicio = deps.agora().getTime()
+  // D-1267 e CB-1235: com o e-mail digitado, a resposta sai no mínimo `TEMPO_MINIMO_DO_RECEBER_MS` depois do pedido.
+  const noTempo = async (resposta: RespostaDaFuncao): Promise<RespostaDaFuncao> => {
+    const falta = TEMPO_MINIMO_DO_RECEBER_MS - (deps.agora().getTime() - inicio)
+    if (falta > 0) await (deps.esperar ?? esperarDeVerdade)(falta)
+    return resposta
+  }
   const aberto = await abrir(corpo['token'], deps)
   if (aberto === null) return erro(LINK_QUE_NAO_ABRE, 404)
   const { link, nutri } = aberto
@@ -262,9 +275,22 @@ async function receber(corpo: Readonly<Record<string, unknown>>, deps: Dependenc
   if ((await deps.banco.suprimidos([emailHash])).get(emailHash) === 'devolvido') {
     // D-1260 e CA-2306: o e-mail digitado que já voltou responde como qualquer outro (a resposta não revela a devolução),
     // e nada sai. O que o link já tem continua com "Confira o e-mail.": é o do paciente, que precisa saber.
-    return usarDoLink ? erro(CONFIRA_O_EMAIL, 422) : { status: 200, corpo: { enviadoPara: mascararEmail(email), confirmar: true, confirmarEmail: true } }
+    return usarDoLink ? erro(CONFIRA_O_EMAIL, 422) : noTempo({ status: 200, corpo: { enviadoPara: mascararEmail(email), confirmar: true, confirmarEmail: true } })
   }
+  const resposta = await mandarAoEmail(link, nutri, email, emailHash, marcados, usarDoLink, deps)
+  return usarDoLink ? resposta : noTempo(resposta)
+}
 
+/** O resto do "Receber", depois das conferências: o S1 (só ao e-mail que já vale) e o S3, e a resposta. */
+async function mandarAoEmail(
+  link: LinkDoBanco,
+  nutri: DadosDaNutricionista,
+  email: string,
+  emailHash: string,
+  marcados: readonly TipoDeAviso[],
+  usarDoLink: boolean,
+  deps: DependenciasDoMeuLink,
+): Promise<RespostaDaFuncao> {
   const ativos = new Set((await deps.banco.aceitesDoLink(link.id)).filter((a) => a.saiuEm === null && a.emailHash === emailHash).map((a) => a.tipo))
   const pedir = marcados.filter((t) => !ativos.has(t))
   // D-1258: o link do plano só vai para o e-mail que já vale; o digitado o recebe no "Confirmar".

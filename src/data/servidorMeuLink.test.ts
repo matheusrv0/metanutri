@@ -4,7 +4,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { CHAVE_QUE_NAO_VALE, CONFIRA_O_EMAIL, hashDoToken, LIMITE_DA_CONTA, LINK_QUE_NAO_ABRE, NAO_ENVIOU, PEDIDOS_DEMAIS_NO_DIA } from '../../supabase/functions/_shared/avisos/comum.ts'
 import { hashDoEmail } from '../../supabase/functions/_shared/avisos/email.ts'
-import { meuLink, TEMPO_DA_RECUPERACAO_MS, type DependenciasDoMeuLink } from '../../supabase/functions/_shared/avisos/meuLink.ts'
+import { meuLink, TEMPO_DA_RECUPERACAO_MS, TEMPO_MINIMO_DO_RECEBER_MS, type DependenciasDoMeuLink } from '../../supabase/functions/_shared/avisos/meuLink.ts'
 import { TETOS_PADRAO } from '../../supabase/functions/_shared/avisos/tetos.ts'
 import * as doApp from '../domain/emailsDoLink.ts'
 import { acertarRelogio, ANA, bancoFalso, comLink, dependencias, envioAntigo, linkDe, resendFalso, type EstadoFalso, type ResendFalso } from './servidorAvisosFalsos.test-utils.ts'
@@ -325,6 +325,37 @@ describe('Receber meu link por e-mail (D-1221)', () => {
     expect(resend.lotes).toHaveLength(lotes)
     expect([...estado.chaves.values()].filter((k) => k.email === 'voltou@gmail.com')).toEqual([])
     expect(estado.limites.filter((l) => l.chave === 'link:link-juliana')).toHaveLength(2)
+  })
+
+  it('CB-1235 e D-1267: com e-mail digitado, bloqueado ou não, a resposta espera até 1,5 s do pedido; o mascarado não espera', async () => {
+    await comLink(estado)
+    estado.supressao.set(await hashDoEmail('voltou@gmail.com'), 'devolvido')
+    expect(TEMPO_MINIMO_DO_RECEBER_MS).toBe(1_500)
+    let esperas: number[] = []
+    deps = { ...deps, esperar: async (ms) => void esperas.push(ms) }
+    // O relógio dos testes está parado: nada passou desde o pedido, e a resposta espera os 1,5 s inteiros.
+    expect((await pedir({ acao: 'receber', token: 'k7q2mx9pla3r', email: 'voltou@gmail.com', avisos: [] })).status).toBe(200)
+    expect(esperas).toEqual([1_500])
+    esperas = []
+    expect((await pedir({ acao: 'receber', token: 'k7q2mx9pla3r', email: 'qualquer@gmail.com', avisos: [] })).status).toBe(200)
+    expect(esperas).toEqual([1_500])
+    esperas = []
+    expect((await pedir({ acao: 'receber', token: 'k7q2mx9pla3r', usarDaFicha: true, avisos: [] })).status).toBe(200)
+    expect(esperas).toEqual([])
+  })
+
+  it('CB-1235 e D-1267: o que já passou desde o pedido conta; passados 1,5 s, a resposta não espera mais', async () => {
+    await comLink(estado)
+    const esperas: number[] = []
+    let relogio = new Date('2026-11-03T13:15:00.000Z').getTime()
+    deps = { ...deps, agora: () => new Date(relogio), esperar: async (ms) => void esperas.push(ms) }
+    // O DNS do domínio demora 400 ms; a resposta espera só o que falta.
+    deps = { ...deps, temServidorDeEmail: async () => ((relogio += 400), true) }
+    await pedir({ acao: 'receber', token: 'k7q2mx9pla3r', email: 'um@gmail.com', avisos: [] })
+    expect(esperas).toEqual([1_100])
+    deps = { ...deps, temServidorDeEmail: async () => ((relogio += 2_000), true) }
+    await pedir({ acao: 'receber', token: 'k7q2mx9pla3r', email: 'dois@gmail.com', avisos: [] })
+    expect(esperas).toEqual([1_100])
   })
 
   it('CB-1216: Resend fora do ar: "Não foi possível enviar agora."', async () => {
