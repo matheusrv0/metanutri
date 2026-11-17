@@ -62,15 +62,21 @@ export function TelaRecuperarLink({ aoVoltar, cliente: clienteInjetado }: TelaRe
   }
 
   return (
-    <MolduraConta titulo="Recuperar meu link" subtitulo="Digite o e-mail que você deu à sua nutricionista.">
-      <button
-        type="button"
-        onClick={aoVoltar}
-        className="-mt-2 -ml-2 inline-flex min-h-11 w-fit items-center gap-1 rounded-full pr-2.5 pl-1 text-base font-semibold text-heading focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-      >
-        <ChevronLeft className="size-5" aria-hidden="true" />
-        Voltar
-      </button>
+    <MolduraConta
+      titulo="Recuperar meu link"
+      subtitulo="Digite o e-mail que você deu à sua nutricionista."
+      // D-1270 e CB-1238: "Voltar" fica acima do título; entre o subtítulo e o campo, ele cortava o formulário no meio.
+      aviso={
+        <button
+          type="button"
+          onClick={aoVoltar}
+          className="-ml-2 inline-flex min-h-11 w-fit items-center gap-1 rounded-full pr-2.5 pl-1 text-base font-semibold text-heading focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <ChevronLeft className="size-5" aria-hidden="true" />
+          Voltar
+        </button>
+      }
+    >
       {enviado ? (
         <div role="status" className="flex flex-col items-center gap-3 py-2 text-center">
           <span aria-hidden="true" className="grid size-13 place-content-center rounded-full bg-lightsuccess text-successtext">

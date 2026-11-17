@@ -86,3 +86,15 @@ describe('CA-2233: "Recuperar meu link"', () => {
     expect(aoVoltar).toHaveBeenCalled()
   })
 })
+
+describe('CB-1238 e D-1270: "Voltar" acima do título', () => {
+  it('CB-1238: "Voltar" vem antes do título, e o campo vem logo depois do subtítulo', () => {
+    const { cliente } = clienteFalso()
+    render(<TelaRecuperarLink aoVoltar={() => undefined} cliente={cliente} />)
+    const voltar = screen.getByRole('button', { name: 'Voltar' })
+    const titulo = screen.getByRole('heading', { level: 1, name: 'Recuperar meu link' })
+    const campo = screen.getByLabelText('E-mail')
+    expect(voltar.compareDocumentPosition(titulo) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(titulo.compareDocumentPosition(campo) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+})
