@@ -139,7 +139,7 @@ export function textosPeloSexo(sexo: Sexo | null): { readonly autorizou: string;
 // --- O envio (D-1453, D-1505) ------------------------------------------------------------------------------------------
 
 /**
- * D-1547: `conta-cheia`, o servidor recusou pelo teto da conta (500 MB ou 2.000 arquivos, o código 53100 da D-1546);
+ * D-1547: `conta-cheia`, o servidor recusou pelo teto da conta (500 MB ou 2.000 arquivos, o código MN001 da D-1550 ou o 53100 da D-1546);
  * `sessao`, recusou a sessão (401, 403 ou o token); `recusado`, respondeu e não aceitou por outro motivo; `sem-rede`, não
  * respondeu.
  */

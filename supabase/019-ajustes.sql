@@ -9,7 +9,9 @@
 -- O que muda:
 --   * "Trocar o endereço" passa a guardar também o resumo do token de cada link antigo que ela corta, e os links já
 --     cortados ganham o resumo agora. Assim o endereço cortado nunca volta a abrir, nem se a linha dele for apagada e
---     gravada de novo com o mesmo token (D-1266, CB-1234).
+--     gravada de novo com o mesmo token (D-1266, CB-1234);
+--   * a conta cheia de fotos e anexos recusa com um código próprio do MetaNutri, `MN001`, e não mais com o `53100`, que
+--     no registro do banco aparecia como "disco cheio" (D-1550, CB-1499).
 --
 -- Tudo numa transação só: se algum passo falhar, nada fica pela metade.
 
@@ -90,6 +92,67 @@ select public.hash_do_token(c.token),
  where c.cortado_em is not null
 on conflict (token_hash) do nothing;
 
+
+-- ---------- A conta cheia com o código do MetaNutri (D-1550) ----------
+
+-- A mesma função do 018, com uma mudança: a conta cheia (2.000 arquivos ou 500 MB) recusa com o código `MN001`, que é
+-- só do MetaNutri (fora das classes do Postgres), no lugar do `53100`, que é o "disco cheio" do Postgres e aparecia
+-- assim no registro do banco. O app lê os dois. O gatilho do 018 continua o mesmo: aqui só o corpo da função muda, e
+-- o projeto que não deixou criar o gatilho fica como estava.
+create or replace function public.limite_de_arquivos_da_avaliacao()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_conta text := split_part(new.name, '/', 1);
+  v_plano text := split_part(new.name, '/', 1) || '/' || split_part(new.name, '/', 2) || '/';
+  v_pasta text := split_part(new.name, '/', 1) || '/' || split_part(new.name, '/', 2) || '/' || split_part(new.name, '/', 3) || '/';
+  v_limite integer := case split_part(new.name, '/', 3) when 'fotos' then 5 else 10 end;
+  v_tamanho bigint := case when new.metadata->>'size' ~ '^[0-9]{1,15}$' then (new.metadata->>'size')::bigint else 0 end;
+  v_mime text := new.metadata->>'mimetype';
+  v_mime_do_caminho text := case split_part(new.name, '/', 3) when 'fotos' then 'image/jpeg' else 'application/pdf' end;
+  v_na_conta integer;
+  v_no_plano integer;
+  v_bytes_na_conta bigint;
+  v_bytes_no_plano bigint;
+begin
+  if new.bucket_id is distinct from 'fotos-avaliacao' then
+    return new;
+  end if;
+  perform pg_advisory_xact_lock(hashtext('fotos-avaliacao:' || v_conta));
+  select count(*)::integer, coalesce(sum(case when o.metadata->>'size' ~ '^[0-9]{1,15}$' then (o.metadata->>'size')::bigint else 0 end), 0)
+    into v_na_conta, v_bytes_na_conta
+    from storage.objects o
+   where o.bucket_id = 'fotos-avaliacao' and starts_with(o.name, v_conta || '/') and o.name <> new.name;
+  select count(*)::integer into v_no_plano
+    from storage.objects o
+   where o.bucket_id = 'fotos-avaliacao' and starts_with(o.name, v_pasta) and o.name <> new.name;
+  select coalesce(sum(case when o.metadata->>'size' ~ '^[0-9]{1,15}$' then (o.metadata->>'size')::bigint else 0 end), 0)
+    into v_bytes_no_plano
+    from storage.objects o
+   where o.bucket_id = 'fotos-avaliacao' and starts_with(o.name, v_plano) and o.name <> new.name;
+  if v_no_plano >= v_limite then
+    raise exception 'Limite de arquivos da avaliação.' using errcode = 'check_violation';
+  end if;
+  if v_mime is not null and v_mime is distinct from v_mime_do_caminho then
+    raise exception 'Tipo do arquivo da avaliação.' using errcode = 'check_violation';
+  end if;
+  -- 8 MB = 8.388.608 bytes por plano; 500 MB = 524.288.000 bytes por conta (D-1506 e D-1531).
+  if v_bytes_no_plano + v_tamanho > 8388608 then
+    raise exception 'Espaço da avaliação cheio.' using errcode = 'check_violation';
+  end if;
+  -- D-1550: o código chega ao app na mensagem ("database error, code: MN001"); o texto da recusa, não.
+  if v_na_conta >= 2000 or v_bytes_na_conta + v_tamanho > 524288000 then
+    raise exception 'Espaço da conta cheio.' using errcode = 'MN001';
+  end if;
+  return new;
+end;
+$$;
+
+revoke all on function public.limite_de_arquivos_da_avaliacao() from public, anon, authenticated;
+
 commit;
 
 
@@ -100,3 +163,5 @@ commit;
 -- -- uma linha: 0
 -- select position('returning a.token' in prosrc) > 0 as guarda_os_cortados from pg_proc where proname = 'trocar_o_endereco';
 -- -- uma linha: true
+-- select position('MN001' in prosrc) > 0 as conta_cheia_mn001, position('53100' in prosrc) = 0 as sem_53100 from pg_proc where proname = 'limite_de_arquivos_da_avaliacao';
+-- -- uma linha: true, true

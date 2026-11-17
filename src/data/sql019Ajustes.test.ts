@@ -66,3 +66,29 @@ describe('CB-1234 e D-1266: o endereço cortado nunca volta', () => {
   })
 })
 
+describe('CB-1499 e D-1550: a conta cheia com o código do MetaNutri', () => {
+  const gatilho = funcao('limite_de_arquivos_da_avaliacao')
+
+  it('a conta cheia (2.000 arquivos ou 500 MB) recusa com MN001; o resto do gatilho, como no 018, com 23514', () => {
+    expect(gatilho).toContain(`if v_na_conta >= 2000 or v_bytes_na_conta + v_tamanho > 524288000 then\n    raise exception 'Espaço da conta cheio.' using errcode = 'MN001';`)
+    expect(gatilho.match(/errcode = 'MN001'/g)).toHaveLength(1)
+    expect(gatilho).not.toContain('53100')
+    expect(gatilho.match(/errcode = 'check_violation'/g)).toHaveLength(3)
+    expect(gatilho).toContain('perform pg_advisory_xact_lock(hashtext(\'fotos-avaliacao:\' || v_conta));')
+    expect(gatilho).toContain('if v_bytes_no_plano + v_tamanho > 8388608 then')
+    expect(gatilho).toContain('security definer')
+    expect(semComentarios).toContain('revoke all on function public.limite_de_arquivos_da_avaliacao() from public, anon, authenticated;')
+  })
+
+  it('o código é de usuário: 5 caracteres, fora das classes do Postgres (não começa por número)', () => {
+    expect('MN001').toMatch(/^[A-Z][A-Z0-9]{4}$/)
+  })
+
+  it('não mexe no gatilho, no balde nem nas políticas do 018: só troca o corpo da função', () => {
+    expect(foraDasFuncoes).not.toMatch(/\b(create trigger|drop trigger|create policy|drop policy|storage\.buckets)\b/i)
+  })
+
+  it('a conferência do fim mostra o código novo', () => {
+    expect(conferencia).toContain("position('MN001' in prosrc) > 0")
+  })
+})

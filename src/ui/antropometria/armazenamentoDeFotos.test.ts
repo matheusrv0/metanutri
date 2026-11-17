@@ -76,6 +76,12 @@ describe('a recusa do envio (D-1547)', () => {
     expect(await enviar({ erro: recusa(500, '500', 'database error, code: 53100', 'DatabaseError') })).toBe('conta-cheia')
   })
 
+  it('CB-1499 e D-1550: "code: MN001" (o código do 019) também é a conta cheia; um parecido, não', async () => {
+    expect(await enviar({ erro: recusa(500, '500', 'database error, code: MN001', 'DatabaseError') })).toBe('conta-cheia')
+    expect(await enviar({ erro: recusa(500, '500', 'database error, code: MN0011') })).toBe('recusado')
+    expect(await enviar({ erro: recusa(500, '500', 'database error, code: MN002') })).toBe('recusado')
+  })
+
   it('CB-1415 e D-1547: 401, o 403 do token e o token recusado são a sessão vencida', async () => {
     // O formato real do token vencido, da sonda r3b (storage-api v1.79.36): 400, `statusCode` "403" e `AccessDenied`.
     expect(await enviar({ erro: recusa(400, '403', '"exp" claim timestamp check failed', 'AccessDenied') })).toBe('sessao')
