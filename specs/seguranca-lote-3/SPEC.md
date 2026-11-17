@@ -33,7 +33,7 @@ reenvio do código. Conferir o código de 8 dígitos não exige verificação, e
 - **CA-461** · Dado que o script da verificação não carrega (rede ou bloqueador), quando a pessoa clica no botão, então o pedido segue sem a verificação (D-119). Se o servidor exigir a verificação, a tela diz "A verificação de segurança não carregou. Confira a internet ou desative o bloqueador e recarregue a página."
 - **CA-462** · Dado que o Cloudflare pede um clique, então a verificação aparece logo acima do botão, em português e no tema do site.
 - **CA-463** · Dado o site sem a chave pública (`VITE_TURNSTILE_SITE_KEY` vazia), então nenhuma verificação aparece e os pedidos seguem como hoje.
-- **CA-464** · Dado a Política de privacidade, então ela diz que o Cloudflare Turnstile recebe dados técnicos do navegador nas telas de conta, para separar pessoas de robôs.
+- **CA-464** · Dado a Política de privacidade, então ela diz que o Cloudflare Turnstile recebe dados técnicos do navegador nas telas de conta e em "Recuperar meu link", para separar pessoas de robôs. *Nota de 16/11/2026: o "e em 'Recuperar meu link'" entrou com a spec `lado-do-paciente` (D-1259 e D-1275), que pôs o Turnstile também nessa tela.*
 
 ## 3. Casos de borda
 
