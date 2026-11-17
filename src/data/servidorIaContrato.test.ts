@@ -341,6 +341,50 @@ describe('CA-2390 e D-1337: a limpeza custa pouco em qualquer texto', () => {
     expect(lido.restricoes.naoGosta[0]).toBe('x0')
   })
 
+  it('CA-2423 (D-1372): o item de "Meus alimentos" com números inválidos não chega a ter o nome limpo', () => {
+    let nomesLidos = 0
+    const invalido = (kcal: unknown) => ({
+      id: PRIMEIRO_ID_DE_MEU_ALIMENTO + 1,
+      get nome() {
+        nomesLidos += 1
+        return 'Pão caseiro'
+      },
+      get grupo() {
+        nomesLidos += 1
+        return 'Cereais'
+      },
+      kcal,
+      p: 1,
+      c: 1,
+      g: 1,
+    })
+    const pedido = limpo({ ...PEDIDO_BASE, meusAlimentos: [invalido('x'), invalido(-1), invalido(5000), invalido(null)] })
+    expect(pedido.meusAlimentos).toEqual([])
+    expect(nomesLidos).toBe(0)
+  })
+
+  it('CA-2423 (D-1372): 63 KB de itens inválidos de "Meus alimentos" com nomes longos, em poucos milissegundos', () => {
+    const nome = 'ﷺ'.repeat(60)
+    const itens = Array.from({ length: 300 }, (_, i) => ({ id: PRIMEIRO_ID_DE_MEU_ALIMENTO + i, nome, grupo: nome, kcal: 'x', p: 1, c: 1, g: 1 }))
+    const corpo = { ...PEDIDO_BASE, meusAlimentos: itens }
+    expect(JSON.stringify(corpo).length).toBeLessThan(65_536)
+    expect(medir(() => limparPedido(corpo))).toBeLessThan(POUCOS_MS)
+    expect(limpo(corpo).meusAlimentos).toEqual([])
+  })
+
+  it('CA-2423: a resposta da IA de 128 mil caracteres é conferida em menos de 1 s', () => {
+    const ponto = (base: string) => base.repeat(Math.ceil(43_000 / base.length)).slice(0, 43_000)
+    const grande = JSON.stringify({
+      refeicoes: [{ refeicao: 0, principal: [{ alimentoId: 53, gramas: 50 }], opcao2: [] }],
+      mudancas: [],
+      pontosAConfirmar: [ponto('Confirme 1.800 kcal; ligue 11 98765-4321. '), ponto('a.'), ponto('ﷺ')],
+    })
+    expect(grande.length).toBeGreaterThan(128_000)
+    const contexto: ContextoDaResposta = { modo: 'gerar', refeicoes: 1, idsPermitidos: new Set([53]), plano: null }
+    expect(medir(() => conferirResposta(grande, contexto))).toBeLessThan(1000)
+    expect(conferirResposta(grande, contexto).ok).toBe(true)
+  })
+
   it('o corte antes de limpar não deixa meia palavra no fim', () => {
     // Limite 20, corte prévio em 40: o 40º caractere cai no meio do e-mail. Sem voltar ao espaço, "fulan" chegaria à IA,
     // porque o endereço web antes dele encolhe para "[removido]".
