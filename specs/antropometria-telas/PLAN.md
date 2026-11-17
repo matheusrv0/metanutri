@@ -424,6 +424,25 @@ bloqueada).
 commit `docs` das decisões. As sondas do revisor que afirmavam o defeito (S4, S10 e S12) agora falham na asserção do
 defeito, e as contraprovas (os mesmos cenários com a asserção corrigida, fora do repositório) passam.
 
+## Validação da rodada de melhorias (M1 a M8, 16/11/2026)
+
+M1 a M8 em cima de 15715f95, no ramo `melhorias-paciente-fotos` (junto da rodada do `lado-do-paciente`). O banco é o
+`supabase/019-ajustes.sql`; o 018 não mudou.
+- `npm run lint`: 0 erro (o aviso antigo de `linkDeTeste.test-utils.tsx`). `npm run typecheck`: limpo. `npm run build`:
+  limpo.
+- `npx vitest run --maxWorkers=4`: 474 arquivos, 8.594 testes verdes e 2 pulados.
+- e2e completo, com a `trava-e2e` e `--workers=2`: 525 de 528 na rodada inteira. Caíram o e2e das fotos (390 e 1440
+  px), que esperava "Ver fotos de hoje" numa avaliação gravada com 03/11/2026 (corrigido para aceitar "desta
+  avaliação", D-1553), e o `site/mudanca.spec.ts` no Firefox, por tempo (o `page.goto` e o fim do contexto passaram de 60
+  s com a máquina cheia). Repetidos: as fotos, 2 de 2 (390 e 1440 px); o `mudanca` caiu de novo no Firefox junto com outro arquivo, só no fim do
+  contexto, e sozinho deu 2 de 2.
+- `npm run test:csp` (com a `trava-csp`): 3 de 3.
+- `npm run test:seguranca` (com a `trava-ataques`, o 001 ao 019): 407 de 407 em 13 arquivos.
+
+**Divergências que ficam:** o e2e das fotos grava a avaliação com a data fixa de 03/11/2026 e por isso, desde a D-1553,
+aceita "de hoje" ou "desta avaliação". A redução na abertura (D-1552) só se confere no <canvas> de verdade pelo e2e, que
+usa fotos pequenas; a conta do tamanho guardado continua pela foto aberta.
+
 ## Matriz CA × teste
 
 Preenchida na validação (T26). Da F1 já feita: CA-2449 a CA-2456 e CB-1412 em `src/ui/antropometria/historico.test.tsx`;

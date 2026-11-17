@@ -925,3 +925,33 @@ de 2026". O "ou" da busca de substitutos entrou no desenho novo do Plano do link
   issued at future", porque o relógio do contêiner estava atrás do da máquina. Rodado sozinho, `avisos.test.ts` deu 33
   de 33, e a sonda da r4 deu "nenhum furo".
 - O SQL deste ramo continua sendo um só, o `supabase/017-lado-do-paciente.sql`. A `main` não o tem e não mexeu nele.
+
+### 10.6 A validação da rodada de melhorias (16/11/2026)
+
+T77 a T87 em cima de 15715f95 (a `main` no ar). O banco desta rodada é o `supabase/019-ajustes.sql`; o 017 não mudou.
+- `npm run lint`: 0 erro (o aviso antigo de `linkDeTeste.test-utils.tsx`). `npm run typecheck`: limpo. `npm run build`:
+  limpo.
+- `npx vitest run --maxWorkers=4`: 474 arquivos, 8.594 testes verdes e 2 pulados.
+- e2e completo, com a `trava-e2e` e `--workers=2`: 525 de 528 na rodada inteira. Caíram o e2e das fotos (390 e 1440
+  px), que esperava "Ver fotos de hoje" numa avaliação gravada com 03/11/2026 (corrigido para aceitar "desta
+  avaliação", D-1553), e o `site/mudanca.spec.ts` no Firefox, por tempo (o `page.goto` e o fim do contexto passaram de 60
+  s com a máquina cheia). Repetidos: as fotos, 2 de 2 (390 e 1440 px); o `mudanca` caiu de novo no Firefox junto com outro arquivo, só no fim do
+  contexto, e sozinho deu 2 de 2.
+- `npm run test:csp` (com a `trava-csp`): 3 de 3.
+- `npm run test:seguranca` (com a `trava-ataques`, o 001 ao 019): 407 de 407 em 13 arquivos.
+
+**Achados da validação, corrigidos:**
+- **O teste do N1 (`avisos.test.ts`, CA-2267) caía às segundas-feiras.** A rodada da manhã do teste de cima (HOJE + 7,
+  também uma segunda) já mandava o N1 daquele dia, e o teste via dois. Ele passou a contar só o que as duas chamadas dele
+  mandam. Não era erro do código.
+- **O CA-2225 de `ladoDoPaciente.test.ts` roda o 017 de novo**, o que voltava a troca do endereço à versão do 017 para o
+  resto do arquivo. O teste agora roda o 019 logo depois, como o cabeçalho do 019 manda.
+
+**Divergências que ficam:**
+- Com o Resend mais lento que 1,5 s, a resposta do "Receber" com e-mail digitado volta a ter diferença de tempo entre o
+  bloqueado e os outros (D-1267). O pedido pede o token do link e conta nos 3 do dia.
+- Os CA-2300 a CA-2312 desta SPEC e os da `assistente-ia` usam os mesmos números (de antes desta rodada). Os critérios
+  novos daqui são CB.
+- A regra `chaves_de_aviso_aceite_com_endereco` continua `not valid` (leve 4 da r3): o 017 rodou numa base sem chave
+  antiga, e nada a valida de propósito.
+
