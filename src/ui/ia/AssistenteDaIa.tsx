@@ -167,6 +167,9 @@ export function AssistenteDaIa(p: AssistenteDaIaProps) {
   const [erroLocal, setErroLocal] = useState<Erro | null>(null)
   // D-1369: a frase do limite só entra na região viva depois da releitura do contador ao abrir.
   const [usoRelido, setUsoRelido] = useState(true)
+  // D-1364 e D-1369 (L1): a gaveta que reabre na volta ao plano nasce com a região vazia; a frase guardada (o erro ou o
+  // limite) entra depois da releitura do contador, para o leitor de tela anunciar.
+  const [voltaPronta, setVoltaPronta] = useState(() => lembrada === null)
   // D-1359: o botão que abriu a gaveta, para o foco voltar a ele quando ela fecha. A gaveta reaberta (D-1366) não foi
   // aberta por um clique: vale o botão do modo dela, que se anota quando aparece.
   const quemAbriu = useRef<HTMLElement | null>(null)
@@ -187,7 +190,7 @@ export function AssistenteDaIa(p: AssistenteDaIaProps) {
   }, [dono, desfazer])
   // A gaveta reaberta relê o contador, como ao abrir (CB-1300).
   useEffect(() => {
-    if (lembrada) void sugestao.lerUso()
+    if (lembrada) void sugestao.lerUso().then(() => setVoltaPronta(true))
     // eslint-disable-next-line react-hooks/exhaustive-deps -- uma leitura só, a da volta ao plano
   }, [])
 
@@ -578,7 +581,7 @@ export function AssistenteDaIa(p: AssistenteDaIaProps) {
     }
   }
 
-  const gaveta = lugar && aberta ? <GavetaIa titulo={titulo} lugar={lugar} aoFechar={fechar} quemAbriu={quemAbriu} aviso={<ErroDaIa erro={aviso} aoVerPlanos={p.aoVerPlanos} />} corpo={corpo} rodape={rodape} /> : null
+  const gaveta = lugar && aberta ? <GavetaIa titulo={titulo} lugar={lugar} aoFechar={fechar} quemAbriu={quemAbriu} aviso={<ErroDaIa erro={voltaPronta ? aviso : null} aoVerPlanos={p.aoVerPlanos} />} corpo={corpo} rodape={rodape} /> : null
 
   const vaiParaTextos = mudancas && lugar !== null ? textosDoVaiPara(mudancas, recusadas, buscarAlimento) : null
   const extras: ExtrasDoPlano = {

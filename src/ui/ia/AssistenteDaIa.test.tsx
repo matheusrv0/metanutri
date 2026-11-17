@@ -595,6 +595,56 @@ describe('AssistenteDaIa: a frase do limite ao reabrir (CA-2420, D-1369)', () =>
   })
 })
 
+describe('AssistenteDaIa: a frase do limite na gaveta que reabre (CA-2420, L1)', () => {
+  /** A função recusa (422) ou cai (503); o contador vem 19 na abertura e 20 na volta, que espera até `soltar`. */
+  const comVolta = (falha: { readonly status: number; readonly codigo: string }) => {
+    let leituras = 0
+    let soltar: () => void = () => {}
+    const deps: DependenciasDaSugestao = {
+      chamar: vi.fn(async (_n: string, c: Record<string, unknown>) => {
+        if (c['modo'] !== 'uso') return { dados: null, falha: { ...falha, erro: null } }
+        leituras += 1
+        if (leituras === 2) await new Promise<void>((r) => (soltar = r))
+        return { dados: { uso: { ...USO, usados: leituras === 1 ? 19 : 20 } }, falha: null }
+      }),
+      salvarAgora: vi.fn(async () => true),
+      online: () => true,
+    }
+    return { deps, soltar: () => soltar() }
+  }
+
+  it('CA-2420: "Voltar ao pedido", sair e voltar com o mês cheio: a região nasce vazia e recebe a frase do limite', async () => {
+    const usuario = userEvent.setup()
+    const { deps, soltar } = comVolta({ status: 422, codigo: 'recusa' })
+    montar(deps)
+    await usuario.click(screen.getByRole('button', { name: 'Sugerir plano com IA' }))
+    await waitFor(() => expect(screen.getByText(/^19 de 20 sugestões em /)).toBeInTheDocument())
+    await usuario.click(screen.getByRole('button', { name: 'Sugerir plano' }))
+    await usuario.click(await screen.findByRole('button', { name: 'Voltar ao pedido' }))
+    await usuario.click(screen.getByRole('button', { name: 'sair do plano' }))
+    await usuario.click(screen.getByRole('button', { name: 'voltar ao plano' }))
+    const regiao = within(screen.getByRole('complementary', { name: 'Sugerir plano com IA' })).getByRole('status')
+    expect(regiao).toHaveTextContent(/^$/)
+    await act(async () => soltar())
+    await waitFor(() => expect(regiao).toHaveTextContent(/^As 20 sugestões de .+ foram usadas\./))
+  })
+
+  it('D-1364: o erro guardado também entra na região depois que a gaveta reabre, não na primeira pintura', async () => {
+    const usuario = userEvent.setup()
+    const { deps, soltar } = comVolta({ status: 503, codigo: 'indisponivel' })
+    montar(deps)
+    await usuario.click(screen.getByRole('button', { name: 'Sugerir plano com IA' }))
+    await usuario.click(screen.getByRole('button', { name: 'Sugerir plano' }))
+    await screen.findByText('As sugestões com IA estão indisponíveis agora. Tente mais tarde.')
+    await usuario.click(screen.getByRole('button', { name: 'sair do plano' }))
+    await usuario.click(screen.getByRole('button', { name: 'voltar ao plano' }))
+    const regiao = within(screen.getByRole('complementary', { name: 'Sugerir plano com IA' })).getByRole('status')
+    expect(regiao).toHaveTextContent(/^$/)
+    await act(async () => soltar())
+    await waitFor(() => expect(regiao).toHaveTextContent('As sugestões com IA estão indisponíveis agora. Tente mais tarde.'))
+  })
+})
+
 describe('AssistenteDaIa: "Gerar de novo" e a proposta vazia (CA-2414, CA-2415, D-1365)', () => {
   it('CA-2414: com a autorização revogada, "Gerar de novo" desliga com o motivo e nada é pedido', async () => {
     const usuario = userEvent.setup()
