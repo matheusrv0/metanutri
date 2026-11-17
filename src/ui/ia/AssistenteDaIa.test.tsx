@@ -402,6 +402,23 @@ describe('AssistenteDaIa: a sugestão espera pelo plano de origem (CA-2416 a CA-
     expect(screen.queryByRole('complementary')).not.toBeInTheDocument()
   })
 
+  it('CA-2428: o plano mudou depois da IA; a faixa e o "Desfazer" somem, na mesma visita e na volta', async () => {
+    const usuario = userEvent.setup()
+    montar(dependencias(), PLANO_VAZIO)
+    await usuario.click(screen.getByRole('button', { name: 'Sugerir plano com IA' }))
+    await usuario.click(screen.getByRole('button', { name: 'Sugerir plano' }))
+    await usuario.click(await screen.findByRole('button', { name: 'Usar como rascunho' }))
+    expect(screen.getByText('Sugestão da IA no plano, como rascunho.')).toBeInTheDocument()
+    await usuario.click(screen.getByRole('button', { name: 'mexer no plano' }))
+    const editado = screen.getByTestId('plano').textContent
+    expect(screen.queryByText('Sugestão da IA no plano, como rascunho.')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Desfazer' })).not.toBeInTheDocument()
+    await usuario.click(screen.getByRole('button', { name: 'sair do plano' }))
+    await usuario.click(screen.getByRole('button', { name: 'voltar ao plano' }))
+    expect(screen.queryByRole('button', { name: 'Desfazer' })).not.toBeInTheDocument()
+    expect(screen.getByTestId('plano').textContent).toBe(editado)
+  })
+
   it('CA-2418: a faixa e o "Desfazer" esperam pelo plano; de volta, desfazem o plano e a marca da IA', async () => {
     const usuario = userEvent.setup()
     montar(dependencias(), PLANO_VAZIO)

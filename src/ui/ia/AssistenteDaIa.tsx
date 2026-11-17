@@ -139,6 +139,8 @@ interface Desfazer {
   readonly plano: Plano
   readonly origemIa: OrigemIa | null
   readonly texto: string
+  /** D-1367: o plano como a IA o deixou, em texto; mudou depois, o "Desfazer" apagaria a edição e some. */
+  readonly planoDaIa: string
 }
 /** D-1367: a faixa com "Desfazer" também espera pelo plano. */
 const desfazeresLembrados = criarMemoriaDaAba<Desfazer>()
@@ -346,21 +348,25 @@ export function AssistenteDaIa(p: AssistenteDaIaProps) {
     // D-1356: a proposta pedida para outro caso ou paciente não entra neste plano.
     if (!proposta || !resposta || pedido?.dono !== dono || proposta.refeicoes.every((r) => r.principal.length === 0)) return
     if (temItens(plano) && !confirmando) return setConfirmando(true)
-    setDesfazer({ dono, plano, origemIa: caso.origemIa, texto: RASCUNHO })
-    p.aoAlterarPlano(propostaParaPlano(proposta, idNovo))
+    const novo = propostaParaPlano(proposta, idNovo)
+    setDesfazer({ dono, plano, origemIa: caso.origemIa, texto: RASCUNHO, planoDaIa: JSON.stringify(novo) })
+    p.aoAlterarPlano(novo)
     p.aoAlterarCaso({ origemIa: marcarIa(resposta.modelo) })
     fechar()
   }
   const aplicar = () => {
     if (!mudancas || !resposta || !pedido || pedido.dono !== dono || aceitas.size === 0) return
     if (JSON.stringify(plano) !== pedido.assinaturaDoPlano) return setErroLocal(PLANO_MUDOU)
-    setDesfazer({ dono, plano, origemIa: caso.origemIa, texto: aceitas.size === 1 ? '1 mudança aplicada.' : `${aceitas.size} mudanças aplicadas.` })
-    p.aoAlterarPlano(aplicarMudancas(plano, mudancas, aceitas, idNovo))
+    const novo = aplicarMudancas(plano, mudancas, aceitas, idNovo)
+    setDesfazer({ dono, plano, origemIa: caso.origemIa, texto: aceitas.size === 1 ? '1 mudança aplicada.' : `${aceitas.size} mudanças aplicadas.`, planoDaIa: JSON.stringify(novo) })
+    p.aoAlterarPlano(novo)
     p.aoAlterarCaso({ origemIa: marcarIa(resposta.modelo) })
     fechar()
   }
+  // D-1356 e D-1367: a faixa e o "Desfazer" só valem no plano de origem e enquanto ele é o que a IA deixou.
+  const desfazerVale = desfazer !== null && desfazer.dono === dono && desfazer.planoDaIa === JSON.stringify(plano)
   const desfazerAgora = () => {
-    if (!desfazer || desfazer.dono !== dono) return
+    if (!desfazer || !desfazerVale) return
     p.aoAlterarPlano(desfazer.plano)
     p.aoAlterarCaso({ origemIa: desfazer.origemIa })
     setDesfazer(null)
@@ -581,7 +587,7 @@ export function AssistenteDaIa(p: AssistenteDaIaProps) {
     topo: (
       <>
         {lugar === 'fluxo' ? gaveta : null}
-        {desfazer && desfazer.dono === dono ? <FaixaDaIa texto={desfazer.texto} aoDesfazer={desfazerAgora} /> : null}
+        {desfazer && desfazerVale ? <FaixaDaIa texto={desfazer.texto} aoDesfazer={desfazerAgora} /> : null}
       </>
     ),
     vaiPara: vaiParaTextos
