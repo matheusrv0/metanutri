@@ -21,7 +21,8 @@ it('CA-1900: "Importar planilha" em Pacientes abre #/pacientes/importar no passo
   // Na lista vazia, o botão aparece no topo e no convite a cadastrar (CA-1901); o do topo basta.
   await userEvent.click(screen.getAllByRole('button', { name: 'Importar planilha' })[0] as HTMLElement)
   expect(window.location.hash).toBe('#/pacientes/importar')
-  expect(await screen.findByRole('heading', { level: 2, name: 'Solte a planilha aqui' })).toBeInTheDocument()
+  // D-923: o pedaço separado da tela leva de 0,5 a 0,7 s com a máquina livre, e passa de 1 s com outras suítes rodando.
+  expect(await screen.findByRole('heading', { level: 2, name: 'Solte a planilha aqui' }, { timeout: 5000 })).toBeInTheDocument()
   expect(screen.getByRole('heading', { level: 1, name: 'Importar planilha' })).toBeInTheDocument()
   expect(document.title).toBe('Importar planilha · MetaNutri')
   const menu = screen.getAllByRole('navigation', { name: 'Menu principal' })[0]
