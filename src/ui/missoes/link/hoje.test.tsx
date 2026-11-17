@@ -63,7 +63,8 @@ describe('CA-2203 e CA-2205: marcar', () => {
     const agua = screen.getByRole('button', { name: /litros de água/ })
     await usuario.click(agua)
     expect(agua).toHaveAttribute('aria-pressed', 'true')
-    expect(agua).toHaveAccessibleName('Beber cerca de 2,2 litros de água, feita')
+    // CB-1236 e D-1268: o estado vem só do pressionado; o nome é o da missão.
+    expect(agua).toHaveAccessibleName('Beber cerca de 2,2 litros de água')
     expect(agua.closest('li')?.className).toContain('bg-lightsuccess')
     expect(agua.querySelector('svg path')).not.toBeNull()
     expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '1')

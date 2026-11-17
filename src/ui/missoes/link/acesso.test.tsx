@@ -11,9 +11,10 @@ describe('CA-2217: o leitor de tela', () => {
     expect(within(barra).getByRole('link', { current: 'page' })).toHaveTextContent('Hoje')
   })
 
-  it('CA-2217: a missão é botão de alternar com o nome e o estado ("Almoço por volta das 12h30, feita")', () => {
+  it('CA-2217, CB-1236 e D-1268: a missão é botão de alternar com o nome, e o estado vem só do pressionado', () => {
     abrirLink(linkDeTeste({ marcacoes: [{ dia: HOJE, feitas: ['refeicao-almoco'] }] }))
-    const almoco = screen.getByRole('button', { name: 'Almoço por volta das 12h30, feita' })
+    const almoco = screen.getByRole('button', { name: 'Almoço por volta das 12h30', pressed: true })
+    expect(screen.queryByRole('button', { name: /, feita$/ })).not.toBeInTheDocument()
     expect(almoco).toHaveAttribute('aria-pressed', 'true')
     expect(almoco).toHaveAccessibleDescription('Refeição do plano')
     expect(screen.getByRole('button', { name: 'Lanche por volta das 16h' })).toHaveAttribute('aria-pressed', 'false')
@@ -37,7 +38,7 @@ describe('CA-2217: o leitor de tela', () => {
     const cafe = screen.getByRole('button', { name: 'Café da manhã por volta das 7h' })
     cafe.focus()
     await usuario.keyboard(' ')
-    expect(screen.getByRole('button', { name: 'Café da manhã por volta das 7h, feita' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: 'Café da manhã por volta das 7h' })).toHaveAttribute('aria-pressed', 'true')
     await usuario.tab()
     expect(screen.getByRole('button', { name: 'Ver o café da manhã no plano' })).toHaveFocus()
   })

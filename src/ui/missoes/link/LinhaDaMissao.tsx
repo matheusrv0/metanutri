@@ -15,7 +15,7 @@ interface LinhaDaMissaoProps {
 
 /**
  * Uma missão de Hoje (D-1203 a D-1205, CA-2203 e CA-2217): um botão de alternar de 64 px, com o nome e o estado para o
- * leitor de tela ("Almoço por volta das 12h, feita"), e o "Ver" de 44 px separado, que nunca marca. Feita, a linha fica
+ * leitor de tela pelo botão pressionado (D-1268), e o "Ver" de 44 px separado, que nunca marca. Feita, a linha fica
  * no verde de "feita", que não é a cor da marca (CA-1965).
  */
 export function LinhaDaMissao({ missao, acabouDeMarcar, aoAlternar, ver }: LinhaDaMissaoProps) {
@@ -30,7 +30,7 @@ export function LinhaDaMissao({ missao, acabouDeMarcar, aoAlternar, ver }: Linha
       <button
         type="button"
         aria-pressed={missao.feita}
-        aria-label={missao.feita ? `${missao.texto}, feita` : missao.texto}
+        aria-label={missao.texto}
         aria-describedby={idOrigem}
         onClick={() => aoAlternar(missao.id, !missao.feita)}
         className={cn(
