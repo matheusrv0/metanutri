@@ -9,8 +9,13 @@ import type { DesenhistaDeFoto, FotoAberta } from '@/domain/fotosDaAvaliacao.ts'
 const FUNDO_DO_JPEG = 'white'
 
 export const desenhistaDoNavegador: DesenhistaDeFoto = {
-  async abrir(arquivo) {
-    const bitmap = await createImageBitmap(arquivo, { imageOrientation: 'from-image' })
+  async abrir(arquivo, larguraDeAbertura) {
+    // D-1552: a foto grande abre já reduzida (uma de 8000 × 6000 inteira ocupa uns 190 MB de memória). Só a largura: a
+    // proporção fica a da foto, girada ou não; o navegador que não reduz abre inteira.
+    const bitmap = await createImageBitmap(arquivo, {
+      imageOrientation: 'from-image',
+      ...(larguraDeAbertura === null ? {} : { resizeWidth: larguraDeAbertura, resizeQuality: 'high' as const }),
+    })
     const aberta: FotoAberta = {
       largura: bitmap.width,
       altura: bitmap.height,

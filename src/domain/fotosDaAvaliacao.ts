@@ -95,6 +95,16 @@ export function ladosDaCopia(largura: number, altura: number): { readonly largur
   return { largura: Math.max(1, Math.round(largura * escala)), altura: Math.max(1, Math.round(altura * escala)) }
 }
 
+/**
+ * D-1552 e CB-1501: a largura com que o navegador abre a foto, já reduzida, quando o lado maior do cabeçalho passa de
+ * 1600 px: a que leva o lado maior a 1600, arredondada para cima (a foto aberta nunca fica menor que a guardada). Nula: a
+ * foto abre inteira. Só a largura vai ao navegador, para a proporção ficar a da foto, girada ou não.
+ */
+export function larguraDeAbertura(largura: number, altura: number): number | null {
+  const maior = Math.max(largura, altura)
+  return maior > LADO_DA_FOTO ? Math.ceil((largura * LADO_DA_FOTO) / maior) : null
+}
+
 /** D-1451: o que a avaliação já usa, fotos e anexos somados. */
 export function bytesUsados(avaliacao: DadosDaAvaliacao): number {
   return [...(avaliacao.fotos ?? []), ...(avaliacao.anexos ?? [])].reduce((soma, a) => soma + (Number.isFinite(a.bytes) && a.bytes > 0 ? a.bytes : 0), 0)
@@ -180,8 +190,11 @@ export interface FotoAberta {
 
 /** Quem abre e redesenha a foto: o <canvas> na interface; um falso nos testes. */
 export interface DesenhistaDeFoto {
-  /** Rejeita quando a foto não abre. */
-  abrir(arquivo: Blob): Promise<FotoAberta>
+  /**
+   * Rejeita quando a foto não abre. Com `larguraDeAbertura`, o navegador abre a foto já nessa largura (D-1552); quem não
+   * reduz abre inteira, e os lados da foto aberta dizem o que veio.
+   */
+  abrir(arquivo: Blob, larguraDeAbertura: number | null): Promise<FotoAberta>
 }
 
 export type EnvioDoArquivo = { readonly tipo: 'ok'; readonly arquivo: ArquivoDaAvaliacao } | { readonly tipo: 'erro'; readonly mensagem: string }
@@ -257,7 +270,8 @@ export async function enviarFoto(entrada: EntradaDaFoto, porta: ArmazenamentoDeF
   if (conferida.tipo === 'erro') return conferida
   let blob: Blob
   try {
-    const aberta = await desenhista.abrir(entrada.arquivo)
+    const cabecalho = ladosPeloCabecalho(entrada.bytes, conferida.mime)
+    const aberta = await desenhista.abrir(entrada.arquivo, cabecalho ? larguraDeAbertura(cabecalho.largura, cabecalho.altura) : null)
     if (!(aberta.largura > 0) || !(aberta.altura > 0)) return erro(FRASES.leitura)
     const lados = ladosDaCopia(aberta.largura, aberta.altura)
     blob = await aberta.desenharJpeg(lados.largura, lados.altura, QUALIDADE_DA_FOTO)
