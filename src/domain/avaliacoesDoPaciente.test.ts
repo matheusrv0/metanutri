@@ -75,3 +75,23 @@ describe('duas avaliações no mesmo dia na lista (spec antropometria-telas, D-1
     expect(rotulosDaLista([{ casoId: 'x', data: '' }])).toEqual(['Avaliação de data não informada'])
   })
 })
+
+describe('CB-1505 e D-1556: "2ª do dia" pela ordem de criação', () => {
+  it('CB-1505: a criada antes é a 1ª do dia, mesmo editada depois da outra; editar não troca os números', () => {
+    const lista = avaliacoesDoPaciente('p1', [
+      // A da manhã foi criada antes e editada por último (às 19h); a da tarde, criada às 15h.
+      salvo('manha', { dataConsulta: '2026-11-03', criadoEm: '2026-11-03T12:00:00.000Z' }, '2026-11-03T22:00:00.000Z'),
+      salvo('tarde', { dataConsulta: '2026-11-03', criadoEm: '2026-11-03T18:00:00.000Z' }, '2026-11-03T18:30:00.000Z'),
+    ])
+    expect(lista.map((a) => a.casoId)).toEqual(['tarde', 'manha'])
+    expect(rotulosDaLista(lista)).toEqual(['Avaliação de 03/11/2026 · 2ª do dia', 'Avaliação de 03/11/2026 · 1ª do dia'])
+  })
+
+  it('CB-1505: o plano de antes, sem a data de criação, usa a última alteração, como antes', () => {
+    const lista = avaliacoesDoPaciente('p1', [
+      salvo('antigo', { dataConsulta: '2026-11-03' }, '2026-11-03T20:00:00.000Z'),
+      salvo('novo', { dataConsulta: '2026-11-03', criadoEm: '2026-11-03T19:00:00.000Z' }, '2026-11-03T23:00:00.000Z'),
+    ])
+    expect(lista.map((a) => a.casoId)).toEqual(['antigo', 'novo'])
+  })
+})

@@ -272,3 +272,18 @@ describe('repositório de casos', () => {
     expect(() => repo.renomear('x', 'y')).toThrow(/x/)
   })
 })
+
+describe('CB-1505 e D-1556: o plano guarda quando nasceu', () => {
+  it('CB-1505: criar e duplicar gravam a data e a hora de criação; salvar de novo não a muda', () => {
+    const repo = criarRepositorio(new MemoriaFalsa(), { agora: relogio(), gerarId: ids() })
+    const criado = repo.criar('Ana')
+    const nasceu = criado.caso.criadoEm
+    expect(nasceu).toMatch(/^\d{4}-\d{2}-\d{2}T/)
+    const salvo = repo.salvar({ ...criado, caso: { ...criado.caso, pesoKg: 60 } })
+    expect(salvo.caso.criadoEm).toBe(nasceu)
+    expect(salvo.atualizadoEm).not.toBe(nasceu)
+    const copia = repo.duplicar(criado.caso.id)
+    expect(copia.caso.criadoEm).toMatch(/^\d{4}-\d{2}-\d{2}T/)
+    expect(copia.caso.criadoEm).not.toBe(nasceu)
+  })
+})

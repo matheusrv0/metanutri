@@ -21,12 +21,18 @@ export function dataDaAvaliacao(r: CasoSalvo): string {
   return Number.isNaN(alterado.getTime()) ? r.atualizadoEm.slice(0, 10) : diaLocal(alterado)
 }
 
-/** D-1404: da avaliação mais nova à mais velha; na mesma data, a alterada por último primeiro. */
+/** D-1556 e CB-1505: a ordem no mesmo dia, pela criação; o plano de antes, sem ela, pela última alteração. */
+const ordemNoDia = (r: CasoSalvo): string => r.caso.criadoEm ?? r.atualizadoEm
+
+/**
+ * D-1404 e D-1556: da avaliação mais nova à mais velha; na mesma data, a criada por último primeiro (editar não muda a
+ * ordem).
+ */
 export function avaliacoesDoPaciente(pacienteId: string, registros: readonly CasoSalvo[]): AvaliacaoNaLista[] {
   return registros
     .filter((r) => r.caso.pacienteId === pacienteId && r.caso.modo === 'completo')
     .map((registro) => ({ casoId: registro.caso.id, data: dataDaAvaliacao(registro), registro }))
-    .sort((a, b) => b.data.localeCompare(a.data) || b.registro.atualizadoEm.localeCompare(a.registro.atualizadoEm))
+    .sort((a, b) => b.data.localeCompare(a.data) || ordemNoDia(b.registro).localeCompare(ordemNoDia(a.registro)))
 }
 
 /** D-1401: a avaliação que a aba "Antropometria" da ficha abre. */
@@ -44,14 +50,14 @@ export function tipoDaAvaliacao(casoId: string, avaliacoes: readonly AvaliacaoNa
 
 /**
  * D-1404 e D-1529: o texto de cada avaliação na lista, na ordem dela. Duas ou mais no mesmo dia levam "· Nª do dia",
- * contadas da alterada antes (a 1ª) à alterada por último, como as colunas do Histórico (CB-1440). O app não guarda a
- * hora da consulta.
+ * contadas da criada antes (a 1ª) à criada por último (D-1556; o plano de antes, pela última alteração), como as
+ * colunas do Histórico (CB-1440). O app não guarda a hora da consulta.
  */
 export function rotulosDaLista(lista: readonly { readonly casoId: string; readonly data: string }[]): string[] {
   return lista.map((a, i) => {
     const rotulo = `Avaliação de ${dataCompleta(a.data) || 'data não informada'}`
     if (lista.filter((b) => b.data === a.data).length < 2) return rotulo
-    // A lista vem da mais nova à mais velha; no mesmo dia, a alterada por último primeiro.
+    // A lista vem da mais nova à mais velha; no mesmo dia, a criada por último primeiro (D-1556).
     const ordem = lista.slice(i).filter((b) => b.data === a.data).length
     return `${rotulo} · ${ordem}ª do dia`
   })
