@@ -372,9 +372,12 @@ describe('a rodada dos avisos (função avisos)', () => {
 
     it('CA-2267, CA-2268 e CA-2276: o N1 vai ao e-mail da conta, como MetaNutri, sem nada do paciente, uma vez por dia', async () => {
       const agora = instanteEmBrasilia(somarDias(HOJE, 8), 7, 0)
+      // Só o que estas duas chamadas mandaram: quando o teste roda numa segunda-feira, a rodada da manhã do teste de cima
+      // (HOJE + 7, também segunda) já manda o N1 daquele dia (D-1237), e o "uma vez por dia" é por dia.
+      const antes = para(c.vitima.email).length
       expect((await rodar('n1', agora)).status).toBe(200)
       expect((await rodar('n1', agora)).status).toBe(200)
-      const recebidos = para(c.vitima.email)
+      const recebidos = para(c.vitima.email).slice(antes)
       expect(recebidos).toHaveLength(1)
       const n1 = recebidos[0]?.email
       expect(n1?.from).toBe(`"MetaNutri" <${REMETENTE}>`)

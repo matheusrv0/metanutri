@@ -252,6 +252,8 @@ describe('o link fixo por paciente (CA-2225, CA-2226)', () => {
     expect(sqlNoBancoLocal(readFileSync(new URL('../../supabase/017-lado-do-paciente.sql', import.meta.url), 'utf8')).ok).toBe(true)
     expect((await linhaDoLink(antigo.id))['substituido_por']).toBe(fixo.id)
     expect((await linhaDoLink(fixo.id))['substituido_por']).toBeNull()
+    // O 017 refaz a troca do endereço na versão dele: o 019 roda logo depois, como o cabeçalho do 019 manda (D-1266).
+    expect(sqlNoBancoLocal(readFileSync(new URL('../../supabase/019-ajustes.sql', import.meta.url), 'utf8')).ok).toBe(true)
   })
 
   it('CA-2226: o limite conta pacientes com link: o substituído não conta, e o terceiro paciente passa do limite', async () => {
