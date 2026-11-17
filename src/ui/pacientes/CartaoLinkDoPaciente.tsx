@@ -102,7 +102,8 @@ export function CartaoLinkDoPaciente({ paciente, link, planoNoLink, emails, aoMu
   const trocarEndereco = async (mandar: boolean) => {
     setTrocando(false)
     setCopiado(false)
-    const novo = regerarLink(link, { missoes: link.missoes })
+    // D-1272: o link leva o nome da ficha.
+    const novo = regerarLink(link, { nome: paciente.nome.trim() || link.nome, missoes: link.missoes })
     setSalvando(true)
     const motivo = await salvar(novo)
     setSalvando(false)

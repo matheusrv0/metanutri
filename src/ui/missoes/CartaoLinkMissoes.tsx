@@ -112,6 +112,8 @@ export function CartaoLinkMissoes({
     (pacienteAtual ? linkDoPaciente(acompanhamentos, pacienteAtual, planos) : null) ?? acompanhamentos.find((a) => a.casoId === casoId) ?? null
   const { emails, recarregar: recarregarEmails } = useEmailsDoLink(acompanhamento?.id ?? null)
   const nomeCurto = primeiroNome(nome)
+  // D-1272 e CB-1240: o link leva o nome da ficha do paciente (o do plano pode ser "Gestante Ana"); sem ficha, o do plano.
+  const nomeDoLink = (pacienteAtual ? fichas?.pacientes.find((p) => p.id === pacienteAtual)?.nome.trim() : undefined) || nome
   const podeAvisar = emails !== null && avisoLigado(emails, 'plano')
   const avisar = avisarEscolha ?? podeAvisar
   const dietaVai = dieta !== undefined && mostrarDieta
@@ -129,7 +131,7 @@ export function CartaoLinkMissoes({
   const gerar = () => {
     setCopiado(false)
     setPedindoConsentimento(false)
-    void gravar(criarAcompanhamento({ casoId, pacienteId: pacienteAtual, nome, missoes, usoNaoComercial: naoComercial, dieta: dieta && mostrarDieta ? copiarDieta(dieta, hoje) : null }))
+    void gravar(criarAcompanhamento({ casoId, pacienteId: pacienteAtual, nome: nomeDoLink, missoes, usoNaoComercial: naoComercial, dieta: dieta && mostrarDieta ? copiarDieta(dieta, hoje) : null }))
   }
 
   /**
@@ -142,7 +144,7 @@ export function CartaoLinkMissoes({
     setTrocando(false)
     setCopiado(false)
     const dietaNova = acompanhamento.dieta && dieta ? { dieta: copiarDieta(dieta, hoje) } : {}
-    const novo = { ...regerarLink(acompanhamento, { nome, missoes, ...dietaNova }), usoNaoComercial: acompanhamento.usoNaoComercial || naoComercial }
+    const novo = { ...regerarLink(acompanhamento, { nome: nomeDoLink, missoes, ...dietaNova }), usoNaoComercial: acompanhamento.usoNaoComercial || naoComercial }
     const motivo = await gravar(novo)
     if (motivo !== null) return
     if (fichaQueFunciona === null || !mandar) {
@@ -159,7 +161,7 @@ export function CartaoLinkMissoes({
   const atualizarComEstePlano = async () => {
     if (!acompanhamento) return
     const motivo = await gravar({
-      ...atualizarComPlano(acompanhamento, { casoId, pacienteId: pacienteAtual, nome, missoes, dieta }, hoje),
+      ...atualizarComPlano(acompanhamento, { casoId, pacienteId: pacienteAtual, nome: nomeDoLink, missoes, dieta }, hoje),
       usoNaoComercial: acompanhamento.usoNaoComercial || naoComercial,
     })
     if (motivo === null && avisar && podeAvisar) {
