@@ -269,7 +269,27 @@ Riscos e decisões para o dono revisar:
 
 - **DP-IA-13.** A lembrança da aba (D-1366) guarda dado do paciente só na memória da página, nunca no navegador nem na
   nuvem; recarregar ou sair apaga.
-- **DP-IA-14.** O custo máximo de uma chamada (D-1373) usa o preço do modelo configurado; a troca automática para um
-  modelo mais caro no meio da chamada fica fora da conta (o teto pode passar por pouco mais que uma chamada).
+- **DP-IA-14.** O custo máximo de uma chamada (D-1373) usa o preço do modelo configurado: US$ 0,85 no Opus 5.5 e
+  US$ 0,43 no Sonnet 5.5. A troca automática de modelo (recusa no meio da resposta) cobra a parte já escrita e a chamada
+  inteira de novo no outro modelo: uma chamada pode custar até 2 vezes o máximo (cerca de 2,25 vezes no Opus, que troca
+  para o Opus 5 ou o 4.8, mais caros). O teto pode passar por isso (revisão das melhorias, B3).
 - **DP-IA-15.** A segunda conferência do teto (D-1373) gasta uma das 10 da hora quando barra: é o preço de não travar a
-  tabela.
+  tabela. Com muitos pedidos no mesmo instante perto do teto, todos podem ser barrados (cada um vê os outros): não gasta
+  dinheiro, e no uso real (pedidos a segundos de distância) é raro (revisão das melhorias, B1).
+- **DP-IA-16.** A reserva presa (D-1373, CB-1303) sai do teto depois de 10 minutos: o que ela gastou de verdade fica sem
+  contar no dia. A trava final é o limite mensal no Console da Anthropic (D-1318); o dono vê e solta as presas pelo SQL
+  Editor (relatório da rodada).
+
+## 12. Correções da revisão das melhorias (16/11/2026)
+
+A revisão `revisao-melhorias-ia` aprovou com 2 médios (M1 e M2) e baixos. Decisões D-1366 a D-1374 atualizadas,
+testes CA-2428 a CA-2431. Uma tarefa por commit, em TDD. Sem SQL.
+
+| Tarefa | Arquivos | CA |
+|---|---|---|
+| T59 — M1: o "Desfazer" some quando o plano mudou | `src/ui/ia/AssistenteDaIa.tsx` (+ teste) | CA-2428, CA-2418 |
+| T60 — M2 e B2: só a reserva viva conta, lida antes da soma | `supabase/functions/_shared/ia.ts`, `src/data/servidorIa.test.ts` | CA-2431, CA-2424 |
+| T61 — B4: a troca de conta esquece a aba | `src/ui/estado/memoriaDaAba.ts` (`useEsquecerAoTrocarDeConta`), `src/App.tsx` (+ teste) | CA-2429 |
+| T62 — B5: café e chás somam com a opção no adequar | `src/domain/iaMudancas.ts` (+ teste) | CA-2430 |
+| T63 — L1: a gaveta que reabre espera a releitura | `src/ui/ia/AssistenteDaIa.tsx` (+ teste) | CA-2420 |
+| T64 — L2: os dois textos | `src/domain/iaGaveta.ts`, `src/ui/ia/AssistenteDaIa.tsx` (+ testes) | CA-2419, CA-2421 |
