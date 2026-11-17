@@ -333,7 +333,7 @@ export function TelaPaciente({
             agora={agora}
           />
           <CartaoProximoEmail link={link} emails={emailsDoLink.emails} proximo={proximo} nomeDoPaciente={paciente.nome} nutricionista={perfilLocal.nome} registro={registro} />
-          <CartaoEnviados emails={emailsDoLink.emails} proximo={proximo} />
+          <CartaoEnviados emails={emailsDoLink.emails} />
         </div>
       ) : null}
 
