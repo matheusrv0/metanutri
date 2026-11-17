@@ -76,6 +76,8 @@ export function grupoDeSubstituicao(a: Alimento): GrupoDeSubstituicao {
 
 /** O tofu e os outros derivados de soja, que a lista de equivalentes põe com os feijões. */
 const DERIVADO_DE_SOJA = /^Soja,|(^|[\s,(])tofu($|[\s,)])/i
+/** O derivado de soja entre as leguminosas (o tofu): a bebida de soja é do grupo dos leites. */
+export const ehDerivadoDeSoja = (a: Alimento): boolean => grupoDeSubstituicao(a).id === 'leguminosa' && DERIVADO_DE_SOJA.test(a.descricao)
 
 /**
  * D-1133, estreitada pela D-1136 (spec busca-substitutos, revisão rodada 4, M1): os grupos em que a própria lista de
@@ -87,7 +89,7 @@ const DERIVADO_DE_SOJA = /^Soja,|(^|[\s,(])tofu($|[\s,)])/i
  */
 export function dispensaOMacroDominante(a: Alimento): boolean {
   const grupo = grupoDeSubstituicao(a).id
-  return grupo === 'leite' || grupo === 'verdura' || (grupo === 'leguminosa' && DERIVADO_DE_SOJA.test(a.descricao))
+  return grupo === 'leite' || grupo === 'verdura' || ehDerivadoDeSoja(a)
 }
 
 /**
