@@ -3,7 +3,7 @@
 // com o banco e o Resend de mentira. Os dias são de novembro de 2026 (dia 1 é domingo); as horas, de Brasília.
 import { beforeEach, describe, expect, it } from 'vitest'
 import type { DependenciasComuns } from '../../supabase/functions/_shared/avisos/comum.ts'
-import { instanteEmBrasilia } from '../../supabase/functions/_shared/avisos/regras.ts'
+import { emBrasilia, instanteEmBrasilia } from '../../supabase/functions/_shared/avisos/regras.ts'
 import { rodarAvisos, type Vez } from '../../supabase/functions/_shared/avisos/rodada.ts'
 import { TETOS_PADRAO } from '../../supabase/functions/_shared/avisos/tetos.ts'
 import type { MarcacaoDia } from '../../supabase/functions/_shared/adesao.ts'
@@ -345,5 +345,23 @@ describe('o resumo da adesão às segundas (D-1231)', () => {
     await rodar('manha', as(9, 8))
     await rodar('manha', as(9, 8, 1))
     expect(tipos()).toEqual(['N1'])
+  })
+
+  it('CA-2313 e D-1266: a segunda do agendamento (o "n1" das 7h duas vezes e a "manha" das 8h) manda 1 N1, e a de 21h30 ainda é segunda', async () => {
+    // O teste de ataque falhou em 16/11 às 21h24: já é terça no UTC, mas o dia dos avisos é o de Brasília (CB-1206).
+    const noite = as(16, 21, 30)
+    expect(noite.toISOString()).toBe('2026-11-17T00:30:00.000Z')
+    expect(emBrasilia(noite)).toMatchObject({ dia: dia(16), diaDaSemana: 1 })
+    comPacientes()
+    // O 017 chama o "n1" às 10h UTC da segunda ('0 10 * * 1'), que são 7h de Brasília da mesma segunda.
+    expect(emBrasilia(new Date('2026-11-23T10:00:00Z'))).toMatchObject({ dia: dia(23), hora: 7, diaDaSemana: 1 })
+    await rodar('n1', as(23, 7))
+    await rodar('n1', as(23, 7))
+    await rodar('manha', as(23, 8))
+    expect(tipos()).toEqual(['N1'])
+    expect(estado.envios.filter((e) => e.tipo === 'N1').map((e) => e.dia)).toEqual([dia(23)])
+    // A segunda seguinte tem o N1 dela.
+    await rodar('n1', as(30, 7))
+    expect(tipos()).toEqual(['N1', 'N1'])
   })
 })

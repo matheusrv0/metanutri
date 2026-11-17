@@ -16,7 +16,7 @@ import { hashDoEmail, mascararEmail } from '../../supabase/functions/_shared/avi
 import { enviarLink } from '../../supabase/functions/_shared/avisos/enviarLink.ts'
 import type { Buscar } from '../../supabase/functions/_shared/avisos/http.ts'
 import { meuLink, type DependenciasDoMeuLink } from '../../supabase/functions/_shared/avisos/meuLink.ts'
-import { emBrasilia, instanteEmBrasilia, somarDias } from '../../supabase/functions/_shared/avisos/regras.ts'
+import { diaDaSemanaDe, emBrasilia, instanteEmBrasilia, somarDias } from '../../supabase/functions/_shared/avisos/regras.ts'
 import { API_DO_RESEND } from '../../supabase/functions/_shared/avisos/resend.ts'
 import { rodarAvisos } from '../../supabase/functions/_shared/avisos/rodada.ts'
 import { receberEventoDoResend } from '../../supabase/functions/_shared/avisos/webhookResend.ts'
@@ -121,6 +121,8 @@ const dependenciasDoWebhook = () => ({
 // ---------- O cenário ----------
 
 const HOJE = emBrasilia(new Date()).dia
+/** A primeira segunda a partir deste dia (ele mesmo, se for segunda): o dia em que o agendamento chama o "n1". */
+const proximaSegunda = (dia: string): string => somarDias(dia, (8 - diaDaSemanaDe(dia)) % 7)
 const sufixo = randomUUID().slice(0, 8)
 const endereco = (nome: string): string => `${nome}.${sufixo}@exemplo.com`
 
@@ -370,11 +372,14 @@ describe('a rodada dos avisos (função avisos)', () => {
       expect(await enviosDo(link)).toEqual([expect.objectContaining({ tipo: 'A2', estado: 'enviado', dia, extra: { dias: 2 } })])
     })
 
-    it('CA-2267, CA-2268 e CA-2276: o N1 vai ao e-mail da conta, como MetaNutri, sem nada do paciente, uma vez por dia', async () => {
-      const agora = instanteEmBrasilia(somarDias(HOJE, 8), 7, 0)
-      expect((await rodar('n1', agora)).status).toBe(200)
-      expect((await rodar('n1', agora)).status).toBe(200)
-      const recebidos = para(c.vitima.email)
+    it('CA-2267, CA-2268, CA-2276 e CA-2313: o N1 vai ao e-mail da conta, como MetaNutri, sem nada do paciente, uma vez por segunda', async () => {
+      // D-1266: o "n1" roda numa segunda, como o agendamento do 017, depois do dia do A2 acima. Se a suíte roda numa
+      // segunda, aquele dia também é segunda, e a "manha" dele já mandou o N1 daquela semana (D-1237): conta só o daqui.
+      const segunda = proximaSegunda(somarDias(HOJE, 8))
+      const antes = para(c.vitima.email).length
+      expect((await rodar('n1', instanteEmBrasilia(segunda, 7, 0))).status).toBe(200)
+      expect((await rodar('n1', instanteEmBrasilia(segunda, 7, 0))).status).toBe(200)
+      const recebidos = para(c.vitima.email).slice(antes)
       expect(recebidos).toHaveLength(1)
       const n1 = recebidos[0]?.email
       expect(n1?.from).toBe(`"MetaNutri" <${REMETENTE}>`)

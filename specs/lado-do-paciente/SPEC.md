@@ -10,6 +10,8 @@ A revisão nº 3 (10/11/2026, r3) trouxe as decisões da seção 1.10 (D-1261 a 
 (CA-2308 a CA-2310).
 A revisão nº 4 (10/11/2026, r4) trouxe as decisões da seção 1.11 (D-1264 e D-1265) e os critérios da seção 2.10
 (CA-2311 e CA-2312).
+A correção de 16/11/2026 (o teste do N1 que falhava às segundas) trouxe a decisão da seção 1.12 (D-1266) e o critério
+da seção 2.11 (CA-2313).
 
 **Pedido do dono (03/11/2026):** "vamos melhorar a visualização da tela que o paciente vê no link que o nutri manda,
 vamos continuar por ali e manter a ideia do link, vamos melhorar os avisos, por email, se o paciente deixar de abrir ou
@@ -191,6 +193,19 @@ antes.
 | D-1264 | **Apagar os e-mails do link segura o link primeiro** (L-r4-1; completa o D-1261). Ao excluir o paciente, o banco segura o link antes de apagar os aceites, os envios, as chaves e o e-mail, na mesma ordem da troca do endereço e do "Confirmar". O "Confirmar" que chegar no meio espera e responde "Este endereço não vale."; o que chegou antes termina, e o apagar leva o que ele gravou. Nenhum dos dois cai por *deadlock* (duas transações esperando uma pela outra) | Na ordem de antes (os aceites e depois as chaves), o apagar e o "Confirmar" do mesmo link, com um aceite ativo igual, esperavam um pelo outro, e o banco derrubava um deles com erro |
 | D-1265 | **O "Confirmar" não manda o link do plano para o e-mail que volta** (L-r4-2; completa o D-1258). Se o endereço confirmado está na lista de bloqueio por devolução, o e-mail passa a valer no link do mesmo jeito, mas o S1 não sai. O marcado como spam continua recebendo o S1, porque foi o próprio paciente que pediu no link (D-1263) | A Política diz que o e-mail que volta não recebe mais nenhum e-mail do MetaNutri (D-1263) |
 
+### 1.12 A correção de 16/11/2026 (o teste do N1)
+
+O teste de ataque do N1 (CA-2267) passou em 04/11 (quarta) e falhou em 16/11 (segunda, 21h24) com dois e-mails no
+lugar de um. A causa é o dia da semana em que o teste roda, não a hora nem o código: o teste do A2 roda a "manha" 7 dias
+depois de hoje, que numa segunda também é segunda e já manda o N1 daquela semana (D-1237); o teste do N1 chamava o "n1"
+no dia seguinte, uma terça, que o agendamento nunca chama, e saía o N1 de outro dia. Em produção, o N1 sai uma vez por
+segunda: o 017 chama o "n1" às 10h UTC da segunda (7h de Brasília), a "manha" das 8h é do mesmo dia de Brasília, e a
+chave única do envio (endereço, N1, dia e conta) não deixa sair duas vezes (CA-2276).
+
+| # | Decisão | Motivo |
+|---|---|---|
+| D-1266 | **O N1 é um por conta e por segunda de Brasília** (completa o D-1231 e o D-1237). O "n1" das 7h, repetido ou não, e a "manha" das 8h da mesma segunda mandam um e-mail só; a segunda seguinte tem o dela. O dia vem sempre do relógio de Brasília: às 21h30 de uma segunda, que já é terça no UTC, ainda é segunda. Quem escolhe a segunda é o agendamento do 017; a função não confere o dia da semana, e os testes chamam o "n1" numa segunda, como o agendamento | O teste chamava o "n1" numa terça e contava o N1 que a "manha" da segunda tinha mandado antes, por isso falhava só quando rodava numa segunda |
+
 ## 2. Critérios de aceite
 
 ### 2.1 A tela do link
@@ -335,6 +350,10 @@ antes.
 
 - **CA-2311** · Dado um link com um aceite ativo e a confirmação aberta do mesmo aviso e do mesmo endereço, quando a nutricionista exclui o paciente (apagar os e-mails do link) e o paciente toca em "Confirmar" ao mesmo tempo, então os dois terminam sem erro; se o apagar chegou antes, o "Confirmar" responde "Este endereço não vale."; e no fim o link fica sem aceites, envios, chaves e e-mail (D-1264).
 - **CA-2312** · Dado um e-mail digitado no link que entrou na lista de bloqueio por devolução depois do pedido, quando o paciente toca em "Confirmar", então o e-mail passa a valer no link e nenhum e-mail sai para ele; se ele foi marcado como spam, o S1 sai (D-1265).
+
+### 2.11 A correção de 16/11/2026 (o teste do N1)
+
+- **CA-2313** · Dado uma conta com pacientes em acompanhamento, quando o agendamento chama o "n1" duas vezes às 7h de uma segunda e a "manha" às 8h da mesma segunda, então sai 1 N1, com o dia daquela segunda; e na segunda seguinte sai o N1 dela. O resultado não muda com a hora em que o teste roda: às 21h30 de Brasília de uma segunda (00h30 UTC de terça), o dia é a segunda (D-1266).
 
 ## 3. Casos de borda
 

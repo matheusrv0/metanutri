@@ -600,6 +600,7 @@ Todo teste leva o ID no nome. "Dono" é conferência que só ele faz (seção 9)
 | CA-2310 | `src/ui/publico/legal.test.tsx` |
 | CA-2311 | `src/data/sqlLadoDoPaciente.test.ts` (texto); `testes/seguranca/ladoDoPaciente.test.ts` (o apagar de verdade e o "Confirmar" ao mesmo tempo, com o apagar parado no meio por uma terceira transação); a parte G5 da sonda da revisão r4 |
 | CA-2312 | `src/data/servidorAvisosResposta.test.ts`; a parte G6 da sonda da revisão r4 |
+| CA-2313 | `src/data/servidorAvisosRodada.test.ts` (a segunda das 7h e das 8h, e as 21h30 de Brasília); `testes/seguranca/avisos.test.ts` (o "n1" numa segunda de verdade, contando só o que sai nele) |
 | CA-2299 | `servidorAvisosTetos.test.ts`, `servidorEnviarLink.test.ts` (o teto e o remetente limpo), `servidorAvisosRodada.test.ts`, `servidorMeuLink.test.ts`; `testes/seguranca/avisos.test.ts` |
 | CA-587 (B6), CB-1228 | `src/ui/pacientes/excluirPaciente.test.tsx` |
 | D-1255 (B10) | `src/domain/conta.test.ts` |
