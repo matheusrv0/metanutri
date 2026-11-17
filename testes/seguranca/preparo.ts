@@ -7,31 +7,28 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { createHash, randomBytes, randomUUID } from 'node:crypto'
 import { expect } from 'vitest'
 import { ambienteLocal, type Ambiente } from './local.ts'
+import { fetchQueAcertaORelogio } from './relogio.ts'
 import { codigoDoApp } from './totp.ts'
 import { CORES_PRONTAS } from '../../src/domain/corDaMarca.ts'
 
 export { ambienteLocal, type Ambiente }
 
-const esperar = (ms: number) => new Promise((resolver) => setTimeout(resolver, ms))
+const SESSAO = { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
 
 /**
- * Repete o pedido que voltou com "JWT issued at future" (PGRST303): o relógio do Docker pode ficar um pouco
- * atrás da hora em que o login assinou o token. Recusado assim, o ataque nem chegou à regra do banco, e a
- * recusa não provaria nada; repetido, ele é de fato avaliado. Qualquer outra resposta volta como veio.
+ * Um cliente cujo pedido recusado com "JWT issued at future" (PGRST303) é repetido (testes/seguranca/relogio.ts):
+ * primeiro com a sessão renovada, que ganha um token assinado no relógio de agora do Docker; sem sessão, esperando.
+ * Recusado assim, o ataque nem chegou à regra do banco, e a recusa não provaria nada.
  */
-const fetchQueEsperaORelogio: typeof fetch = async (entrada, opcoes) => {
-  for (let tentativa = 1; ; tentativa++) {
-    const resposta = await fetch(entrada, opcoes)
-    if (resposta.ok || tentativa >= 40) return resposta
-    const corpo = await resposta.clone().text()
-    if (!/PGRST303|issued at future/i.test(corpo)) return resposta
-    await esperar(250)
+function novoCliente(ambiente: Ambiente, chave: string): SupabaseClient {
+  const deste: { cliente?: SupabaseClient } = {}
+  const renovar = async (): Promise<string | null> => {
+    const auth = deste.cliente?.auth
+    if (!auth || !(await auth.getSession()).data.session) return null
+    return (await auth.refreshSession()).data.session?.access_token ?? null
   }
-}
-
-const OPCOES = {
-  auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
-  global: { fetch: fetchQueEsperaORelogio },
+  deste.cliente = createClient(ambiente.url, chave, { auth: SESSAO, global: { fetch: fetchQueAcertaORelogio(fetch, renovar) } })
+  return deste.cliente
 }
 
 export const BALDE = 'comprovantes'
@@ -107,7 +104,7 @@ async function criarConta(
   falhou(`criar ${email}`, criada.error)
   const id = criada.data.user?.id
   if (!id) throw new Error(`Preparo do cenário: ${email} sem id`)
-  const cliente = createClient(ambiente.url, ambiente.anon, OPCOES)
+  const cliente = novoCliente(ambiente, ambiente.anon)
   const entrou = await cliente.auth.signInWithPassword({ email, password: senha })
   falhou(`entrar com ${email}`, entrou.error)
   return { id, email, senha, cliente }
@@ -115,7 +112,7 @@ async function criarConta(
 
 /** Um cliente novo com uma conta que já existe (para entrar de novo depois de mudar algo). */
 export function clienteSemSessao(ambiente: Ambiente): SupabaseClient {
-  return createClient(ambiente.url, ambiente.anon, OPCOES)
+  return novoCliente(ambiente, ambiente.anon)
 }
 
 /**
@@ -184,8 +181,8 @@ export async function novoAdministradorComApp(c: Cenario, email: string): Promis
 
 export async function prepararCenario(): Promise<Cenario> {
   const ambiente = ambienteLocal()
-  const servico = createClient(ambiente.url, ambiente.servico, OPCOES)
-  const anonimo = createClient(ambiente.url, ambiente.anon, OPCOES)
+  const servico = novoCliente(ambiente, ambiente.servico)
+  const anonimo = novoCliente(ambiente, ambiente.anon)
   const sufixo = aleatorio(4)
   const marcador = `segredo-da-vitima-${aleatorio(6)}`
 
@@ -203,7 +200,7 @@ export async function prepararCenario(): Promise<Cenario> {
   // D-260: o administrador tem o app autenticador; a sessão principal dele é confirmada pelo código (aal2), e
   // uma segunda sessão entra só com a senha (aal1).
   const admin = await cadastrarApp(ambiente, contaAdmin)
-  const adminSemCodigo = createClient(ambiente.url, ambiente.anon, OPCOES)
+  const adminSemCodigo = novoCliente(ambiente, ambiente.anon)
   falhou('entrar com o administrador só com a senha', (await adminSemCodigo.auth.signInWithPassword({ email: admin.email, password: admin.senha })).error)
 
   // O que a vítima grava pelo próprio login, como no app.
