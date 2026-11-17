@@ -55,6 +55,8 @@ export const FRASES = {
   semOutra: 'Comparar fotos precisa de outra avaliação com foto.',
   regras: 'Até 5 fotos por avaliação. Fotos e anexos somam até 8 MB. Fotos em JPG ou PNG; anexos em PDF. Imagem anexada entra como foto.',
   dezDeDez: '10 de 10 anexos.',
+  /** D-1555: junto de "Adicionar arquivo", quando a imagem anexada entra entre as fotos. */
+  imagemNasFotos: 'A imagem entrou nas fotos.',
 } as const
 
 export type TipoDoArquivo = ArquivoDaAvaliacao['tipo']

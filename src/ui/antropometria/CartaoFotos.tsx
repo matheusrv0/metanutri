@@ -80,6 +80,8 @@ export function CartaoFotos({ bruto, sexo, atual, anterior, aoAlterar, agora }: 
   const [enviando, setEnviando] = useState<'foto' | 'anexo' | null>(null)
   const [erroDaFoto, setErroDaFoto] = useState<string | null>(null)
   const [erroDoAnexo, setErroDoAnexo] = useState<string | null>(null)
+  // D-1555: a imagem escolhida em "Adicionar arquivo" entrou entre as fotos, longe do botão no celular.
+  const [imagemNasFotos, setImagemNasFotos] = useState(false)
   const [excluindo, setExcluindo] = useState<ArquivoAExcluir>(null)
 
   // O envio termina depois de alguns segundos: a lista é acrescentada ao plano como ele está nessa hora, não como estava
@@ -156,6 +158,7 @@ export function CartaoFotos({ bruto, sexo, atual, anterior, aoAlterar, agora }: 
     evento.target.value = ''
     if (!arquivo) return
     setErroDaFoto(null)
+    setImagemNasFotos(false)
     setEnviando('foto')
     try {
       const bytes = await lerBytes(arquivo, FOTO_ENVIO_MAX_BYTES + 1)
@@ -176,6 +179,7 @@ export function CartaoFotos({ bruto, sexo, atual, anterior, aoAlterar, agora }: 
     evento.target.value = ''
     if (!arquivo) return
     setErroDoAnexo(null)
+    setImagemNasFotos(false)
     setEnviando('anexo')
     try {
       // D-1530: a imagem anexada vira foto, e a foto vai até 20 MB antes de reduzir.
@@ -186,6 +190,7 @@ export function CartaoFotos({ bruto, sexo, atual, anterior, aoAlterar, agora }: 
         desenhista,
       )
       receber(resultado, setErroDoAnexo)
+      setImagemNasFotos(resultado.tipo === 'ok' && resultado.campo === 'fotos')
     } finally {
       setEnviando(null)
     }
@@ -322,6 +327,11 @@ export function CartaoFotos({ bruto, sexo, atual, anterior, aoAlterar, agora }: 
             </label>
           </div>
           {anexosCheios ? <p className="text-sm text-muted-foreground">{FRASES.dezDeDez}</p> : null}
+          {imagemNasFotos ? (
+            <p role="status" className="text-sm text-muted-foreground">
+              {FRASES.imagemNasFotos}
+            </p>
+          ) : null}
           {erroDoAnexo ? (
             <p role="alert" className="flex items-start gap-2 text-sm text-errortext">
               <CircleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />

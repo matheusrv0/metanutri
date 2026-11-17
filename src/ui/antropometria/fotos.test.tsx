@@ -355,6 +355,19 @@ describe('anexos e espaço (CA-2482, CA-2483, D-1511)', () => {
     expect(cartao().queryByRole('list', { name: 'Anexos' })).not.toBeInTheDocument()
   })
 
+  it('CB-1504 e D-1555: a imagem anexada avisa junto do botão "A imagem entrou nas fotos."; o PDF não', async () => {
+    const { usuario, gravado, cartao } = abrir({ avaliacao: { fotosAutorizadasEm: '2026-11-03' } })
+    await usuario.upload(campoDoAnexo(), arquivoDe(jpeg(1200, 1600), 'IMG_0001.jpg', 'image/jpeg'))
+    await vi.waitFor(() => expect(gravado()?.fotos).toHaveLength(1))
+    const aviso = cartao().getByRole('status')
+    expect(aviso).toHaveTextContent('A imagem entrou nas fotos.')
+    // Junto do botão: na área dos anexos, depois do "Adicionar arquivo".
+    expect(campoDoAnexo().compareDocumentPosition(aviso) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    await usuario.upload(campoDoAnexo(), arquivoDe(PDF, 'exame.pdf', 'application/pdf'))
+    await vi.waitFor(() => expect(gravado()?.anexos).toHaveLength(1))
+    expect(cartao().queryByText('A imagem entrou nas fotos.')).not.toBeInTheDocument()
+  })
+
   it('CB-1467 e D-1530: sem a autorização, a imagem anexada não sobe e a frase pede a marca', async () => {
     const f = falsos()
     const { usuario, gravado, cartao } = abrir({ porta: f.porta })
