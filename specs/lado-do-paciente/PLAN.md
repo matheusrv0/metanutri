@@ -1,6 +1,6 @@
 # PLAN — O lado do paciente: a tela do link, o link que não se perde e os avisos por e-mail
 
-**Spec de origem:** `./SPEC.md` (D-1200 a D-1245, CA-2200 a CA-2288, CB-1200 a CB-1227).
+**Spec de origem:** `./SPEC.md` (D-1200 a D-1245, CA-2200 a CA-2288, CB-1200 a CB-1227; das revisões: D-1246 a D-1265, CA-2289 a CA-2312, CB-1228 a CB-1233; da rodada de melhorias de 16/11: D-1266 a D-1275 e CB-1234 a CB-1242).
 **Protótipo aprovado (04/11/2026):** `LinkPaciente.dc.html`, `EmailsPaciente.dc.html` e `AvisosNutri.dc.html` (canvas
 "MetaNutri Redesenho"). As pílulas "Estados do protótipo" e os painéis de notas ao lado do celular são do protótipo e não
 entram no app.
@@ -277,6 +277,34 @@ As decisões D-1264 e D-1265 da SPEC (seção 1.11), no código:
   "Recuperar" e o "Receber" do `meuLink`. A consulta fica dentro do mesmo `try`: o banco que falha não manda e não
   desfaz a confirmação (CB-1233).
 
+### 2.5 A rodada de melhorias (16/11/2026)
+
+As decisões D-1266 a D-1275 da SPEC (seção 1.12), no código. O 017 já rodou em produção e não muda: o banco vai no
+`supabase/019-ajustes.sql` (uma transação, pode rodar de novo, com as consultas de conferência no fim), o único SQL da
+rodada.
+
+- **DP-LP-52** · **O 019 guarda o resumo dos tokens cortados** (D-1266). `trocar_o_endereco` é refeita: o `update` que
+  corta os links antigos devolve o token de cada um (`returning`), e o resumo dele entra em `tokens_trocados`, preso ao
+  link de agora (`link_id = new.id`), como o do token trocado. Os links já cortados antes do 019 ganham o resumo também,
+  presos ao fixo que os cortou (o `substituido_por` não cortado; sem ele, o link vigente do mesmo paciente; sem nenhum, o
+  próprio link). Como `cuidar_do_link` e `link_trocado` já olham `tokens_trocados`, nada mais muda. Se o 017 rodar de
+  novo, o 019 roda logo depois (o cabeçalho diz).
+- **DP-LP-53** · **O tempo mínimo do "Receber"** (D-1267). `meuLink.ts` ganha `TEMPO_MINIMO_DO_RECEBER_MS = 1_500`. O
+  `receber` anota a hora do começo (`deps.agora()`) e, no e-mail digitado, toda resposta depois do limite do dia (o
+  bloqueado, o enviado, o 503 e o 404 da troca) espera o que faltar para 1,5 s, pelo mesmo `esperar` da recuperação. O
+  mascarado não espera.
+- **DP-LP-54** · **As leves de tela** (D-1268 a D-1271): `LinhaDaMissao.tsx` (o `aria-label` sem ", feita"; o botão sem
+  fundo próprio quando feita); `CartaoEnviados.tsx` sem a linha do próximo (e `linhaDoProximo`, que só ela usava, sai de
+  `avisosNaFicha.ts`); `TelaRecuperarLink.tsx` passa o "Voltar" pelo `aviso` da `MolduraConta`, que fica antes do título.
+- **DP-LP-55** · **O nome do link** (D-1272). `CartaoLinkMissoes.tsx` procura a ficha do paciente do plano
+  (`usePacientesOpcional`) e grava o nome dela no gerar, no atualizar e no trocar o endereço; sem ficha, o nome do
+  plano. `CartaoLinkDoPaciente.tsx` (a troca pela ficha) grava o nome da ficha.
+- **DP-LP-56** · **A corrente achatada** (D-1273). `migrarParaLinkFixo` (`linkFixo.ts`) devolve também os links não
+  vigentes que apontavam para um dos antigos, agora apontando para o fixo novo.
+- **DP-LP-57** · **O formulário lido até 1 KB** (D-1274). `corpo.ts` ganha `lerTexto(pedido, limite)`, a mesma leitura
+  por pedaços do `lerCorpo`, que devolve o texto; `avisos-resposta/index.ts` o usa no formulário de um clique.
+  `lerCorpo` não muda.
+
 ## 3. O contrato (banco, funções e tipos)
 
 ### 3.1 `supabase/017-lado-do-paciente.sql` (uma transação, pode rodar de novo)
@@ -512,6 +540,18 @@ dependência está entre colchetes.
 | T74 | `fix(banco)`: apagar os e-mails do link segura o link primeiro (DP-LP-50) | T73 |
 | T75 | `fix(avisos)`: o "Confirmar" não manda o S1 para o e-mail que volta (DP-LP-51) | T73 |
 | T76 | `docs`: a validação da correção r4 | todas |
+| T77 | `docs`: as decisões da rodada de melhorias (D-1266 a D-1275, DP-LP-52 a DP-LP-57) | — |
+| T78 | `fix(banco)`: o endereço cortado nunca volta, no 019 (DP-LP-52) | T77 |
+| T79 | `fix(avisos)`: "Receber" com e-mail digitado responde no mesmo tempo (DP-LP-53) | T77 |
+| T80 | `fix(link)`: a missão diz o estado uma vez ao leitor de tela (DP-LP-54) | T77 |
+| T81 | `fix(ficha)`: "Próximo" num lugar só (DP-LP-54) | T77 |
+| T82 | `fix(link)`: "Voltar" acima do título em "Recuperar meu link" (DP-LP-54) | T77 |
+| T83 | `fix(link)`: a missão feita com um verde só (DP-LP-54) | T77 |
+| T84 | `fix(link)`: o link leva o nome da ficha (DP-LP-55) | T77 |
+| T85 | `fix(link)`: o link antigo aponta sempre para o fixo de agora (DP-LP-56) | T77 |
+| T86 | `fix(avisos)`: o descadastro de um clique lê até 1 KB (DP-LP-57) | T77 |
+| T87 | `docs`: as specs antigas apontam para esta (D-1275) | T77 |
+| T88 | `docs`: a validação da rodada | todas |
 
 ## 6. Matriz CA/CB × teste
 
@@ -604,6 +644,15 @@ Todo teste leva o ID no nome. "Dono" é conferência que só ele faz (seção 9)
 | CA-587 (B6), CB-1228 | `src/ui/pacientes/excluirPaciente.test.tsx` |
 | D-1255 (B10) | `src/domain/conta.test.ts` |
 | R-LP-6 (B5) | `src/seguranca/csp.test.ts` |
+| CB-1234 | `src/data/sql019Ajustes.test.ts` (texto); `testes/seguranca/ladoDoPaciente.test.ts` (o link cortado apagado e recriado, e o cortado antes do 019) |
+| CB-1235 | `src/data/servidorMeuLink.test.ts` |
+| CB-1236 | `src/ui/missoes/link/acesso.test.tsx`, `link/hoje.test.tsx` |
+| CB-1237 | `src/ui/pacientes/avisosNaFicha.test.tsx` |
+| CB-1238 | `src/ui/publico/conta/telaRecuperarLink.test.tsx` |
+| CB-1239 | `src/ui/missoes/link/hoje.test.tsx` |
+| CB-1240 | `src/ui/missoes/linkFixo.test.tsx` |
+| CB-1241 | `src/domain/linkFixo.test.ts` |
+| CB-1242 | `src/data/servidorCorpo.test.ts` |
 
 ## 7. Riscos
 

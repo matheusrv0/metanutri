@@ -191,6 +191,26 @@ antes.
 | D-1264 | **Apagar os e-mails do link segura o link primeiro** (L-r4-1; completa o D-1261). Ao excluir o paciente, o banco segura o link antes de apagar os aceites, os envios, as chaves e o e-mail, na mesma ordem da troca do endereço e do "Confirmar". O "Confirmar" que chegar no meio espera e responde "Este endereço não vale."; o que chegou antes termina, e o apagar leva o que ele gravou. Nenhum dos dois cai por *deadlock* (duas transações esperando uma pela outra) | Na ordem de antes (os aceites e depois as chaves), o apagar e o "Confirmar" do mesmo link, com um aceite ativo igual, esperavam um pelo outro, e o banco derrubava um deles com erro |
 | D-1265 | **O "Confirmar" não manda o link do plano para o e-mail que volta** (L-r4-2; completa o D-1258). Se o endereço confirmado está na lista de bloqueio por devolução, o e-mail passa a valer no link do mesmo jeito, mas o S1 não sai. O marcado como spam continua recebendo o S1, porque foi o próprio paciente que pediu no link (D-1263) | A Política diz que o e-mail que volta não recebe mais nenhum e-mail do MetaNutri (D-1263) |
 
+### 1.12 A rodada de melhorias (16/11/2026)
+
+O ramo já está no ar (o 017 rodou em produção). As recomendações leves das revisões r1 a r4 que ainda valiam entram
+aqui. O 017 não muda mais: o que é de banco vai no `supabase/019-ajustes.sql`. Os critérios novos são casos de borda
+(CB-1234 em diante): os CA-2313 em diante já são da `assistente-ia`. Já estavam feitos e não mudam: a saída por tempo que
+apaga os planos lembrados (D-1260, CA-2305) e o seletor de opção com 44 px também com o mouse (D-1260, CA-2307).
+
+| # | Decisão | Motivo |
+|---|---|---|
+| D-1266 | **O endereço cortado nunca volta, nem apagado e recriado** (leve 1 da r2; completa o D-1246). A troca do endereço guarda o resumo do token de cada link que ela corta, além do token trocado, e o 019 guarda o dos links já cortados antes dele. Um link novo com um desses tokens é recusado ("Este endereço já foi usado."), e quem o abre vê "Este link foi trocado." | O corte valia só enquanto a linha do link cortado existisse: apagada e recriada com o mesmo token, ela abria de novo e devolvia o endereço novo |
+| D-1267 | **"Receber meu link por e-mail" com um e-mail digitado responde no mesmo tempo, bloqueado ou não** (leve 6 da r3; completa o D-1260 e o CA-2306). A resposta ao e-mail digitado sai no mínimo 1,5 s depois do pedido, saia o e-mail ou não. O que o link já tem (o mascarado) responde na hora, como antes | A resposta ao e-mail que já voltou era a mesma no corpo, mas saía sem esperar o envio: o tempo revelava a devolução. O envio ao Resend costuma levar menos de 1,5 s |
+| D-1268 | **A missão diz o estado uma vez só ao leitor de tela** (leve 1 da r1; muda o texto do CA-2217). O nome do botão é só o da missão ("Almoço por volta das 12h30"); "feita" vem do botão de alternar pressionado | O nome "…, feita" e o "pressionado" faziam o leitor anunciar o estado duas vezes |
+| D-1269 | **"Próximo" aparece num lugar só da ficha** (leve 2 da r1; muda o CA-2264). A linha "Próximo: Resumo da semana, quinta, 5/11, 8h" sai do topo de "Enviados"; o cartão "Próximo e-mail", logo acima, já diz o mesmo, com a prévia | A regra do dono: sem texto repetido |
+| D-1270 | **Em "Recuperar meu link", "Voltar" fica acima do título** (leve 3 da r1) | Entre o subtítulo e o campo, ele cortava o formulário no meio |
+| D-1271 | **A missão feita tem um verde só** (leve 4 da r1). O fundo verde é o da linha inteira; o botão da missão e o "Ver" ficam por cima dele, sem fundo próprio | No escuro, o verde é transparente: o do botão somava com o da linha, e a linha ficava com dois tons e um canto arredondado no meio |
+| D-1272 | **O link leva o nome da ficha do paciente** (leve 5 da r1). Gerar, atualizar ou trocar o endereço grava no link o nome do paciente da ficha; sem paciente, o nome do plano, como antes. O primeiro nome dos e-mails e do título do link sai dele | Um plano chamado "Gestante Ana" fazia o e-mail começar com "Gestante," e o título dizer "Dia completo, Gestante." |
+| D-1273 | **O link antigo aponta sempre para o fixo de agora** (leve 6 da r1). Quando um paciente ganha um fixo novo (dois links dele vigentes, de um app antigo), os links que apontavam para o fixo de antes passam a apontar para o novo, junto com ele | O banco segue o `substituido_por` um nível só: o link mais antigo abria o do meio, com o plano velho, até a segunda abertura |
+| D-1274 | **O descadastro de um clique lê no máximo 1 KB** (leve 8 da r1). O corpo do formulário `List-Unsubscribe=One-Click` é lido até 1 KB, e a leitura para no primeiro pedaço que passa disso | O corpo sem o tamanho declarado era lido inteiro antes de ser cortado |
+| D-1275 | **As specs antigas apontam para esta** (divergências da seção 10 do PLAN). O CA-464 da `seguranca-lote-3` ganha a frase do D-1259 ("Nas telas de conta e em 'Recuperar meu link'"); o CA-1965 e o CA-1966 da `marca-no-link`, o CA-883 da `receitas-com-calculo` e o CA-974 da `integracao-rodada-1910` ganham uma nota que diz o que vale agora (D-1202 e D-1206) | O texto das specs antigas descrevia a tela de antes |
+
 ## 2. Critérios de aceite
 
 ### 2.1 A tela do link
@@ -212,7 +232,7 @@ antes.
 - **CA-2214** · Dado uma Próxima consulta na ficha, então o link mostra "Próxima consulta: ter., 17/11, às 14:30" em Hoje, abaixo da mensagem, e "Próxima consulta: terça, 17 de novembro, às 14:30" em Semana; quando a ficha muda, então o link muda sem link novo; quando a consulta passa (D-145), então some.
 - **CA-2215** · Dado uma conta com marca salva, então valem os CA-1965 a CA-1973 da `marca-no-link`, com a aba escolhida da barra de baixo e "Marcar como feita" na cor dela; e o nome da nutricionista aparece na mensagem e na folha "Meu plano".
 - **CA-2216** · Dado o celular no tema escuro, então o link fica escuro (D-955 para a cor da marca); dado o claro, então fica claro.
-- **CA-2217** · Dado o leitor de tela, então a barra de baixo é navegação com três links nomeados, a missão é botão de alternar com o nome e o estado, "Ver" é botão com o nome da refeição, o seletor de opções é um grupo de abas, e tudo funciona com o teclado.
+- **CA-2217** · Dado o leitor de tela, então a barra de baixo é navegação com três links nomeados, a missão é botão de alternar com o nome e o estado (o estado só pelo pressionado, D-1268), "Ver" é botão com o nome da refeição, o seletor de opções é um grupo de abas, e tudo funciona com o teclado.
 - **CA-2218** · Dado 360, 390 e 412 px, com a letra do sistema em 200%, então nada rola de lado, a barra de baixo não cobre a última missão, e todo alvo tem 44 px ou mais.
 - **CA-2219** · Dado o botão Mais, então abre a folha "Meu plano" com o nome do paciente e da nutricionista, "Instalar na tela inicial" (fora do app instalado), "Receber meu link por e-mail", "Avisos por e-mail" com o estado e "Esquecer neste aparelho" por último.
 
@@ -268,7 +288,7 @@ antes.
 - **CA-2261** · Dado um paciente sem e-mail na ficha e sem e-mail confirmado, então "Avisos por e-mail" diz "Sem e-mail" com "Cadastrar na ficha", que abre a ficha no campo E-mail.
 - **CA-2262** · Dado "E-mail" no cartão do link, então o diálogo diz "Enviar o link para juliana.martins@gmail.com?" com "Enviar"; quando ela envia, então sai o S2 e "Enviados" ganha a linha; dado o trigésimo primeiro envio de serviço da conta no dia, então o diálogo diz "Você chegou a 30 e-mails hoje. Amanhã volta." e nada sai.
 - **CA-2263** · Dado o interruptor de um aviso desligado pela nutricionista, então nenhum aviso daquele tipo sai para o paciente a partir dali, e o estado mostra "Desligado por você".
-- **CA-2264** · Dado "Enviados", então cada linha tem o dia e a hora, o tipo (Serviço ou Aviso), o assunto e o estado ("Entregue", "Enviado", "Devolvido", "Adiado pelo teto", "Não saiu: pausado"), dos últimos 30 dias, e a linha "Próximo: Resumo da semana, quinta, 5/11, 8h" quando há.
+- **CA-2264** · Dado "Enviados", então cada linha tem o dia e a hora, o tipo (Serviço ou Aviso), o assunto e o estado ("Entregue", "Enviado", "Devolvido", "Adiado pelo teto", "Não saiu: pausado"), dos últimos 30 dias, (a linha do próximo aviso fica só no cartão "Próximo e-mail", D-1269).
 - **CA-2265** · Dado um e-mail devolvido, então o cartão diz "O e-mail voltou: o endereço não existe. Confira na ficha. Nenhum aviso vai até corrigir.", os avisos mostram "E-mail devolvido", o botão "E-mail" do link fica desativado e nenhum aviso sai para o endereço; quando a nutricionista corrige o e-mail na ficha, então o estado vira "Sem aceite" e "Enviar convite" aparece.
 - **CA-2266** · Dado Configurações, então há "E-mails" com "Resumo da adesão às segundas" (ligado), "Oferecer avisos aos pacientes novos" (ligado) e "Respostas dos pacientes vão para" com o e-mail do Perfil.
 - **CA-2267** · Dado uma conta com pacientes em acompanhamento, então toda segunda às 7h sai o N1 com os quatro números, até 8 nomes dos que pararam de marcar (primeiro nome, inicial, dias) e "Abrir a Adesão"; com mais de 8, "e mais 4 na Adesão"; sem pacientes em acompanhamento, nada sai; com o resumo desligado, nada sai.
@@ -372,6 +392,18 @@ antes.
 - **CB-1231** · **O endereço trocado duas vezes:** os dois endereços de antes mostram "Este link foi trocado." (D-1246).
 - **CB-1232** · **A troca do endereço no meio de um pedido do paciente:** se a confirmação foi gravada antes da troca, a troca a apaga (D-1248); se a troca veio antes, a confirmação não nasce e nada sai (D-1256). No "Confirmar", vale o mesmo nas duas ordens (D-1261). As duas nunca valem juntas.
 - **CB-1233** · **O "Confirmar" com o Resend fora ou o teto cheio:** o e-mail passa a valer no link e o S1 não sai; o paciente pede de novo pelo "Receber" (agora com o e-mail mascarado) ou por "Recuperar meu link" (D-1258).
+
+### A rodada de melhorias (16/11/2026)
+
+- **CB-1234** · **O link cortado apagado e recriado** (D-1266): dado um link cortado pela troca do endereço, quando a linha dele é apagada e um link novo é gravado com o mesmo token, então o banco recusa ("Este endereço já foi usado."), e o token responde "Este link foi trocado."; dado um link cortado antes do 019, então vale o mesmo depois de rodar o 019.
+- **CB-1235** · **O tempo do "Receber" com e-mail digitado** (D-1267): dado um e-mail digitado que está na lista de bloqueio por devolução e outro qualquer, então as duas respostas saem no mínimo 1,5 s depois do pedido, com o mesmo corpo; dado o e-mail mascarado do link, então a resposta não espera.
+- **CB-1236** · **O estado da missão no leitor de tela** (D-1268): dado uma missão feita, então o botão se chama "Almoço por volta das 12h30" e está pressionado (`aria-pressed="true"`); não feita, o mesmo nome, sem pressionar.
+- **CB-1237** · **"Próximo" na ficha** (D-1269): dado um aviso a caminho, então "Próximo e-mail" diz o assunto, o tipo e quando; "Enviados" não repete a linha "Próximo: …".
+- **CB-1238** · **"Voltar" em "Recuperar meu link"** (D-1270): dado a tela, então "Voltar" vem antes do título "Recuperar meu link", e o formulário começa logo depois do subtítulo.
+- **CB-1239** · **O verde da missão feita** (D-1271): dado uma missão feita, então só a linha tem o fundo verde; o botão da missão não tem fundo próprio.
+- **CB-1240** · **O nome do link** (D-1272): dado o plano "Gestante Ana" da paciente "Ana Souza", quando a nutricionista gera o link (ou atualiza, ou troca o endereço), então o link se chama "Ana Souza"; dado um plano sem paciente, então o link leva o nome do plano.
+- **CB-1241** · **A corrente de links antigos** (D-1273): dado o link A que aponta para o fixo F e um link N do mesmo paciente, mais novo, que um app antigo criou, quando o app abre, então F e A passam a apontar para N.
+- **CB-1242** · **O formulário de um clique grande** (D-1274): dado um formulário de um clique sem o tamanho declarado e com mais de 1 KB, então a função responde "O pedido é grande demais." e não muda nada; com `List-Unsubscribe=One-Click`, segue como antes.
 
 ## 4. Fora de escopo
 
