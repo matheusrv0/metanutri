@@ -547,6 +547,37 @@ describe('AssistenteDaIa: o erro numa região que já existe (CA-2410, D-1364)',
   })
 })
 
+describe('AssistenteDaIa: a frase do limite ao reabrir (CA-2420, D-1369)', () => {
+  it('CA-2420: na segunda abertura com o mês cheio, a região viva nasce vazia e recebe a frase depois da releitura', async () => {
+    const usuario = userEvent.setup()
+    const CHEIO = { ...USO, usados: 20 }
+    let leituras = 0
+    let soltarSegunda: () => void = () => {}
+    const deps: DependenciasDaSugestao = {
+      chamar: vi.fn(async (_n: string, c: Record<string, unknown>) => {
+        if (c['modo'] !== 'uso') return { dados: null, falha: { status: 503, codigo: 'indisponivel', erro: null } }
+        leituras += 1
+        if (leituras === 2) await new Promise<void>((r) => (soltarSegunda = r))
+        return { dados: { uso: CHEIO }, falha: null }
+      }),
+      salvarAgora: vi.fn(async () => true),
+      online: () => true,
+    }
+    montar(deps)
+    await usuario.click(screen.getByRole('button', { name: 'Sugerir plano com IA' }))
+    const primeira = screen.getByRole('complementary', { name: 'Sugerir plano com IA' })
+    await waitFor(() => expect(within(primeira).getByRole('status')).toHaveTextContent(/^As 20 sugestões de .+ foram usadas\./))
+    await usuario.click(within(primeira).getAllByRole('button', { name: 'Fechar' })[0] as HTMLElement)
+    await usuario.click(screen.getByRole('button', { name: 'Sugerir plano com IA' }))
+    const segunda = screen.getByRole('complementary', { name: 'Sugerir plano com IA' })
+    const regiao = within(segunda).getByRole('status')
+    expect(regiao).toHaveTextContent(/^$/)
+    await act(async () => soltarSegunda())
+    await waitFor(() => expect(regiao).toHaveTextContent(/^As 20 sugestões de .+ foram usadas\./))
+    expect(regiao.isConnected).toBe(true)
+  })
+})
+
 describe('AssistenteDaIa: "Gerar de novo" e a proposta vazia (CA-2414, CA-2415, D-1365)', () => {
   it('CA-2414: com a autorização revogada, "Gerar de novo" desliga com o motivo e nada é pedido', async () => {
     const usuario = userEvent.setup()

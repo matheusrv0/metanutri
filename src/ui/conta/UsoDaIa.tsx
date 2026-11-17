@@ -19,7 +19,7 @@ interface UsoDaIaProps {
 export function UsoDaIa({ agora, dependencias }: UsoDaIaProps) {
   const { uso, lerUso } = useSugestaoIa(DONO_DA_CONTA, dependencias)
   useEffect(() => {
-    lerUso()
+    void lerUso()
     // Uma leitura ao abrir a tela; as seguintes vêm da gaveta.
     // eslint-disable-next-line react-hooks/exhaustive-deps -- lerUso muda a cada desenho e a leitura é só a da abertura
   }, [])

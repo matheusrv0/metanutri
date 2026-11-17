@@ -33,7 +33,8 @@ export interface ValorSugestaoIa {
   readonly ocupado: boolean
   /** D-1368: outro plano da aba espera a IA; este não pede até ela terminar. */
   readonly outroEsperando: boolean
-  readonly lerUso: () => void
+  /** Relê o contador; a promessa termina quando a leitura acaba, com ou sem resposta (D-1369). Nunca rejeita. */
+  readonly lerUso: () => Promise<void>
   readonly pedir: (corpo: CorpoDoPedidoIa, contexto: ContextoDaResposta) => Promise<void>
   /** CA-2366: volta ao pedido; a resposta que chegar depois é descartada. */
   readonly cancelar: () => void
@@ -134,13 +135,17 @@ export function useSugestaoIa(dono: string, dependencias?: DependenciasDaSugesta
   const { chamar, salvarAgora } = d
   const estaOnline = d.online
 
-  const lerUsoAgora = useCallback(() => {
-    void chamar(FUNCAO_DA_IA, { modo: 'uso' }).then(({ dados, falha }) => {
-      if (falha) return
-      const lido = typeof dados === 'object' && dados !== null ? lerUso((dados as Record<string, unknown>)['uso']) : null
-      if (lido) setUso(lido)
-    })
-  }, [chamar])
+  const lerUsoAgora = useCallback(
+    () =>
+      chamar(FUNCAO_DA_IA, { modo: 'uso' })
+        .then(({ dados, falha }) => {
+          if (falha) return
+          const lido = typeof dados === 'object' && dados !== null ? lerUso((dados as Record<string, unknown>)['uso']) : null
+          if (lido) setUso(lido)
+        })
+        .catch(() => undefined),
+    [chamar],
+  )
 
   const pedir = useCallback(
     async (corpo: CorpoDoPedidoIa, contexto: ContextoDaResposta) => {
@@ -169,7 +174,7 @@ export function useSugestaoIa(dono: string, dependencias?: DependenciasDaSugesta
       if (!valeAinda()) return
       if (falha) {
         falhou(falha)
-        if (falha.status === 429 && falha.codigo === 'limite-mes') lerUsoAgora()
+        if (falha.status === 429 && falha.codigo === 'limite-mes') void lerUsoAgora()
         return
       }
       const lida = lerRespostaDaFuncao(dados, contexto)
@@ -180,7 +185,7 @@ export function useSugestaoIa(dono: string, dependencias?: DependenciasDaSugesta
         // D-1355: a função não conseguiu reler o contador, mas a sugestão já contou. Fica a estimativa e o pedido de
         // releitura; o contador vazio nunca faz a sugestão sumir.
         setUso((antes) => (antes ? { ...antes, usados: antes.usados + 1 } : null))
-        lerUsoAgora()
+        void lerUsoAgora()
       }
     },
     [dono, chamar, salvarAgora, estaOnline, uso, lerUsoAgora],

@@ -162,6 +162,8 @@ export function AssistenteDaIa(p: AssistenteDaIaProps) {
   const [recusadas, setRecusadas] = useState<ReadonlySet<number>>(() => lembrada?.recusadas ?? new Set())
   const [desfazer, setDesfazer] = useState<Desfazer | null>(() => desfazeresLembrados.ler(dono) ?? null)
   const [erroLocal, setErroLocal] = useState<Erro | null>(null)
+  // D-1369: a frase do limite só entra na região viva depois da releitura do contador ao abrir.
+  const [usoRelido, setUsoRelido] = useState(true)
   // D-1359: o botão que abriu a gaveta, para o foco voltar a ele quando ela fecha. A gaveta reaberta (D-1366) não foi
   // aberta por um clique: vale o botão do modo dela, que se anota quando aparece.
   const quemAbriu = useRef<HTMLElement | null>(null)
@@ -182,7 +184,7 @@ export function AssistenteDaIa(p: AssistenteDaIaProps) {
   }, [dono, desfazer])
   // A gaveta reaberta relê o contador, como ao abrir (CB-1300).
   useEffect(() => {
-    if (lembrada) sugestao.lerUso()
+    if (lembrada) void sugestao.lerUso()
     // eslint-disable-next-line react-hooks/exhaustive-deps -- uma leitura só, a da volta ao plano
   }, [])
 
@@ -230,8 +232,9 @@ export function AssistenteDaIa(p: AssistenteDaIaProps) {
       outro: '',
       desmarcadas: new Set(),
     })
-    // CB-1300: o contador é relido ao abrir.
-    sugestao.lerUso()
+    // CB-1300: o contador é relido ao abrir; D-1369: a frase do limite espera por ele.
+    setUsoRelido(false)
+    void sugestao.lerUso().then(() => setUsoRelido(true))
   }
 
   const fechar = () => {
@@ -485,7 +488,8 @@ export function AssistenteDaIa(p: AssistenteDaIaProps) {
         />
       )
     } else if (limite) {
-      aviso = limite
+      // D-1369: na primeira pintura a região está vazia; a frase entra quando a releitura termina.
+      aviso = usoRelido ? limite : null
       rodape = <RodapeDaIa acoes={<Button disabled>{aberta === 'gerar' ? 'Sugerir plano' : 'Sugerir ajustes'}</Button>} contador={contador} />
     } else if (aberta === 'gerar') {
       const semRefeicao = form.tiradas.size >= refeicoesDoPlano.length

@@ -33,7 +33,7 @@ describe('useSugestaoIa (spec assistente-ia, T30)', () => {
   it('CA-2361: lê o contador pelo modo uso', async () => {
     const d = dependencias()
     const { result } = renderHook(() => useSugestaoIa(DONO, d))
-    act(() => result.current.lerUso())
+    await act(async () => result.current.lerUso())
     await waitFor(() => expect(result.current.uso).toEqual(USO))
     expect(d.chamar).toHaveBeenCalledWith('sugerir-plano', { modo: 'uso' })
   })
@@ -71,7 +71,7 @@ describe('useSugestaoIa (spec assistente-ia, T30)', () => {
       }),
     })
     const { result } = renderHook(() => useSugestaoIa(DONO, d))
-    act(() => result.current.lerUso())
+    await act(async () => result.current.lerUso())
     await waitFor(() => expect(result.current.uso).toEqual(USO))
     await act(async () => result.current.pedir(corpo, CONTEXTO))
     expect(result.current.estado.fase).toBe('resposta')
