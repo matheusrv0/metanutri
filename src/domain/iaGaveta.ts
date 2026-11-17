@@ -307,7 +307,7 @@ export function motivoDoGerarDeNovo(motivo: string | null, uso: UsoDoMes | null,
   if (motivo === SEM_CONSENTIMENTO) return 'Para gerar de novo, registre na ficha a autorização do paciente.'
   if (uso && motivo === textoDoLimite(uso.limite, agora)) {
     const quando = textoDaRenovacao(renovaEm(agora)).replace(/^Renovam em /, '')
-    return `Para gerar de novo, espere ${quando}: as ${uso.limite} sugestões de ${mesEmBrasilia(agora)} foram usadas.`
+    return `Para gerar de novo, espere até ${quando}: as ${uso.limite} sugestões de ${mesEmBrasilia(agora)} foram usadas.`
   }
   return motivo
 }

@@ -95,7 +95,7 @@ const SEM_REFEICAO = 'Deixe ao menos uma refeição.'
 const CORRIJA_A_META = 'Corrija a meta de energia.'
 const PROPOSTA_VAZIA = 'A conferência retirou todos os itens. Gere de novo.'
 /** D-1368: um pedido por vez na aba. */
-const OUTRA_ESPERANDO = 'Outra sugestão está sendo gerada. Espere ela terminar.'
+const OUTRA_ESPERANDO = 'Outro plano está esperando a sugestão da IA. Espere ou cancele lá.'
 const RASCUNHO = 'Sugestão da IA no plano, como rascunho.'
 
 const idNovo = () => globalThis.crypto.randomUUID()

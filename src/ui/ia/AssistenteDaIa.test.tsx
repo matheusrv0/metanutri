@@ -454,7 +454,7 @@ describe('AssistenteDaIa: um pedido por vez na aba (CA-2419, D-1368)', () => {
     await usuario.click(screen.getByRole('button', { name: 'Sugerir plano com IA' }))
     const sugerir = screen.getByRole('button', { name: 'Sugerir plano' })
     expect(sugerir).toBeDisabled()
-    expect(screen.getByText('Outra sugestão está sendo gerada. Espere ela terminar.')).toBeInTheDocument()
+    expect(screen.getByText('Outro plano está esperando a sugestão da IA. Espere ou cancele lá.')).toBeInTheDocument()
     await act(async () => soltar())
     await waitFor(() => expect(sugerir).toBeEnabled())
     expect(vi.mocked(deps.chamar).mock.calls.filter(([, c]) => c['modo'] === 'gerar')).toHaveLength(1)
@@ -649,7 +649,7 @@ describe('AssistenteDaIa: "Gerar de novo" e a proposta vazia (CA-2414, CA-2415, 
     await usuario.click(screen.getByRole('button', { name: 'Sugerir plano' }))
     expect(await screen.findByRole('button', { name: 'Usar como rascunho' })).toBeEnabled()
     expect(screen.getByRole('button', { name: 'Gerar de novo' })).toBeDisabled()
-    expect(screen.getByText(/^Para gerar de novo, espere 1º de .+: as 20 sugestões de .+ foram usadas\.$/)).toBeInTheDocument()
+    expect(screen.getByText(/^Para gerar de novo, espere até 1º de .+: as 20 sugestões de .+ foram usadas\.$/)).toBeInTheDocument()
     expect(screen.queryByText(/^As 20 sugestões de /)).not.toBeInTheDocument()
   })
 
