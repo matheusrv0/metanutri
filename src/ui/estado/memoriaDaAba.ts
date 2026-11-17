@@ -1,6 +1,8 @@
 // A lembrança da aba (spec assistente-ia, D-1366 e D-1367): o que a tela do plano precisa reencontrar quando a
 // nutricionista sai dele e volta, guardado pelo caso e pelo paciente. Fica só na memória da página: nunca vai ao
-// navegador (localStorage) nem à nuvem, e recarregar a página ou sair da conta (que recarrega, D-131) a apaga.
+// navegador (localStorage) nem à nuvem, e recarregar a página, sair da conta (que recarrega, D-131) ou trocar de conta
+// na mesma aba (DP-15, useEsquecerAoTrocarDeConta) a apaga.
+import { useEffect, useRef } from 'react'
 
 /** Uma lembrança por dono (o caso e o paciente do plano). */
 export interface MemoriaDaAba<T> {
@@ -31,4 +33,14 @@ export function criarMemoriaDaAba<T>(): MemoriaDaAba<T> {
 /** Apaga todas as lembranças da aba. Os testes chamam entre um caso e outro (vitest.setup.ts). */
 export function esquecerTudoDaAba(): void {
   for (const esquecer of esquecedores) esquecer()
+}
+
+/** D-1366 e CA-2429: a conta trocou na mesma aba sem recarregar (DP-15): nada da conta anterior fica na memória. */
+export function useEsquecerAoTrocarDeConta(usuarioId: string | null): void {
+  const anterior = useRef(usuarioId)
+  useEffect(() => {
+    if (anterior.current === usuarioId) return
+    anterior.current = usuarioId
+    esquecerTudoDaAba()
+  }, [usuarioId])
 }

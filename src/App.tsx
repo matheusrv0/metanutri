@@ -3,6 +3,7 @@ import { CONTATO_EMAIL } from './domain/legal.ts'
 import { Button } from '@ds/componentes/forms/button.tsx'
 import { AreaDeTrabalho } from './ui/AreaDeTrabalho.tsx'
 import { armazenamentoLocal } from './ui/estado/armazenamentoLocal.ts'
+import { useEsquecerAoTrocarDeConta } from './ui/estado/memoriaDaAba.ts'
 import { ProvedorArmazenamento } from './ui/estado/ProvedorArmazenamento.tsx'
 import { ProvedoresDeDados } from './ui/estado/ProvedoresDeDados.tsx'
 import { ProvedorNuvem } from './ui/estado/ProvedorNuvem.tsx'
@@ -75,6 +76,8 @@ function Conteudo({ conta, usuarioId, perfilConta }: ConteudoProps) {
 
   // DP-15: a conta trocou direto (A → B, sem passar por Entrar) numa tela de trabalho. O endereço
   // pode ser de um plano ou paciente da conta anterior: a conta nova vai para o painel, uma vez.
+  // Spec assistente-ia, D-1366 e CA-2429: a lembrança da aba (a sugestão, a gaveta e o "Desfazer") não passa para a outra conta.
+  useEsquecerAoTrocarDeConta(usuarioId)
   const [contaNaTela, setContaNaTela] = useState(usuarioId)
   const [enderecoDaTroca, setEnderecoDaTroca] = useState<string | null>(null)
   if (usuarioId !== contaNaTela) {
