@@ -1,7 +1,7 @@
 // @vitest-environment node
 // D-110 (spec seguranca-lote-2): o pedido às três funções de cobrança vai até 64 KB. Testado com o
 // Request e o ReadableStream de verdade do Node, os mesmos do Deno.
-import { CORPO_MAXIMO_BYTES, lerCorpo, PEDIDO_GRANDE_DEMAIS } from '../../supabase/functions/_shared/corpo.ts'
+import { CORPO_MAXIMO_BYTES, lerCorpo, PEDIDO_GRANDE_DEMAIS, PRAZO_DO_CORPO_MS } from '../../supabase/functions/_shared/corpo.ts'
 
 const KB = 1024
 const pedido = (corpo: string | null) => new Request('https://exemplo.com/funcao', { method: 'POST', ...(corpo === null ? {} : { body: corpo }) })
@@ -26,6 +26,36 @@ function corpoSemFim(tamanho: number) {
   )
   return { corpo, estado }
 }
+
+describe('CA-2427 e D-1375: o prazo da leitura (só na sugerir-plano)', () => {
+  /** Um corpo que não manda nada e não termina, como o cliente lento. */
+  function corpoParado() {
+    const estado = { cancelado: false }
+    const corpo = new ReadableStream<Uint8Array>({
+      pull: () => new Promise<void>(() => {}),
+      cancel() {
+        estado.cancelado = true
+      },
+    })
+    return { corpo, estado }
+  }
+  const comCorpo = (corpo: ReadableStream<Uint8Array>) => ({ headers: new Headers(), body: corpo })
+
+  it('o prazo é de 10 s', () => {
+    expect(PRAZO_DO_CORPO_MS).toBe(10_000)
+  })
+
+  it('o corpo que não chega no prazo vira nulo, e a leitura para', async () => {
+    const { corpo, estado } = corpoParado()
+    expect(await lerCorpo(comCorpo(corpo), CORPO_MAXIMO_BYTES, 50)).toEqual({ grande: false, json: null })
+    expect(estado.cancelado).toBe(true)
+  })
+
+  it('o corpo que chega no prazo é lido como antes', async () => {
+    expect(await lerCorpo(pedido('{"modo":"uso"}'), CORPO_MAXIMO_BYTES, 1000)).toEqual({ grande: false, json: { modo: 'uso' } })
+    expect(await lerCorpo(pedido(jsonCom(64 * KB + 1)), CORPO_MAXIMO_BYTES, 1000)).toEqual({ grande: true })
+  })
+})
 
 describe('o tamanho do pedido às funções de cobrança (D-110)', () => {
   it('lê o JSON do pedido pequeno, como antes', async () => {
